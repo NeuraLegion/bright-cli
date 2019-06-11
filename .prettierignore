@@ -1,0 +1,2 @@
+src/Customer/domain/OfferAggregate/Offer.ts
+src/Scan/domain/AggregateRoots/OrganizationAggregate/SubscriptionSpecification.ts

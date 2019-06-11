@@ -1,0 +1,40 @@
+{
+  "compilerOptions": {
+    "outDir": "./dist",
+    "baseUrl": ".",
+    "lib": [
+      "es2018"
+    ],
+    "module": "commonjs",
+    "target": "es2018",
+    "sourceMap": false,
+    "resolveJsonModule": true,
+    "inlineSources": false,
+    "declaration": false,
+    "importHelpers": true,
+    "downlevelIteration": true,
+    "strict": true,
+    "noImplicitAny": true,
+    "strictNullChecks": false,
+    "suppressImplicitAnyIndexErrors": true,
+    "allowSyntheticDefaultImports": true,
+    "moduleResolution": "node",
+    "emitDecoratorMetadata": true,
+    "experimentalDecorators": true,
+    "typeRoots": [
+      "./node_modules/@types",
+      "./typings"
+    ],
+    "skipLibCheck": true,
+    "types": [
+      "node",
+      "mocha",
+      "reflect-metadata"
+    ]
+  },
+  "exclude": [
+    "node_modules",
+    "tmp",
+    "**/*.spec.ts"
+  ]
+}

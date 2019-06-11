@@ -1,0 +1,8 @@
+/node_modules
+/src
+/typings
+/.idea
+
+tsconfig.json
+tslint.json
+webpack.config.js
