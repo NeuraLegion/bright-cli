@@ -22,7 +22,7 @@ First, install NexPloit-CLI globally:
 
 
 ```bash
-$ npm install nexploit-cli -g
+$ npm install @neuralegion/nexploit-cli -g
 ```
 
 Next, go to the directory of your project and run the command:
