@@ -8,14 +8,16 @@ export interface Headers {
 
 type PlanFormData = string | Buffer | Readable;
 
+type FormDataField = PlanFormData | {
+  value: PlanFormData,
+  options: {
+    filename: string;
+    contentType: string
+  }
+};
+
 export interface FormData {
-  [key: string]: PlanFormData | {
-    value: PlanFormData,
-    options: {
-      filename: string;
-      contentType: string
-    }
-  };
+  [key: string]: FormDataField | FormDataField[];
 }
 
 export enum MockRequestType {
@@ -56,9 +58,12 @@ export interface FormUrlencodedMockRequest extends GenericMockRequest<MockReques
   };
 }
 
+export type MultiPartField = SimpleTextMockRequest<MockRequestType.text> |
+  FileMockRequest;
+
 export interface MultiPartMockRequest extends GenericMockRequest<MockRequestType.multipart> {
   readonly body: {
-    readonly [key: string]: SimpleTextMockRequest<MockRequestType.text> | FileMockRequest;
+    readonly [key: string]: MultiPartField | MultiPartField[];
   };
 }
 
@@ -143,8 +148,10 @@ export class MockRequestsParser extends Transform {
 
   private mockFormDataPayload(request: MultiPartMockRequest): FormData {
     return Object.entries(request.body)
-      .reduce((acc: FormData, [key, value]: [string, SimpleTextMockRequest<MockRequestType.text> | FileMockRequest]) => {
-        acc[key] = this.parseFormDataValue(value);
+      .reduce((acc: FormData, [key, value]: [string, MultiPartField | MultiPartField[]]) => {
+        acc[key] = Array.isArray(value) ?
+          value.map(this.parseFormDataValue.bind(this)) :
+          this.parseFormDataValue(value);
         return acc;
       }, {});
   }
