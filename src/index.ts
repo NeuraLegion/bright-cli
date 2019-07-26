@@ -12,4 +12,5 @@ cli
     new VersionCommand(),
     new GenerateArchive(),
     new RunScan()
-  );
+  )
+  .argv;

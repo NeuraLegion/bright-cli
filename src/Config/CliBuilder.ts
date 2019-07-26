@@ -83,7 +83,7 @@ export class CliBuilder {
   }
 
   private configToJson(): any {
-    [...this.config.entries()]
+    return [...this.config.entries()]
       .reduce((acc: any, [key, value]: [string, any]) => {
         acc[key] = value;
         return acc;
