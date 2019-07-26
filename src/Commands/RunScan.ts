@@ -46,6 +46,13 @@ export class RunScan implements yargs.CommandModule {
         describe: 'Protocol-type scan or Application-type scan.',
         demandOption: true
       })
+      .option('module', {
+        default: 'core',
+        choices: ['core', 'exploratory'],
+        describe: 'The core module tests for specific scenarios, mainly OWASP top 10 and other common scenarios. ' +
+          'The exploratory module generates various scenarios to test for unknown vulnerabilities, ' +
+          'providing automated AI led fuzzing testing. This module can be coupled with the agent to find additional vulnerabilities.'
+      })
       .option('service', {
         choices: ['jenkins', 'circleci', 'travisci'],
         describe: 'The CI tool name your project uses.',
@@ -86,9 +93,9 @@ export class RunScan implements yargs.CommandModule {
       await new FileExistingValidator()
         .validate(args.archive as string);
 
-      const {id}: { id: string } = await proxy.post({
-        uri: `/archives`,
-        qs: {protocol: args.protocol, discard: args.discard},
+      const {ids}: { ids: string[] } = await proxy.post({
+        uri: `/files`,
+        qs: {discard: args.discard},
         json: true,
         formData: {
           har: createReadStream(args.archive as string)
@@ -102,8 +109,10 @@ export class RunScan implements yargs.CommandModule {
           protocol: args.protocol,
           type: args.type,
           name: args.name,
+          discoveryTypes: ['archive'],
+          module: args.module,
           hostsFilter: args['host-filter'],
-          archiveId: id,
+          fileId: ids[0],
           build: args.service ?
             {
               service: args.service,
