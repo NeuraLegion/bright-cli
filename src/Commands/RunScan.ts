@@ -3,6 +3,7 @@ import * as request from 'request-promise';
 import {RequestPromiseAPI} from 'request-promise';
 import * as yargs from 'yargs';
 import {FileExistingValidator} from '../Utils/FileExistingValidator';
+import {basename} from "path";
 
 export class RunScan implements yargs.CommandModule {
   public readonly command = 'scan:run';
@@ -102,6 +103,8 @@ export class RunScan implements yargs.CommandModule {
         }
       });
 
+      console.log(`${basename(args.archive as string)} was uploaded by ${args.$0}.`);
+
       await proxy.post({
         uri: `/scans`,
         json: true,
@@ -124,7 +127,7 @@ export class RunScan implements yargs.CommandModule {
         }
       });
 
-      console.log(`${args.name} scan was runned by ${args.$0}.`);
+      console.log(`${args.name} scan was ran by ${args.$0}.`);
       process.exit(0);
     } catch (e) {
       console.error(`Error during "scan:run" run: ${e.error || e.message}`);
