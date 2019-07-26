@@ -3,7 +3,7 @@ import * as request from 'request-promise';
 import {RequestPromiseAPI} from 'request-promise';
 import * as yargs from 'yargs';
 import {FileExistingValidator} from '../Utils/FileExistingValidator';
-import {basename} from "path";
+import {basename} from 'path';
 
 export class RunScan implements yargs.CommandModule {
   public readonly command = 'scan:run';

@@ -7,6 +7,7 @@ const cli: CliBuilder = new CliBuilder({
   cwd: process.cwd()
 });
 
+// tslint:disable:no-unused-expression
 cli
   .build(
     new VersionCommand(),
