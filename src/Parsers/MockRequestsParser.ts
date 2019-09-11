@@ -74,24 +74,33 @@ export type MockRequest = FormUrlencodedMockRequest |
 
 export class MockRequestsParser extends Transform {
   private readonly options: { headers?: Headers, url?: string };
+  private readonly chunks: string[];
 
   constructor(options: { headers?: Headers, url?: string }) {
     super({objectMode: true});
     this.options = options;
+    this.chunks = [];
   }
 
   public _transform(data: string, encoding: string, done: TransformCallback): void {
-    const mocks: MockRequest[] = this.parseJson(data);
-
-    if (!Array.isArray(mocks)) {
-      return done();
-    }
-
-    mocks.forEach((item: MockRequest) =>
-      this.push(this.mockToRequestOptions(item))
-    );
-
+    this.chunks.push(data);
     done();
+  }
+
+  public _flush(callback: (error?: Error, data?: any) => void): void {
+    try {
+      const mocks: MockRequest[] = JSON.parse(this.chunks.join('')) as MockRequest[];
+
+      if (!Array.isArray(mocks)) {
+        return callback();
+      }
+
+      callback(null, mocks.map((item: MockRequest) =>
+        this.mockToRequestOptions(item)
+      ));
+    } catch (e) {
+      callback(new Error(`NexMock file is invalid. Check your file and try again.`));
+    }
   }
 
   public mockToRequestOptions(mock: MockRequest): Options {
@@ -135,14 +144,6 @@ export class MockRequestsParser extends Transform {
         ...defaultOptions,
         body: mock.body
       };
-    }
-  }
-
-  private parseJson(data: string): MockRequest[] | null {
-    try {
-      return JSON.parse(data) as MockRequest[];
-    } catch (e) {
-      return null;
     }
   }
 

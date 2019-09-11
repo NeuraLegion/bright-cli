@@ -66,11 +66,14 @@ export class RunScan implements yargs.CommandModule {
       .option('project', {
         describe: 'Name of the project of this build. This is the name you gave your job or workflow when you first setup CI.'
       })
+      .option('user', {
+        describe: 'Name of the user that is currently signed in.'
+      })
       .option('vcs', {
         choices: ['github', 'bitbucket'],
         describe: 'The version control system type your project uses. Current choices are github or bitbucket. CircleCI only.'
       })
-      .group(['service', 'build-number', 'vcs', 'project'], 'build')
+      .group(['service', 'build-number', 'vcs', 'project', 'user'], 'build')
       .option('discard', {
         alias: 'd',
         default: true,
@@ -88,6 +91,7 @@ export class RunScan implements yargs.CommandModule {
     try {
       const proxy: RequestPromiseAPI = request.defaults({
         baseUrl: args.api as string,
+        strictSSL: false,
         headers: {Authorization: `Api-Key ${args['api-key']}`}
       });
 
@@ -121,13 +125,14 @@ export class RunScan implements yargs.CommandModule {
               service: args.service,
               buildNumber: args.buildNumber,
               project: args.project,
+              user: args.user,
               vcs: args.vcs
             } :
             undefined
         }
       });
 
-      console.log(`${args.name} scan was ran by ${args.$0}.`);
+      console.log(`${args.name} scan was run by ${args.$0}.`);
       process.exit(0);
     } catch (e) {
       console.error(`Error during "scan:run" run: ${e.error || e.message}`);
