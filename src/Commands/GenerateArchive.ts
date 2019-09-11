@@ -19,6 +19,17 @@ export class GenerateArchive implements yargs.CommandModule {
         describe: 'Mock file.',
         demandOption: true
       })
+      .option('pool', {
+        alias: 'p',
+        number: true,
+        default: 250,
+        describe: 'Size of the worker pool.'
+      })
+      .option('timeout', {
+        number: true,
+        default: 5000,
+        describe: 'Time to wait for a server to send response headers (and start the response body) before aborting the request.'
+      })
       .option('archive', {
         alias: 'f',
         normalize: true,
@@ -49,8 +60,8 @@ export class GenerateArchive implements yargs.CommandModule {
           headers: new InlineHeaders(args.header as string[]).get()
         }),
         new RequestCrawler({
-          timeout: 5000,
-          maxSockets: 50
+          timeout: args.timeout as number,
+          pool: args.pool as number
         }),
         createWriteStream(args.archive as string),
         (err) => {

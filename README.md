@@ -59,6 +59,8 @@ During the creating of the archive, you can edit the `.nexploitrc.json` file and
 {
    "api-key": "fdge44df.tdfeswerfwsttsdrest",
    "target": "https://example.com/",
+   "timeout": 5000,
+   "pool": 100,
    "host-filter": ["https://example.com/"]
 }
 ```
@@ -91,6 +93,7 @@ $ nexploit-cli scan:run \
       --api-key fdge44df.tdfeswerfwsttsdrest
       --service circleci
       --build-number 1
+      --user circleci
       --project YourProject
       --vcs github
 ```
