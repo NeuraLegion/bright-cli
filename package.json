@@ -1,6 +1,6 @@
 {
   "name": "@neuralegion/nexploit-cli",
-  "version": "2.1.0",
+  "version": "2.2.1",
   "private": false,
   "repository": {
     "type": "git",
@@ -41,6 +41,7 @@
     "@types/request": "^2.48.1",
     "@types/request-promise": "^4.1.44",
     "@types/yargs": "^13.0.0",
+    "ajv": "^6.10.2",
     "capture-har": "^1.0.1",
     "find-up": "^3.0.0",
     "js-yaml": "^3.13.1",

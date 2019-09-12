@@ -2,23 +2,21 @@
 import { CaptureHar } from 'capture-har';
 import * as request from 'request';
 import { CoreOptions, Options } from 'request';
-import { Transform, TransformCallback } from 'stream';
 
-export class RequestCrawler extends Transform {
+export class RequestCrawler {
   private readonly options: CoreOptions;
   private readonly proxy: CaptureHar;
   private readonly pool: number;
 
   constructor({
-    pool = 250,
-    timeout = 5000,
-    maxRedirects = 20
-  }: {
+                pool = 250,
+                timeout = 5000,
+                maxRedirects = 20
+              }: {
     timeout: number;
     pool?: number;
     maxRedirects?: number;
   }) {
-    super({ objectMode: true });
     this.options = {
       timeout,
       maxRedirects,
@@ -28,25 +26,25 @@ export class RequestCrawler extends Transform {
     this.proxy = new CaptureHar(request.defaults(this.options));
   }
 
-  public _transform(
-    data: Options | Options[],
-    encoding: string,
-    done: TransformCallback
-  ): void {
+  public async parse(data: Options | Options[]): Promise<string> {
     const requests: Options[] = Array.isArray(data) ? data : [data];
+    const chunks: Options[][] = this.splitByChunks<Options[], Options>(
+      requests,
+      this.pool
+    );
 
-    this.splitByChunks<Options[], Options>(requests, this.pool)
-      .reduce(
-        (total: Promise<void>, partOfRequests: Options[]) =>
-          total.then(
-            () =>
-              Promise.all<void>(
-                partOfRequests.map((opt: Options) => this.executeRequest(opt))
-              ) as any
-          ),
-        Promise.resolve()
-      )
-      .then(() => done(null, JSON.stringify(this.proxy.stop())));
+    await chunks.reduce(
+      (total: Promise<void>, partOfRequests: Options[]) =>
+        total.then(
+          () =>
+            Promise.all<void>(
+              partOfRequests.map((opt: Options) => this.executeRequest(opt))
+            ) as any
+        ),
+      Promise.resolve()
+    );
+
+    return JSON.stringify(this.proxy.stop());
   }
 
   private executeRequest(opt: Options): Promise<void> {

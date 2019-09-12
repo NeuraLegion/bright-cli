@@ -36,8 +36,8 @@ export class VersionCommand implements yargs.CommandModule {
       / @nexploit\/cli@(.*)\n/
     );
     const localNpmVersion: string = (localMatches && localMatches[1]
-      ? localMatches[1]
-      : ''
+        ? localMatches[1]
+        : ''
     )
       .replace(/"invalid"/gi, '')
       .trim();
@@ -49,8 +49,8 @@ export class VersionCommand implements yargs.CommandModule {
       / @nexploit\/cli@(.*)\n/
     );
     const globalNpmVersion: string = (globalMatches && globalMatches[1]
-      ? globalMatches[1]
-      : ''
+        ? globalMatches[1]
+        : ''
     )
       .replace(/"invalid"/gi, '')
       .trim();
@@ -74,7 +74,7 @@ export class VersionCommand implements yargs.CommandModule {
     ) {
       console.log(
         'To avoid issues with CLI please make sure your global and local NexPloit versions match, ' +
-          'or you are using locally installed NexPloit instead of global one.'
+        'or you are using locally installed NexPloit instead of global one.'
       );
     }
   }

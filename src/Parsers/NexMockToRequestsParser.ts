@@ -1,5 +1,5 @@
 import { Options } from 'request';
-import { Readable, Transform, TransformCallback } from 'stream';
+import { Readable } from 'stream';
 import { URL } from 'url';
 
 export interface Headers {
@@ -11,12 +11,12 @@ type PlanFormData = string | Buffer | Readable;
 type FormDataField =
   | PlanFormData
   | {
-      value: PlanFormData;
-      options: {
-        filename: string;
-        contentType: string;
-      };
-    };
+  value: PlanFormData;
+  options: {
+    filename: string;
+    contentType: string;
+  };
+};
 
 export interface FormData {
   [key: string]: FormDataField | FormDataField[];
@@ -32,10 +32,8 @@ export enum MockRequestType {
   text = 'text'
 }
 
-export type SimpleBodyType = Exclude<
-  MockRequestType,
-  MockRequestType.multipart & MockRequestType.form_urlencoded
->;
+export type SimpleBodyType = Exclude<MockRequestType,
+  MockRequestType.multipart & MockRequestType.form_urlencoded>;
 
 export interface GenericMockRequest<T extends MockRequestType> {
   readonly type: T;
@@ -62,7 +60,7 @@ export interface FileMockRequest
 export interface FormUrlencodedMockRequest
   extends GenericMockRequest<MockRequestType.form_urlencoded> {
   readonly body: {
-    readonly [key: string]: SimpleTextMockRequest<MockRequestType.text>;
+    readonly [key: string]: string;
   };
 }
 
@@ -83,51 +81,18 @@ export type MockRequest =
   | FileMockRequest
   | SimpleTextMockRequest<Exclude<SimpleBodyType, MockRequestType.file>>;
 
-export class MockRequestsParser extends Transform {
+export class NexMockToRequestsParser {
   private readonly options: { headers?: Headers; url?: string };
-  private readonly chunks: string[];
 
   constructor(options: { headers?: Headers; url?: string }) {
-    super({ objectMode: true });
     this.options = options;
-    this.chunks = [];
   }
 
-  public _transform(
-    data: string,
-    encoding: string,
-    done: TransformCallback
-  ): void {
-    this.chunks.push(data);
-    done();
-  }
-
-  public _flush(callback: (error?: Error, data?: any) => void): void {
-    try {
-      const mocks: MockRequest[] = JSON.parse(
-        this.chunks.join('')
-      ) as MockRequest[];
-
-      if (!Array.isArray(mocks)) {
-        return callback();
-      }
-
-      callback(
-        null,
-        mocks.map((item: MockRequest) => this.mockToRequestOptions(item))
-      );
-    } catch (e) {
-      callback(
-        new Error(`NexMock file is invalid. Check your file and try again.`)
-      );
-    }
+  public async parse(mocks: MockRequest[]): Promise<Options[]> {
+    return mocks.map((item: MockRequest) => this.mockToRequestOptions(item));
   }
 
   public mockToRequestOptions(mock: MockRequest): Options {
-    if (!mock.method || !mock.url || !mock.type) {
-      return null;
-    }
-
     const defaultOptions: Options = {
       url: this.buildUrl(mock.url),
       headers: this.mergeHeaders(this.options.headers, mock.headers),
@@ -135,35 +100,35 @@ export class MockRequestsParser extends Transform {
     };
 
     switch (mock.type) {
-      case MockRequestType.file:
-      case MockRequestType.stream:
-      case MockRequestType.buffer:
-        return {
-          ...defaultOptions,
-          body: Buffer.from(mock.body, 'base64')
-        };
-      case MockRequestType.json:
-        return {
-          ...defaultOptions,
-          json: true,
-          body: JSON.parse(mock.body)
-        };
-      case MockRequestType.multipart:
-        return {
-          ...defaultOptions,
-          formData: this.mockFormDataPayload(mock as MultiPartMockRequest)
-        };
-      case MockRequestType.form_urlencoded:
-        return {
-          ...defaultOptions,
-          form: mock.body
-        };
-      case MockRequestType.text:
-      default:
-        return {
-          ...defaultOptions,
-          body: mock.body
-        };
+    case MockRequestType.file:
+    case MockRequestType.stream:
+    case MockRequestType.buffer:
+      return {
+        ...defaultOptions,
+        body: Buffer.from(mock.body, 'base64')
+      };
+    case MockRequestType.json:
+      return {
+        ...defaultOptions,
+        json: true,
+        body: JSON.parse(mock.body)
+      };
+    case MockRequestType.multipart:
+      return {
+        ...defaultOptions,
+        formData: this.mockFormDataPayload(mock as MultiPartMockRequest)
+      };
+    case MockRequestType.form_urlencoded:
+      return {
+        ...defaultOptions,
+        form: mock.body
+      };
+    case MockRequestType.text:
+    default:
+      return {
+        ...defaultOptions,
+        body: mock.body
+      };
     }
   }
 
@@ -187,12 +152,12 @@ export class MockRequestsParser extends Transform {
   ) {
     return value.type !== MockRequestType.text
       ? {
-          value: Buffer.from(value.body, 'base64'),
-          options: {
-            filename: value.fileName,
-            contentType: value.mimeType
-          }
+        value: Buffer.from(value.body, 'base64'),
+        options: {
+          filename: value.fileName,
+          contentType: value.mimeType
         }
+      }
       : value.body;
   }
 
@@ -201,8 +166,8 @@ export class MockRequestsParser extends Transform {
   }
 
   private buildUrl(urlOrPath: string = '/'): string {
-    const pat: RegExp = /^https?:\/\//i;
-    return pat.test(urlOrPath)
+    const path: RegExp = /^https?:\/\//i;
+    return path.test(urlOrPath)
       ? urlOrPath
       : new URL(urlOrPath, this.options.url).toString();
   }
