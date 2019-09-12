@@ -1,9 +1,9 @@
-import {createReadStream} from 'fs';
+import { createReadStream } from 'fs';
 import * as request from 'request-promise';
-import {RequestPromiseAPI} from 'request-promise';
+import { RequestPromiseAPI } from 'request-promise';
 import * as yargs from 'yargs';
-import {FileExistingValidator} from '../Utils/FileExistingValidator';
-import {basename} from 'path';
+import { FileExistingValidator } from '../Utils/FileExistingValidator';
+import { basename } from 'path';
 
 export class RunScan implements yargs.CommandModule {
   public readonly command = 'scan:run';
@@ -24,7 +24,8 @@ export class RunScan implements yargs.CommandModule {
       .option('archive', {
         alias: 'f',
         normalize: true,
-        describe: 'A collection your app\'s http/websockets logs into HAR or WSAR file. ' +
+        describe:
+          "A collection your app's http/websockets logs into HAR or WSAR file. " +
           'Usually you can use browser dev tools or our browser web extension',
         demandOption: true
       })
@@ -50,7 +51,8 @@ export class RunScan implements yargs.CommandModule {
       .option('module', {
         default: 'core',
         choices: ['core', 'exploratory'],
-        describe: 'The core module tests for specific scenarios, mainly OWASP top 10 and other common scenarios. ' +
+        describe:
+          'The core module tests for specific scenarios, mainly OWASP top 10 and other common scenarios. ' +
           'The exploratory module generates various scenarios to test for unknown vulnerabilities, ' +
           'providing automated AI led fuzzing testing. This module can be coupled with the agent to find additional vulnerabilities.'
       })
@@ -64,21 +66,24 @@ export class RunScan implements yargs.CommandModule {
         describe: 'The current build number.'
       })
       .option('project', {
-        describe: 'Name of the project of this build. This is the name you gave your job or workflow when you first setup CI.'
+        describe:
+          'Name of the project of this build. This is the name you gave your job or workflow when you first setup CI.'
       })
       .option('user', {
         describe: 'Name of the user that is currently signed in.'
       })
       .option('vcs', {
         choices: ['github', 'bitbucket'],
-        describe: 'The version control system type your project uses. Current choices are github or bitbucket. CircleCI only.'
+        describe:
+          'The version control system type your project uses. Current choices are github or bitbucket. CircleCI only.'
       })
       .group(['service', 'build-number', 'vcs', 'project', 'user'], 'build')
       .option('discard', {
         alias: 'd',
         default: true,
         boolean: true,
-        describe: 'Indicates if archive should be remove or not after scan running. Enabled by default.'
+        describe:
+          'Indicates if archive should be remove or not after scan running. Enabled by default.'
       })
       .option('api', {
         default: 'https://nexploit.app/api/v1/',
@@ -92,22 +97,23 @@ export class RunScan implements yargs.CommandModule {
       const proxy: RequestPromiseAPI = request.defaults({
         baseUrl: args.api as string,
         strictSSL: false,
-        headers: {Authorization: `Api-Key ${args['api-key']}`}
+        headers: { Authorization: `Api-Key ${args['api-key']}` }
       });
 
-      await new FileExistingValidator()
-        .validate(args.archive as string);
+      await new FileExistingValidator().validate(args.archive as string);
 
-      const {ids}: { ids: string[] } = await proxy.post({
+      const { ids }: { ids: string[] } = await proxy.post({
         uri: `/files`,
-        qs: {discard: args.discard},
+        qs: { discard: args.discard },
         json: true,
         formData: {
           har: createReadStream(args.archive as string)
         }
       });
 
-      console.log(`${basename(args.archive as string)} was uploaded by ${args.$0}.`);
+      console.log(
+        `${basename(args.archive as string)} was uploaded by ${args.$0}.`
+      );
 
       await proxy.post({
         uri: `/scans`,
@@ -120,15 +126,15 @@ export class RunScan implements yargs.CommandModule {
           module: args.module,
           hostsFilter: args['host-filter'],
           fileId: ids[0],
-          build: args.service ?
-            {
-              service: args.service,
-              buildNumber: args.buildNumber,
-              project: args.project,
-              user: args.user,
-              vcs: args.vcs
-            } :
-            undefined
+          build: args.service
+            ? {
+                service: args.service,
+                buildNumber: args.buildNumber,
+                project: args.project,
+                user: args.user,
+                vcs: args.vcs
+              }
+            : undefined
         }
       });
 
@@ -139,5 +145,4 @@ export class RunScan implements yargs.CommandModule {
       process.exit(1);
     }
   }
-
 }

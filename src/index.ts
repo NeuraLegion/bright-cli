@@ -1,6 +1,6 @@
 import 'reflect-metadata';
-import {GenerateArchive, RunScan, VersionCommand} from './Commands';
-import {CliBuilder} from './Config/CliBuilder';
+import { GenerateArchive, RunScan, VersionCommand } from './Commands';
+import { CliBuilder } from './Config/CliBuilder';
 
 const cli: CliBuilder = new CliBuilder({
   colors: true,
@@ -8,10 +8,4 @@ const cli: CliBuilder = new CliBuilder({
 });
 
 // tslint:disable:no-unused-expression
-cli
-  .build(
-    new VersionCommand(),
-    new GenerateArchive(),
-    new RunScan()
-  )
-  .argv;
+cli.build(new VersionCommand(), new GenerateArchive(), new RunScan()).argv;
