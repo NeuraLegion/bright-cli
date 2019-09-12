@@ -6,7 +6,7 @@
       "es2018"
     ],
     "module": "commonjs",
-    "target": "es2018",
+    "target": "es6",
     "sourceMap": false,
     "resolveJsonModule": true,
     "inlineSources": false,
