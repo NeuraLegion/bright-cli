@@ -1,4 +1,4 @@
-import {Headers} from 'request';
+import { Headers } from 'request';
 
 export class InlineHeaders {
   private readonly _entries: Headers;
@@ -12,8 +12,8 @@ export class InlineHeaders {
   }
 
   private prepareArgHeaders(headers: string[]): Headers {
-    return headers.reduce((acc: Headers, value: string) =>
-        ({...acc, ...this.parseHeader(value)}),
+    return headers.reduce(
+      (acc: Headers, value: string) => ({ ...acc, ...this.parseHeader(value) }),
       {}
     );
   }
@@ -27,6 +27,6 @@ export class InlineHeaders {
       .split(':', 2)
       .map((item: string) => decodeURIComponent(item.trim()));
 
-    return {[key]: value} as Headers;
+    return { [key]: value } as Headers;
   }
 }

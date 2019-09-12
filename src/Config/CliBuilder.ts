@@ -14,7 +14,13 @@ export class CliBuilder {
     'nexploit.config.js'
   ];
 
-  constructor({cwd = process.cwd(), colors = false}: { cwd: string, colors: boolean }) {
+  constructor({
+    cwd = process.cwd(),
+    colors = false
+  }: {
+    cwd: string;
+    colors: boolean;
+  }) {
     this.config = new Map<string, any>();
     this.cwd = this.guessCWD(cwd);
     if (colors) {
@@ -34,11 +40,17 @@ export class CliBuilder {
     const cli: yargs.Argv = yargs
       .usage('Usage: $0 <command> [options]')
       .pkgConf('nexploit', this.cwd)
-      .example('$0 archive:generate --mockfile=.mockfile --name=archive.har', 'output har file on base your mock requests')
+      .example(
+        '$0 archive:generate --mockfile=.mockfile --name=archive.har',
+        'output har file on base your mock requests'
+      )
       .config(config);
 
     return comands
-      .reduce((acc: yargs.Argv, item: yargs.CommandModule) => acc.command(item), cli)
+      .reduce(
+        (acc: yargs.Argv, item: yargs.CommandModule) => acc.command(item),
+        cli
+      )
       .recommendCommands()
       .demandCommand(1)
       .strict(false)
@@ -48,7 +60,9 @@ export class CliBuilder {
   }
 
   private load(): this {
-    const rcPath: string | null = findUp.sync(this.rcOptions, {cwd: this.cwd});
+    const rcPath: string | null = findUp.sync(this.rcOptions, {
+      cwd: this.cwd
+    });
 
     if (!rcPath) {
       return;
@@ -59,10 +73,7 @@ export class CliBuilder {
     if (rcExt === '.js') {
       this.configure(require(rcPath));
     } else if (rcExt === '.yml' || rcExt === '.yaml') {
-      this.configure(
-        require('js-yaml')
-          .load(fs.readFileSync(rcPath, 'utf8'))
-      );
+      this.configure(require('js-yaml').load(fs.readFileSync(rcPath, 'utf8')));
     } else {
       this.configure(JSON.parse(fs.readFileSync(rcPath, 'utf-8')));
     }
@@ -73,7 +84,7 @@ export class CliBuilder {
   private guessCWD(cwd: string): string {
     cwd = cwd || process.env.NEXPLOIT_CWD || process.cwd();
 
-    const pkgPath: string | null = findUp.sync('package.json', {cwd});
+    const pkgPath: string | null = findUp.sync('package.json', { cwd });
 
     if (!!pkgPath) {
       cwd = path.dirname(pkgPath);
@@ -83,15 +94,18 @@ export class CliBuilder {
   }
 
   private configToJson(): any {
-    return [...this.config.entries()]
-      .reduce((acc: any, [key, value]: [string, any]) => {
+    return [...this.config.entries()].reduce(
+      (acc: any, [key, value]: [string, any]) => {
         acc[key] = value;
         return acc;
-      }, {});
+      },
+      {}
+    );
   }
 
   private configure(map: { [key: string]: any }): void {
-    Object.entries(map)
-      .map(([key, value]: [string, any]) => this.config.set(key, value));
+    Object.entries(map).map(([key, value]: [string, any]) =>
+      this.config.set(key, value)
+    );
   }
 }

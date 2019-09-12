@@ -1,6 +1,6 @@
-import {access, constants} from 'fs';
-import {promisify} from 'util';
-import {basename} from 'path';
+import { access, constants } from 'fs';
+import { promisify } from 'util';
+import { basename } from 'path';
 
 const accessPromisified = promisify(access);
 

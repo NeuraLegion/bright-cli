@@ -22,16 +22,13 @@
     "nexploit-cli": "./dist/index.js"
   },
   "scripts": {
-    "tslint": "tslint",
-    "ts-node": "ts-node",
-    "mocha": "node_modules/mocha/bin/mocha",
-    "lint": "tslint --project . -c tslint.json 'src/**/*.ts' -e node_modules",
+    "lint": "tslint --project . -c tslint.json 'src/**/*.ts' -e node_modules --fix",
+    "pretty": "prettier --write 'src/**/*.ts'",
     "format": "tslint --project . -c tslint.json 'src/**/*.ts' -e node_modules --fix",
-    "test": "mocha -r ts-node/register tsconfig-paths/register test/*.test.ts",
-    "build:dev": "npm run clean && webpack --config webpack.config.js --mode=development",
-    "build:prod": "npm run clean && webpack --config webpack.config.js --mode=production",
+    "test": "mocha -r ts-node/register -r tsconfig-paths/register src/*.spec.ts",
+    "build": "npm run clean && webpack --config webpack.config.js",
     "clean": "rimraf lib",
-    "prepublish": "npm run clean && npm run lint && npm run build:prod",
+    "prepublish": "npm run clean && npm run lint && npm run build -- --mode=production",
     "please": "npm cache clean -f && rm -rf node_modules && rm -f package-lock.json"
   },
   "homepage": "https://github.com/NeuraLegion/nexploit-cli#readme",
@@ -56,6 +53,7 @@
   "devDependencies": {
     "@types/chai": "^4.1.7",
     "@types/mocha": "^5.2.1",
+    "tslint-plugin-prettier": "^2.0.1",
     "@types/node": "10.12.18",
     "webpack": "4.30.0",
     "webpack-cli": "3.3.1",
@@ -65,7 +63,7 @@
     "chai": "^4.2.0",
     "chalk": "2.4.1",
     "mocha": "^5.2.0",
-    "prettier-tslint": "^0.4.2",
+    "prettier": "^1.18.2",
     "ts-node": "8.1.0",
     "tslint": "5.16.0",
     "typescript": "3.4.5",
