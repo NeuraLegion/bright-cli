@@ -15,9 +15,9 @@ export class CliBuilder {
   ];
 
   constructor({
-    cwd = process.cwd(),
-    colors = false
-  }: {
+                cwd = process.cwd(),
+                colors = false
+              }: {
     cwd: string;
     colors: boolean;
   }) {

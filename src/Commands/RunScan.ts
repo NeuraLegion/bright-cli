@@ -1,9 +1,10 @@
-import { createReadStream } from 'fs';
 import * as request from 'request-promise';
 import { RequestPromiseAPI } from 'request-promise';
 import * as yargs from 'yargs';
-import { FileExistingValidator } from '../Utils/FileExistingValidator';
 import { basename } from 'path';
+import { HarFileParser } from '../Parsers/HarFileParser';
+import { Har } from 'har-format';
+import { createReadStream } from 'fs';
 
 export class RunScan implements yargs.CommandModule {
   public readonly command = 'scan:run';
@@ -100,7 +101,13 @@ export class RunScan implements yargs.CommandModule {
         headers: { Authorization: `Api-Key ${args['api-key']}` }
       });
 
-      await new FileExistingValidator().validate(args.archive as string);
+      const harFileParser: HarFileParser = new HarFileParser();
+
+      await harFileParser.parse(args.archive as string);
+
+      console.log(
+        `${basename(args.archive as string)} was verified and parsed.`
+      );
 
       const { ids }: { ids: string[] } = await proxy.post({
         uri: `/files`,
