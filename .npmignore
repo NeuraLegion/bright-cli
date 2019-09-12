@@ -2,6 +2,7 @@
 /src
 /typings
 /.idea
+/.github
 
 tsconfig.json
 tslint.json
