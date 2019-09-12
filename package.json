@@ -22,9 +22,11 @@
     "nexploit-cli": "./dist/index.js"
   },
   "scripts": {
-    "lint": "tslint --project . -c tslint.json 'src/**/*.ts' -e node_modules --fix",
-    "pretty": "prettier --write 'src/**/*.ts'",
-    "format": "tslint --project . -c tslint.json 'src/**/*.ts' -e node_modules --fix",
+    "lint": "tslint --project . -c tslint.json 'src/**/*.ts' -e node_modules",
+    "pretty": "prettier --check 'src/**/*.ts'",
+    "lint:fix": "tslint --project . -c tslint.json 'src/**/*.ts' -e node_modules --fix",
+    "pretty:fix": "prettier --write 'src/**/*.ts'",
+    "format": "npm run lint:fix && npm run pretty:fix",
     "test": "mocha -r ts-node/register -r tsconfig-paths/register src/*.spec.ts",
     "build": "npm run clean && webpack --config webpack.config.js",
     "clean": "rimraf lib",
