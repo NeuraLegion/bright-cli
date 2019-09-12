@@ -42,7 +42,8 @@ export class GenerateArchive implements yargs.CommandModule {
       })
       .option('target', {
         alias: 't',
-        describe: 'Target hostname or IP address.'
+        describe: 'Target hostname or IP address.',
+        demandOption: true
       })
       .option('header', {
         alias: 'H',
