@@ -1,22 +1,20 @@
-import {
-  ArchiveRef,
-  RunArchiveDiscoveryStrategy
-} from './RunArchiveDiscoveryStrategy';
-import { HarFileParser } from '../Parsers/HarFileParser';
+import { RunArchiveDiscoveryStrategy } from './RunArchiveDiscoveryStrategy';
 import { createReadStream } from 'fs';
-import { OasFileParser } from '../Parsers/OasFileParser';
+import { OasFileParser } from '../../Parsers/OasFileParser';
+import { Options as RequestOptions } from 'request';
+import { Discovery, DiscoveryTypes } from './RunStrategyExecutor';
 
 export class RunOasDiscoveryStrategy extends RunArchiveDiscoveryStrategy {
-  constructor(baseUrl: string, apiKey: string) {
-    super(baseUrl, apiKey);
+  get discovery(): DiscoveryTypes {
+    return [Discovery.oas];
   }
 
-  protected async uploadArchive(
+  protected getUploadArchiveOptions(
     filePath: string,
     discard: boolean = true,
     headers?: { [key: string]: string }
-  ): Promise<ArchiveRef> {
-    return this.proxy.post({
+  ): RequestOptions {
+    return {
       uri: `/specs`,
       qs: { discard },
       json: true,
@@ -24,7 +22,7 @@ export class RunOasDiscoveryStrategy extends RunArchiveDiscoveryStrategy {
         headers: headers && JSON.stringify(headers),
         file: createReadStream(filePath)
       }
-    });
+    };
   }
 
   protected async validateFile(filePath: string): Promise<void> {

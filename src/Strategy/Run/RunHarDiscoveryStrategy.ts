@@ -1,27 +1,26 @@
-import {
-  ArchiveRef,
-  RunArchiveDiscoveryStrategy
-} from './RunArchiveDiscoveryStrategy';
-import { HarFileParser } from '../Parsers/HarFileParser';
+import { RunArchiveDiscoveryStrategy } from './RunArchiveDiscoveryStrategy';
+import { HarFileParser } from '../../Parsers/HarFileParser';
 import { createReadStream } from 'fs';
+import { Discovery, DiscoveryTypes } from './RunStrategyExecutor';
+import { Options as RequestOptions } from 'request';
 
 export class RunHarDiscoveryStrategy extends RunArchiveDiscoveryStrategy {
-  constructor(baseUrl: string, apiKey: string) {
-    super(baseUrl, apiKey);
+  get discovery(): DiscoveryTypes {
+    return [Discovery.archive];
   }
 
-  protected async uploadArchive(
+  protected getUploadArchiveOptions(
     filePath: string,
     discard: boolean = true
-  ): Promise<ArchiveRef> {
-    return this.proxy.post({
+  ): RequestOptions {
+    return {
       uri: `/files`,
       qs: { discard },
       json: true,
       formData: {
         file: createReadStream(filePath)
       }
-    });
+    };
   }
 
   protected async validateFile(filePath: string): Promise<void> {
