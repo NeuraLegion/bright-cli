@@ -1,10 +1,11 @@
-import * as request from 'request-promise';
-import { RequestPromiseAPI } from 'request-promise';
 import * as yargs from 'yargs';
-import { basename } from 'path';
-import { HarFileParser } from '../Parsers/HarFileParser';
-import { Har } from 'har-format';
-import { createReadStream } from 'fs';
+import { RunStrategyFactory } from '../Strategy/Run/RunStrategyFactory';
+import { InlineHeaders } from '../Parsers/InlineHeaders';
+import {
+  Discovery,
+  DiscoveryTypes,
+  RunStrategyExecutor
+} from '../Strategy/Run/RunStrategyExecutor';
 
 export class RunScan implements yargs.CommandModule {
   public readonly command = 'scan:run';
@@ -15,29 +16,42 @@ export class RunScan implements yargs.CommandModule {
       .option('api-key', {
         alias: 'K',
         describe: 'NexPloit API-key',
+        requiresArg: true,
         demandOption: true
       })
       .option('name', {
         alias: 'n',
         describe: 'Name of the scan.',
+        requiresArg: true,
         demandOption: true
       })
       .option('archive', {
         alias: 'f',
         normalize: true,
+        requiresArg: true,
+        conflicts: ['oas'],
         describe:
           "A collection your app's http/websockets logs into HAR or WSAR file. " +
-          'Usually you can use browser dev tools or our browser web extension',
-        demandOption: true
+          'Usually you can use browser dev tools or our browser web extension'
       })
-      .option('host-filter', {
-        alias: 'F',
-        default: [],
+      .option('crawler', {
+        alias: 'c',
+        requiresArg: true,
         array: true,
-        describe: 'A list of specific hosts that should be included into scan.'
+        conflicts: ['oas'],
+        describe:
+          'A list of specific urls that should be included into crawler.'
+      })
+      .option('oas', {
+        alias: 'o',
+        requiresArg: true,
+        normalize: true,
+        conflicts: ['archive', 'crawler'],
+        describe: 'A file of your OAS specification.'
       })
       .option('protocol', {
         alias: 'p',
+        requiresArg: true,
         choices: ['http', 'websocket'],
         describe: 'Exploited protocol: HTTP, Websocket, etc.',
         demandOption: true
@@ -45,40 +59,62 @@ export class RunScan implements yargs.CommandModule {
       .option('type', {
         alias: 'T',
         default: 'appscan',
+        requiresArg: true,
         choices: ['appscan', 'protoscan'],
         describe: 'Protocol-type scan or Application-type scan.',
         demandOption: true
       })
+      .option('service', {
+        choices: ['jenkins', 'circleci', 'travisci'],
+        requiresArg: true,
+        describe: 'The CI tool name your project uses.'
+      })
+      .option('build-number', {
+        number: true,
+        requiresArg: true,
+        describe: 'The current build number.',
+        implies: ['service']
+      })
+      .option('project', {
+        requiresArg: true,
+        describe:
+          'Name of the project of this build. This is the name you gave your job or workflow when you first setup CI.',
+        implies: ['service']
+      })
+      .option('user', {
+        requiresArg: true,
+        describe: 'Name of the user that is currently signed in.',
+        implies: ['service']
+      })
+      .option('vcs', {
+        requiresArg: true,
+        choices: ['github', 'bitbucket'],
+        implies: ['service'],
+        describe:
+          'The version control system type your project uses. Current choices are github or bitbucket. CircleCI only.'
+      })
       .option('module', {
         default: 'core',
+        requiresArg: true,
         choices: ['core', 'exploratory'],
         describe:
           'The core module tests for specific scenarios, mainly OWASP top 10 and other common scenarios. ' +
           'The exploratory module generates various scenarios to test for unknown vulnerabilities, ' +
           'providing automated AI led fuzzing testing. This module can be coupled with the agent to find additional vulnerabilities.'
       })
-      .option('service', {
-        choices: ['jenkins', 'circleci', 'travisci'],
-        describe: 'The CI tool name your project uses.',
-        implies: ['build-number', 'project', 'vcs']
+      .option('host-filter', {
+        alias: 'F',
+        requiresArg: true,
+        array: true,
+        describe: 'A list of specific hosts that should be included into scan.'
       })
-      .option('build-number', {
-        number: true,
-        describe: 'The current build number.'
-      })
-      .option('project', {
+      .option('header', {
+        alias: 'H',
+        requiresArg: true,
+        array: true,
         describe:
-          'Name of the project of this build. This is the name you gave your job or workflow when you first setup CI.'
+          'A list of specific headers that should be included into request.'
       })
-      .option('user', {
-        describe: 'Name of the user that is currently signed in.'
-      })
-      .option('vcs', {
-        choices: ['github', 'bitbucket'],
-        describe:
-          'The version control system type your project uses. Current choices are github or bitbucket. CircleCI only.'
-      })
-      .group(['service', 'build-number', 'vcs', 'project', 'user'], 'build')
       .option('discard', {
         alias: 'd',
         default: true,
@@ -90,49 +126,31 @@ export class RunScan implements yargs.CommandModule {
         default: 'https://nexploit.app/api/v1/',
         hidden: true,
         describe: 'NexPloit base url'
-      });
+      })
+      .group(['archive', 'crawler', 'oas', 'discard'], 'Discovery Options')
+      .group(
+        ['service', 'build-number', 'vcs', 'project', 'user'],
+        'Build Options'
+      )
+      .group(['host-filter', 'header', 'api', 'module'], 'Additional Options');
   }
 
   public async handler(args: yargs.Arguments): Promise<void> {
     try {
-      const proxy: RequestPromiseAPI = request.defaults({
-        baseUrl: args.api as string,
-        strictSSL: false,
-        headers: { Authorization: `Api-Key ${args['api-key']}` }
-      });
-
-      const harFileParser: HarFileParser = new HarFileParser();
-
-      await harFileParser.parse(args.archive as string);
-
-      console.log(
-        `${basename(args.archive as string)} was verified and parsed.`
-      );
-
-      const { ids }: { ids: string[] } = await proxy.post({
-        uri: `/files`,
-        qs: { discard: args.discard },
-        json: true,
-        formData: {
-          har: createReadStream(args.archive as string)
-        }
-      });
-
-      console.log(
-        `${basename(args.archive as string)} was uploaded by ${args.$0}.`
-      );
-
-      await proxy.post({
-        uri: `/scans`,
-        json: true,
-        body: {
+      const runStrategyFactory: RunStrategyFactory = new RunStrategyFactory();
+      const runStrategyExecutor: RunStrategyExecutor = new RunStrategyExecutor(
+        args.api as string,
+        args['api-key'] as string,
+        {
           protocol: args.protocol,
           type: args.type,
           name: args.name,
-          discoveryTypes: ['archive'],
           module: args.module,
           hostsFilter: args['host-filter'],
-          fileId: ids[0],
+          headers: new InlineHeaders(args.header as string[]).get(),
+          crawlerUrls: args['crawler'],
+          filePath: args.archive || args.oas,
+          fileDiscard: args.discard,
           build: args.service
             ? {
                 service: args.service,
@@ -142,10 +160,17 @@ export class RunScan implements yargs.CommandModule {
                 vcs: args.vcs
               }
             : undefined
-        }
-      });
+        } as any
+      );
 
-      console.log(`${args.name} scan was run by ${args.$0}.`);
+      const discoveryTypes: Discovery[] = Object.keys(args).filter(
+        (key: string) => Object.values(Discovery).includes(key)
+      ) as Discovery[];
+
+      const scanId: string = await runStrategyExecutor.execute(
+        runStrategyFactory.Create(discoveryTypes)
+      );
+
       process.exit(0);
     } catch (e) {
       console.error(`Error during "scan:run" run: ${e.error || e.message}`);

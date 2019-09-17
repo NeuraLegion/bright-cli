@@ -25,7 +25,7 @@ export class HarValidator {
     }
 
     if (!this.entriesAreValid(data.log.entries)) {
-      throw new Error(`HAR is empty or doesn't contains none of request.`);
+      throw new Error(`HAR is empty or contains none of request.`);
     }
   }
 
