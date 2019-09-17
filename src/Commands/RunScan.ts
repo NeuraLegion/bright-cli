@@ -127,6 +127,29 @@ export class RunScan implements yargs.CommandModule {
         hidden: true,
         describe: 'NexPloit base url'
       })
+      .option('polling', {
+        boolean: true,
+        default: false,
+        describe: "Enables the API polling to check a scan's status.",
+        implies: ['interval', 'failure-on']
+      })
+      .option('interval', {
+        number: true,
+        default: 5000,
+        implies: ['polling', 'failure-on']
+      })
+      .option('failure-on', {
+        choices: [
+          'first-issue',
+          'first-medium-severity-issue',
+          'first-high-severity-issue',
+          'none'
+        ],
+        string: true,
+        default: ['none'],
+        implies: ['polling', 'interval']
+      })
+      .group(['polling', 'interval', 'failure-on'], 'polling')
       .group(['archive', 'crawler', 'oas', 'discard'], 'Discovery Options')
       .group(
         ['service', 'build-number', 'vcs', 'project', 'user'],
