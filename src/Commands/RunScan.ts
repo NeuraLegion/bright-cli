@@ -49,6 +49,7 @@ export class RunScan implements yargs.CommandModule {
         alias: 'o',
         requiresArg: true,
         normalize: true,
+        hidden: true,
         conflicts: ['archive', 'crawler'],
         describe: 'A file of your OAS specification.'
       })
