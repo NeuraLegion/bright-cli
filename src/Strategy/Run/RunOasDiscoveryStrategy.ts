@@ -15,7 +15,7 @@ export class RunOasDiscoveryStrategy extends RunArchiveDiscoveryStrategy {
     headers?: { [key: string]: string }
   ): RequestOptions {
     return {
-      uri: `/specs`,
+      uri: `/api/v1/specs`,
       qs: { discard },
       json: true,
       formData: {

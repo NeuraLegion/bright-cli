@@ -126,31 +126,29 @@ export class RunScan implements yargs.CommandModule {
           'Indicates if archive should be remove or not after scan running. Enabled by default.'
       })
       .option('api', {
-        default: 'https://nexploit.app/api/v1/',
+        default: 'https://nexploit.app/',
         hidden: true,
         describe: 'NexPloit base url'
       })
       .option('polling', {
         boolean: true,
         default: false,
-        describe: "Enables the API polling to check a scan's status.",
-        implies: ['interval', 'failure-on']
+        describe: "Enables the API polling to check a scan's status."
       })
       .option('interval', {
         number: true,
         default: 5000,
-        implies: ['polling', 'failure-on']
+        implies: ['polling']
       })
       .option('failure-on', {
         choices: [
           'first-issue',
           'first-medium-severity-issue',
-          'first-high-severity-issue',
-          'none'
+          'first-high-severity-issue'
         ],
         string: true,
-        default: ['none'],
-        implies: ['polling', 'interval']
+        default: 'first-issue',
+        implies: ['polling']
       })
       .group(['polling', 'interval', 'failure-on'], 'polling')
       .group(['archive', 'crawler', 'oas', 'discard'], 'Discovery Options')

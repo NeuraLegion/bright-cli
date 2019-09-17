@@ -22,7 +22,7 @@ export class FailureStrategyFactory {
         return new FailureOnFirstIssue();
       case FailureOnType.firstHighSeverityIssue:
         return new FailureOnFirstSeverityIssue(IssueCategory.high);
-      case FailureOnType.firstMiddleSeverityIssue:
+      case FailureOnType.firstMediumSeverityIssue:
         return new FailureOnFirstSeverityIssue(IssueCategory.medium);
       case FailureOnType.none:
       default:

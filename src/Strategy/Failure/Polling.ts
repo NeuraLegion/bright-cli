@@ -4,7 +4,7 @@ import { FailureStrategy } from './FailureStrategy';
 
 export enum FailureOnType {
   firstIssue = 'first-issue',
-  firstMiddleSeverityIssue = 'first-middle-severity-issue',
+  firstMediumSeverityIssue = 'first-medium-severity-issue',
   firstHighSeverityIssue = 'first-high-severity-issue',
   none = 'none'
 }
@@ -62,21 +62,25 @@ export class Polling {
     if (!strategy) {
       throw new Error('You should specify a failure strategy for polling.');
     }
+    let i = 0;
     for await (const x of this.poll()) {
       await strategy.execute(x);
+      console.log(`step: ${i++}`);
     }
   }
 
   private async *poll(): AsyncIterableIterator<StatsIssuesCategory[]> {
-    await this.delay();
+    while (true) {
+      await this.delay();
 
-    const { status, issuesBySeverity }: ScanState = await this.getStatus();
+      const { status, issuesBySeverity }: ScanState = await this.getStatus();
+      console.log(status, issuesBySeverity);
+      if (this.isRedundant(status)) {
+        break;
+      }
 
-    if (this.isRedundant(status)) {
-      return;
+      yield issuesBySeverity;
     }
-
-    yield issuesBySeverity;
   }
 
   private isRedundant(status: ScanStatus): boolean {
@@ -91,7 +95,7 @@ export class Polling {
 
   protected getStatus(): Promise<ScanState> {
     return this.proxy.get({
-      uri: `/scans/${this.options.scanId}`,
+      uri: `/api/v1/scans/${this.options.scanId}`,
       json: true
     }) as any;
   }
