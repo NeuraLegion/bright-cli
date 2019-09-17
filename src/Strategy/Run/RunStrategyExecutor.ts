@@ -75,7 +75,7 @@ export class RunStrategyExecutor {
   protected async configureScan(body: ScanConfig): Promise<string> {
     const { id }: ResponseRef = await this.proxy.post({
       body,
-      uri: `/scans`,
+      uri: `/api/v1/scans`,
       json: true
     });
 

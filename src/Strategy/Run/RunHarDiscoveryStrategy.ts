@@ -14,7 +14,7 @@ export class RunHarDiscoveryStrategy extends RunArchiveDiscoveryStrategy {
     discard: boolean = true
   ): RequestOptions {
     return {
-      uri: `/files`,
+      uri: `/api/v1/files`,
       qs: { discard },
       json: true,
       formData: {

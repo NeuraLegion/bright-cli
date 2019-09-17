@@ -6,9 +6,19 @@ import { RunCrawlerDiscoveryStrategy } from './RunCrawlerDiscoveryStrategy';
 import { Discovery } from './RunStrategyExecutor';
 
 export class RunStrategyFactory {
-  public Create(
-    discoveryTypes: ('crawler' | 'archive' | 'oas')[]
-  ): RunStrategy {
+  private static _instance: RunStrategyFactory;
+
+  protected constructor() {}
+
+  public static get Instance(): RunStrategyFactory {
+    if (!this._instance) {
+      this._instance = new RunStrategyFactory();
+    }
+
+    return this._instance;
+  }
+
+  public Create(discoveryTypes: Discovery[]): RunStrategy {
     if (
       discoveryTypes.includes(Discovery.archive) &&
       discoveryTypes.includes(Discovery.crawler)
