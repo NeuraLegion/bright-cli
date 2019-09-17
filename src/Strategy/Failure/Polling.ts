@@ -10,7 +10,6 @@ export enum FailureOnType {
 }
 
 export interface PollingConfig {
-  failureOn?: FailureOnType;
   poolingInterval?: number;
   scanId?: string;
 }

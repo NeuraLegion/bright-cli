@@ -3,9 +3,12 @@ import { RunStrategyFactory } from '../Strategy/Run/RunStrategyFactory';
 import { InlineHeaders } from '../Parsers/InlineHeaders';
 import {
   Discovery,
-  DiscoveryTypes,
   RunStrategyExecutor
 } from '../Strategy/Run/RunStrategyExecutor';
+import { FailureStrategyFactory } from '../Strategy/Failure/FailureStrategyFactory';
+import { FailureOnType, Polling } from '../Strategy/Failure/Polling';
+import { ExecutorFactory } from '../Strategy/ExecutorFactory';
+import { FailureError } from '../Strategy/Failure/FailureError';
 
 export class RunScan implements yargs.CommandModule {
   public readonly command = 'scan:run';
@@ -160,10 +163,11 @@ export class RunScan implements yargs.CommandModule {
 
   public async handler(args: yargs.Arguments): Promise<void> {
     try {
-      const runStrategyFactory: RunStrategyFactory = new RunStrategyFactory();
-      const runStrategyExecutor: RunStrategyExecutor = new RunStrategyExecutor(
+      const executorFactory: ExecutorFactory = new ExecutorFactory(
         args.api as string,
-        args['api-key'] as string,
+        args['api-key'] as string
+      );
+      const runStrategyExecutor: RunStrategyExecutor = executorFactory.CreateRunExecutor(
         {
           protocol: args.protocol,
           type: args.type,
@@ -191,11 +195,30 @@ export class RunScan implements yargs.CommandModule {
       ) as Discovery[];
 
       const scanId: string = await runStrategyExecutor.execute(
-        runStrategyFactory.Create(discoveryTypes)
+        RunStrategyFactory.Instance.Create(discoveryTypes)
       );
+
+      if (args.polling) {
+        const polling: Polling = executorFactory.CreatePolling({
+          scanId,
+          poolingInterval: args.interval as number
+        });
+
+        await polling.check(
+          FailureStrategyFactory.Instance.Create(args[
+            'failure-on'
+          ] as FailureOnType)
+        );
+      }
 
       process.exit(0);
     } catch (e) {
+      if (e instanceof FailureError) {
+        console.error(`Scan failure during "scan:run": ${e.message}`);
+        process.exit(50);
+        return;
+      }
+
       console.error(`Error during "scan:run" run: ${e.error || e.message}`);
       process.exit(1);
     }

@@ -14,7 +14,9 @@ export abstract class FailureStrategy {
     }
   }
 
-  protected abstract exceptionOnFailure(stat: StatsIssuesCategory): never;
+  protected abstract exceptionOnFailure(
+    stat: StatsIssuesCategory
+  ): never | void;
 
   protected abstract isFailureCondition(
     stats: StatsIssuesCategory | null
