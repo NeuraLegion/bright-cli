@@ -62,10 +62,9 @@ export class Polling {
     if (!strategy) {
       throw new Error('You should specify a failure strategy for polling.');
     }
-    let i = 0;
+
     for await (const x of this.poll()) {
       await strategy.execute(x);
-      console.log(`step: ${i++}`);
     }
   }
 
@@ -74,7 +73,7 @@ export class Polling {
       await this.delay();
 
       const { status, issuesBySeverity }: ScanState = await this.getStatus();
-      console.log(status, issuesBySeverity);
+
       if (this.isRedundant(status)) {
         break;
       }
