@@ -1,5 +1,8 @@
 import { writeFile as writeFileCb } from 'fs';
-import { MockRequest, NexMockToRequestsParser } from '../Parsers/NexMockToRequestsParser';
+import {
+  MockRequest,
+  NexMockToRequestsParser
+} from '../Parsers/NexMockToRequestsParser';
 import { RequestCrawler } from '../Parsers/RequestCrawler';
 import * as yargs from 'yargs';
 import { InlineHeaders } from '../Parsers/InlineHeaders';
@@ -7,6 +10,8 @@ import { basename } from 'path';
 import { NexMockFileParser } from '../Parsers/NexMockFileParser';
 import { Options } from 'request';
 import { promisify } from 'util';
+import { split } from '../Utils/split';
+import { generatorFileNameFactory } from '../Utils/generateFileName';
 
 const writeFile = promisify(writeFileCb);
 
@@ -34,6 +39,13 @@ export class GenerateArchive implements yargs.CommandModule {
         describe:
           'Time to wait for a server to send response headers (and start the response body) before aborting the request.'
       })
+      .option('split', {
+        alias: 's',
+        number: true,
+        default: 1,
+        describe:
+          'Number of the HAR chunks. Allows to split a mock file to into multiple HAR files.'
+      })
       .option('archive', {
         alias: 'f',
         normalize: true,
@@ -57,32 +69,57 @@ export class GenerateArchive implements yargs.CommandModule {
   public async handler(args: yargs.Arguments): Promise<void> {
     try {
       const nexMockFileParser: NexMockFileParser = new NexMockFileParser();
+
+      const nexMocks: MockRequest[] = await nexMockFileParser.parse(
+        args.mockfile as string
+      );
+      console.log(
+        `${basename(args.mockfile as string)} was verified and parsed.`
+      );
       const nexMockRequestsParser: NexMockToRequestsParser = new NexMockToRequestsParser(
         {
           url: args.target as string,
           headers: new InlineHeaders(args.header as string[]).get()
         }
       );
-      const crawler: RequestCrawler = new RequestCrawler({
-        timeout: args.timeout as number,
-        pool: args.pool as number
-      });
-      const nexMocks: MockRequest[] = await nexMockFileParser.parse(
-        args.mockfile as string
-      );
-      console.log(`${basename(args.mockfile as string)} was verified and parsed.`);
       const requestOptions: Options[] = await nexMockRequestsParser.parse(
         nexMocks
       );
       console.log(`${requestOptions.length} requests were prepared.`);
-      const harFile: string = await crawler.parse(requestOptions);
 
-      await writeFile(args.archive as string, harFile, { encoding: 'utf8' });
+      const chunks: Options[][] =
+        (args.split as number) > 0
+          ? split(
+              requestOptions,
+              requestOptions.length / (args.split as number)
+            )
+          : [requestOptions];
+
+      const generateFileName: (
+        filePath: string
+      ) => string = generatorFileNameFactory();
+
+      const fileNames: string[] = await Promise.all(
+        chunks.map(async (items: Options[]) => {
+          const crawler: RequestCrawler = new RequestCrawler({
+            timeout: args.timeout as number,
+            pool: args.pool as number
+          });
+          const harFile: string = await crawler.parse(items);
+          const fileName: string = generateFileName(args.archive as string);
+          await writeFile(fileName, harFile, {
+            encoding: 'utf8'
+          });
+          return fileName;
+        })
+      );
+
+      const plural: boolean = fileNames.length > 1;
 
       console.log(
-        `${basename(
-          args.archive as string
-        )} archive was created on base ${basename(
+        `${fileNames.map((name: string) => basename(name))} ${
+          plural ? 'archives' : 'archive'
+        } ${plural ? 'were' : 'was'} created on base ${basename(
           args.mockfile as string
         )} mockfile.`
       );
