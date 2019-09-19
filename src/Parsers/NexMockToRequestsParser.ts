@@ -3,7 +3,7 @@ import { Readable } from 'stream';
 import { URL } from 'url';
 
 export interface Headers {
-  readonly [key: string]: string | string[];
+  [key: string]: string | string[];
 }
 
 type PlanFormData = string | Buffer | Readable;
@@ -11,12 +11,12 @@ type PlanFormData = string | Buffer | Readable;
 type FormDataField =
   | PlanFormData
   | {
-  value: PlanFormData;
-  options: {
-    filename: string;
-    contentType: string;
-  };
-};
+      value: PlanFormData;
+      options: {
+        filename: string;
+        contentType: string;
+      };
+    };
 
 export interface FormData {
   [key: string]: FormDataField | FormDataField[];
@@ -32,8 +32,10 @@ export enum MockRequestType {
   text = 'text'
 }
 
-export type SimpleBodyType = Exclude<MockRequestType,
-  MockRequestType.multipart & MockRequestType.form_urlencoded>;
+export type SimpleBodyType = Exclude<
+  MockRequestType,
+  MockRequestType.multipart & MockRequestType.form_urlencoded
+>;
 
 export interface GenericMockRequest<T extends MockRequestType> {
   readonly type: T;
@@ -100,35 +102,35 @@ export class NexMockToRequestsParser {
     };
 
     switch (mock.type) {
-    case MockRequestType.file:
-    case MockRequestType.stream:
-    case MockRequestType.buffer:
-      return {
-        ...defaultOptions,
-        body: Buffer.from(mock.body, 'base64')
-      };
-    case MockRequestType.json:
-      return {
-        ...defaultOptions,
-        json: true,
-        body: JSON.parse(mock.body)
-      };
-    case MockRequestType.multipart:
-      return {
-        ...defaultOptions,
-        formData: this.mockFormDataPayload(mock as MultiPartMockRequest)
-      };
-    case MockRequestType.form_urlencoded:
-      return {
-        ...defaultOptions,
-        form: mock.body
-      };
-    case MockRequestType.text:
-    default:
-      return {
-        ...defaultOptions,
-        body: mock.body
-      };
+      case MockRequestType.file:
+      case MockRequestType.stream:
+      case MockRequestType.buffer:
+        return {
+          ...defaultOptions,
+          body: Buffer.from(mock.body, 'base64')
+        };
+      case MockRequestType.json:
+        return {
+          ...defaultOptions,
+          json: true,
+          body: JSON.parse(mock.body)
+        };
+      case MockRequestType.multipart:
+        return {
+          ...defaultOptions,
+          formData: this.mockFormDataPayload(mock as MultiPartMockRequest)
+        };
+      case MockRequestType.form_urlencoded:
+        return {
+          ...defaultOptions,
+          form: mock.body
+        };
+      case MockRequestType.text:
+      default:
+        return {
+          ...defaultOptions,
+          body: mock.body
+        };
     }
   }
 
@@ -152,17 +154,24 @@ export class NexMockToRequestsParser {
   ) {
     return value.type !== MockRequestType.text
       ? {
-        value: Buffer.from(value.body, 'base64'),
-        options: {
-          filename: value.fileName,
-          contentType: value.mimeType
+          value: Buffer.from(value.body, 'base64'),
+          options: {
+            filename: value.fileName,
+            contentType: value.mimeType
+          }
         }
-      }
       : value.body;
   }
 
   private mergeHeaders(source: Headers, mockHeaders: Headers): Headers {
-    return { ...mockHeaders, ...source };
+    const headers: Headers = { ...mockHeaders, ...source };
+    return Object.entries(headers).reduce(
+      (common: Headers, [key, value]: [string, string | string[]]) => {
+        common[key] = Array.isArray(value) ? value.join('; ') : value;
+        return common;
+      },
+      {}
+    );
   }
 
   private buildUrl(urlOrPath: string = '/'): string {

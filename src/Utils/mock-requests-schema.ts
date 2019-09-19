@@ -5,6 +5,19 @@ const mockRequestsType = {
   minItems: 1
 };
 
+const methods = [
+  'GET',
+  'POST',
+  'PUT',
+  'DELETE',
+  'DEL',
+  'PATCH',
+  'HEAD',
+  'TRACE',
+  'OPTIONS',
+  'CONNECT'
+];
+
 const requestType = {
   $id: 'request',
   type: 'object',
@@ -13,17 +26,7 @@ const requestType = {
   properties: {
     method: {
       type: 'string',
-      enum: [
-        'GET',
-        'POST',
-        'PUT',
-        'DELETE',
-        'PATCH',
-        'HEAD',
-        'TRACE',
-        'OPTIONS',
-        'CONNECT'
-      ]
+      enum: [...methods, ...methods.map((item: string) => item.toLowerCase())]
     },
     url: { type: 'string', format: 'uri-reference', optional: true },
     type: {
@@ -51,7 +54,9 @@ const recordType = {
   type: 'object',
   description: 'Helper name-value pair structure.',
   patternProperties: {
-    '.{1,}': { type: 'string' }
+    '.{1,}': {
+      oneOf: [{ type: 'array', items: { type: 'string' } }, { type: 'string' }]
+    }
   }
 };
 
