@@ -138,7 +138,7 @@ export class RunScan implements yargs.CommandModule {
       })
       .option('interval', {
         number: true,
-        default: 5000,
+        requiresArg: true,
         implies: ['polling']
       })
       .option('failure-on', {
@@ -147,8 +147,8 @@ export class RunScan implements yargs.CommandModule {
           'first-medium-severity-issue',
           'first-high-severity-issue'
         ],
+        requiresArg: true,
         string: true,
-        default: 'first-issue',
         implies: ['polling']
       })
       .group(['polling', 'interval', 'failure-on'], 'polling')
