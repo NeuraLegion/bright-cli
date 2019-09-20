@@ -1,16 +1,19 @@
-import harSchema from '../Utils/har-schema';
-import { ValidateFunction } from 'ajv';
-import * as ajv from 'ajv';
 import { Entry, Har } from 'har-format';
+import { Validator } from './Validator';
+import * as ajv from 'ajv';
+import { ValidateFunction } from 'ajv';
 import { parse, Url } from 'url';
+import harSchema from '../Utils/har-schema';
 
-export class HarValidator {
+export class HarFileValidator implements Validator<Har> {
   private readonly ajv: ajv.Ajv;
 
   constructor() {
     this.ajv = new ajv({
       allErrors: true,
-      async: true
+      async: true,
+      jsonPointers: true,
+      extendRefs: true
     });
     this.ajv.addSchema(harSchema);
   }

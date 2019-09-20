@@ -2,8 +2,9 @@ import mockRequestsSchema from '../Utils/mock-requests-schema';
 import * as ajv from 'ajv';
 import { ValidateFunction } from 'ajv';
 import { MockRequest } from '../Parsers/NexMockToRequestsParser';
+import { Validator } from './Validator';
 
-export class NexMockValidator {
+export class NexMockValidator implements Validator<MockRequest[]> {
   private readonly ajv: ajv.Ajv;
 
   constructor() {

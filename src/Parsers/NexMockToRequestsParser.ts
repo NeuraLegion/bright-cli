@@ -1,6 +1,8 @@
 import { Options } from 'request';
 import { Readable } from 'stream';
 import { URL } from 'url';
+import { Parser } from './Parser';
+import { NexMockParser } from './NexMockParser';
 
 export interface Headers {
   [key: string]: string | string[];
@@ -83,14 +85,14 @@ export type MockRequest =
   | FileMockRequest
   | SimpleTextMockRequest<Exclude<SimpleBodyType, MockRequestType.file>>;
 
-export class NexMockToRequestsParser {
-  private readonly options: { headers?: Headers; url?: string };
+export class NexMockToRequestsParser implements Parser<string, Options[]> {
+  constructor(
+    private readonly options: { headers?: Headers; url?: string },
+    private readonly nexMockParser: Parser<string, MockRequest[]>
+  ) {}
 
-  constructor(options: { headers?: Headers; url?: string }) {
-    this.options = options;
-  }
-
-  public async parse(mocks: MockRequest[]): Promise<Options[]> {
+  public async parse(path: string): Promise<Options[]> {
+    const mocks: MockRequest[] = await this.nexMockParser.parse(path);
     return mocks.map((item: MockRequest) => this.mockToRequestOptions(item));
   }
 

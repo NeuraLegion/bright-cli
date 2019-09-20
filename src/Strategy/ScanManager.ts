@@ -1,6 +1,5 @@
 import * as request from 'request-promise';
 import { RequestPromiseAPI } from 'request-promise';
-import { RunStrategy } from './RunStrategy';
 
 export enum Discovery {
   crawler = 'crawler',
@@ -14,8 +13,7 @@ export interface RunStrategyConfig {
   poolSize?: number;
   type: 'appscan' | 'protoscan';
   module?: 'core' | 'exploratory';
-  filePath?: string;
-  fileDiscard?: boolean;
+  fileId?: string;
   build?: {
     service: string;
     buildNumber?: number;
@@ -34,53 +32,68 @@ export type DiscoveryTypes =
   | (Discovery.archive | Discovery.crawler)[]
   | Discovery.oas[];
 
-export type ScanConfig = Exclude<
-  RunStrategyConfig,
-  'fileDiscard' & 'filePath'
-> & {
+export interface ScanConfig extends RunStrategyConfig {
   discoveryTypes: DiscoveryTypes;
   fileId?: string;
-};
+}
 
-export type ResponseRef = { ids?: string[] } & { id?: string };
-
-export class RunStrategyExecutor {
+export class ScanManager {
   private readonly proxy: RequestPromiseAPI;
   private readonly proxyConfig: {
     strictSSL: boolean;
     headers: { Authorization: string };
     baseUrl: string;
   };
-  private readonly config: RunStrategyConfig;
 
-  constructor(
-    baseUrl: string,
-    apiKey: string,
-    config: RunStrategyConfig
-  ) {
+  constructor(baseUrl: string, apiKey: string) {
     this.proxyConfig = {
       baseUrl,
       strictSSL: false,
       headers: { Authorization: `Api-Key ${apiKey}` }
     };
     this.proxy = request.defaults(this.proxyConfig);
-    this.config = config;
   }
 
-  public async execute(strategy: RunStrategy): Promise<string> {
-    const scanConfig: ScanConfig = await strategy.run(this.proxy, this.config);
-    return this.configureScan(scanConfig);
-  }
+  public async create(body: RunStrategyConfig): Promise<string> {
+    const discoveryTypes: Discovery[] = [];
 
-  protected async configureScan(body: ScanConfig): Promise<string> {
-    const { id }: ResponseRef = await this.proxy.post({
-      body,
+    if (Array.isArray(body.crawlerUrls)) {
+      discoveryTypes.push(Discovery.crawler);
+    }
+
+    if (body.fileId) {
+      discoveryTypes.push(Discovery.archive);
+    }
+
+    const { id }: { id: string } = await this.proxy.post({
+      body: { ...body, discoveryTypes } as ScanConfig,
       uri: `/api/v1/scans`,
       json: true
     });
 
-    console.log(`${body.name} scan was run.`);
+    return id;
+  }
+
+  public async retest(scanId: string): Promise<string> {
+    const { id }: { id: string } = await this.proxy.post({
+      uri: `/api/v1/scans/${scanId}/retest`,
+      json: true
+    });
 
     return id;
+  }
+
+  public async stop(scanId: string): Promise<void> {
+    await this.proxy.post({
+      uri: `/api/v1/scans/${scanId}/stop`,
+      json: true
+    });
+  }
+
+  public async delete(scanId: string): Promise<void> {
+    await this.proxy.delete({
+      uri: `/api/v1/scans/${scanId}`,
+      json: true
+    });
   }
 }
