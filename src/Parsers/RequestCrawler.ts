@@ -2,18 +2,19 @@
 import { CaptureHar } from 'capture-har';
 import * as request from 'request';
 import { CoreOptions, Options } from 'request';
-import {split} from '../Utils/split';
+import { split } from '../Utils/split';
+import { Parser } from './Parser';
 
-export class RequestCrawler {
+export class RequestCrawler implements Parser<Options[] | string> {
   private readonly options: CoreOptions;
   private readonly proxy: CaptureHar;
   private readonly pool: number;
 
   constructor({
-                pool = 250,
-                timeout = 5000,
-                maxRedirects = 20
-              }: {
+    pool = 250,
+    timeout = 5000,
+    maxRedirects = 20
+  }: {
     timeout: number;
     pool?: number;
     maxRedirects?: number;
@@ -27,12 +28,9 @@ export class RequestCrawler {
     this.proxy = new CaptureHar(request.defaults(this.options));
   }
 
-  public async parse(data: Options | Options[]): Promise<string> {
+  public async parse(data: Options[]): Promise<string> {
     const requests: Options[] = Array.isArray(data) ? data : [data];
-    const chunks: Options[][] = split<Options[], Options>(
-      requests,
-      this.pool
-    );
+    const chunks: Options[][] = split<Options[], Options>(requests, this.pool);
 
     await chunks.reduce(
       (total: Promise<void>, partOfRequests: Options[]) =>

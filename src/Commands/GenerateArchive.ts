@@ -7,11 +7,13 @@ import { RequestCrawler } from '../Parsers/RequestCrawler';
 import * as yargs from 'yargs';
 import { InlineHeaders } from '../Parsers/InlineHeaders';
 import { basename } from 'path';
-import { NexMockFileParser } from '../Parsers/NexMockFileParser';
 import { Options } from 'request';
 import { promisify } from 'util';
 import { split } from '../Utils/split';
 import { generatorFileNameFactory } from '../Utils/generateFileName';
+import { NexMockParser } from '../Parsers/NexMockParser';
+import { NexMockValidator } from '../Validators/NexMockValidator';
+import { FileExistingValidator } from '../Validators/FileExistingValidator';
 
 const writeFile = promisify(writeFileCb);
 
@@ -68,22 +70,15 @@ export class GenerateArchive implements yargs.CommandModule {
 
   public async handler(args: yargs.Arguments): Promise<void> {
     try {
-      const nexMockFileParser: NexMockFileParser = new NexMockFileParser();
-
-      const nexMocks: MockRequest[] = await nexMockFileParser.parse(
-        args.mockfile as string
-      );
-      console.log(
-        `${basename(args.mockfile as string)} was verified and parsed.`
-      );
       const nexMockRequestsParser: NexMockToRequestsParser = new NexMockToRequestsParser(
         {
           url: args.target as string,
-          headers: new InlineHeaders(args.header as string[]).get()
-        }
+          headers: new InlineHeaders().parse(args.header as string[])
+        },
+        new NexMockParser(new NexMockValidator(), new FileExistingValidator())
       );
       const requestOptions: Options[] = await nexMockRequestsParser.parse(
-        nexMocks
+        args.mockfile as string
       );
       console.log(`${requestOptions.length} requests were prepared.`);
 

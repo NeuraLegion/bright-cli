@@ -1,14 +1,11 @@
 import * as yargs from 'yargs';
-import { RunStrategyFactory } from '../Strategy/Run/RunStrategyFactory';
+import { Discovery, ScanManager } from '../Strategy/ScanManager';
 import { InlineHeaders } from '../Parsers/InlineHeaders';
-import {
-  Discovery,
-  RunStrategyExecutor
-} from '../Strategy/Run/RunStrategyExecutor';
+
 import { FailureStrategyFactory } from '../Strategy/Failure/FailureStrategyFactory';
 import { FailureOnType, Polling } from '../Strategy/Failure/Polling';
-import { ExecutorFactory } from '../Strategy/ExecutorFactory';
 import { FailureError } from '../Strategy/Failure/FailureError';
+import { ServicesApiFactory } from '../Strategy/ServicesApiFactory';
 
 export class RunScan implements yargs.CommandModule {
   public readonly command = 'scan:run';
@@ -16,6 +13,11 @@ export class RunScan implements yargs.CommandModule {
 
   public builder(args: yargs.Argv): yargs.Argv {
     return args
+      .option('api', {
+        default: 'https://nexploit.app/',
+        hidden: true,
+        describe: 'NexPloit base url'
+      })
       .option('api-key', {
         alias: 'K',
         describe: 'NexPloit API-key',
@@ -29,10 +31,9 @@ export class RunScan implements yargs.CommandModule {
         demandOption: true
       })
       .option('archive', {
-        alias: 'f',
+        alias: 'a',
         normalize: true,
         requiresArg: true,
-        conflicts: ['oas'],
         describe:
           "A collection your app's http/websockets logs into HAR or WSAR file. " +
           'Usually you can use browser dev tools or our browser web extension'
@@ -41,17 +42,8 @@ export class RunScan implements yargs.CommandModule {
         alias: 'c',
         requiresArg: true,
         array: true,
-        conflicts: ['oas'],
         describe:
           'A list of specific urls that should be included into crawler.'
-      })
-      .option('oas', {
-        alias: 'o',
-        requiresArg: true,
-        normalize: true,
-        hidden: true,
-        conflicts: ['archive', 'crawler'],
-        describe: 'A file of your OAS specification.'
       })
       .option('protocol', {
         alias: 'p',
@@ -119,64 +111,30 @@ export class RunScan implements yargs.CommandModule {
         describe:
           'A list of specific headers that should be included into request.'
       })
-      .option('discard', {
-        alias: 'd',
-        default: true,
-        boolean: true,
-        describe:
-          'Indicates if archive should be remove or not after scan running. Enabled by default.'
-      })
-      .option('api', {
-        default: 'https://nexploit.app/',
-        hidden: true,
-        describe: 'NexPloit base url'
-      })
-      .option('polling', {
-        boolean: true,
-        default: false,
-        describe: "Enables the API polling to check a scan's status."
-      })
-      .option('interval', {
-        number: true,
-        requiresArg: true,
-        implies: ['polling']
-      })
-      .option('failure-on', {
-        choices: [
-          'first-issue',
-          'first-medium-severity-issue',
-          'first-high-severity-issue'
-        ],
-        requiresArg: true,
-        string: true,
-        implies: ['polling']
-      })
-      .group(['polling', 'interval', 'failure-on'], 'polling')
-      .group(['archive', 'crawler', 'oas', 'discard'], 'Discovery Options')
+      .group(['archive', 'crawler'], 'Discovery Options')
       .group(
         ['service', 'build-number', 'vcs', 'project', 'user'],
         'Build Options'
       )
-      .group(['host-filter', 'header', 'api', 'module'], 'Additional Options');
+      .group(['host-filter', 'header', 'module'], 'Additional Options');
   }
 
   public async handler(args: yargs.Arguments): Promise<void> {
     try {
-      const executorFactory: ExecutorFactory = new ExecutorFactory(
+      const scanId: string = await new ServicesApiFactory(
         args.api as string,
-        args['api-key'] as string
-      );
-      const runStrategyExecutor: RunStrategyExecutor = executorFactory.CreateRunExecutor(
-        {
+        args.apiKey as string
+      )
+        .CreateScanManager()
+        .create({
           protocol: args.protocol,
           type: args.type,
           name: args.name,
           module: args.module,
-          hostsFilter: args['host-filter'],
-          headers: new InlineHeaders(args.header as string[]).get(),
-          crawlerUrls: args['crawler'],
-          filePath: args.archive || args.oas,
-          fileDiscard: args.discard,
+          hostsFilter: args.hostFilter,
+          headers: new InlineHeaders().parse(args.header as string[]),
+          crawlerUrls: args.crawler,
+          fileId: args.archive,
           build: args.service
             ? {
                 service: args.service,
@@ -186,29 +144,9 @@ export class RunScan implements yargs.CommandModule {
                 vcs: args.vcs
               }
             : undefined
-        } as any
-      );
+        } as any);
 
-      const discoveryTypes: Discovery[] = Object.keys(args).filter(
-        (key: string) => Object.values(Discovery).includes(key)
-      ) as Discovery[];
-
-      const scanId: string = await runStrategyExecutor.execute(
-        RunStrategyFactory.Instance.Create(discoveryTypes)
-      );
-
-      if (args.polling) {
-        const polling: Polling = executorFactory.CreatePolling({
-          scanId,
-          poolingInterval: args.interval as number
-        });
-
-        await polling.check(
-          FailureStrategyFactory.Instance.Create(args[
-            'failure-on'
-          ] as FailureOnType)
-        );
-      }
+      console.log(scanId);
 
       process.exit(0);
     } catch (e) {

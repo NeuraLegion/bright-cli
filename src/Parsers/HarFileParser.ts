@@ -1,27 +1,21 @@
 import { Har } from 'har-format';
 import { readFile as readFileCb } from 'fs';
 import { promisify } from 'util';
-import { HarValidator } from '../Validators/HarValidator';
-import { FileExistingValidator } from '../Validators/FileExistingValidator';
+import { Parser } from './Parser';
+import { Validator } from '../Validators/Validator';
 
 const readFile = promisify(readFileCb);
 
-export class HarFileParser {
-  private readonly fileExistingValidator: FileExistingValidator;
-  private readonly harValidator: HarValidator;
+export class HarFileParser implements Parser<string, Har> {
+  constructor(
+    private readonly validator: Validator<any>,
+    private readonly fileValidator: Validator<string>
+  ) {}
 
-  constructor() {
-    this.fileExistingValidator = new FileExistingValidator();
-    this.harValidator = new HarValidator();
-  }
-
-  public async parse(path: string): Promise<Har | never> {
-    if (!path) {
-      throw new Error('The path is invalid.');
-    }
-    await this.fileExistingValidator.validate(path);
+  public async parse(path: string): Promise<Har | null> {
+    await this.fileValidator.validate(path);
     const har: Har = await this.readAndDeserialize(path);
-    await this.harValidator.validate(har);
+    await this.validator.validate(har);
     return har;
   }
 

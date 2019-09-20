@@ -15,9 +15,9 @@ export class CliBuilder {
   ];
 
   constructor({
-                cwd = process.cwd(),
-                colors = false
-              }: {
+    cwd = process.cwd(),
+    colors = false
+  }: {
     cwd: string;
     colors: boolean;
   }) {
@@ -38,7 +38,7 @@ export class CliBuilder {
     const config: any = this.configToJson();
 
     const cli: yargs.Argv = yargs
-      .usage('Usage: $0 <command> [options]')
+      .usage('Usage: $0 <command> [options] [<file | scan>]')
       .pkgConf('nexploit', this.cwd)
       .example(
         '$0 archive:generate --mockfile=.mockfile --name=archive.har',
@@ -55,7 +55,7 @@ export class CliBuilder {
       .demandCommand(1)
       .strict(false)
       .alias('v', 'version')
-      .help('h')
+      .help('help')
       .alias('h', 'help');
   }
 

@@ -1,14 +1,8 @@
 import { Headers } from 'request';
 
 export class InlineHeaders {
-  private readonly _entries: Headers;
-
-  constructor(headers: string[] = []) {
-    this._entries = this.prepareArgHeaders(headers);
-  }
-
-  public get(): Headers {
-    return this._entries;
+  public parse(headers: string[] = []): Headers {
+    return this.prepareArgHeaders(headers);
   }
 
   private prepareArgHeaders(headers: string[]): Headers {
