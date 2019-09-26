@@ -1,9 +1,4 @@
 import * as yargs from 'yargs';
-import { Discovery, ScanManager } from '../Strategy/ScanManager';
-import { InlineHeaders } from '../Parsers/InlineHeaders';
-
-import { FailureStrategyFactory } from '../Strategy/Failure/FailureStrategyFactory';
-import { FailureOnType, Polling } from '../Strategy/Failure/Polling';
 import { FailureError } from '../Strategy/Failure/FailureError';
 import { ServicesApiFactory } from '../Strategy/ServicesApiFactory';
 
@@ -25,7 +20,7 @@ export class StopScan implements yargs.CommandModule {
         demandOption: true
       })
       .positional('scan', {
-        describe: 'ID of an existing scan which you want to re-run.',
+        describe: 'ID of an existing scan which you want to stop.',
         type: 'string'
       });
   }

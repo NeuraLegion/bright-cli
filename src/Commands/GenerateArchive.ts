@@ -1,8 +1,5 @@
 import { writeFile as writeFileCb } from 'fs';
-import {
-  MockRequest,
-  NexMockToRequestsParser
-} from '../Parsers/NexMockToRequestsParser';
+import { NexMockToRequestsParser } from '../Parsers/NexMockToRequestsParser';
 import { RequestCrawler } from '../Parsers/RequestCrawler';
 import * as yargs from 'yargs';
 import { InlineHeaders } from '../Parsers/InlineHeaders';
