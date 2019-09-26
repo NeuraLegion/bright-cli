@@ -1,7 +1,6 @@
 # NexPloit CLI
 
-NexPloit CLI is a [CLI](https://en.wikipedia.org/wiki/Command-line_interface)
-tool that can initialize, stop, polling and maintain scans in NeuraLegions solutions (Such as NexPloit). 
+NexPloit CLI is a [CLI](https://en.wikipedia.org/wiki/Command-line_interface) tool that can initialize, stop, polling and maintain scans in NeuraLegions solutions (Such as NexPloit). 
 
 Some NexPloit CLI features:
 

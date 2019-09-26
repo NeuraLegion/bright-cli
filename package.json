@@ -78,5 +78,5 @@
     "webpack-cli": "3.3.1",
     "webpack-node-externals": "1.7.2"
   },
-  "description": "NexPloit CLI is a [CLI](https://en.wikipedia.org/wiki/Command-line_interface)\ntool that can initialize, stop, polling and maintain scans in NeuraLegions solutions (Such as NexPloit)."
+  "description": "NexPloit CLI is a [CLI](https://en.wikipedia.org/wiki/Command-line_interface) tool that can initialize, stop, polling and maintain scans in NeuraLegions solutions (Such as NexPloit)."
 }
