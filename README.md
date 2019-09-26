@@ -200,9 +200,9 @@ E.g. `archive.har`, `archive_2.har` and etc.
 
 ### 🏃 Run Scan
 
-`nexploit-cli scan:run [options] <archiveID>` starts a new scan for the received configuration. 
+`nexploit-cli scan:run [options]` starts a new scan for the received configuration. 
 
-> ✴ NeuraLegions solutions (Such as NexPloit) provide opportunities to run scan immediately, schedule a future running and put it in the queue.
+> ✴ If you don't have enough engines you might put a scan in the queue. The scan will start, if you manually stop another scan or it isn't done.
 
 The command allows to specify one of discovery strategy. This means that you can handle client side dynamic content, javascript, and etc using `--crawler` option or just use generated .HAR/.WSAR files, or 
 both at the same time.
