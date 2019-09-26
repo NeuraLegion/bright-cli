@@ -13,15 +13,15 @@ Some NexPloit CLI features:
  * [Installing NexPloit CLI](#installing-nexploit-cli)
  * [CLI command-language syntax](#cli-command-language-syntax)
  * [Configuration files](#configuration-files)
- * [Quick Start](#🚀-quick-start)
+ * [Quick Start](#-quick-start)
  * [Command Overview](#command-overview)
-    + [Upload Archive](#📥-upload-archive)
-    + [Generate Archive based on NexMock](#🛠️-generate-archive-based-on-nexmock)
-    + [Run Scan](#🏃-run-scan)
-    + [Check Scan's status](#🚓-check-scans-status)
-    + [Stop Scan](#🛑-stop-scan)
-    + [Retest Scan](#🔁-retest-scan)
- * [License](#📝-license)
+    + [Upload Archive](#-upload-archive)
+    + [Generate Archive based on NexMock](#-generate-archive-based-on-nexmock)
+    + [Run Scan](#-run-scan)
+    + [Check Scan's status](#-check-scans-status)
+    + [Stop Scan](#-stop-scan)
+    + [Retest Scan](#-retest-scan)
+ * [License](#-license)
 
 ## Installing NexPloit CLI
 
@@ -47,7 +47,7 @@ nexploit-cli scan:stop --api-key my-api-kye my-scan-id
 ```
 * Typically, the generated artifact can be given as an argument to the command or specified with the `--archive` option (See `archive:generate`).
 
-### Configuration files
+## Configuration files
 
 Any configuration options that can be set via the command line can also be specified in the `nexploit` stanza of your package.json, or within a seperate configuration file - a variety of flavors are available:
 
@@ -90,7 +90,7 @@ nexploit-cli archive:generate \
 
 Where `mockfile` is the path to your mockfile and `archive` is the path to save the HAR file to.
 
-The [archive:generate](#🛠️-generate-archive-based-on-nexmock) command will generate a new archive at the archive path:
+The [archive:generate](#-generate-archive-based-on-nexmock) command will generate a new archive at the archive path:
 
 ```
 Project
@@ -125,7 +125,7 @@ nexploit-cli archive:upload \
       archive.har
 ```
 
-The [archive:upload](#📥-upload-archive) command will output ID of new archive, which you can use to run a new scan:
+The [archive:upload](#-upload-archive) command will output ID of new archive, which you can use to run a new scan:
 
 ```bash
 nexploit-cli scan:run \
