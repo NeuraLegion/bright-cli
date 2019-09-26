@@ -17,7 +17,7 @@ Some NexPloit CLI features:
  * [Quick Start](#🚀-quick-start)
  * [Command Overview](#command-overview)
     + [Upload Archive](#📥-upload-archive)
-    + [Generate Archive based on NexMock](#🧬🛠️-generate-archive-based-on-nexmock)
+    + [Generate Archive based on NexMock](#🛠️-generate-archive-based-on-nexmock)
     + [Run Scan](#🏃-run-scan)
     + [Check Scan's status](#🚓-check-scans-status)
     + [Stop Scan](#🛑-stop-scan)
@@ -91,7 +91,7 @@ nexploit-cli archive:generate \
 
 Where `mockfile` is the path to your mockfile and `archive` is the path to save the HAR file to.
 
-The [archive:generate](#🧬🛠️-generate-archive-based-on-nexmock) command will generate a new archive at the archive path:
+The [archive:generate](#🛠️-generate-archive-based-on-nexmock) command will generate a new archive at the archive path:
 
 ```
 Project
