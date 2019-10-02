@@ -86,12 +86,12 @@ export class RunScan implements yargs.CommandModule {
           'The version control system type your project uses. Current choices are github or bitbucket. CircleCI only.'
       })
       .option('module', {
-        default: 'core',
+        default: 'dast',
         requiresArg: true,
-        choices: ['core', 'exploratory'],
+        choices: ['dast', 'fuzzer'],
         describe:
-          'The core module tests for specific scenarios, mainly OWASP top 10 and other common scenarios. ' +
-          'The exploratory module generates various scenarios to test for unknown vulnerabilities, ' +
+          'The dast module tests for specific scenarios, mainly OWASP top 10 and other common scenarios. ' +
+          'The fuzzer module generates various scenarios to test for unknown vulnerabilities, ' +
           'providing automated AI led fuzzing testing. This module can be coupled with the agent to find additional vulnerabilities.'
       })
       .option('host-filter', {
@@ -126,7 +126,7 @@ export class RunScan implements yargs.CommandModule {
           protocol: args.protocol,
           type: args.type,
           name: args.name,
-          module: args.module,
+          moduleRef: args.module,
           hostsFilter: args.hostFilter,
           headers: new InlineHeaders().parse(args.header as string[]),
           crawlerUrls: args.crawler,
