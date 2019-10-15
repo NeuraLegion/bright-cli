@@ -7,11 +7,11 @@ const config = {
   entry: './src/index.ts',
   context: process.cwd(),
   optimization: {
-    minimize: false,
-    mergeDuplicateChunks: true,
-    removeAvailableModules: true,
-    removeEmptyChunks: true,
-    splitChunks: false
+    sideEffects: false,
+    usedExports: true,
+    splitChunks: false,
+    noEmitOnErrors: true,
+    minimize: false
   },
   plugins: [
     new BannerPlugin({ banner: '#!/usr/bin/env node', raw: true })
