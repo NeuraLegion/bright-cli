@@ -29,6 +29,7 @@ export enum ScanStatus {
   running = 'running',
   pending = 'pending',
   stopped = 'stopped',
+  failed = 'failed',
   done = 'done',
   scheduled = 'scheduled',
   queued = 'queued'
@@ -83,7 +84,11 @@ export class Polling {
   }
 
   private isRedundant(status: ScanStatus): boolean {
-    return status === ScanStatus.done || status === ScanStatus.stopped;
+    return (
+      status === ScanStatus.done ||
+      status === ScanStatus.stopped ||
+      status === ScanStatus.failed
+    );
   }
 
   private delay(): Promise<void> {
