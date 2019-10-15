@@ -1,5 +1,5 @@
 import { Polling, PollingConfig } from './Failure/Polling';
-import { RunStrategyConfig, ScanManager } from './ScanManager';
+import { ScanManager } from './ScanManager';
 import { UploadStrategyFactory } from './UploadStrategyFactory';
 
 export class ServicesApiFactory {

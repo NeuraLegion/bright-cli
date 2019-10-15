@@ -1,9 +1,6 @@
 import * as yargs from 'yargs';
-import { Discovery, ScanManager } from '../Strategy/ScanManager';
-import { InlineHeaders } from '../Parsers/InlineHeaders';
-
 import { FailureStrategyFactory } from '../Strategy/Failure/FailureStrategyFactory';
-import { FailureOnType, Polling } from '../Strategy/Failure/Polling';
+import { FailureOnType } from '../Strategy/Failure/Polling';
 import { FailureError } from '../Strategy/Failure/FailureError';
 import { ServicesApiFactory } from '../Strategy/ServicesApiFactory';
 
@@ -44,7 +41,7 @@ export class PollingScanStatus implements yargs.CommandModule {
         default: 'first-issue'
       })
       .positional('scan', {
-        describe: 'ID of an existing scan which you want to re-run.',
+        describe: 'ID of an existing scan which you want to check.',
         type: 'string',
         demandOption: true
       });

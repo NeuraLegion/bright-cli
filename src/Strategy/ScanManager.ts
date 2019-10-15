@@ -7,12 +7,22 @@ export enum Discovery {
   oas = 'oas'
 }
 
+export enum ModuleRef {
+  dast = 'dast',
+  fuzzer = 'fuzzer'
+}
+
+export enum Module {
+  core = 'core',
+  exploratory = 'exploratory'
+}
+
 export interface RunStrategyConfig {
   name: string;
   protocol: 'http' | 'websocket';
   poolSize?: number;
   type: 'appscan' | 'protoscan';
-  module?: 'core' | 'exploratory';
+  moduleRef?: ModuleRef;
   fileId?: string;
   build?: {
     service: string;
@@ -32,9 +42,9 @@ export type DiscoveryTypes =
   | (Discovery.archive | Discovery.crawler)[]
   | Discovery.oas[];
 
-export interface ScanConfig extends RunStrategyConfig {
+export interface ScanConfig extends Exclude<RunStrategyConfig, 'moduleRef'> {
   discoveryTypes: DiscoveryTypes;
-  fileId?: string;
+  module: Module;
 }
 
 export class ScanManager {
@@ -55,18 +65,8 @@ export class ScanManager {
   }
 
   public async create(body: RunStrategyConfig): Promise<string> {
-    const discoveryTypes: Discovery[] = [];
-
-    if (Array.isArray(body.crawlerUrls)) {
-      discoveryTypes.push(Discovery.crawler);
-    }
-
-    if (body.fileId) {
-      discoveryTypes.push(Discovery.archive);
-    }
-
     const { id }: { id: string } = await this.proxy.post({
-      body: { ...body, discoveryTypes } as ScanConfig,
+      body: this.extractScanConfig(body),
       uri: `/api/v1/scans`,
       json: true
     });
@@ -95,5 +95,35 @@ export class ScanManager {
       uri: `/api/v1/scans/${scanId}`,
       json: true
     });
+  }
+
+  private extractScanConfig(strategyConfig: RunStrategyConfig): ScanConfig {
+    const { moduleRef, ...partialConfig } = strategyConfig;
+    const discoveryTypes: Discovery[] = this.getDiscovery(strategyConfig);
+    const module: Module = this.getModule(moduleRef);
+    return { ...partialConfig, discoveryTypes, module } as ScanConfig;
+  }
+
+  private getModule(moduleRef: ModuleRef): Module {
+    switch (moduleRef) {
+      case ModuleRef.dast:
+        return Module.core;
+      case ModuleRef.fuzzer:
+        return Module.exploratory;
+    }
+  }
+
+  private getDiscovery(body: RunStrategyConfig): Discovery[] {
+    const discoveryTypes: Discovery[] = [];
+
+    if (Array.isArray(body.crawlerUrls)) {
+      discoveryTypes.push(Discovery.crawler);
+    }
+
+    if (body.fileId) {
+      discoveryTypes.push(Discovery.archive);
+    }
+
+    return discoveryTypes;
   }
 }

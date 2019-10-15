@@ -2,7 +2,6 @@ import { Options } from 'request';
 import { Readable } from 'stream';
 import { URL } from 'url';
 import { Parser } from './Parser';
-import { NexMockParser } from './NexMockParser';
 
 export interface Headers {
   [key: string]: string | string[];
