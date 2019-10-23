@@ -19,9 +19,7 @@ export enum Module {
 
 export interface RunStrategyConfig {
   name: string;
-  protocol: 'http' | 'websocket';
   poolSize?: number;
-  type: 'appscan' | 'protoscan';
   moduleRef?: ModuleRef;
   fileId?: string;
   build?: {

@@ -41,21 +41,6 @@ export class RunScan implements yargs.CommandModule {
         describe:
           'A list of specific urls that should be included into crawler.'
       })
-      .option('protocol', {
-        alias: 'p',
-        requiresArg: true,
-        choices: ['http', 'websocket'],
-        describe: 'Exploited protocol: HTTP, Websocket, etc.',
-        demandOption: true
-      })
-      .option('type', {
-        alias: 'T',
-        default: 'appscan',
-        requiresArg: true,
-        choices: ['appscan', 'protoscan'],
-        describe: 'Protocol-type scan or Application-type scan.',
-        demandOption: true
-      })
       .option('service', {
         choices: ['jenkins', 'circleci', 'travisci'],
         requiresArg: true,
@@ -123,8 +108,6 @@ export class RunScan implements yargs.CommandModule {
       )
         .CreateScanManager()
         .create({
-          protocol: args.protocol,
-          type: args.type,
           name: args.name,
           moduleRef: args.module,
           hostsFilter: args.hostFilter,
