@@ -35,8 +35,23 @@
     "test": "mocha -r ts-node/register -r tsconfig-paths/register src/*.spec.ts",
     "build": "npm run clean && webpack --config webpack.config.js",
     "clean": "rimraf lib",
+    "semantic-release": "semantic-release",
     "prepublish": "npm run clean && npm run lint && npm run build -- --mode=production",
     "please": "npm cache clean -f && rm -rf node_modules && rm -f package-lock.json"
+  },
+  "husky": {
+    "hooks": {
+      "commit-msg": "commitlint -E HUSKY_GIT_PARAMS",
+      "pre-commit": "lint-staged",
+      "post-commit": "git update-index --again"
+    }
+  },
+  "lint-staged": {
+    "*.ts": [
+      "tslint -c tslint.json --fix",
+      "prettier --write",
+      "git add"
+    ]
   },
   "homepage": "https://github.com/NeuraLegion/nexploit-cli#readme",
   "dependencies": {
@@ -63,6 +78,11 @@
     "@types/request": "^2.48.1",
     "@types/request-promise": "^4.1.44",
     "@types/yargs": "^13.0.0",
+    "semantic-release": "^15.13.27",
+    "@commitlint/cli": "^8.2.0",
+    "@commitlint/config-conventional": "^8.2.0",
+    "husky": "^3.0.7",
+    "lint-staged": "^9.4.0",
     "chai": "^4.2.0",
     "chalk": "2.4.1",
     "mocha": "^5.2.0",
