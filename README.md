@@ -155,7 +155,7 @@ The command will output an ID of a new archive, which you can use to run a new s
 
 | Argument  |  Description |
 |---|:---|
-| `<file>` | A collection of your app's http/websockets logs exported into a .HAR or .WSAR file. Typically, you can use any browser's dev tools or NeuraLegion's browser extension to generate them. In addition, you can use an OAS file that describes your public API. |
+| `<file>` | A collection of your app's http/websockets logs exported into a .HAR or .WSAR file. Typically, you can use any browser's dev tools or NeuraLegion's [browser extension](https://chrome.google.com/webstore/detail/nexploit/pgmogkjcjlgjnconlkocehfadbkimjbg) to generate them. In addition, you can use an OAS file that describes your public API. |
 
 #### Options
 
