@@ -2,9 +2,12 @@ const { join } = require('path');
 const { BannerPlugin } = require('webpack');
 const nodeExternals = require('webpack-node-externals');
 const TsConfigPathsPlugin = require('tsconfig-paths-webpack-plugin');
+const { CleanWebpackPlugin } = require('clean-webpack-plugin');
 
-const config = {
+module.exports = (env, argv) => ({
   entry: './src/index.ts',
+  devtool:
+    argv.mode === 'development' ? 'cheap-module-eval-source-map' : 'source-map',
   context: process.cwd(),
   optimization: {
     sideEffects: false,
@@ -14,12 +17,11 @@ const config = {
     minimize: false
   },
   plugins: [
+    new CleanWebpackPlugin(),
     new BannerPlugin({ banner: '#!/usr/bin/env node', raw: true })
   ],
   resolve: {
-    plugins: [
-      new TsConfigPathsPlugin()
-    ],
+    plugins: [new TsConfigPathsPlugin()],
     extensions: ['.ts', '.js', '.json']
   },
   module: {
@@ -38,14 +40,4 @@ const config = {
   },
   externals: [nodeExternals()],
   target: 'node'
-};
-
-module.exports = (env, argv) => {
-  if (argv.mode === 'development') {
-    config.devtool = 'cheap-module-eval-source-map';
-  } else {
-    config.devtool = 'source-map';
-  }
-
-  return config;
-};
+});

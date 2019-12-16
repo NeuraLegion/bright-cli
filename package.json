@@ -1,6 +1,6 @@
 {
   "name": "@neuralegion/nexploit-cli",
-  "version": "4.0.0",
+  "version": "0.0.0",
   "private": false,
   "repository": {
     "type": "git",
@@ -33,11 +33,9 @@
     "pretty:fix": "prettier --write 'src/**/*.ts'",
     "format": "npm run lint:fix && npm run pretty:fix",
     "test": "mocha -r ts-node/register -r tsconfig-paths/register src/*.spec.ts",
-    "build": "npm run clean && webpack --config webpack.config.js",
-    "clean": "rimraf lib",
+    "build": "webpack --config webpack.config.js",
     "semantic-release": "semantic-release",
-    "prepublish": "npm run clean && npm run lint && npm run build -- --mode=production",
-    "please": "npm cache clean -f && rm -rf node_modules && rm -f package-lock.json"
+    "prepublishOnly": "npm run lint && npm run build -- --mode=production"
   },
   "husky": {
     "hooks": {
@@ -45,6 +43,11 @@
       "pre-commit": "lint-staged",
       "post-commit": "git update-index --again"
     }
+  },
+  "commitlint": {
+    "extends": [
+      "@commitlint/config-conventional"
+    ]
   },
   "lint-staged": {
     "*.ts": [
@@ -56,38 +59,38 @@
   "homepage": "https://github.com/NeuraLegion/nexploit-cli#readme",
   "dependencies": {
     "ajv": "^6.10.2",
-    "capture-har": "^1.0.1",
+    "capture-har": "^1.1.0",
     "find-up": "^3.0.0",
     "js-yaml": "^3.13.1",
-    "openapi-schemas": "^1.0.1",
+    "openapi-schemas": "^1.0.3",
     "reflect-metadata": "^0.1.13",
     "request": "^2.88.0",
     "request-capture-har": "^1.2.2",
-    "request-promise": "^4.2.4",
+    "request-promise": "^4.2.5",
     "tslib": "1.9.3",
     "yargonaut": "1.1.4",
     "yargs": "12.0.5"
   },
   "devDependencies": {
-    "@types/chai": "^4.1.7",
+    "@commitlint/cli": "^8.2.0",
+    "@commitlint/config-conventional": "^8.2.0",
+    "@types/chai": "^4.2.7",
     "@types/find-up": "^2.1.1",
     "@types/har-format": "^1.2.4",
     "@types/js-yaml": "^3.12.1",
     "@types/mocha": "^5.2.1",
     "@types/node": "10.12.18",
-    "@types/request": "^2.48.1",
-    "@types/request-promise": "^4.1.44",
-    "@types/yargs": "^13.0.0",
-    "semantic-release": "^15.13.27",
-    "@commitlint/cli": "^8.2.0",
-    "@commitlint/config-conventional": "^8.2.0",
-    "husky": "^3.0.7",
-    "lint-staged": "^9.4.0",
+    "@types/request": "^2.48.3",
+    "@types/request-promise": "^4.1.45",
+    "@types/yargs": "^13.0.3",
     "chai": "^4.2.0",
     "chalk": "2.4.1",
+    "clean-webpack-plugin": "^3.0.0",
+    "husky": "^3.1.0",
+    "lint-staged": "^9.5.0",
     "mocha": "^5.2.0",
-    "prettier": "^1.18.2",
-    "rimraf": "^2.6.2",
+    "prettier": "^1.19.1",
+    "semantic-release": "^15.13.31",
     "ts-loader": "^5.4.3",
     "ts-node": "8.1.0",
     "tsconfig-paths-webpack-plugin": "^3.2.0",
