@@ -7,6 +7,33 @@ export enum Discovery {
   oas = 'oas'
 }
 
+export enum TestType {
+  angular_csti = 'angular_csti',
+  file_upload = 'file_upload',
+  csrf = 'csrf',
+  unvalidated_redirect = 'unvalidated_redirect',
+  rfi = 'rfi',
+  lfi = 'lfi',
+  sqli = 'sqli',
+  date_manipulation = 'date_manipulation',
+  osi = 'osi',
+  retire_js = 'retire_js',
+  ssti = 'ssti',
+  full_path_disclosure = 'full_path_disclosure',
+  ldapi = 'ldapi',
+  cookie_security = 'cookie_security',
+  directory_listing = 'directory_listing',
+  header_security = 'header_security',
+  http_method_fuzzing = 'http_method_fuzzing',
+  version_control_systems = 'version_control_systems',
+  backup_locations = 'backup_locations',
+  jwt = 'jwt',
+  default_login_location = 'default_login_location',
+  dom_xss = 'dom_xss',
+  xss = 'xss',
+  xxe = 'xxe'
+}
+
 export enum ModuleRef {
   dast = 'dast',
   fuzzer = 'fuzzer'
@@ -17,11 +44,16 @@ export enum Module {
   exploratory = 'exploratory'
 }
 
+export function toArray<T>(enumeration: any): T[] {
+  return [...Object.values(enumeration)] as T[];
+}
+
 export interface RunStrategyConfig {
   name: string;
   poolSize?: number;
   moduleRef?: ModuleRef;
   fileId?: string;
+  tests?: TestType[];
   build?: {
     service: string;
     buildNumber?: number;
