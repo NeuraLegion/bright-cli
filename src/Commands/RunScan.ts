@@ -2,6 +2,7 @@ import * as yargs from 'yargs';
 import { InlineHeaders } from '../Parsers/InlineHeaders';
 import { FailureError } from '../Strategy/Failure/FailureError';
 import { ServicesApiFactory } from '../Strategy/ServicesApiFactory';
+import { ModuleRef, TestType, toArray } from '../Strategy/ScanManager';
 
 export class RunScan implements yargs.CommandModule {
   public readonly command = 'scan:run';
@@ -41,6 +42,12 @@ export class RunScan implements yargs.CommandModule {
         describe:
           'A list of specific urls that should be included into crawler.'
       })
+      .option('test', {
+        choices: toArray(TestType),
+        default: toArray(TestType),
+        array: true,
+        describe: 'A list of tests which you want to run during a scan.'
+      })
       .option('service', {
         choices: ['jenkins', 'circleci', 'travisci'],
         requiresArg: true,
@@ -71,9 +78,9 @@ export class RunScan implements yargs.CommandModule {
           'The version control system type your project uses. Current choices are github or bitbucket. CircleCI only.'
       })
       .option('module', {
-        default: 'dast',
+        default: ModuleRef.dast,
         requiresArg: true,
-        choices: ['dast', 'fuzzer'],
+        choices: toArray(ModuleRef),
         describe:
           'The dast module tests for specific scenarios, mainly OWASP top 10 and other common scenarios. ' +
           'The fuzzer module generates various scenarios to test for unknown vulnerabilities, ' +
@@ -110,6 +117,7 @@ export class RunScan implements yargs.CommandModule {
         .create({
           name: args.name,
           moduleRef: args.module,
+          tests: args.test,
           hostsFilter: args.hostFilter,
           headers: new InlineHeaders().parse(args.header as string[]),
           crawlerUrls: args.crawler,
