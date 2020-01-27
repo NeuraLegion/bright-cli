@@ -1,15 +1,15 @@
 import { Entry, Har } from 'har-format';
 import { Validator } from './Validator';
-import * as ajv from 'ajv';
+import Ajv from 'ajv';
 import { ValidateFunction } from 'ajv';
 import { parse, Url } from 'url';
 import harSchema from '../Utils/har-schema';
 
 export class HarFileValidator implements Validator<Har> {
-  private readonly ajv: ajv.Ajv;
+  private readonly ajv: Ajv.Ajv;
 
   constructor() {
-    this.ajv = new ajv({
+    this.ajv = new Ajv({
       allErrors: true,
       async: true,
       jsonPointers: true,

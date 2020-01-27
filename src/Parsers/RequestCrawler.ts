@@ -1,6 +1,6 @@
 // @ts-ignore
 import { CaptureHar } from 'capture-har';
-import * as request from 'request';
+import request from 'request';
 import { CoreOptions, Options } from 'request';
 import { split } from '../Utils/split';
 import { Parser } from './Parser';

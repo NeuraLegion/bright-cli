@@ -1,52 +1,47 @@
-import * as request from 'request-promise';
-import { RequestPromiseAPI } from 'request-promise';
+import request, { RequestPromiseAPI } from 'request-promise';
 
 export enum Discovery {
-  crawler = 'crawler',
-  archive = 'archive',
-  oas = 'oas'
+  CRAWLER = 'crawler',
+  ARCHIVE = 'archive',
+  OAS = 'oas'
 }
 
 export enum TestType {
-  angular_csti = 'angular_csti',
-  file_upload = 'file_upload',
-  csrf = 'csrf',
-  unvalidated_redirect = 'unvalidated_redirect',
-  rfi = 'rfi',
-  lfi = 'lfi',
-  sqli = 'sqli',
-  date_manipulation = 'date_manipulation',
-  osi = 'osi',
-  retire_js = 'retire_js',
-  ssti = 'ssti',
-  full_path_disclosure = 'full_path_disclosure',
-  ldapi = 'ldapi',
-  cookie_security = 'cookie_security',
-  directory_listing = 'directory_listing',
-  header_security = 'header_security',
-  http_method_fuzzing = 'http_method_fuzzing',
-  version_control_systems = 'version_control_systems',
-  backup_locations = 'backup_locations',
-  jwt = 'jwt',
-  default_login_location = 'default_login_location',
-  dom_xss = 'dom_xss',
-  xss = 'xss',
-  xxe = 'xxe',
-  ssrf = 'ssrf',
-  wordpress = 'wordpress',
-  common_files = 'common_files',
-  brute_force_login = 'brute_force_login',
-  secret_tokens = 'secret_tokens'
-}
-
-export enum ModuleRef {
-  dast = 'dast',
-  fuzzer = 'fuzzer'
+  ANGULAR_CSTI = 'angular_csti',
+  FILE_UPLOAD = 'file_upload',
+  CSRF = 'csrf',
+  UNVALIDATED_REDIRECT = 'unvalidated_redirect',
+  RFI = 'rfi',
+  LFI = 'lfi',
+  SQLI = 'sqli',
+  DATE_MANIPULATION = 'date_manipulation',
+  OSI = 'osi',
+  RETIRE_JS = 'retire_js',
+  SSTI = 'ssti',
+  FULL_PATH_DISCLOSURE = 'full_path_disclosure',
+  LDAPI = 'ldapi',
+  COOKIE_SECURITY = 'cookie_security',
+  DIRECTORY_LISTING = 'directory_listing',
+  HEADER_SECURITY = 'header_security',
+  HTTP_METHOD_FUZZING = 'http_method_fuzzing',
+  VERSION_CONTROL_SYSTEMS = 'version_control_systems',
+  BACKUP_LOCATIONS = 'backup_locations',
+  JWT = 'jwt',
+  DEFAULT_LOGIN_LOCATION = 'default_login_location',
+  DOM_XSS = 'dom_xss',
+  XSS = 'xss',
+  XXE = 'xxe',
+  SSRF = 'ssrf',
+  WORDPRESS = 'wordpress',
+  COMMON_FILES = 'common_files',
+  BRUTE_FORCE_LOGIN = 'brute_force_login',
+  SECRET_TOKENS = 'secret_tokens',
+  HRS = 'hrs'
 }
 
 export enum Module {
-  core = 'core',
-  exploratory = 'exploratory'
+  DAST = 'dast',
+  FUZZER = 'fuzzer'
 }
 
 export function toArray<T>(enumeration: any): T[] {
@@ -56,7 +51,7 @@ export function toArray<T>(enumeration: any): T[] {
 export interface RunStrategyConfig {
   name: string;
   poolSize?: number;
-  moduleRef?: ModuleRef;
+  module?: Module;
   fileId?: string;
   tests?: TestType[];
   build?: {
@@ -74,12 +69,11 @@ export interface RunStrategyConfig {
 }
 
 export type DiscoveryTypes =
-  | (Discovery.archive | Discovery.crawler)[]
-  | Discovery.oas[];
+  | (Discovery.ARCHIVE | Discovery.CRAWLER)[]
+  | Discovery.OAS[];
 
-export interface ScanConfig extends Exclude<RunStrategyConfig, 'moduleRef'> {
+export interface ScanConfig extends RunStrategyConfig {
   discoveryTypes: DiscoveryTypes;
-  module: Module;
 }
 
 export class ScanManager {
@@ -101,7 +95,7 @@ export class ScanManager {
 
   public async create(body: RunStrategyConfig): Promise<string> {
     const { id }: { id: string } = await this.proxy.post({
-      body: this.extractScanConfig(body),
+      body: this.getScanConfig(body),
       uri: `/api/v1/scans`,
       json: true
     });
@@ -132,31 +126,21 @@ export class ScanManager {
     });
   }
 
-  private extractScanConfig(strategyConfig: RunStrategyConfig): ScanConfig {
-    const { moduleRef, ...partialConfig } = strategyConfig;
-    const discoveryTypes: Discovery[] = this.getDiscovery(strategyConfig);
-    const module: Module = this.getModule(moduleRef);
-    return { ...partialConfig, discoveryTypes, module } as ScanConfig;
-  }
+  private getScanConfig(config: RunStrategyConfig): ScanConfig {
+    const discoveryTypes: Discovery[] = this.getDiscovery(config);
 
-  private getModule(moduleRef: ModuleRef): Module {
-    switch (moduleRef) {
-      case ModuleRef.dast:
-        return Module.core;
-      case ModuleRef.fuzzer:
-        return Module.exploratory;
-    }
+    return { ...config, discoveryTypes } as ScanConfig;
   }
 
   private getDiscovery(body: RunStrategyConfig): Discovery[] {
     const discoveryTypes: Discovery[] = [];
 
     if (Array.isArray(body.crawlerUrls)) {
-      discoveryTypes.push(Discovery.crawler);
+      discoveryTypes.push(Discovery.CRAWLER);
     }
 
     if (body.fileId) {
-      discoveryTypes.push(Discovery.archive);
+      discoveryTypes.push(Discovery.ARCHIVE);
     }
 
     return discoveryTypes;

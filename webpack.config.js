@@ -7,7 +7,7 @@ const { CleanWebpackPlugin } = require('clean-webpack-plugin');
 module.exports = (env, argv) => ({
   entry: './src/index.ts',
   devtool:
-    argv.mode === 'development' ? 'cheap-module-eval-source-map' : 'source-map',
+    argv.mode === 'development' ? 'eval-cheap-source-map' : 'source-map',
   context: process.cwd(),
   optimization: {
     sideEffects: false,

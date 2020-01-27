@@ -1,13 +1,13 @@
-import * as ajv from 'ajv';
+import Ajv from 'ajv';
 import { ValidateFunction } from 'ajv';
 import { openapiV1, openapiV2, openapiV3 } from 'openapi-schemas';
 import { Validator } from './Validator';
 
 export class OasValidator implements Validator<any> {
-  private readonly ajv: ajv.Ajv;
+  private readonly ajv: Ajv.Ajv;
 
   constructor() {
-    this.ajv = new ajv({
+    this.ajv = new Ajv({
       allErrors: true,
       $data: true,
       jsonPointers: true,

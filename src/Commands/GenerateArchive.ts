@@ -1,7 +1,7 @@
 import { writeFile as writeFileCb } from 'fs';
 import { NexMockToRequestsParser } from '../Parsers/NexMockToRequestsParser';
 import { RequestCrawler } from '../Parsers/RequestCrawler';
-import * as yargs from 'yargs';
+import yargs from 'yargs';
 import { InlineHeaders } from '../Parsers/InlineHeaders';
 import { basename } from 'path';
 import { Options } from 'request';

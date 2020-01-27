@@ -1,5 +1,5 @@
 import { exec, ExecException } from 'child_process';
-import * as yargs from 'yargs';
+import yargs from 'yargs';
 
 export class VersionCommand implements yargs.CommandModule {
   public readonly command = 'version';

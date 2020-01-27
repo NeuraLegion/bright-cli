@@ -1,7 +1,7 @@
-import * as findUp from 'find-up';
-import * as fs from 'fs';
-import * as path from 'path';
-import * as yargs from 'yargs';
+import { sync } from 'find-up';
+import fs from 'fs';
+import path from 'path';
+import yargs from 'yargs';
 
 export class CliBuilder {
   private readonly cwd: string;
@@ -60,7 +60,7 @@ export class CliBuilder {
   }
 
   private load(): this {
-    const rcPath: string | null = findUp.sync(this.rcOptions, {
+    const rcPath: string | null = sync(this.rcOptions, {
       cwd: this.cwd
     });
 
@@ -84,7 +84,7 @@ export class CliBuilder {
   private guessCWD(cwd: string): string {
     cwd = cwd || process.env.NEXPLOIT_CWD || process.cwd();
 
-    const pkgPath: string | null = findUp.sync('package.json', { cwd });
+    const pkgPath: string | null = sync('package.json', { cwd });
 
     if (!!pkgPath) {
       cwd = path.dirname(pkgPath);

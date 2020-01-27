@@ -14,7 +14,7 @@ export class UploadHARStrategy extends UploadStrategy<Har> {
   }
 
   get discovery(): Discovery {
-    return Discovery.archive;
+    return Discovery.ARCHIVE;
   }
 
   protected async sendRequestToService(
