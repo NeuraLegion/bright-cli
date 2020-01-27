@@ -16,20 +16,18 @@ export class UploadStrategyFactory {
 
   public Create(discovery: Discovery): UploadStrategy<any> {
     switch (discovery) {
-      case Discovery.archive:
+      case Discovery.ARCHIVE:
         return new UploadHARStrategy(
           this.baseUrl,
           this.apiKey,
           new HarFileParser(new HarFileValidator(), new FileExistingValidator())
         );
-      case Discovery.oas:
+      case Discovery.OAS:
         return new UploadOASStrategy(
           this.baseUrl,
           this.apiKey,
           new OasParser(new OasValidator(), new FileExistingValidator())
         );
-      default:
-        return null;
     }
   }
 }

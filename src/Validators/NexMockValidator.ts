@@ -1,14 +1,14 @@
 import mockRequestsSchema from '../Utils/mock-requests-schema';
-import * as ajv from 'ajv';
+import Ajv from 'ajv';
 import { ValidateFunction } from 'ajv';
 import { MockRequest } from '../Parsers/NexMockToRequestsParser';
 import { Validator } from './Validator';
 
 export class NexMockValidator implements Validator<MockRequest[]> {
-  private readonly ajv: ajv.Ajv;
+  private readonly ajv: Ajv.Ajv;
 
   constructor() {
-    this.ajv = new ajv({
+    this.ajv = new Ajv({
       allErrors: true,
       async: true
     });

@@ -1,8 +1,8 @@
-import * as yargs from 'yargs';
+import yargs from 'yargs';
 import { InlineHeaders } from '../Parsers/InlineHeaders';
 import { FailureError } from '../Strategy/Failure/FailureError';
 import { ServicesApiFactory } from '../Strategy/ServicesApiFactory';
-import { ModuleRef, TestType, toArray } from '../Strategy/ScanManager';
+import { Module, TestType, toArray } from '../Strategy/ScanManager';
 
 export class RunScan implements yargs.CommandModule {
   public readonly command = 'scan:run';
@@ -32,7 +32,7 @@ export class RunScan implements yargs.CommandModule {
         normalize: true,
         requiresArg: true,
         describe:
-          "A collection your app's http/websockets logs into HAR or WSAR file. " +
+          "A collection your app's http/websockets logs into HAR file. " +
           'Usually you can use browser dev tools or our browser web extension'
       })
       .option('crawler', {
@@ -78,9 +78,9 @@ export class RunScan implements yargs.CommandModule {
           'The version control system type your project uses. Current choices are github or bitbucket. CircleCI only.'
       })
       .option('module', {
-        default: ModuleRef.dast,
+        default: Module.DAST,
         requiresArg: true,
-        choices: toArray(ModuleRef),
+        choices: toArray(Module),
         describe:
           'The dast module tests for specific scenarios, mainly OWASP top 10 and other common scenarios. ' +
           'The fuzzer module generates various scenarios to test for unknown vulnerabilities, ' +
@@ -116,7 +116,7 @@ export class RunScan implements yargs.CommandModule {
         .CreateScanManager()
         .create({
           name: args.name,
-          moduleRef: args.module,
+          module: args.module,
           tests: args.test,
           hostsFilter: args.hostFilter,
           headers: new InlineHeaders().parse(args.header as string[]),

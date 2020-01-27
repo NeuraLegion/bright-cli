@@ -1,4 +1,4 @@
-import * as yargs from 'yargs';
+import yargs from 'yargs';
 import { FailureError } from '../Strategy/Failure/FailureError';
 import { ServicesApiFactory } from '../Strategy/ServicesApiFactory';
 

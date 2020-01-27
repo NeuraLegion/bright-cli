@@ -1,4 +1,4 @@
-import * as yargs from 'yargs';
+import yargs from 'yargs';
 import { FailureStrategyFactory } from '../Strategy/Failure/FailureStrategyFactory';
 import { FailureOnType } from '../Strategy/Failure/Polling';
 import { FailureError } from '../Strategy/Failure/FailureError';

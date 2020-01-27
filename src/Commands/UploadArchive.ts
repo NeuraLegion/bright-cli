@@ -1,4 +1,4 @@
-import * as yargs from 'yargs';
+import yargs from 'yargs';
 import { InlineHeaders } from '../Parsers/InlineHeaders';
 import { Discovery } from '../Strategy/ScanManager';
 import { ServicesApiFactory } from '../Strategy/ServicesApiFactory';
@@ -45,7 +45,7 @@ export class UploadArchive implements yargs.CommandModule {
       })
       .positional('file', {
         describe:
-          "A collection your app's http/websockets logs into HAR or WSAR file. " +
+          "A collection your app's http/websockets logs into HAR file. " +
           'Usually you can use browser dev tools or our browser web extension',
         type: 'string',
         normalize: true

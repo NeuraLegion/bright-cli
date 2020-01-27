@@ -4,16 +4,12 @@ import { Discovery } from '../ScanManager';
 import { Parser } from '../../Parsers/Parser';
 
 export class UploadOASStrategy extends UploadStrategy<any> {
-  constructor(
-    baseUrl: string,
-    apiKey: string,
-    fileParser: Parser<string, any>
-  ) {
+  constructor(baseUrl: string, apiKey: string, fileParser: Parser<string>) {
     super(baseUrl, apiKey, fileParser);
   }
 
   get discovery(): Discovery {
-    return Discovery.oas;
+    return Discovery.OAS;
   }
 
   protected async sendRequestToService(

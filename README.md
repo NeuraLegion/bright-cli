@@ -143,19 +143,19 @@ This section contains information on using NexPloit CLI's commands.
 
 ### 📥 Upload Archive
 
-`nexploit-cli archive:upload [options] <file>` uploads passed .HAR/.WSAR (or OAS) into your [NeuraLegion Storage](https://nexploit.app/storage).
+`nexploit-cli archive:upload [options] <file>` uploads passed HAR (or OAS) into your [NeuraLegion Storage](https://nexploit.app/storage).
 
 > ✴ If you plan to upload OAS file to the storage, you can specify a different discovery option by setting the `--discovery` to `oas`.
 
 The command will output an ID of a new archive, which you can use to run a new scan.
 
-> ✴ If the archive with that name already exists, you'll receive the following error message: `The file with that name already exists or the HAR/WSAR file is corrupted.`
+> ✴ If the archive with that name already exists, you'll receive the following error message: `The file with that name already exists or the HAR file is corrupted.`
 
 #### Arguments
 
 | Argument  |  Description |
 |---|:---|
-| `<file>` | A collection of your app's http/websockets logs exported into a .HAR or .WSAR file. Typically, you can use any browser's dev tools or NeuraLegion's [browser extension](https://chrome.google.com/webstore/detail/nexploit/pgmogkjcjlgjnconlkocehfadbkimjbg) to generate them. In addition, you can use an OAS file that describes your public API. |
+| `<file>` | A collection of your app's http/websockets logs exported into a HAR file. Typically, you can use any browser's dev tools or NeuraLegion's [browser extension](https://chrome.google.com/webstore/detail/nexploit/pgmogkjcjlgjnconlkocehfadbkimjbg) to generate them. In addition, you can use an OAS file that describes your public API. |
 
 #### Options
 
@@ -203,7 +203,7 @@ E.g. `archive.har`, `archive_2.har` and etc.
 
 > ✴ If you don't have enough available engines, the scan will be placed in the queue. The new scan will start, if you manually stop another running scan or when it is done.
 
-This command allows you to specify one or more of the discovery strategies, for example using the`--crawler` option and/or  the generated .HAR/.WSAR files, seperately or both at the same time. This means that you can handle client side dynamic content, javascript, etc.
+This command allows you to specify one or more of the discovery strategies, for example using the`--crawler` option and/or the generated HAR files, seperately or both at the same time. This means that you can handle client side dynamic content, javascript, etc.
 
 #### Options
 
