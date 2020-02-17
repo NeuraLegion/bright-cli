@@ -31,7 +31,12 @@ export enum TestType {
   default_login_location = 'default_login_location',
   dom_xss = 'dom_xss',
   xss = 'xss',
-  xxe = 'xxe'
+  xxe = 'xxe',
+  ssrf = 'ssrf',
+  wordpress = 'wordpress',
+  common_files = 'common_files',
+  brute_force_login = 'brute_force_login',
+  secret_tokens = 'secret_tokens'
 }
 
 export enum ModuleRef {
