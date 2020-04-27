@@ -28,8 +28,7 @@ jobs:
       - uses: actions/setup-node@v1
         with:
           node-version: 12
-      - run: echo ::set-env name=RELEASE_VERSION::$(echo ${GITHUB_REF:10})
-      - run: npm version $RELEASE_VERSION --git-tag-version false
+      - run: npm version from-git
       - run: npm ci
       - run: npm publish
         env:
