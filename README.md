@@ -155,7 +155,7 @@ The command will output an ID of a new archive, which you can use to run a new s
 
 | Argument  |  Description |
 |---|:---|
-| `<file>` | A collection of your app's http/websockets logs exported into a HAR file. Typically, you can use any browser's dev tools or NeuraLegion's [browser extension](https://chrome.google.com/webstore/detail/nexploit/pgmogkjcjlgjnconlkocehfadbkimjbg) to generate them. In addition, you can use an OAS file that describes your public API. |
+| `<file>` | A collection of your app's http/websockets logs exported into a HAR file. Typically, you can use any browser's dev tools, NeuraLegion's [browser extension](https://chrome.google.com/webstore/detail/nexploit/pgmogkjcjlgjnconlkocehfadbkimjbg) or [Cypress plugin](https://www.npmjs.com/package/@neuralegion/cypress-har-generator) to generate them. In addition, you can use an OAS file that describes your public API. |
 
 #### Options
 
@@ -216,6 +216,7 @@ This command allows you to specify one or more of the discovery strategies, for 
 | `--module=dast/fuzzer` | The `dast` module tests for specific scenarios, such as OWASP top 10 and other common scenarios. The `fuzzer` module generates various new scenarios to test for unknown vulnerabilities, providing automated AI guided fuzz-testing. Default: `dast` |
 | `--host-filter=hostOrIp`, `-F=hostOrIp` | The list of specific hosts that should be included in the scan. |
 | `--header=extraHeader`, `-H=extraHeader` | Extra headers to be passed with the Archive file. Also, it can be used to remove a header by providing a name without content, for example: `-H "Host:"`. **WARNING**: headers set with this option overide the archive headers and will be set in all the requests |
+| `--test=test` | Allows specifying a list of relevant tests to execute during a scan, for example: `--tests default_login_location dom_xss` |
 
 ### 🚓 Check Scan Status
 
