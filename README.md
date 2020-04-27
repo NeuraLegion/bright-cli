@@ -271,6 +271,6 @@ After the launch, it will check the scan's status most of the time.  If the scan
 
 ## 📝 License
 
-Copyright © 2019 [NeuraLegion](https://github.com/NeuraLegion).
+Copyright © 2020 [NeuraLegion](https://github.com/NeuraLegion).
 
 This project is licensed under the MIT License - see the [LICENSE file](LICENSE) for details.
