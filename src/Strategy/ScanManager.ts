@@ -113,7 +113,7 @@ export class ScanManager {
   }
 
   public async stop(scanId: string): Promise<void> {
-    await this.proxy.post({
+    await this.proxy.get({
       uri: `/api/v1/scans/${scanId}/stop`,
       json: true
     });
