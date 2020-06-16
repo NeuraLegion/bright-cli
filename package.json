@@ -60,6 +60,7 @@
     "capture-har": "^1.1.0",
     "find-up": "^4.1.0",
     "js-yaml": "^3.13.1",
+    "ms": "^2.1.2",
     "openapi-schemas": "^2.0.3",
     "reflect-metadata": "^0.1.13",
     "request": "^2.88.2",
@@ -77,6 +78,7 @@
     "@types/har-format": "^1.2.4",
     "@types/js-yaml": "^3.12.3",
     "@types/mocha": "^7.0.2",
+    "@types/ms": "^0.7.31",
     "@types/node": "^10.12.18",
     "@types/request": "^2.48.4",
     "@types/request-promise": "^4.1.46",
@@ -96,7 +98,7 @@
     "tslint-plugin-prettier": "^2.3.0",
     "typescript": "^3.8.3",
     "webpack": "4.43.0",
-    "webpack-cli": "3.3.1",
+    "webpack-cli": "^3.3.11",
     "webpack-node-externals": "1.7.2"
   },
   "description": "NexPloit CLI is a CLI tool that can initialize, stop, polling and maintain scans in NeuraLegions solutions (Such as NexPloit)."

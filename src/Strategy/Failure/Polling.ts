@@ -1,6 +1,7 @@
 import * as request from 'request-promise';
 import { RequestPromiseAPI } from 'request-promise';
 import { FailureStrategy } from './FailureStrategy';
+import ms from 'ms';
 
 export enum FailureOnType {
   firstIssue = 'first-issue',
@@ -10,7 +11,8 @@ export enum FailureOnType {
 }
 
 export interface PollingConfig {
-  poolingInterval?: number;
+  timeout?: number | string;
+  interval?: number;
   scanId?: string;
 }
 
@@ -43,11 +45,17 @@ export interface ScanState {
 export class Polling {
   private readonly proxy: RequestPromiseAPI;
   private readonly options: PollingConfig;
-  private proxyConfig: {
+  private readonly proxyConfig: {
     strictSSL: boolean;
     headers: { Authorization: string };
     baseUrl: string;
   };
+
+  private _active = true;
+
+  get active(): boolean {
+    return this._active;
+  }
 
   constructor(baseUrl: string, apiKey: string, options: PollingConfig) {
     this.proxyConfig = {
@@ -63,14 +71,28 @@ export class Polling {
     if (!strategy) {
       throw new Error('You should specify a failure strategy for polling.');
     }
+    let timeoutDescriptor;
 
-    for await (const x of this.poll()) {
-      await strategy.execute(x);
+    try {
+      if (this.options.timeout) {
+        const timeout: number = this.toMilliseconds(this.options.timeout);
+        timeoutDescriptor = setTimeout(() => (this._active = false), timeout);
+      }
+
+      for await (const x of this.poll()) {
+        await strategy.execute(x);
+      }
+    } finally {
+      if (!this._active) {
+        console.log('Polling has been terminated by timeout.');
+      }
+      this._active = false;
+      clearTimeout(timeoutDescriptor);
     }
   }
 
   private async *poll(): AsyncIterableIterator<StatsIssuesCategory[]> {
-    while (true) {
+    while (this.active) {
       await this.delay();
 
       const { status, issuesBySeverity }: ScanState = await this.getStatus();
@@ -83,6 +105,18 @@ export class Polling {
     }
   }
 
+  private toMilliseconds(time: string | number): number {
+    if (typeof time === 'string') {
+      const milliseconds = ms(time);
+      if (!milliseconds) {
+        return;
+      }
+      return milliseconds;
+    } else if (typeof time === 'number') {
+      return time;
+    }
+  }
+
   private isRedundant(status: ScanStatus): boolean {
     return (
       status === ScanStatus.done ||
@@ -92,9 +126,8 @@ export class Polling {
   }
 
   private delay(): Promise<void> {
-    return new Promise<void>((resolve) =>
-      setTimeout(resolve, this.options.poolingInterval)
-    );
+    const interval = this.toMilliseconds(this.options.interval) ?? 5000;
+    return new Promise<void>((resolve) => setTimeout(resolve, interval));
   }
 
   protected getStatus(): Promise<ScanState> {

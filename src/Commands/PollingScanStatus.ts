@@ -22,11 +22,17 @@ export class PollingScanStatus implements yargs.CommandModule {
         demandOption: true
       })
       .option('interval', {
-        number: true,
         requiresArg: true,
         describe:
-          'Period of time between the end of a timeout period or completion of a scan status request, and the next request for status.',
+          'Period of time between the end of a timeout period or completion of a scan status request, and the next request for status. ' +
+          'Eg: 60, "2min", "10h", "7d". A numeric value is interpreted as a milliseconds count.',
         default: 5000
+      })
+      .option('timeout', {
+        requiresArg: true,
+        describe:
+          'Period of time between the end of a timeout period or completion of a scan status request, and the next request for status. ' +
+          'Eg: 60, "2min", "10h", "7d". A numeric value is interpreted as a milliseconds count.'
       })
       .option('failure-on', {
         choices: [
@@ -52,7 +58,8 @@ export class PollingScanStatus implements yargs.CommandModule {
       await new ServicesApiFactory(args.api as string, args.apiKey as string)
         .CreatePolling({
           scanId: args.scan as string,
-          poolingInterval: args.interval as number
+          interval: args.interval as any,
+          timeout: args.timeout as any
         })
         .check(
           new FailureStrategyFactory().Create(args.failureOn as FailureOnType)
