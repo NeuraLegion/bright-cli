@@ -236,7 +236,8 @@ After the launch, it will check the scan's status most of the time.  If the scan
 |---|:---|
 | `--api-key=yourApiKey`, `-K=yourApiKey` | The unique identifier used to authenticate a user. It can be issued in your organization dashboard |
 | `--failure-on=first-issue / first-medium-severity-issue / first-high-severity-issue.` | The predefined failure strategy that allows to finish process with exit code `50` only after fulfilling the condition. Default: `first-issue`|
-| `--interval=milliseconds.` | The period of time between the end of a timeout period or completion of a scan status request, and the next request for status. Default: `5000` |
+| `--interval=milliseconds.` | The period of time between the end of a timeout period or completion of a scan status request, and the next request for status. Eg: 60, "2min", "10h", "7d". A numeric value is interpreted as a milliseconds count. Default: `5000` |
+| `--timeout=milliseconds.` | The allowed maximum time for a polling to end normally. Eg: 60, "2min", "10h", "7d". A numeric value is interpreted as a milliseconds count. |
 
 ### 🛑 Stop Scan
 
