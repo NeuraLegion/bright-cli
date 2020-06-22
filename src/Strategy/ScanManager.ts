@@ -65,7 +65,7 @@ export interface RunStrategyConfig {
   headers?: { [p: string]: string };
   crawlerUrls?: string[];
   hostsFilter?: string[];
-  agentsUuids?: string[];
+  agents?: string[];
 }
 
 export type DiscoveryTypes =

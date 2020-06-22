@@ -213,6 +213,7 @@ This command allows you to specify one or more of the discovery strategies, for 
 | `--name=extraHeader`, `-n=extraHeader` | The name of the scan. |
 | `--archive=archiveID`, `-a=archiveID` | The Archive ID, which can be received via the `archive:upload` command. |
 | `--crawler=url`, `-c=url` | Allows to specify a list of specific urls that should be included during crawler discovery. |
+| `--agent=uuid` | Allows to specify a list of agent UUIDs that should be connected with the scan. |
 | `--module=dast/fuzzer` | The `dast` module tests for specific scenarios, such as OWASP top 10 and other common scenarios. The `fuzzer` module generates various new scenarios to test for unknown vulnerabilities, providing automated AI guided fuzz-testing. Default: `dast` |
 | `--host-filter=hostOrIp`, `-F=hostOrIp` | The list of specific hosts that should be included in the scan. |
 | `--header=extraHeader`, `-H=extraHeader` | Extra headers to be passed with the Archive file. Also, it can be used to remove a header by providing a name without content, for example: `-H "Host:"`. **WARNING**: headers set with this option overide the archive headers and will be set in all the requests |

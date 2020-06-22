@@ -27,6 +27,11 @@ export class RunScan implements yargs.CommandModule {
         requiresArg: true,
         demandOption: true
       })
+      .option('agent', {
+        requiresArg: true,
+        array: true,
+        describe: 'ID of any agents connected with the scan.'
+      })
       .option('archive', {
         alias: 'a',
         normalize: true,
@@ -104,11 +109,15 @@ export class RunScan implements yargs.CommandModule {
         ['service', 'build-number', 'vcs', 'project', 'user'],
         'Build Options'
       )
-      .group(['host-filter', 'header', 'module'], 'Additional Options');
+      .group(
+        ['host-filter', 'header', 'module', 'agent', 'test'],
+        'Additional Options'
+      );
   }
 
   public async handler(args: yargs.Arguments): Promise<void> {
     try {
+      const headerParser = new InlineHeaders();
       const scanId: string = await new ServicesApiFactory(
         args.api as string,
         args.apiKey as string
@@ -119,9 +128,10 @@ export class RunScan implements yargs.CommandModule {
           module: args.module,
           tests: args.test,
           hostsFilter: args.hostFilter,
-          headers: new InlineHeaders().parse(args.header as string[]),
+          headers: headerParser.parse(args.header as string[]),
           crawlerUrls: args.crawler,
           fileId: args.archive,
+          agents: args.agent,
           build: args.service
             ? {
                 service: args.service,
