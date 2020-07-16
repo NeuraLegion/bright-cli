@@ -36,7 +36,9 @@ export enum TestType {
   COMMON_FILES = 'common_files',
   BRUTE_FORCE_LOGIN = 'brute_force_login',
   SECRET_TOKENS = 'secret_tokens',
-  HRS = 'hrs'
+  HRS = 'hrs',
+  HTML_INJECTION = 'html_injection',
+  OPEN_DATABASE = 'open_database'
 }
 
 export enum Module {
