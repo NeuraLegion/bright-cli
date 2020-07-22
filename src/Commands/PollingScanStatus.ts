@@ -1,14 +1,16 @@
-import yargs from 'yargs';
-import { FailureStrategyFactory } from '../Strategy/Failure/FailureStrategyFactory';
-import { FailureOnType } from '../Strategy/Failure/Polling';
-import { FailureError } from '../Strategy/Failure/FailureError';
-import { ServicesApiFactory } from '../Strategy/ServicesApiFactory';
+import {
+  FailureError,
+  FailureOnType,
+  FailureStrategyFactory,
+  ServicesApiFactory
+} from '../Strategy';
+import { Arguments, Argv, CommandModule } from 'yargs';
 
-export class PollingScanStatus implements yargs.CommandModule {
+export class PollingScanStatus implements CommandModule {
   public readonly command = 'scan:polling [options] <scan>';
   public readonly describe = 'Allows to configure a polling of scan status.';
 
-  public builder(args: yargs.Argv): yargs.Argv {
+  public builder(args: Argv): Argv {
     return args
       .option('api', {
         default: 'https://nexploit.app/',
@@ -53,16 +55,16 @@ export class PollingScanStatus implements yargs.CommandModule {
       });
   }
 
-  public async handler(args: yargs.Arguments): Promise<void> {
+  public async handler(args: Arguments): Promise<void> {
     try {
       await new ServicesApiFactory(args.api as string, args.apiKey as string)
-        .CreatePolling({
+        .createPolling({
           scanId: args.scan as string,
-          interval: args.interval as any,
-          timeout: args.timeout as any
+          interval: args.interval as number,
+          timeout: args.timeout as number
         })
         .check(
-          new FailureStrategyFactory().Create(args.failureOn as FailureOnType)
+          new FailureStrategyFactory().create(args.failureOn as FailureOnType)
         );
 
       process.exit(0);
@@ -70,6 +72,7 @@ export class PollingScanStatus implements yargs.CommandModule {
       if (e instanceof FailureError) {
         console.error(`Scan failure during "scan:polling": ${e.message}`);
         process.exit(50);
+
         return;
       }
 

@@ -1,8 +1,8 @@
+import { Parser } from './Parser';
+import { Validator } from '../Validators';
 import { extname } from 'path';
 import { promisify } from 'util';
 import { readFile as readFileCb } from 'fs';
-import { Parser } from './Parser';
-import { Validator } from '../Validators/Validator';
 
 const readFile = promisify(readFileCb);
 
@@ -16,6 +16,7 @@ export class OasParser implements Parser<string> {
     await this.fileValidator.validate(data);
     const oas: any = await this.readAndDeserialize(data);
     await this.validator.validate(oas);
+
     return oas;
   }
 

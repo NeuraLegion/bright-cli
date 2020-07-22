@@ -1,14 +1,19 @@
-import yargs from 'yargs';
-import { InlineHeaders } from '../Parsers/InlineHeaders';
-import { FailureError } from '../Strategy/Failure/FailureError';
-import { ServicesApiFactory } from '../Strategy/ServicesApiFactory';
-import { Module, TestType, toArray } from '../Strategy/ScanManager';
+import { InlineHeaders } from '../Parsers';
+import {
+  FailureError,
+  Module,
+  RunStrategyConfig,
+  ServicesApiFactory,
+  TestType,
+  toArray
+} from '../Strategy';
+import { Arguments, Argv, CommandModule } from 'yargs';
 
-export class RunScan implements yargs.CommandModule {
+export class RunScan implements CommandModule {
   public readonly command = 'scan:run';
   public readonly describe = 'Start a new scan for the received configuration.';
 
-  public builder(args: yargs.Argv): yargs.Argv {
+  public builder(args: Argv): Argv {
     return args
       .option('api', {
         default: 'https://nexploit.app/',
@@ -115,14 +120,14 @@ export class RunScan implements yargs.CommandModule {
       );
   }
 
-  public async handler(args: yargs.Arguments): Promise<void> {
+  public async handler(args: Arguments): Promise<void> {
     try {
       const headerParser = new InlineHeaders();
       const scanId: string = await new ServicesApiFactory(
         args.api as string,
         args.apiKey as string
       )
-        .CreateScanManager()
+        .createScanManager()
         .create({
           name: args.name,
           module: args.module,
@@ -141,7 +146,7 @@ export class RunScan implements yargs.CommandModule {
                 vcs: args.vcs
               }
             : undefined
-        } as any);
+        } as RunStrategyConfig);
 
       console.log(scanId);
 
@@ -150,6 +155,7 @@ export class RunScan implements yargs.CommandModule {
       if (e instanceof FailureError) {
         console.error(`Scan failure during "scan:run": ${e.message}`);
         process.exit(50);
+
         return;
       }
 

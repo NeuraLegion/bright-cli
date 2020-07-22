@@ -1,7 +1,7 @@
-import { Headers } from 'request';
 import { File, UploadStrategy } from './UploadStrategy';
 import { Discovery } from '../ScanManager';
-import { Parser } from '../../Parsers/Parser';
+import { Parser } from '../../Parsers';
+import { Headers } from 'request';
 
 export class UploadOASStrategy extends UploadStrategy<any> {
   constructor(baseUrl: string, apiKey: string, fileParser: Parser<string>) {

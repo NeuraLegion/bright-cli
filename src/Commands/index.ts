@@ -1,7 +1,7 @@
-export * from './GenerateArchive';
-export * from './VersionCommand';
-export * from './RunScan';
-export * from './UploadArchive';
-export * from './RetestScan';
-export * from './StopScan';
-export * from './PollingScanStatus';
+export { GenerateArchive } from './GenerateArchive';
+export { VersionCommand } from './VersionCommand';
+export { RunScan } from './RunScan';
+export { UploadArchive } from './UploadArchive';
+export { RetestScan } from './RetestScan';
+export { StopScan } from './StopScan';
+export { PollingScanStatus } from './PollingScanStatus';

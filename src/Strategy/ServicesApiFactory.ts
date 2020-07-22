@@ -1,4 +1,4 @@
-import { Polling, PollingConfig } from './Failure/Polling';
+import { Polling, PollingConfig } from './Failure';
 import { ScanManager } from './ScanManager';
 import { UploadStrategyFactory } from './UploadStrategyFactory';
 
@@ -8,15 +8,15 @@ export class ServicesApiFactory {
     private readonly apiKey: string
   ) {}
 
-  public CreatePolling(config: PollingConfig): Polling {
+  public createPolling(config: PollingConfig): Polling {
     return new Polling(this.baseUrl, this.apiKey, config);
   }
 
-  public CreateScanManager(): ScanManager {
+  public createScanManager(): ScanManager {
     return new ScanManager(this.baseUrl, this.apiKey);
   }
 
-  public CreateUploadStrategyFactory(): UploadStrategyFactory {
+  public createUploadStrategyFactory(): UploadStrategyFactory {
     return new UploadStrategyFactory(this.baseUrl, this.apiKey);
   }
 }

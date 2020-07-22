@@ -34,7 +34,10 @@
       "@semantic-release/github",
       {
         "labels": false,
-        "releasedLabels": false
+        "releasedLabels": false,
+        "failTitle": false,
+        "failComment": false,
+        "successComment": false
       }
     ]
   ],

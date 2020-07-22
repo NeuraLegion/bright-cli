@@ -1,8 +1,7 @@
-import { Headers } from 'request';
 import { File, UploadStrategy } from './UploadStrategy';
-import { Har } from 'har-format';
 import { Discovery } from '../ScanManager';
-import { Parser } from '../../Parsers/Parser';
+import { Parser } from '../../Parsers';
+import { Har } from 'har-format';
 
 export class UploadHARStrategy extends UploadStrategy<Har> {
   constructor(
@@ -19,8 +18,7 @@ export class UploadHARStrategy extends UploadStrategy<Har> {
 
   protected async sendRequestToService(
     file: File,
-    discard: boolean,
-    headers?: Headers
+    discard: boolean
   ): Promise<string> {
     const { ids }: { ids?: string[] } = await this.proxy.post({
       uri: `/api/v1/files`,

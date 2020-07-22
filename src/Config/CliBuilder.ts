@@ -1,7 +1,8 @@
 import { sync } from 'find-up';
+import { Argv, CommandModule } from 'yargs';
+import yargs from 'yargs';
 import fs from 'fs';
 import path from 'path';
-import yargs from 'yargs';
 
 export class CliBuilder {
   private readonly cwd: string;
@@ -24,7 +25,7 @@ export class CliBuilder {
     this.config = new Map<string, any>();
     this.cwd = this.guessCWD(cwd);
     if (colors) {
-      // tslint:disable-next-line:no-var-requires
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
       require('yargonaut')
         .style('blue')
         .style('yellow', 'required')
@@ -34,10 +35,10 @@ export class CliBuilder {
     this.load();
   }
 
-  public build(...comands: yargs.CommandModule[]): yargs.Argv {
+  public build(...commands: CommandModule[]): Argv {
     const config: any = this.configToJson();
 
-    const cli: yargs.Argv = yargs
+    const cli: Argv = yargs
       .usage('Usage: $0 <command> [options] [<file | scan>]')
       .pkgConf('nexploit', this.cwd)
       .example(
@@ -46,11 +47,8 @@ export class CliBuilder {
       )
       .config(config);
 
-    return comands
-      .reduce(
-        (acc: yargs.Argv, item: yargs.CommandModule) => acc.command(item),
-        cli
-      )
+    return commands
+      .reduce((acc: Argv, item: CommandModule) => acc.command(item), cli)
       .recommendCommands()
       .demandCommand(1)
       .strict(false)
@@ -71,8 +69,10 @@ export class CliBuilder {
     const rcExt: string = path.extname(rcPath.toLowerCase());
 
     if (rcExt === '.js') {
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
       this.configure(require(rcPath));
     } else if (rcExt === '.yml' || rcExt === '.yaml') {
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
       this.configure(require('js-yaml').load(fs.readFileSync(rcPath, 'utf8')));
     } else {
       this.configure(JSON.parse(fs.readFileSync(rcPath, 'utf-8')));
@@ -86,7 +86,7 @@ export class CliBuilder {
 
     const pkgPath: string | null = sync('package.json', { cwd });
 
-    if (!!pkgPath) {
+    if (pkgPath) {
       cwd = path.dirname(pkgPath);
     }
 
@@ -97,6 +97,7 @@ export class CliBuilder {
     return [...this.config.entries()].reduce(
       (acc: any, [key, value]: [string, any]) => {
         acc[key] = value;
+
         return acc;
       },
       {}

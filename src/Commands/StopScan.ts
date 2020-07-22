@@ -1,12 +1,11 @@
-import yargs from 'yargs';
-import { FailureError } from '../Strategy/Failure/FailureError';
-import { ServicesApiFactory } from '../Strategy/ServicesApiFactory';
+import { FailureError, ServicesApiFactory } from '../Strategy';
+import { Arguments, Argv, CommandModule } from 'yargs';
 
-export class StopScan implements yargs.CommandModule {
+export class StopScan implements CommandModule {
   public readonly command = 'scan:stop [options] <scan>';
   public readonly describe = 'Stop scan by id.';
 
-  public builder(args: yargs.Argv): yargs.Argv {
+  public builder(args: Argv): Argv {
     return args
       .option('api', {
         default: 'https://nexploit.app/',
@@ -25,10 +24,10 @@ export class StopScan implements yargs.CommandModule {
       });
   }
 
-  public async handler(args: yargs.Arguments): Promise<void> {
+  public async handler(args: Arguments): Promise<void> {
     try {
       await new ServicesApiFactory(args.api as string, args.apiKey as string)
-        .CreateScanManager()
+        .createScanManager()
         .stop(args.scan as string);
 
       process.exit(0);
@@ -36,6 +35,7 @@ export class StopScan implements yargs.CommandModule {
       if (e instanceof FailureError) {
         console.error(`Scan failure during "scan:run": ${e.message}`);
         process.exit(50);
+
         return;
       }
 

@@ -1,11 +1,10 @@
-import { UploadStrategy } from './Upload/UploadStrategy';
-import { UploadHARStrategy } from './Upload/UploadHARStrategy';
-import { UploadOASStrategy } from './Upload/UploadOASStrategy';
-import { HarFileParser } from '../Parsers/HarFileParser';
-import { HarFileValidator } from '../Validators/HarFileValidator';
-import { FileExistingValidator } from '../Validators/FileExistingValidator';
-import { OasParser } from '../Parsers/OasParser';
-import { OasValidator } from '../Validators/OasValidator';
+import { UploadHARStrategy, UploadOASStrategy, UploadStrategy } from './Upload';
+import { HarFileParser, OasParser } from '../Parsers';
+import {
+  FileExistingValidator,
+  HarFileValidator,
+  OasValidator
+} from '../Validators';
 import { Discovery } from './ScanManager';
 
 export class UploadStrategyFactory {
@@ -14,7 +13,7 @@ export class UploadStrategyFactory {
     private readonly apiKey: string
   ) {}
 
-  public Create(discovery: Discovery): UploadStrategy<any> {
+  public create(discovery: Discovery): UploadStrategy<any> {
     switch (discovery) {
       case Discovery.ARCHIVE:
         return new UploadHARStrategy(

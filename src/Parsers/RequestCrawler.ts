@@ -1,9 +1,8 @@
-// @ts-ignore
-import { CaptureHar } from 'capture-har';
-import request from 'request';
-import { CoreOptions, Options } from 'request';
 import { split } from '../Utils/split';
 import { Parser } from './Parser';
+import { CaptureHar } from '@neuralegion/capture-har';
+import request, { CoreOptions, Options, OptionsWithUrl } from 'request';
+import { Stream } from 'stream';
 
 export class RequestCrawler implements Parser<Options[] | string> {
   private readonly options: CoreOptions;
@@ -48,10 +47,9 @@ export class RequestCrawler implements Parser<Options[] | string> {
 
   private executeRequest(opt: Options): Promise<void> {
     return new Promise<void>((resolve) =>
-      this.proxy
-        .start(opt)
+      ((this.proxy.start(opt as OptionsWithUrl) as unknown) as Stream)
         .once('end', resolve)
-        .once('error', (err: Error) => resolve())
+        .once('error', () => resolve())
     );
   }
 }

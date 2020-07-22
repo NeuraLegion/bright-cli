@@ -3,19 +3,16 @@ import { FailureStrategy } from './FailureStrategy';
 import { FailureError } from './FailureError';
 
 export class FailureOnFirstSeverityIssue extends FailureStrategy {
-  private readonly severity: IssueCategory;
-
-  constructor(severity: IssueCategory) {
+  constructor(private readonly severity: IssueCategory) {
     super();
-    this.severity = severity;
   }
 
-  protected exceptionOnFailure(stat: StatsIssuesCategory): never {
+  protected exceptionOnFailure(): never {
     throw new FailureError(`NexPloit found a first ${this.severity} issue.`);
   }
 
-  protected isFailureCondition(stats: StatsIssuesCategory | null): boolean {
-    return stats && stats.number > 0;
+  protected isFailureCondition(stats?: StatsIssuesCategory): boolean {
+    return stats?.number > 0;
   }
 
   protected selectStatIssueCategory(
