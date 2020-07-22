@@ -1,8 +1,8 @@
+import { Discovery } from '../ScanManager';
+import { Parser } from '../../Parsers';
 import { Headers } from 'request';
 import * as request from 'request-promise';
 import { RequestPromiseAPI } from 'request-promise';
-import { Discovery } from '../ScanManager';
-import { Parser } from '../../Parsers/Parser';
 import { basename } from 'path';
 
 export interface File {
@@ -35,23 +35,25 @@ export abstract class UploadStrategy<T> {
 
   abstract get discovery(): Discovery;
 
-  public async upload(config: {
-    path: string;
-    discard: boolean;
-    headers?: Headers;
-  }): Promise<string | never> {
-    const file: File = await this.getRequestOptions(config.path);
-    return this.sendRequestToService(file, config.discard, config.headers);
-  }
-
   protected abstract sendRequestToService(
     file: File,
     discard: boolean,
     headers?: Headers
   ): Promise<string | never>;
 
+  public async upload(config: {
+    path: string;
+    discard: boolean;
+    headers?: Headers;
+  }): Promise<string | never> {
+    const file: File = await this.getRequestOptions(config.path);
+
+    return this.sendRequestToService(file, config.discard, config.headers);
+  }
+
   protected async getRequestOptions(filePath: string): Promise<File | never> {
     const value: T = await this.fileParser.parse(filePath);
+
     return {
       value: Buffer.from(JSON.stringify(value)),
       options: {

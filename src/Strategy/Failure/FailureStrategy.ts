@@ -1,7 +1,15 @@
 import { StatsIssuesCategory } from './Polling';
 
 export abstract class FailureStrategy {
-  protected constructor() {}
+  protected abstract exceptionOnFailure(
+    stat?: StatsIssuesCategory
+  ): never | void;
+
+  protected abstract isFailureCondition(stats?: StatsIssuesCategory): boolean;
+
+  protected abstract selectStatIssueCategory(
+    issuesStats: StatsIssuesCategory[]
+  ): StatsIssuesCategory;
 
   public async execute(
     statsIssuesCategories: StatsIssuesCategory[]
@@ -13,16 +21,4 @@ export abstract class FailureStrategy {
       this.exceptionOnFailure(stat);
     }
   }
-
-  protected abstract exceptionOnFailure(
-    stat: StatsIssuesCategory
-  ): never | void;
-
-  protected abstract isFailureCondition(
-    stats: StatsIssuesCategory | null
-  ): boolean;
-
-  protected abstract selectStatIssueCategory(
-    issuesStats: StatsIssuesCategory[]
-  ): StatsIssuesCategory;
 }

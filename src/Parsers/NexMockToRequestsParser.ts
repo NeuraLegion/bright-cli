@@ -1,7 +1,7 @@
+import { Parser } from './Parser';
 import { Options } from 'request';
 import { Readable } from 'stream';
 import { URL } from 'url';
-import { Parser } from './Parser';
 
 export interface Headers {
   [key: string]: string | string[];
@@ -24,18 +24,18 @@ export interface FormData {
 }
 
 export enum MockRequestType {
-  buffer = 'buffer',
-  json = 'json',
-  multipart = 'multipart',
-  file = 'file',
-  stream = 'stream',
-  form_urlencoded = 'form_urlencoded',
-  text = 'text'
+  BUFFER = 'buffer',
+  JSON = 'json',
+  MULTIPART = 'multipart',
+  FILE = 'file',
+  STREAM = 'stream',
+  FORM_URLENCODED = 'form_urlencoded',
+  TEXT = 'text'
 }
 
 export type SimpleBodyType = Exclude<
   MockRequestType,
-  MockRequestType.multipart & MockRequestType.form_urlencoded
+  MockRequestType.MULTIPART & MockRequestType.FORM_URLENCODED
 >;
 
 export interface GenericMockRequest<T extends MockRequestType> {
@@ -54,25 +54,25 @@ export interface SimpleTextMockRequest<T extends SimpleBodyType>
 }
 
 export interface FileMockRequest
-  extends SimpleTextMockRequest<MockRequestType.file> {
+  extends SimpleTextMockRequest<MockRequestType.FILE> {
   readonly mimeType: string;
 
   readonly fileName: string;
 }
 
 export interface FormUrlencodedMockRequest
-  extends GenericMockRequest<MockRequestType.form_urlencoded> {
+  extends GenericMockRequest<MockRequestType.FORM_URLENCODED> {
   readonly body: {
     readonly [key: string]: string;
   };
 }
 
 export type MultiPartField =
-  | SimpleTextMockRequest<MockRequestType.text>
+  | SimpleTextMockRequest<MockRequestType.TEXT>
   | FileMockRequest;
 
 export interface MultiPartMockRequest
-  extends GenericMockRequest<MockRequestType.multipart> {
+  extends GenericMockRequest<MockRequestType.MULTIPART> {
   readonly body: {
     readonly [key: string]: MultiPartField | MultiPartField[];
   };
@@ -82,7 +82,7 @@ export type MockRequest =
   | FormUrlencodedMockRequest
   | MultiPartMockRequest
   | FileMockRequest
-  | SimpleTextMockRequest<Exclude<SimpleBodyType, MockRequestType.file>>;
+  | SimpleTextMockRequest<Exclude<SimpleBodyType, MockRequestType.FILE>>;
 
 export class NexMockToRequestsParser implements Parser<string, Options[]> {
   constructor(
@@ -92,6 +92,7 @@ export class NexMockToRequestsParser implements Parser<string, Options[]> {
 
   public async parse(path: string): Promise<Options[]> {
     const mocks: MockRequest[] = await this.nexMockParser.parse(path);
+
     return mocks.map((item: MockRequest) => this.mockToRequestOptions(item));
   }
 
@@ -103,30 +104,30 @@ export class NexMockToRequestsParser implements Parser<string, Options[]> {
     };
 
     switch (mock.type) {
-      case MockRequestType.file:
-      case MockRequestType.stream:
-      case MockRequestType.buffer:
+      case MockRequestType.FILE:
+      case MockRequestType.STREAM:
+      case MockRequestType.BUFFER:
         return {
           ...defaultOptions,
           body: Buffer.from(mock.body, 'base64')
         };
-      case MockRequestType.json:
+      case MockRequestType.JSON:
         return {
           ...defaultOptions,
           json: true,
           body: JSON.parse(mock.body)
         };
-      case MockRequestType.multipart:
+      case MockRequestType.MULTIPART:
         return {
           ...defaultOptions,
           formData: this.mockFormDataPayload(mock as MultiPartMockRequest)
         };
-      case MockRequestType.form_urlencoded:
+      case MockRequestType.FORM_URLENCODED:
         return {
           ...defaultOptions,
           form: mock.body
         };
-      case MockRequestType.text:
+      case MockRequestType.TEXT:
       default:
         return {
           ...defaultOptions,
@@ -144,6 +145,7 @@ export class NexMockToRequestsParser implements Parser<string, Options[]> {
         acc[key] = Array.isArray(value)
           ? value.map(this.parseFormDataValue.bind(this))
           : this.parseFormDataValue(value);
+
         return acc;
       },
       {}
@@ -151,9 +153,9 @@ export class NexMockToRequestsParser implements Parser<string, Options[]> {
   }
 
   private parseFormDataValue(
-    value: SimpleTextMockRequest<MockRequestType.text> | FileMockRequest
+    value: SimpleTextMockRequest<MockRequestType.TEXT> | FileMockRequest
   ) {
-    return value.type !== MockRequestType.text
+    return value.type !== MockRequestType.TEXT
       ? {
           value: Buffer.from(value.body, 'base64'),
           options: {
@@ -166,9 +168,11 @@ export class NexMockToRequestsParser implements Parser<string, Options[]> {
 
   private mergeHeaders(source: Headers, mockHeaders: Headers): Headers {
     const headers: Headers = { ...mockHeaders, ...source };
+
     return Object.entries(headers).reduce(
       (common: Headers, [key, value]: [string, string | string[]]) => {
         common[key] = Array.isArray(value) ? value.join('; ') : value;
+
         return common;
       },
       {}
@@ -176,7 +180,8 @@ export class NexMockToRequestsParser implements Parser<string, Options[]> {
   }
 
   private buildUrl(urlOrPath: string = '/'): string {
-    const path: RegExp = /^https?:\/\//i;
+    const path = /^https?:\/\//i;
+
     return path.test(urlOrPath)
       ? urlOrPath
       : new URL(urlOrPath, this.options.url).toString();

@@ -1,13 +1,12 @@
-import yargs from 'yargs';
-import { InlineHeaders } from '../Parsers/InlineHeaders';
-import { Discovery } from '../Strategy/ScanManager';
-import { ServicesApiFactory } from '../Strategy/ServicesApiFactory';
+import { InlineHeaders } from '../Parsers';
+import { Discovery, ServicesApiFactory } from '../Strategy';
+import { Arguments, Argv, CommandModule } from 'yargs';
 
-export class UploadArchive implements yargs.CommandModule {
+export class UploadArchive implements CommandModule {
   public readonly command = 'archive:upload [options] <file>';
   public readonly describe = 'Uploads a archive to nexploit.';
 
-  public builder(args: yargs.Argv): yargs.Argv {
+  public builder(args: Argv): Argv {
     return args
       .option('api', {
         default: 'https://nexploit.app/',
@@ -53,14 +52,14 @@ export class UploadArchive implements yargs.CommandModule {
       .group(['header'], 'OAS Options');
   }
 
-  public async handler(args: yargs.Arguments): Promise<void> {
+  public async handler(args: Arguments): Promise<void> {
     try {
       const archiveId: string = await new ServicesApiFactory(
         args.api as string,
         args.apiKey as string
       )
-        .CreateUploadStrategyFactory()
-        .Create(args.discovery as Discovery)
+        .createUploadStrategyFactory()
+        .create(args.discovery as Discovery)
         .upload({
           path: args.file as string,
           discard: args.discard as boolean,

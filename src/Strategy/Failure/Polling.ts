@@ -1,13 +1,13 @@
+import { FailureStrategy } from './FailureStrategy';
 import * as request from 'request-promise';
 import { RequestPromiseAPI } from 'request-promise';
-import { FailureStrategy } from './FailureStrategy';
 import ms from 'ms';
 
 export enum FailureOnType {
-  firstIssue = 'first-issue',
-  firstMediumSeverityIssue = 'first-medium-severity-issue',
-  firstHighSeverityIssue = 'first-high-severity-issue',
-  none = 'none'
+  FIRST_ISSUE = 'first-issue',
+  FIRST_MEDIUM_SEVERITY_ISSUE = 'first-medium-severity-issue',
+  FIRST_HIGH_SEVERITY_ISSUE = 'first-high-severity-issue',
+  NONE = 'none'
 }
 
 export interface PollingConfig {
@@ -17,9 +17,9 @@ export interface PollingConfig {
 }
 
 export enum IssueCategory {
-  medium = 'Medium',
-  high = 'High',
-  low = 'Low'
+  MEDIUM = 'Medium',
+  HIGH = 'High',
+  LOW = 'Low'
 }
 
 export interface StatsIssuesCategory {
@@ -28,13 +28,13 @@ export interface StatsIssuesCategory {
 }
 
 export enum ScanStatus {
-  running = 'running',
-  pending = 'pending',
-  stopped = 'stopped',
-  failed = 'failed',
-  done = 'done',
-  scheduled = 'scheduled',
-  queued = 'queued'
+  RUNNING = 'running',
+  PENDING = 'pending',
+  STOPPED = 'stopped',
+  FAILED = 'failed',
+  DONE = 'done',
+  SCHEDULED = 'scheduled',
+  QUEUED = 'queued'
 }
 
 export interface ScanState {
@@ -91,6 +91,13 @@ export class Polling {
     }
   }
 
+  protected getStatus(): Promise<ScanState> {
+    return this.proxy.get({
+      uri: `/api/v1/scans/${this.options.scanId}`,
+      json: true
+    }) as any;
+  }
+
   private async *poll(): AsyncIterableIterator<StatsIssuesCategory[]> {
     while (this.active) {
       await this.delay();
@@ -111,6 +118,7 @@ export class Polling {
       if (!milliseconds) {
         return;
       }
+
       return milliseconds;
     } else if (typeof time === 'number') {
       return time;
@@ -119,21 +127,15 @@ export class Polling {
 
   private isRedundant(status: ScanStatus): boolean {
     return (
-      status === ScanStatus.done ||
-      status === ScanStatus.stopped ||
-      status === ScanStatus.failed
+      status === ScanStatus.DONE ||
+      status === ScanStatus.STOPPED ||
+      status === ScanStatus.FAILED
     );
   }
 
   private delay(): Promise<void> {
     const interval = this.toMilliseconds(this.options.interval) ?? 5000;
-    return new Promise<void>((resolve) => setTimeout(resolve, interval));
-  }
 
-  protected getStatus(): Promise<ScanState> {
-    return this.proxy.get({
-      uri: `/api/v1/scans/${this.options.scanId}`,
-      json: true
-    }) as any;
+    return new Promise<void>((resolve) => setTimeout(resolve, interval));
   }
 }

@@ -17,5 +17,5 @@ jobs:
           node-version: 12
       - run: npm ci -q
       - run: npm run lint
-      - run: npm run pretty
+      - run: npm run format
       - run: npm run build

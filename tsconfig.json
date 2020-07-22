@@ -1,43 +1,29 @@
 {
   "compilerOptions": {
-    "outDir": "./dist",
     "baseUrl": ".",
-    "lib": [
-      "es2018"
-    ],
+    "outDir": "dist",
+    "target": "es2015",
+    "lib": ["es2020"],
     "newLine": "LF",
-    "esModuleInterop": true,
-    "noEmitOnError": true,
     "module": "commonjs",
-    "target": "es5",
-    "sourceMap": false,
-    "resolveJsonModule": true,
-    "inlineSources": false,
-    "declaration": false,
-    "importHelpers": true,
-    "downlevelIteration": true,
-    "strict": true,
-    "noImplicitAny": true,
-    "strictNullChecks": false,
-    "suppressImplicitAnyIndexErrors": true,
-    "allowSyntheticDefaultImports": true,
     "moduleResolution": "node",
     "emitDecoratorMetadata": true,
     "experimentalDecorators": true,
-    "typeRoots": [
-      "./node_modules/@types",
-      "./typings"
-    ],
+    "strict": true,
+    "strictNullChecks": false,
+    "sourceMap": true,
     "skipLibCheck": true,
-    "types": [
-      "node",
-      "mocha",
-      "reflect-metadata"
-    ]
+    "importHelpers": true,
+    "downlevelIteration": true,
+    "esModuleInterop": true,
+    "resolveJsonModule": true,
+    "noEmitOnError": true,
+    "noUnusedLocals": true,
+    "noFallthroughCasesInSwitch": true,
+    "noUnusedParameters": true,
+    "forceConsistentCasingInFileNames": true,
+    "suppressImplicitAnyIndexErrors": true,
+    "allowSyntheticDefaultImports": true
   },
-  "exclude": [
-    "node_modules",
-    "tmp",
-    "**/*.spec.ts"
-  ]
+  "exclude": ["**/node_modules", "**/.*/", "**/dist", "**/*.spec.ts"]
 }

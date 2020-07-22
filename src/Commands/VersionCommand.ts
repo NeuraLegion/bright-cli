@@ -1,7 +1,7 @@
+import { CommandModule } from 'yargs';
 import { exec, ExecException } from 'child_process';
-import yargs from 'yargs';
 
-export class VersionCommand implements yargs.CommandModule {
+export class VersionCommand implements CommandModule {
   public readonly command = 'version';
   public readonly describe = 'Prints NexPloit version this project uses.';
 

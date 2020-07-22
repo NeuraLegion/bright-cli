@@ -1,24 +1,25 @@
-import { writeFile as writeFileCb } from 'fs';
-import { NexMockToRequestsParser } from '../Parsers/NexMockToRequestsParser';
-import { RequestCrawler } from '../Parsers/RequestCrawler';
-import yargs from 'yargs';
-import { InlineHeaders } from '../Parsers/InlineHeaders';
-import { basename } from 'path';
-import { Options } from 'request';
-import { promisify } from 'util';
+import {
+  InlineHeaders,
+  NexMockParser,
+  NexMockToRequestsParser,
+  RequestCrawler
+} from '../Parsers';
 import { split } from '../Utils/split';
 import { generatorFileNameFactory } from '../Utils/generateFileName';
-import { NexMockParser } from '../Parsers/NexMockParser';
-import { NexMockValidator } from '../Validators/NexMockValidator';
-import { FileExistingValidator } from '../Validators/FileExistingValidator';
+import { FileExistingValidator, NexMockValidator } from '../Validators';
+import { Options } from 'request';
+import { Arguments, Argv, CommandModule } from 'yargs';
+import { promisify } from 'util';
+import { basename } from 'path';
+import { writeFile as writeFileOld } from 'fs';
 
-const writeFile = promisify(writeFileCb);
+const writeFile = promisify(writeFileOld);
 
-export class GenerateArchive implements yargs.CommandModule {
+export class GenerateArchive implements CommandModule {
   public readonly command = 'archive:generate';
   public readonly describe = 'Generates a new archive on base unit-tests.';
 
-  public builder(args: yargs.Argv): yargs.Argv {
+  public builder(args: Argv): Argv {
     return args
       .option('mockfile', {
         alias: 'm',
@@ -65,7 +66,7 @@ export class GenerateArchive implements yargs.CommandModule {
       });
   }
 
-  public async handler(args: yargs.Arguments): Promise<void> {
+  public async handler(args: Arguments): Promise<void> {
     try {
       const nexMockRequestsParser: NexMockToRequestsParser = new NexMockToRequestsParser(
         {
@@ -102,6 +103,7 @@ export class GenerateArchive implements yargs.CommandModule {
           await writeFile(fileName, harFile, {
             encoding: 'utf8'
           });
+
           return fileName;
         })
       );

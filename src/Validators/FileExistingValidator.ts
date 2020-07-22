@@ -1,9 +1,9 @@
-import { access as accessCb, constants } from 'fs';
+import { Validator } from './Validator';
+import { access as accessOld, constants } from 'fs';
 import { basename } from 'path';
 import { promisify } from 'util';
-import { Validator } from './Validator';
 
-const access = promisify(accessCb);
+const access = promisify(accessOld);
 
 export class FileExistingValidator implements Validator<string> {
   public async validate(path: string): Promise<void | never> {

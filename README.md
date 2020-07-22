@@ -18,14 +18,14 @@ Some NexPloit CLI features:
     + [Upload Archive](#-upload-archive)
     + [Generate Archive based on NexMock](#-generate-archive-based-on-nexmock)
     + [Run Scan](#-run-scan)
-    + [Check Scan's status](#-check-scans-status)
+    + [Check Scan's status](#-check-scan-status)
     + [Stop Scan](#-stop-scan)
     + [Retest Scan](#-retest-scan)
  * [License](#-license)
 
 ## Installing NexPloit CLI
 
-Major versions of NexPloit CLI follow the supported major version of NexPloit.
+Major versions of NexPloit CLI follows the supported major version of NexPloit.
 
 Install the CLI using the npm package manager:
 

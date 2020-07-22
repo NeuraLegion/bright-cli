@@ -1,9 +1,9 @@
-import { Entry, Har } from 'har-format';
 import { Validator } from './Validator';
+import harSchema from '../Utils/har-schema';
+import { Entry, Har } from 'har-format';
 import Ajv from 'ajv';
 import { ValidateFunction } from 'ajv';
 import { parse, Url } from 'url';
-import harSchema from '../Utils/har-schema';
 
 export class HarFileValidator implements Validator<Har> {
   private readonly ajv: Ajv.Ajv;

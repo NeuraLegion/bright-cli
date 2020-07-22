@@ -1,7 +1,7 @@
+import { Validator } from './Validator';
 import Ajv from 'ajv';
 import { ValidateFunction } from 'ajv';
 import { openapiV1, openapiV2, openapiV3 } from 'openapi-schemas';
-import { Validator } from './Validator';
 
 export class OasValidator implements Validator<any> {
   private readonly ajv: Ajv.Ajv;
@@ -15,8 +15,10 @@ export class OasValidator implements Validator<any> {
       async: true,
       schemaId: 'auto'
     });
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
     const ajvFormats = require('ajv/lib/compile/formats.js');
     this.ajv.addFormat('uriref', ajvFormats.full['uri-reference']);
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
     this.ajv.addMetaSchema(require('ajv/lib/refs/json-schema-draft-04.json'));
     (this.ajv as any)._refs['http://json-schema.org/schema'] =
       'http://json-schema.org/draft-04/schema'; // optional, using unversioned URI is out of spec

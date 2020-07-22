@@ -1,13 +1,12 @@
-import yargs from 'yargs';
-import { FailureError } from '../Strategy/Failure/FailureError';
-import { ServicesApiFactory } from '../Strategy/ServicesApiFactory';
+import { FailureError, ServicesApiFactory } from '../Strategy';
+import { Arguments, Argv, CommandModule } from 'yargs';
 
-export class RetestScan implements yargs.CommandModule {
+export class RetestScan implements CommandModule {
   public readonly command = 'scan:retest [options] <scan>';
   public readonly describe =
     'Request to start a new scan using the same configuration as an existing scan, by scan ID.';
 
-  public builder(args: yargs.Argv): yargs.Argv {
+  public builder(args: Argv): Argv {
     return args
       .option('api', {
         default: 'https://nexploit.app/',
@@ -27,13 +26,13 @@ export class RetestScan implements yargs.CommandModule {
       });
   }
 
-  public async handler(args: yargs.Arguments): Promise<void> {
+  public async handler(args: Arguments): Promise<void> {
     try {
       const scanId: string = await new ServicesApiFactory(
         args.api as string,
         args.apiKey as string
       )
-        .CreateScanManager()
+        .createScanManager()
         .retest(args.scan as string);
 
       console.log(scanId);
@@ -43,6 +42,7 @@ export class RetestScan implements yargs.CommandModule {
       if (e instanceof FailureError) {
         console.error(`Scan failure during "scan:run": ${e.message}`);
         process.exit(50);
+
         return;
       }
 

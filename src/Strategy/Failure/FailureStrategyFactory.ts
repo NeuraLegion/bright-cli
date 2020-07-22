@@ -4,15 +4,15 @@ import { FailureOnFirstIssue } from './FailureOnFirstIssue';
 import { FailureOnFirstSeverityIssue } from './FailureOnFirstSeverityIssue';
 
 export class FailureStrategyFactory {
-  public Create(failureType: FailureOnType): FailureStrategy {
+  public create(failureType: FailureOnType): FailureStrategy {
     switch (failureType) {
-      case FailureOnType.firstIssue:
+      case FailureOnType.FIRST_ISSUE:
         return new FailureOnFirstIssue();
-      case FailureOnType.firstHighSeverityIssue:
-        return new FailureOnFirstSeverityIssue(IssueCategory.high);
-      case FailureOnType.firstMediumSeverityIssue:
-        return new FailureOnFirstSeverityIssue(IssueCategory.medium);
-      case FailureOnType.none:
+      case FailureOnType.FIRST_HIGH_SEVERITY_ISSUE:
+        return new FailureOnFirstSeverityIssue(IssueCategory.HIGH);
+      case FailureOnType.FIRST_MEDIUM_SEVERITY_ISSUE:
+        return new FailureOnFirstSeverityIssue(IssueCategory.MEDIUM);
+      case FailureOnType.NONE:
       default:
         return null;
     }

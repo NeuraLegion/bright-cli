@@ -7,12 +7,12 @@ export class FailureOnFirstIssue extends FailureStrategy {
     super();
   }
 
-  protected exceptionOnFailure(stat: StatsIssuesCategory): never {
+  protected exceptionOnFailure(): never {
     throw new FailureError(`NexPloit found a first issue.`);
   }
 
-  protected isFailureCondition(stats: StatsIssuesCategory | null): boolean {
-    return stats && stats.number > 0;
+  protected isFailureCondition(stats?: StatsIssuesCategory): boolean {
+    return stats?.number > 0;
   }
 
   protected selectStatIssueCategory(
