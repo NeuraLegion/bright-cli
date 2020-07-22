@@ -38,7 +38,8 @@ export enum TestType {
   SECRET_TOKENS = 'secret_tokens',
   HRS = 'hrs',
   HTML_INJECTION = 'html_injection',
-  OPEN_DATABASE = 'open_database'
+  OPEN_DATABASE = 'open_database',
+  OPEN_BUCKETS = 'open_buckets'
 }
 
 export enum Module {
