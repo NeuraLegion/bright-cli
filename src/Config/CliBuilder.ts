@@ -1,6 +1,5 @@
 import { sync } from 'find-up';
 import { Argv, CommandModule } from 'yargs';
-import yargs from 'yargs';
 import fs from 'fs';
 import path from 'path';
 
@@ -38,7 +37,8 @@ export class CliBuilder {
   public build(...commands: CommandModule[]): Argv {
     const config: any = this.configToJson();
 
-    const cli: Argv = yargs
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const cli: Argv = require('yargs')
       .usage('Usage: $0 <command> [options] [<file | scan>]')
       .pkgConf('nexploit', this.cwd)
       .example(
