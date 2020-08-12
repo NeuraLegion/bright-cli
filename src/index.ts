@@ -16,13 +16,15 @@ const cli: CliBuilder = new CliBuilder({
 });
 
 cli
-  .build(
-    new VersionCommand(),
-    new GenerateArchive(),
-    new PollingScanStatus(),
-    new RunScan(),
-    new RetestScan(),
-    new StopScan(),
-    new UploadArchive()
-  )
+  .build({
+    commands: [
+      new VersionCommand(),
+      new GenerateArchive(),
+      new PollingScanStatus(),
+      new RunScan(),
+      new RetestScan(),
+      new StopScan(),
+      new UploadArchive()
+    ]
+  })
   .wrap(null).argv;

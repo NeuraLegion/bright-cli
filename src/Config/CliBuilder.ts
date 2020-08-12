@@ -1,18 +1,15 @@
+import { CliConfig, ConfigReader } from './ConfigReader';
+import { DefaultConfigReader } from './DefaultConfigReader';
 import { sync } from 'find-up';
 import { Argv, CommandModule } from 'yargs';
-import fs from 'fs';
 import path from 'path';
 
 export class CliBuilder {
-  private readonly cwd: string;
-  private readonly config: Map<string, any>;
-  private readonly rcOptions: string[] = [
-    '.nexploitrc',
-    '.nexploitrc.json',
-    '.nexploitrc.yml',
-    '.nexploitrc.yaml',
-    'nexploit.config.js'
-  ];
+  private _cwd: string;
+
+  get cwd(): string {
+    return this._cwd;
+  }
 
   constructor({
     cwd = process.cwd(),
@@ -21,8 +18,7 @@ export class CliBuilder {
     cwd: string;
     colors: boolean;
   }) {
-    this.config = new Map<string, any>();
-    this.cwd = this.guessCWD(cwd);
+    this._cwd = this.guessCWD(cwd);
     if (colors) {
       // eslint-disable-next-line @typescript-eslint/no-var-requires
       require('yargonaut')
@@ -31,16 +27,21 @@ export class CliBuilder {
         .helpStyle('green')
         .errorsStyle('red');
     }
-    this.load();
   }
 
-  public build(...commands: CommandModule[]): Argv {
-    const config: any = this.configToJson();
+  public build({
+    commands,
+    configReader = new DefaultConfigReader(this.cwd)
+  }: {
+    commands: CommandModule[];
+    configReader?: ConfigReader;
+  }): Argv {
+    const config: CliConfig = configReader.load().toJSON();
 
     // eslint-disable-next-line @typescript-eslint/no-var-requires
     const cli: Argv = require('yargs')
       .usage('Usage: $0 <command> [options] [<file | scan>]')
-      .pkgConf('nexploit', this.cwd)
+      .pkgConf('nexploit', this._cwd)
       .example(
         '$0 archive:generate --mockfile=.mockfile --name=archive.har',
         'output har file on base your mock requests'
@@ -57,30 +58,6 @@ export class CliBuilder {
       .alias('h', 'help');
   }
 
-  private load(): this {
-    const rcPath: string | null = sync(this.rcOptions, {
-      cwd: this.cwd
-    });
-
-    if (!rcPath) {
-      return;
-    }
-
-    const rcExt: string = path.extname(rcPath.toLowerCase());
-
-    if (rcExt === '.js') {
-      // eslint-disable-next-line @typescript-eslint/no-var-requires
-      this.configure(require(rcPath));
-    } else if (rcExt === '.yml' || rcExt === '.yaml') {
-      // eslint-disable-next-line @typescript-eslint/no-var-requires
-      this.configure(require('js-yaml').load(fs.readFileSync(rcPath, 'utf8')));
-    } else {
-      this.configure(JSON.parse(fs.readFileSync(rcPath, 'utf-8')));
-    }
-
-    return this;
-  }
-
   private guessCWD(cwd: string): string {
     cwd = cwd || process.env.NEXPLOIT_CWD || process.cwd();
 
@@ -91,22 +68,5 @@ export class CliBuilder {
     }
 
     return cwd;
-  }
-
-  private configToJson(): any {
-    return [...this.config.entries()].reduce(
-      (acc: any, [key, value]: [string, any]) => {
-        acc[key] = value;
-
-        return acc;
-      },
-      {}
-    );
-  }
-
-  private configure(map: { [key: string]: any }): void {
-    Object.entries(map).map(([key, value]: [string, any]) =>
-      this.config.set(key, value)
-    );
   }
 }
