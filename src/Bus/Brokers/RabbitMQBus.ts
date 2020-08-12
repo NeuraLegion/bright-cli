@@ -1,8 +1,8 @@
-import { Handler, HandlerType } from './Handler';
-import { Event, EventType } from './Event';
-import { HandlerFactory } from './HandlerFactory';
-import { Bus } from './Bus';
-import { Proxy } from './Proxy/Proxy';
+import { Handler, HandlerType } from '../Handler';
+import { Event, EventType } from '../Event';
+import { HandlerFactory } from '../Handlers/HandlerFactory';
+import { Bus } from '../Bus';
+import { Proxy } from '../Proxy/Proxy';
 import { AmqpConnectionManager, ChannelWrapper } from 'amqp-connection-manager';
 import { Channel, ConsumeMessage } from 'amqplib';
 import debug, { Debugger } from 'debug';
