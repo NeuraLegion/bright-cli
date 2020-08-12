@@ -96,7 +96,8 @@ export class GenerateArchive implements CommandModule {
         chunks.map(async (items: Options[]) => {
           const crawler: RequestCrawler = new RequestCrawler({
             timeout: args.timeout as number,
-            pool: args.pool as number
+            pool: args.pool as number,
+            proxyUrl: args.proxy as string
           });
           const harFile: string = await crawler.parse(items);
           const fileName: string = generateFileName(args.archive as string);

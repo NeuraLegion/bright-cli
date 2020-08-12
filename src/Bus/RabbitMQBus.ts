@@ -1,12 +1,9 @@
 import { Handler, HandlerType } from './Handler';
-import { Event } from './Event';
+import { Event, EventType } from './Event';
 import { HandlerFactory } from './HandlerFactory';
 import { Bus } from './Bus';
-import {
-  AmqpConnectionManager,
-  AmqpConnectionManagerOptions,
-  ChannelWrapper
-} from 'amqp-connection-manager';
+import { Proxy } from './Proxy/Proxy';
+import { AmqpConnectionManager, ChannelWrapper } from 'amqp-connection-manager';
 import { Channel, ConsumeMessage } from 'amqplib';
 import debug, { Debugger } from 'debug';
 import { ok } from 'assert';
@@ -14,14 +11,13 @@ import { ok } from 'assert';
 const log: Debugger = debug('nexploit-cli:bus');
 
 export interface RabbitMQBusOptions {
-  urls?: string[];
+  url?: string;
   exchange?: string;
   clientQueue?: string;
   deadLetterExchange?: string;
   deadLetterQueue?: string;
-  socketOptions?: AmqpConnectionManagerOptions & {
-    connectTimeout?: number;
-  };
+  connectTimeout?: number;
+  proxyUrl?: string;
 }
 
 export class RabbitMQBus implements Bus {
@@ -49,26 +45,36 @@ export class RabbitMQBus implements Bus {
       return;
     }
 
-    this.client = (await import('amqp-connection-manager')).connect(
-      this.options.urls,
-      this.options.socketOptions
+    const proxy: Proxy | undefined = this.options.proxyUrl
+      ? new Proxy(this.options.proxyUrl)
+      : undefined;
+
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    this.client = await require('amqp-connection-manager').connect(
+      [this.options.url],
+      {
+        connectionOptions: {
+          socket: await proxy?.open(this.options.url)
+        }
+      }
     );
 
     let connectTimer: NodeJS.Timeout;
 
     this.client.on('connect', () => clearTimeout(connectTimer));
 
-    if (
-      typeof this.options?.socketOptions?.connectTimeout === 'number' &&
-      !connectTimer
-    ) {
+    if (typeof this.options?.connectTimeout === 'number' && !connectTimer) {
       connectTimer = setTimeout(
         () => void this.destroy(),
-        this.options.socketOptions.connectTimeout
+        this.options.connectTimeout
       );
     }
 
-    await this.createConsumerChannel();
+    try {
+      await this.createConsumerChannel();
+    } catch (err) {
+      console.error(err);
+    }
 
     log('Event bus connected to Redis server: %j', this.options);
   }
@@ -81,15 +87,18 @@ export class RabbitMQBus implements Bus {
     );
     ok(instance, `Cannot create instance of "${handler.name}" handler.`);
 
-    const eventName: string | undefined = Reflect.getMetadata(Event, handler);
+    const eventType: EventType | undefined = Reflect.getMetadata(
+      Event,
+      handler
+    );
     ok(
-      eventName,
+      eventType,
       `Cannot determine event that "${handler.name}" handler can process.`
     );
 
-    this.handlers.set(eventName, instance);
+    this.handlers.set(eventType.name, instance);
 
-    await this.subscribeTo(eventName);
+    await this.subscribeTo(eventType.name);
   }
 
   public async publish<T extends Event>(...events: T[]): Promise<void> {

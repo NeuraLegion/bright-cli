@@ -1,7 +1,8 @@
 import { FailureStrategy } from './FailureStrategy';
-import * as request from 'request-promise';
+import request from 'request-promise';
 import { RequestPromiseAPI } from 'request-promise';
 import ms from 'ms';
+import { SocksProxyAgent } from 'socks-proxy-agent';
 
 export enum FailureOnType {
   FIRST_ISSUE = 'first-issue',
@@ -14,6 +15,9 @@ export interface PollingConfig {
   timeout?: number | string;
   interval?: number;
   scanId?: string;
+  baseUrl: string;
+  proxyUrl?: string;
+  apiKey: string;
 }
 
 export enum IssueCategory {
@@ -44,12 +48,6 @@ export interface ScanState {
 
 export class Polling {
   private readonly proxy: RequestPromiseAPI;
-  private readonly options: PollingConfig;
-  private readonly proxyConfig: {
-    strictSSL: boolean;
-    headers: { Authorization: string };
-    baseUrl: string;
-  };
 
   private _active = true;
 
@@ -57,14 +55,13 @@ export class Polling {
     return this._active;
   }
 
-  constructor(baseUrl: string, apiKey: string, options: PollingConfig) {
-    this.proxyConfig = {
+  constructor(private readonly options: PollingConfig) {
+    const { baseUrl, proxyUrl, apiKey } = options;
+    this.proxy = request.defaults({
       baseUrl,
-      strictSSL: false,
-      headers: { Authorization: `Api-Key ${apiKey}` }
-    };
-    this.proxy = request.defaults(this.proxyConfig);
-    this.options = options;
+      agent: proxyUrl ? new SocksProxyAgent(proxyUrl) : undefined,
+      headers: { authorization: `Api-Key ${apiKey}` }
+    });
   }
 
   public async check(strategy: FailureStrategy): Promise<void> {
@@ -91,18 +88,14 @@ export class Polling {
     }
   }
 
-  protected getStatus(): Promise<ScanState> {
-    return this.proxy.get({
-      uri: `/api/v1/scans/${this.options.scanId}`,
-      json: true
-    }) as any;
-  }
-
   private async *poll(): AsyncIterableIterator<StatsIssuesCategory[]> {
     while (this.active) {
       await this.delay();
 
-      const { status, issuesBySeverity }: ScanState = await this.getStatus();
+      const { status, issuesBySeverity }: ScanState = await this.proxy.get({
+        uri: `/api/v1/scans/${this.options.scanId}`,
+        json: true
+      });
 
       if (this.isRedundant(status)) {
         break;

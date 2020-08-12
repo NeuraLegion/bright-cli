@@ -1,8 +1,9 @@
 import { Discovery } from '../ScanManager';
 import { Parser } from '../../Parsers';
 import { Headers } from 'request';
-import * as request from 'request-promise';
+import request from 'request-promise';
 import { RequestPromiseAPI } from 'request-promise';
+import { SocksProxyAgent } from 'socks-proxy-agent';
 import { basename } from 'path';
 
 export interface File {
@@ -10,30 +11,32 @@ export interface File {
   options: { filename: string; contentType: string };
 }
 
+export interface UploadStrategyOptions<T> {
+  baseUrl: string;
+  apiKey: string;
+  fileParser: Parser<string, T>;
+  proxyUrl?: string;
+}
+
 export abstract class UploadStrategy<T> {
-  protected readonly proxy: RequestPromiseAPI;
-  private readonly proxyConfig: {
-    strictSSL: boolean;
-    headers: { Authorization: string };
-    baseUrl: string;
-  };
+  protected readonly client: RequestPromiseAPI;
   private readonly fileParser: Parser<string, T>;
 
-  protected constructor(
-    baseUrl: string,
-    apiKey: string,
-    fileParser: Parser<string, T>
-  ) {
-    this.proxyConfig = {
-      baseUrl,
-      strictSSL: false,
-      headers: { Authorization: `Api-Key ${apiKey}` }
-    };
-    this.fileParser = fileParser;
-    this.proxy = request.defaults(this.proxyConfig);
-  }
-
   abstract get discovery(): Discovery;
+
+  protected constructor({
+    baseUrl,
+    apiKey,
+    proxyUrl,
+    fileParser
+  }: UploadStrategyOptions<T>) {
+    this.fileParser = fileParser;
+    this.client = request.defaults({
+      baseUrl,
+      agent: proxyUrl ? new SocksProxyAgent(proxyUrl) : undefined,
+      headers: { authorization: `Api-Key ${apiKey}` }
+    });
+  }
 
   protected abstract sendRequestToService(
     file: File,

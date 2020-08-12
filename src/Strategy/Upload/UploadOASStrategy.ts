@@ -1,15 +1,14 @@
-import { File, UploadStrategy } from './UploadStrategy';
+import { File, UploadStrategy, UploadStrategyOptions } from './UploadStrategy';
 import { Discovery } from '../ScanManager';
-import { Parser } from '../../Parsers';
 import { Headers } from 'request';
 
 export class UploadOASStrategy extends UploadStrategy<any> {
-  constructor(baseUrl: string, apiKey: string, fileParser: Parser<string>) {
-    super(baseUrl, apiKey, fileParser);
-  }
-
   get discovery(): Discovery {
     return Discovery.OAS;
+  }
+
+  constructor(options: UploadStrategyOptions<any>) {
+    super(options);
   }
 
   protected async sendRequestToService(
@@ -17,7 +16,7 @@ export class UploadOASStrategy extends UploadStrategy<any> {
     discard: boolean,
     headers?: Headers
   ): Promise<string> {
-    const { id }: { id?: string } = await this.proxy.post({
+    const { id }: { id?: string } = await this.client.post({
       uri: `/api/v1/specs`,
       qs: { discard },
       json: true,

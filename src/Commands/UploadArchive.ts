@@ -20,6 +20,9 @@ export class UploadArchive implements CommandModule {
         requiresArg: true,
         demandOption: true
       })
+      .option('proxy', {
+        describe: 'SOCKS4 or SOCKS5 url to proxy all traffic'
+      })
       .option('discovery', {
         alias: 't',
         requiresArg: true,
@@ -56,7 +59,8 @@ export class UploadArchive implements CommandModule {
     try {
       const archiveId: string = await new ServicesApiFactory(
         args.api as string,
-        args.apiKey as string
+        args.apiKey as string,
+        args.proxy as string
       )
         .createUploadStrategyFactory()
         .create(args.discovery as Discovery)

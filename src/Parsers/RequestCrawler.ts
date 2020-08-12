@@ -1,30 +1,34 @@
 import { split } from '../Utils/split';
 import { Parser } from './Parser';
 import { CaptureHar } from '@neuralegion/capture-har';
-import request, { CoreOptions, Options, OptionsWithUrl } from 'request';
+import request, { Options, OptionsWithUrl } from 'request';
+import { SocksProxyAgent } from 'socks-proxy-agent';
 import { Stream } from 'stream';
 
 export class RequestCrawler implements Parser<Options[] | string> {
-  private readonly options: CoreOptions;
   private readonly proxy: CaptureHar;
   private readonly pool: number;
 
   constructor({
     pool = 250,
     timeout = 5000,
+    proxyUrl,
     maxRedirects = 20
   }: {
     timeout: number;
     pool?: number;
+    proxyUrl?: string;
     maxRedirects?: number;
   }) {
-    this.options = {
-      timeout,
-      maxRedirects,
-      strictSSL: false
-    };
     this.pool = pool;
-    this.proxy = new CaptureHar(request.defaults(this.options));
+    this.proxy = new CaptureHar(
+      request.defaults({
+        timeout,
+        maxRedirects,
+        strictSSL: false,
+        agent: proxyUrl ? new SocksProxyAgent(proxyUrl) : undefined
+      })
+    );
   }
 
   public async parse(data: Options[]): Promise<string> {

@@ -1,4 +1,5 @@
 import request, { RequestPromiseAPI } from 'request-promise';
+import { SocksProxyAgent } from 'socks-proxy-agent';
 
 export enum Discovery {
   CRAWLER = 'crawler',
@@ -81,19 +82,21 @@ export interface ScanConfig extends RunStrategyConfig {
 
 export class ScanManager {
   private readonly proxy: RequestPromiseAPI;
-  private readonly proxyConfig: {
-    strictSSL: boolean;
-    headers: { Authorization: string };
-    baseUrl: string;
-  };
 
-  constructor(baseUrl: string, apiKey: string) {
-    this.proxyConfig = {
+  constructor({
+    baseUrl,
+    apiKey,
+    proxyUrl
+  }: {
+    baseUrl: string;
+    apiKey: string;
+    proxyUrl?: string;
+  }) {
+    this.proxy = request.defaults({
       baseUrl,
-      strictSSL: false,
-      headers: { Authorization: `Api-Key ${apiKey}` }
-    };
-    this.proxy = request.defaults(this.proxyConfig);
+      agent: proxyUrl ? new SocksProxyAgent(proxyUrl) : undefined,
+      headers: { authorization: `Api-Key ${apiKey}` }
+    });
   }
 
   public async create(body: RunStrategyConfig): Promise<string> {

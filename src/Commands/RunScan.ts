@@ -26,6 +26,9 @@ export class RunScan implements CommandModule {
         requiresArg: true,
         demandOption: true
       })
+      .option('proxy', {
+        describe: 'SOCKS4 or SOCKS5 url to proxy all traffic'
+      })
       .option('name', {
         alias: 'n',
         describe: 'Name of the scan.',
@@ -125,7 +128,8 @@ export class RunScan implements CommandModule {
       const headerParser = new InlineHeaders();
       const scanId: string = await new ServicesApiFactory(
         args.api as string,
-        args.apiKey as string
+        args.apiKey as string,
+        args.proxy as string
       )
         .createScanManager()
         .create({

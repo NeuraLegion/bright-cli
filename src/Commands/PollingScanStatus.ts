@@ -23,6 +23,9 @@ export class PollingScanStatus implements CommandModule {
         requiresArg: true,
         demandOption: true
       })
+      .option('proxy', {
+        describe: 'SOCKS4 or SOCKS5 url to proxy all traffic'
+      })
       .option('interval', {
         requiresArg: true,
         describe:
@@ -60,6 +63,7 @@ export class PollingScanStatus implements CommandModule {
       await new ServicesApiFactory(args.api as string, args.apiKey as string)
         .createPolling({
           scanId: args.scan as string,
+          proxyUrl: args.proxy as string,
           interval: args.interval as number,
           timeout: args.timeout as number
         })

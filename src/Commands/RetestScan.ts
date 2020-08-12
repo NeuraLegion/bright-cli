@@ -19,6 +19,9 @@ export class RetestScan implements CommandModule {
         requiresArg: true,
         demandOption: true
       })
+      .option('proxy', {
+        describe: 'SOCKS4 or SOCKS5 url to proxy all traffic'
+      })
       .positional('scan', {
         describe: 'ID of an existing scan which you want to re-run.',
         type: 'string',
@@ -30,7 +33,8 @@ export class RetestScan implements CommandModule {
     try {
       const scanId: string = await new ServicesApiFactory(
         args.api as string,
-        args.apiKey as string
+        args.apiKey as string,
+        args.proxy as string
       )
         .createScanManager()
         .retest(args.scan as string);

@@ -32,6 +32,8 @@
     "request": "^2.88.2",
     "request-capture-har": "^1.2.2",
     "request-promise": "^4.2.6",
+    "socks": "^2.4.1",
+    "socks-proxy-agent": "^5.0.0",
     "tslib": "^2.0.0",
     "yargonaut": "^1.1.4",
     "yargs": "^15.4.1"
