@@ -1,5 +1,4 @@
 export { HarFileParser } from './HarFileParser';
-export { InlineHeaders } from './InlineHeaders';
 export { NexMockParser } from './NexMockParser';
 export {
   NexMockToRequestsParser,

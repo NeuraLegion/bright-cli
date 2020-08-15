@@ -3,12 +3,13 @@ import {
   GenerateArchive,
   PollingScanStatus,
   RetestScan,
+  RunAgent,
   RunScan,
   StopScan,
   UploadArchive,
   VersionCommand
 } from './Commands';
-import { CliBuilder } from './Config';
+import { CliBuilder, DefaultConfigReader } from './Config';
 
 const cli: CliBuilder = new CliBuilder({
   colors: true,
@@ -17,7 +18,9 @@ const cli: CliBuilder = new CliBuilder({
 
 cli
   .build({
+    configReader: new DefaultConfigReader(),
     commands: [
+      new RunAgent(),
       new VersionCommand(),
       new GenerateArchive(),
       new PollingScanStatus(),

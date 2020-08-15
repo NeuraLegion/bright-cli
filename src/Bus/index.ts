@@ -1,7 +1,7 @@
 export {
   Handler,
   HandlerType,
-  HandlerFactory,
+  HandlerRegistry,
   ExecutionResult
 } from './Handler';
 export { Event, EventType } from './Event';

@@ -15,5 +15,3 @@ export interface ConfigReader {
 
   toJSON(): CliConfig;
 }
-
-export const ConfigReader: unique symbol = Symbol('ConfigReader');

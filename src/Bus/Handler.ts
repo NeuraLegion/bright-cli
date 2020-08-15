@@ -11,8 +11,6 @@ export interface Handler<
 
 export type HandlerType = new (...args: any[]) => Handler<Event>;
 
-export interface HandlerFactory {
-  create(ctor: HandlerType): Promise<Handler<Event> | undefined>;
+export interface HandlerRegistry {
+  get(ctor: HandlerType): Promise<Handler<Event> | undefined>;
 }
-
-export const HandlerFactory: unique symbol = Symbol('HandlerFactory');

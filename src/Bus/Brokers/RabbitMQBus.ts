@@ -1,4 +1,4 @@
-import { Handler, HandlerFactory, HandlerType } from '../Handler';
+import { Handler, HandlerRegistry, HandlerType } from '../Handler';
 import { Event, EventType } from '../Event';
 import { Bus } from '../Bus';
 import { Proxy } from '../Proxy';
@@ -26,7 +26,7 @@ export class RabbitMQBus implements Bus {
 
   constructor(
     private readonly options: RabbitMQBusOptions,
-    private readonly factory: HandlerFactory
+    private readonly registry: HandlerRegistry
   ) {}
 
   public async destroy(): Promise<void> {
@@ -69,11 +69,7 @@ export class RabbitMQBus implements Bus {
       );
     }
 
-    try {
-      await this.createConsumerChannel();
-    } catch (err) {
-      console.error(err);
-    }
+    await this.createConsumerChannel();
 
     log('Event bus connected to Redis server: %j', this.options);
   }
@@ -81,7 +77,7 @@ export class RabbitMQBus implements Bus {
   public async subscribe(handler: HandlerType): Promise<void> {
     ok(handler, 'Event handler is not defined.');
 
-    const instance: Handler<Event> | undefined = await this.factory.create(
+    const instance: Handler<Event> | undefined = await this.registry.get(
       handler
     );
     ok(instance, `Cannot create instance of "${handler.name}" handler.`);
@@ -166,9 +162,14 @@ export class RabbitMQBus implements Bus {
 
         // eslint-disable-next-line max-depth
         if (response) {
-          await this.channel.sendToQueue(message.properties.replyTo, response, {
-            correlationId: message.properties.correlationId
-          });
+          await this.channel.sendToQueue(
+            message.properties.replyTo,
+            Buffer.from(JSON.stringify(response)),
+            {
+              correlationId: message.properties.correlationId,
+              contentType: 'application/json'
+            }
+          );
         }
       }
 

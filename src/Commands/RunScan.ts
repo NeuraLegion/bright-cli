@@ -1,4 +1,3 @@
-import { InlineHeaders } from '../Parsers';
 import {
   FailureError,
   Module,
@@ -7,6 +6,7 @@ import {
   TestType,
   toArray
 } from '../Strategy';
+import { parseHeaders } from '../Utils/parserHeaders';
 import { Arguments, Argv, CommandModule } from 'yargs';
 
 export class RunScan implements CommandModule {
@@ -125,7 +125,6 @@ export class RunScan implements CommandModule {
 
   public async handler(args: Arguments): Promise<void> {
     try {
-      const headerParser = new InlineHeaders();
       const scanId: string = await new ServicesApiFactory(
         args.api as string,
         args.apiKey as string,
@@ -137,7 +136,7 @@ export class RunScan implements CommandModule {
           module: args.module,
           tests: args.test,
           hostsFilter: args.hostFilter,
-          headers: headerParser.parse(args.header as string[]),
+          headers: parseHeaders(args.header as string[]),
           crawlerUrls: args.crawler,
           fileId: args.archive,
           agents: args.agent,

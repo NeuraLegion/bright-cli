@@ -1,11 +1,9 @@
 import { CliConfig, ConfigReader } from './ConfigReader';
 import { omit } from '../Utils/omit';
 import { sync } from 'find-up';
-import { injectable } from 'inversify';
 import path from 'path';
 import fs from 'fs';
 
-@injectable()
 export class DefaultConfigReader implements ConfigReader {
   private readonly rcOptions: string[] = [
     '.nexploitrc',
@@ -14,10 +12,10 @@ export class DefaultConfigReader implements ConfigReader {
     '.nexploitrc.yaml',
     'nexploit.config.js'
   ];
-  private readonly config: Map<string, any>;
+  private readonly config: Map<keyof CliConfig, CliConfig[keyof CliConfig]>;
 
   constructor() {
-    this.config = new Map<string, any>();
+    this.config = new Map<keyof CliConfig, CliConfig[keyof CliConfig]>();
   }
 
   public load(cwd: string): this {
@@ -52,13 +50,16 @@ export class DefaultConfigReader implements ConfigReader {
     return this.config.has(key);
   }
 
-  public toJSON(): any {
-    return Object.fromEntries(this.config.entries());
+  public toJSON(): CliConfig {
+    return (Object.fromEntries(this.config.entries()) as unknown) as CliConfig;
   }
 
-  private configure(map: { [key: string]: any }): void {
-    Object.entries(omit(map)).map(([key, value]: [string, any]) =>
-      this.config.set(key, value)
+  private configure(map: { [key: string]: unknown }): void {
+    Object.entries(omit(map)).map(([key, value]: [string, unknown]) =>
+      this.config.set(
+        key as keyof CliConfig,
+        value as CliConfig[keyof CliConfig]
+      )
     );
   }
 }

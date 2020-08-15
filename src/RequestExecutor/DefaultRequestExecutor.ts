@@ -4,10 +4,8 @@ import { Script } from './Script';
 import request from 'request-promise';
 import { Response } from 'request';
 import { SocksProxyAgent } from 'socks-proxy-agent';
-import { injectable } from 'inversify';
 import { parse } from 'url';
 
-@injectable()
 export class DefaultRequestExecutor implements RequestExecutor {
   private readonly agent?: SocksProxyAgent;
 
@@ -16,6 +14,7 @@ export class DefaultRequestExecutor implements RequestExecutor {
       maxRedirects?: number;
       timeout?: number;
       proxyUrl?: string;
+      headers?: Record<string, string | string[]>;
     }
   ) {
     this.agent = this.options.proxyUrl
@@ -34,7 +33,7 @@ export class DefaultRequestExecutor implements RequestExecutor {
         agent: this.agent,
         body: script.body,
         method: script.method,
-        headers: script.headers,
+        headers: { ...script.headers, ...(this.options.headers ?? {}) },
         timeout: this.options.timeout,
         resolveWithFullResponse: true,
         maxRedirects: this.options.maxRedirects
