@@ -1,1 +1,0 @@
-export { HandlerFactory } from './HandlerFactory';

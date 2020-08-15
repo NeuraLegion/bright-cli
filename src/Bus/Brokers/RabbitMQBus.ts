@@ -1,8 +1,7 @@
-import { Handler, HandlerType } from '../Handler';
+import { Handler, HandlerFactory, HandlerType } from '../Handler';
 import { Event, EventType } from '../Event';
-import { HandlerFactory } from '../Handlers/HandlerFactory';
 import { Bus } from '../Bus';
-import { Proxy } from '../Proxy/Proxy';
+import { Proxy } from '../Proxy';
 import { AmqpConnectionManager, ChannelWrapper } from 'amqp-connection-manager';
 import { Channel, ConsumeMessage } from 'amqplib';
 import debug, { Debugger } from 'debug';
@@ -163,7 +162,14 @@ export class RabbitMQBus implements Bus {
 
         ok(handler, `Cannot find a handler for ${routingKey} event.`);
 
-        await handler.handle(event);
+        const response: Event | undefined = await handler.handle(event);
+
+        // eslint-disable-next-line max-depth
+        if (response) {
+          await this.channel.sendToQueue(message.properties.replyTo, response, {
+            correlationId: message.properties.correlationId
+          });
+        }
       }
 
       this.channel.ack(message);

@@ -4,8 +4,10 @@ import { Script } from './Script';
 import request from 'request-promise';
 import { Response } from 'request';
 import { SocksProxyAgent } from 'socks-proxy-agent';
+import { injectable } from 'inversify';
 import { parse } from 'url';
 
+@injectable()
 export class DefaultRequestExecutor implements RequestExecutor {
   private readonly agent?: SocksProxyAgent;
 

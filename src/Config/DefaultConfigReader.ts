@@ -1,9 +1,11 @@
 import { CliConfig, ConfigReader } from './ConfigReader';
 import { omit } from '../Utils/omit';
 import { sync } from 'find-up';
+import { injectable } from 'inversify';
 import path from 'path';
 import fs from 'fs';
 
+@injectable()
 export class DefaultConfigReader implements ConfigReader {
   private readonly rcOptions: string[] = [
     '.nexploitrc',
@@ -14,13 +16,13 @@ export class DefaultConfigReader implements ConfigReader {
   ];
   private readonly config: Map<string, any>;
 
-  constructor(private readonly root: string) {
+  constructor() {
     this.config = new Map<string, any>();
   }
 
-  public load(): this {
+  public load(cwd: string): this {
     const rcPath: string | null = sync(this.rcOptions, {
-      cwd: this.root
+      cwd
     });
 
     if (!rcPath) {
@@ -44,6 +46,10 @@ export class DefaultConfigReader implements ConfigReader {
 
   public get<T extends keyof CliConfig>(key: T): CliConfig[T] {
     return this.config.get(key);
+  }
+
+  public has(key: keyof CliConfig): boolean {
+    return this.config.has(key);
   }
 
   public toJSON(): any {

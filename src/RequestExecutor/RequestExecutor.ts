@@ -4,3 +4,5 @@ import { ScriptResult } from './ScriptResult';
 export interface RequestExecutor {
   execute(script: Script): Promise<ScriptResult>;
 }
+
+export const RequestExecutor: unique symbol = Symbol('RequestExecutor');

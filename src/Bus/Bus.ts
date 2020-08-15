@@ -10,3 +10,5 @@ export interface Bus {
 
   publish<T extends Event>(...events: T[]): Promise<void>;
 }
+
+export const Bus: unique symbol = Symbol('Bus');
