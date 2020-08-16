@@ -1,19 +1,15 @@
-import {
-  InlineHeaders,
-  NexMockParser,
-  NexMockToRequestsParser,
-  RequestCrawler
-} from '../Parsers';
 import { split } from '../Utils/split';
 import { generatorFileNameFactory } from '../Utils/generateFileName';
-import { FileExistingValidator, NexMockValidator } from '../Validators';
-import { Options } from 'request';
+import { DefaultParserFactory, Parser } from '../Archive';
+import { parseHeaders } from '../Utils/parserHeaders';
+import { SpecType } from '../Archive/Archives';
 import { Arguments, Argv, CommandModule } from 'yargs';
+import { Entry, Har } from 'har-format';
 import { promisify } from 'util';
 import { basename } from 'path';
-import { writeFile as writeFileOld } from 'fs';
+import { writeFile as write } from 'fs';
 
-const writeFile = promisify(writeFileOld);
+const writeFile = promisify(write);
 
 export class GenerateArchive implements CommandModule {
   public readonly command = 'archive:generate';
@@ -68,42 +64,40 @@ export class GenerateArchive implements CommandModule {
 
   public async handler(args: Arguments): Promise<void> {
     try {
-      const nexMockRequestsParser: NexMockToRequestsParser = new NexMockToRequestsParser(
-        {
-          url: args.target as string,
-          headers: new InlineHeaders().parse(args.header as string[])
-        },
-        new NexMockParser(new NexMockValidator(), new FileExistingValidator())
-      );
-      const requestOptions: Options[] = await nexMockRequestsParser.parse(
-        args.mockfile as string
-      );
-      console.log(`${requestOptions.length} requests were prepared.`);
+      const parserFactory = new DefaultParserFactory({
+        timeout: args.timeout as number,
+        pool: args.pool as number,
+        proxyUrl: args.proxy as string,
+        baseUrl: args.target as string,
+        headers: parseHeaders(args.header as string[])
+      });
 
-      const chunks: Options[][] =
+      const parser: Parser = parserFactory.create(SpecType.NEXMOCK);
+      const { content } = await parser.parse(args.mockfile as string);
+
+      const { log } = JSON.parse(content) as Har;
+
+      console.log(`${log.entries?.length} requests were prepared.`);
+
+      const chunks: Entry[][] =
         (args.split as number) > 0
-          ? split(
-              requestOptions,
-              requestOptions.length / (args.split as number)
-            )
-          : [requestOptions];
+          ? split(log.entries, log.entries.length / (args.split as number))
+          : [log.entries];
 
       const generateFileName: (
         filePath: string
       ) => string = generatorFileNameFactory();
 
       const fileNames: string[] = await Promise.all(
-        chunks.map(async (items: Options[]) => {
-          const crawler: RequestCrawler = new RequestCrawler({
-            timeout: args.timeout as number,
-            pool: args.pool as number,
-            proxyUrl: args.proxy as string
-          });
-          const harFile: string = await crawler.parse(items);
+        chunks.map(async (items: Entry[]) => {
           const fileName: string = generateFileName(args.archive as string);
-          await writeFile(fileName, harFile, {
-            encoding: 'utf8'
-          });
+          await writeFile(
+            fileName,
+            JSON.stringify({ log: { ...log, entries: items } }),
+            {
+              encoding: 'utf8'
+            }
+          );
 
           return fileName;
         })

@@ -1,12 +1,6 @@
-import {
-  FailureError,
-  Module,
-  RunStrategyConfig,
-  ServicesApiFactory,
-  TestType,
-  toArray
-} from '../Strategy';
 import { parseHeaders } from '../Utils/parserHeaders';
+import { RestScans, Module, ScanConfig, TestType } from '../Scan';
+import { toArray } from '../Utils/toArray';
 import { Arguments, Argv, CommandModule } from 'yargs';
 
 export class RunScan implements CommandModule {
@@ -125,44 +119,37 @@ export class RunScan implements CommandModule {
 
   public async handler(args: Arguments): Promise<void> {
     try {
-      const scanId: string = await new ServicesApiFactory(
-        args.api as string,
-        args.apiKey as string,
-        args.proxy as string
-      )
-        .createScanManager()
-        .create({
-          name: args.name,
-          module: args.module,
-          tests: args.test,
-          hostsFilter: args.hostFilter,
-          headers: parseHeaders(args.header as string[]),
-          crawlerUrls: args.crawler,
-          fileId: args.archive,
-          agents: args.agent,
-          build: args.service
-            ? {
-                service: args.service,
-                buildNumber: args.buildNumber,
-                project: args.project,
-                user: args.user,
-                vcs: args.vcs
-              }
-            : undefined
-        } as RunStrategyConfig);
+      const scanManager = new RestScans({
+        baseUrl: args.api as string,
+        apiKey: args.apiKey as string,
+        proxyUrl: args.proxy as string
+      });
+
+      const scanId: string = await scanManager.create({
+        name: args.name,
+        module: args.module,
+        tests: args.test,
+        hostsFilter: args.hostFilter,
+        headers: parseHeaders(args.header as string[]),
+        crawlerUrls: args.crawler,
+        fileId: args.archive,
+        agents: args.agent,
+        build: args.service
+          ? {
+              service: args.service,
+              buildNumber: args.buildNumber,
+              project: args.project,
+              user: args.user,
+              vcs: args.vcs
+            }
+          : undefined
+      } as ScanConfig);
 
       console.log(scanId);
 
       process.exit(0);
     } catch (e) {
-      if (e instanceof FailureError) {
-        console.error(`Scan failure during "scan:run": ${e.message}`);
-        process.exit(50);
-
-        return;
-      }
-
-      console.error(`Error during "scan:run" run: ${e.error || e.message}`);
+      console.error(`Error during "scan:run": ${e.error || e.message}`);
       process.exit(1);
     }
   }

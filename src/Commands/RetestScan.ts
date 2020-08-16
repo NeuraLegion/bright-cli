@@ -1,4 +1,4 @@
-import { FailureError, ServicesApiFactory } from '../Strategy';
+import { RestScans } from '../Scan';
 import { Arguments, Argv, CommandModule } from 'yargs';
 
 export class RetestScan implements CommandModule {
@@ -31,26 +31,19 @@ export class RetestScan implements CommandModule {
 
   public async handler(args: Arguments): Promise<void> {
     try {
-      const scanId: string = await new ServicesApiFactory(
-        args.api as string,
-        args.apiKey as string,
-        args.proxy as string
-      )
-        .createScanManager()
-        .retest(args.scan as string);
+      const scanManager = new RestScans({
+        baseUrl: args.api as string,
+        apiKey: args.apiKey as string,
+        proxyUrl: args.proxy as string
+      });
+
+      const scanId: string = await scanManager.retest(args.scan as string);
 
       console.log(scanId);
 
       process.exit(0);
     } catch (e) {
-      if (e instanceof FailureError) {
-        console.error(`Scan failure during "scan:run": ${e.message}`);
-        process.exit(50);
-
-        return;
-      }
-
-      console.error(`Error during "scan:run" run: ${e.error || e.message}`);
+      console.error(`Error during "scan:retest": ${e.error || e.message}`);
       process.exit(1);
     }
   }

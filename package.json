@@ -23,11 +23,11 @@
     "ajv": "^6.12.3",
     "amqp-connection-manager": "^3.2.0",
     "amqplib": "^0.6.0",
+    "better-ajv-errors": "^0.6.7",
     "debug": "^4.1.1",
     "find-up": "^4.1.0",
     "js-yaml": "^3.14.0",
     "ms": "^2.1.2",
-    "openapi-schemas": "^2.0.4",
     "reflect-metadata": "^0.1.13",
     "request": "^2.88.2",
     "request-capture-har": "^1.2.2",
@@ -78,7 +78,8 @@
     "webpack-node-externals": "2.5.0"
   },
   "files": [
-    "dist"
+    "dist",
+    "schemas"
   ],
   "homepage": "https://github.com/NeuraLegion/nexploit-cli#readme",
   "husky": {

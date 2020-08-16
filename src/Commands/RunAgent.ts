@@ -77,7 +77,7 @@ export class RunAgent implements CommandModule {
 
       await bus.subscribe(SendRequestHandler);
     } catch (e) {
-      console.error(`Error during "agent:run" run: ${e.error || e.message}`);
+      console.error(`Error during "agent": ${e.error || e.message}`);
       process.exit(1);
     }
   }
