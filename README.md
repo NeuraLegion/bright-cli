@@ -106,10 +106,8 @@ During the creating of the archive, you can edit the `.nexploitrc.json` file and
 ```json
 {
   "api-key": "my-jwt-authentication-token",
-  "target": "url-tested-application",
-  "timeout": 5000,
-  "pool": 100,
-  "host-filter": ["hostname-application"]
+  "api": "https://nexploit.app",
+  "bus": "amqps://amq.nexploit.app:5672"
 }
 ```
 
@@ -121,7 +119,7 @@ Once the configuration is completed, upload the .HAR (or OAS) file with:
 
 ```bash
 nexploit-cli archive:upload \
-      --discovery archive \
+      --type HAR \
       archive.har
 ```
 
@@ -162,9 +160,10 @@ The command will output an ID of a new archive, which you can use to run a new s
 | Option  |   Description |
 |---|:---|
 | `--api-key=yourApiKey`, `-K=yourApiKey` | The unique identifier used to authenticate a user. It can be issued in your organization dashboard |
-| `--discovery=archive/oas` | The discovery strategy. Helps determine the best way to parse passed files. Default: `archive`|
+| `--type=HAR/OpenAPI/Postman` | The specification type. Helps determine the best way to parse passed files. Default: `HAR`|
 | `--discard=false/true`, `-d=false/true` | When `true`, removes an archive from the cloud storage after the scan is finished running. Default: `true` |
-| `--header=extraHeader`, `-H=extraHeader` | Extra headers to be passed with the OAS file. Also, it can be used to remove a header by providing a name without content, for example: `-H "Host:"`. **WARNING**: headers set with this option overide the archive headers and will be set in all the requests |
+| `--header=extraHeader`, `-H=extraHeader` | Extra headers to be passed with the OAS/Postman file. Also, it can be used to remove a header by providing a name without content, for example: `-H "Host:"`. **WARNING**: headers set with this option override the archive headers and will be set in all the requests |
+| `--variable=envVariable`, `-V=envVariable` | Environment variables to be passed with the Postman file.  |
 
 ### 🛠️ Generate Archive Based on NexMock
 
@@ -236,7 +235,7 @@ After the launch, it will check the scan's status most of the time.  If the scan
 | Option  |   Description |
 |---|:---|
 | `--api-key=yourApiKey`, `-K=yourApiKey` | The unique identifier used to authenticate a user. It can be issued in your organization dashboard |
-| `--failure-on=first-issue / first-medium-severity-issue / first-high-severity-issue.` | The predefined failure strategy that allows to finish process with exit code `50` only after fulfilling the condition. Default: `first-issue`|
+| `--breakpoint=any / medium-issue / high-issue.` | The predefined breakpoint that allows to finish process with exit code `50` only after fulfilling the condition. Default: `any`|
 | `--interval=milliseconds.` | The period of time between the end of a timeout period or completion of a scan status request, and the next request for status. Eg: 60, "2min", "10h", "7d". A numeric value is interpreted as a milliseconds count. Default: `5000` |
 | `--timeout=milliseconds.` | The allowed maximum time for a polling to end normally. Eg: 60, "2min", "10h", "7d". A numeric value is interpreted as a milliseconds count. |
 
