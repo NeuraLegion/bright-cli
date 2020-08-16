@@ -1,8 +1,7 @@
 import { split } from '../Utils/split';
 import { generatorFileNameFactory } from '../Utils/generateFileName';
-import { DefaultParserFactory, Parser } from '../Archive';
+import { DefaultParserFactory, Parser, SpecType } from '../Archive';
 import { parseHeaders } from '../Utils/parserHeaders';
-import { SpecType } from '../Archive/Archives';
 import { Arguments, Argv, CommandModule } from 'yargs';
 import { Entry, Har } from 'har-format';
 import { promisify } from 'util';
@@ -77,7 +76,7 @@ export class GenerateArchive implements CommandModule {
 
       const { log } = JSON.parse(content) as Har;
 
-      console.log(`${log.entries?.length} requests were prepared.`);
+      console.log(`${log.entries.length ?? 0} requests were prepared.`);
 
       const chunks: Entry[][] =
         (args.split as number) > 0

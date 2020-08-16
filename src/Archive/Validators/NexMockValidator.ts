@@ -17,7 +17,7 @@ export class NexMockValidator implements Validator<MockRequest[]> {
   }
 
   public async validate(data: MockRequest[]): Promise<void | never> {
-    const validate: ValidateFunction = this.ajv.getSchema('requests');
+    const validate: ValidateFunction = this.ajv.getSchema('nexmock');
 
     if (!(await validate(data))) {
       console.error(
