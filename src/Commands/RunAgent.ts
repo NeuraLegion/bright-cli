@@ -1,4 +1,4 @@
-import { AgentStatusUpdated, Bus, RabbitMQBus } from '../Bus';
+import { Bus, RabbitMQBus } from '../Bus';
 import { DefaultHandlerRegistry, SendRequestHandler } from '../Handlers';
 import { DefaultRequestExecutor } from '../RequestExecutor';
 import { Helpers } from '../Utils/Helpers';
@@ -7,7 +7,7 @@ import { Arguments, Argv, CommandModule } from 'yargs';
 
 export class RunAgent implements CommandModule {
   public readonly command = 'agent [options] <agent>';
-  public readonly describe = 'Request to start a agent by its ID.';
+  public readonly describe = 'Starts an agent by its ID.';
 
   public builder(args: Argv): Argv {
     return args
@@ -36,9 +36,15 @@ export class RunAgent implements CommandModule {
       .option('header', {
         alias: 'H',
         requiresArg: true,
+        conflicts: ['headers'],
         array: true,
         describe:
           'A list of specific headers that should be included into request.'
+      })
+      .option('headers', {
+        requiresArg: true,
+        conflicts: ['header'],
+        describe: 'A json of headers that should be included into request.'
       })
       .option('proxy', {
         describe: 'SOCKS4 or SOCKS5 url to proxy all traffic'
@@ -56,9 +62,6 @@ export class RunAgent implements CommandModule {
     let bus: Bus;
     try {
       const stop: () => Promise<void> = async (): Promise<void> => {
-        await bus.publish(
-          new AgentStatusUpdated(args.agent as string, 'disconnected')
-        );
         await bus.destroy();
         process.exit(0);
       };
@@ -78,7 +81,11 @@ export class RunAgent implements CommandModule {
           clientQueue: `agent:${args.agent as string}`,
           connectTimeout: 10000,
           url: args.bus as string,
-          proxyUrl: args.proxy as string
+          proxyUrl: args.proxy as string,
+          credentials: {
+            username: args.agent as string,
+            password: args.apiKey as string
+          }
         },
         handlerRegistry
       );
@@ -86,15 +93,8 @@ export class RunAgent implements CommandModule {
       await bus.init();
 
       await bus.subscribe(SendRequestHandler);
-
-      await bus.publish(
-        new AgentStatusUpdated(args.agent as string, 'connected')
-      );
     } catch (e) {
       logger.error(`Error during "agent": ${e.error || e.message}`);
-      await bus.publish(
-        new AgentStatusUpdated(args.agent as string, 'disconnected')
-      );
       process.exit(1);
     }
   }

@@ -1,7 +1,7 @@
 import chalk from 'chalk';
 import debug, { Debugger } from 'debug';
 
-const log: Debugger = debug('nexploit-cli:bus');
+const log: Debugger = debug('nexploit-cli');
 
 export class Logger {
   get logLevel(): string {

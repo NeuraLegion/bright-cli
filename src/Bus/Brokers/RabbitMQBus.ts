@@ -6,6 +6,7 @@ import logger from '../../Utils/Logger';
 import { AmqpConnectionManager, ChannelWrapper } from 'amqp-connection-manager';
 import { Channel, ConsumeMessage } from 'amqplib';
 import { ok } from 'assert';
+import { format, parse, UrlWithParsedQuery } from 'url';
 
 export interface RabbitMQBusOptions {
   url?: string;
@@ -15,6 +16,10 @@ export interface RabbitMQBusOptions {
   deadLetterQueue?: string;
   connectTimeout?: number;
   proxyUrl?: string;
+  credentials?: {
+    username: string;
+    password: string;
+  };
 }
 
 export class RabbitMQBus implements Bus {
@@ -48,8 +53,9 @@ export class RabbitMQBus implements Bus {
 
     // eslint-disable-next-line @typescript-eslint/no-var-requires
     this.client = await require('amqp-connection-manager').connect(
-      [this.options.url],
+      [this.prepareUrl()],
       {
+        heartbeatIntervalInSeconds: 1,
         connectionOptions: {
           socket: await proxy?.open(this.options.url)
         }
@@ -141,6 +147,20 @@ export class RabbitMQBus implements Bus {
         eventName
       )
     );
+  }
+
+  private prepareUrl(): string {
+    const url: UrlWithParsedQuery = parse(this.options.url, true);
+
+    if (this.options.credentials) {
+      const { username, password } = this.options.credentials;
+
+      url.auth = `${username}:${password}`;
+    }
+
+    url.query = { ...url.query, frameMax: '0' };
+
+    return format(url);
   }
 
   private getEventName(event: Event): string {

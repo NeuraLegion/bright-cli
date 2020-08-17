@@ -18,6 +18,7 @@ Some NexPloit CLI features:
     + [Upload Archive](#-upload-archive)
     + [Generate Archive based on NexMock](#-generate-archive-based-on-nexmock)
     + [Run Scan](#-run-scan)
+    + [Run Scan](#-start-agent)
     + [Check Scan's status](#-check-scan-status)
     + [Stop Scan](#-stop-scan)
     + [Retest Scan](#-retest-scan)
@@ -160,6 +161,7 @@ The command will output an ID of a new archive, which you can use to run a new s
 | Option  |   Description |
 |---|:---|
 | `--api-key=yourApiKey`, `-K=yourApiKey` | The unique identifier used to authenticate a user. It can be issued in your organization dashboard |
+| `--proxy=proxyUrl` | SOCKS4 or SOCKS5 url to proxy all traffic |
 | `--type=HAR/OpenAPI/Postman` | The specification type. Helps determine the best way to parse passed files. Default: `HAR`|
 | `--discard=false/true`, `-d=false/true` | When `true`, removes an archive from the cloud storage after the scan is finished running. Default: `true` |
 | `--header=extraHeader`, `-H=extraHeader` | Extra headers to be passed with the OAS/Postman file. Also, it can be used to remove a header by providing a name without content, for example: `-H "Host:"`. **WARNING**: headers set with this option override the archive headers and will be set in all the requests |
@@ -189,6 +191,7 @@ E.g. `archive.har`, `archive_2.har` and etc.
 | Option  |   Description |
 |---|:---|
 | `--archive=newArchivePath`, `-f=newArchivePath` | The path where the new archives will be created, relative to the new workspace root. |
+| `--proxy=proxyUrl` | SOCKS4 or SOCKS5 url to proxy all traffic |
 | `--mockfile=nexmockPath`, `-m=nexmockPath` | A NexMock file is obtained from the NexMock Reporters. See [E2E Guide](https://github.com/NeuraLegion/nexploit-cli/wiki/End-to-End-Guide#karma-or-mocha) |
 | `--target=hostnameOrIp`, `-t=hostnameOrIp` | The target hostname or IP address. |
 | `--header=extraHeader`, `-H=extraHeader` | Extra headers to be passed with the NexMock file. Also, it can be used to remove a header by providing a name without content, for example: `-H "Host:"`. **WARNING**: headers set with this option overide the archive headers and will be set in all the requests |
@@ -209,6 +212,7 @@ This command allows you to specify one or more of the discovery strategies, for 
 | Option  |   Description |
 |---|:---|
 | `--api-key=yourApiKey`, `-K=yourApiKey` | The unique identifier used to authenticate a user. It can be issued in your organization dashboard |
+| `--proxy=proxyUrl` | SOCKS4 or SOCKS5 url to proxy all traffic |
 | `--name=extraHeader`, `-n=extraHeader` | The name of the scan. |
 | `--archive=archiveID`, `-a=archiveID` | The Archive ID, which can be received via the `archive:upload` command. |
 | `--crawler=url`, `-c=url` | Allows to specify a list of specific urls that should be included during crawler discovery. |
@@ -217,6 +221,57 @@ This command allows you to specify one or more of the discovery strategies, for 
 | `--host-filter=hostOrIp`, `-F=hostOrIp` | The list of specific hosts that should be included in the scan. |
 | `--header=extraHeader`, `-H=extraHeader` | Extra headers to be passed with the Archive file. Also, it can be used to remove a header by providing a name without content, for example: `-H "Host:"`. **WARNING**: headers set with this option overide the archive headers and will be set in all the requests |
 | `--test=test` | Allows specifying a list of relevant tests to execute during a scan, for example: `--tests default_login_location dom_xss` |
+
+### 🕵️ Start agent
+
+`nexploit-cli agent [options] <agent>` starts an agent to connect it to the scans
+
+> ✴ Allows to multiple scans under single agent, decreasing the need for multiple agents.
+
+Repeater allows you to run NexPloit scans without exposing your ports outside. Also, it can be useful, if you want to run a local scan without deploying.
+
+> ✴ The agent requires the ability to have an outbound connection to amq.nexploit.app via the AMQ protocol (over TLS) using port 5672
+
+You also can use Docker image to run it. For example, you can use Docker Compose. It's a tool for defining and running multi-container Docker applications. You can download it from [official Docker page](https://docs.docker.com/compose/install/).
+
+```yaml
+version: '3'
+services:
+  repeater:
+    image: neuralegion/repeater:latest
+    restart: always
+    environment:
+      API_KEY: my-api-key
+      AGENT_ID: my-agent-id
+      HEADERS: { "X-Header": "my-header" }
+```
+
+or using Docker CLI directly
+
+```bash
+docker run neuralegion/repeater \
+  -e 'API_KEY=my-api-key' \
+  -e 'AGENT_ID=my-agent-id'
+```
+
+> ✴ The agent requires `API_KEY` with the scope `agents:write:repeater`
+
+#### Arguments
+
+| Argument  |  Description |
+|---|:---|
+| `<agent>` | The ID of an existing agent which you want to use. |
+
+
+#### Options
+
+| Option  |   Description |
+|---|:---|
+| `--api-key=yourApiKey`, `-K=yourApiKey` | The unique identifier used to authenticate a user. It can be issued in your organization dashboard |
+| `--bus=eventBus` | NexPloit Event Bus URL. Default: `amqps://amq.nexploit.app:5672` |
+| `--header=extraHeader`, `-H=extraHeader` | Extra headers to be passed with each request. Also, it can be used to remove a header by providing a name without content, for example: `-H "Host:"`. **WARNING**: headers set with this option override the original headers and will be set in all the requests |
+| `--proxy=proxyUrl` | SOCKS4 or SOCKS5 url to proxy all traffic |
+
 
 ### 🚓 Check Scan Status
 
@@ -235,6 +290,7 @@ After the launch, it will check the scan's status most of the time.  If the scan
 | Option  |   Description |
 |---|:---|
 | `--api-key=yourApiKey`, `-K=yourApiKey` | The unique identifier used to authenticate a user. It can be issued in your organization dashboard |
+| `--proxy=proxyUrl` | SOCKS4 or SOCKS5 url to proxy all traffic |
 | `--breakpoint=any / medium-issue / high-issue.` | A conditional breakpoint that allows to finish the process with exit code `50` only after fulfilling the predefined condition. Default: `any`|
 | `--interval=milliseconds.` | The period of time between the end of a timeout period or completion of a scan status request, and the next request for status. Eg: 60, "2min", "10h", "7d". A numeric value is interpreted as a milliseconds count. Default: `5000` |
 | `--timeout=milliseconds.` | The allowed maximum time for a polling to end normally. Eg: 60, "2min", "10h", "7d". A numeric value is interpreted as a milliseconds count. |
@@ -254,6 +310,7 @@ After the launch, it will check the scan's status most of the time.  If the scan
 | Option  |   Description |
 |---|:---|
 | `--api-key=yourApiKey`, `-K=yourApiKey` | The unique identifier used to authenticate a user. It can be issued in your organization dashboard |
+| `--proxy=proxyUrl` | SOCKS4 or SOCKS5 url to proxy all traffic |
 
 ### 🔁 Retest Scan
 
@@ -269,6 +326,7 @@ After the launch, it will check the scan's status most of the time.  If the scan
 
 | Option  |   Description |
 |---|:---|
+| `--proxy=proxyUrl` | SOCKS4 or SOCKS5 url to proxy all traffic |
 | `--api-key=yourApiKey`, `-K=yourApiKey` | The unique identifier used to authenticate a user that can be issued in your organization dashboard |
 
 ## 📝 License
