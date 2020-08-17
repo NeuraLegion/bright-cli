@@ -3,3 +3,4 @@ export { DefaultParserFactory } from './DefaultParserFactory';
 export { RestArchives } from './RestArchives';
 export { Parser } from './Parsers';
 export { Validator } from './Validators';
+export { HarSplitter } from './HarSplitter';

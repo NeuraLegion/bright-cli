@@ -6,6 +6,7 @@ import {
   SpecType
 } from '../Archive';
 import { Helpers } from '../Utils/Helpers';
+import logger from '../Utils/Logger';
 import { Arguments, Argv, CommandModule } from 'yargs';
 
 export class UploadArchive implements CommandModule {
@@ -105,10 +106,10 @@ export class UploadArchive implements CommandModule {
         archiveId = await archives.convertAndUpload(spec);
       }
 
-      console.log(archiveId);
+      logger.log(archiveId);
       process.exit(0);
     } catch (e) {
-      console.error(`Error during "archive:generate" run: ${e.message}`);
+      logger.error(`Error during "archive:generate": ${e.message}`);
       process.exit(1);
     }
   }

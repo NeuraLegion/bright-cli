@@ -5,6 +5,8 @@ import {
   DefaultPolling,
   RestScans
 } from '../Scan';
+import logger from '../Utils/Logger';
+import { Helpers } from '../Utils/Helpers';
 import { Arguments, Argv, CommandModule } from 'yargs';
 
 export class PollingScanStatus implements CommandModule {
@@ -41,16 +43,12 @@ export class PollingScanStatus implements CommandModule {
           'Eg: 60, "2min", "10h", "7d". A numeric value is interpreted as a milliseconds count.'
       })
       .option('breakpoint', {
-        choices: [
-          'first-issue',
-          'first-medium-severity-issue',
-          'first-high-severity-issue'
-        ],
+        choices: Helpers.toArray(BreakpointType),
         string: true,
         describe:
-          'Predefined failure strategy that allows to finish process with exit code 50 only after fulfilling the condition.',
+          'A conditional breakpoint that allows to finish the process with exit code 50 only after fulfilling the predefined condition.',
         requiresArg: true,
-        default: 'first-issue'
+        default: BreakpointType.ANY
       })
       .positional('scan', {
         describe: 'ID of an existing scan which you want to check.',
@@ -81,15 +79,14 @@ export class PollingScanStatus implements CommandModule {
       process.exit(0);
     } catch (e) {
       if (e instanceof BreakpointException) {
-        console.error(
-          `The breakpoint has been hit during "scan:polling": ${e.message}`
-        );
+        logger.error(`The breakpoint has been hit during polling.`);
+        logger.error(`Breakpoint: ${e.message}`);
         process.exit(50);
 
         return;
       }
 
-      console.error(`Error during "scan:polling": ${e.error || e.message}`);
+      logger.error(`Error during "scan:polling": ${e.error || e.message}`);
       process.exit(1);
     }
   }

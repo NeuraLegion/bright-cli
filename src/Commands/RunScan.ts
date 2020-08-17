@@ -1,5 +1,6 @@
 import { RestScans, Module, ScanConfig, TestType } from '../Scan';
 import { Helpers } from '../Utils/Helpers';
+import logger from '../Utils/Logger';
 import { Arguments, Argv, CommandModule } from 'yargs';
 
 export class RunScan implements CommandModule {
@@ -144,11 +145,11 @@ export class RunScan implements CommandModule {
           : undefined
       } as ScanConfig);
 
-      console.log(scanId);
+      logger.log(scanId);
 
       process.exit(0);
     } catch (e) {
-      console.error(`Error during "scan:run": ${e.error || e.message}`);
+      logger.error(`Error during "scan:run": ${e.error || e.message}`);
       process.exit(1);
     }
   }

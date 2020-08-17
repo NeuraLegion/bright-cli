@@ -1,4 +1,5 @@
 import { RestScans } from '../Scan';
+import logger from '../Utils/Logger';
 import { Arguments, Argv, CommandModule } from 'yargs';
 
 export class RetestScan implements CommandModule {
@@ -39,11 +40,11 @@ export class RetestScan implements CommandModule {
 
       const scanId: string = await scanManager.retest(args.scan as string);
 
-      console.log(scanId);
+      logger.log(scanId);
 
       process.exit(0);
     } catch (e) {
-      console.error(`Error during "scan:retest": ${e.error || e.message}`);
+      logger.error(`Error during "scan:retest": ${e.error || e.message}`);
       process.exit(1);
     }
   }

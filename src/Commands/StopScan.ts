@@ -1,4 +1,5 @@
 import { RestScans } from '../Scan';
+import logger from '../Utils/Logger';
 import { Arguments, Argv, CommandModule } from 'yargs';
 
 export class StopScan implements CommandModule {
@@ -39,7 +40,7 @@ export class StopScan implements CommandModule {
 
       process.exit(0);
     } catch (e) {
-      console.error(`Error during "scan:run" run: ${e.error || e.message}`);
+      logger.error(`Error during "scan:stop": ${e.error || e.message}`);
       process.exit(1);
     }
   }

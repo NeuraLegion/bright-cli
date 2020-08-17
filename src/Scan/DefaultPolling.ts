@@ -1,6 +1,7 @@
 import { CountIssuesBySeverity, Scans, ScanState, ScanStatus } from './Scans';
 import { Polling } from './Polling';
 import { Breakpoint } from './Breakpoint';
+import logger from '../Utils/Logger';
 import ms from 'ms';
 import { ok } from 'assert';
 
@@ -15,6 +16,7 @@ export class DefaultPolling implements Polling {
   private options: Omit<PollingConfig, 'scanManager'>;
   private scanManager: Scans;
   private timeoutDescriptor?: NodeJS.Timeout;
+  private defaultInterval: number = 10000;
 
   private _active = true;
 
@@ -25,12 +27,23 @@ export class DefaultPolling implements Polling {
   constructor({ scanManager, ...options }: PollingConfig) {
     this.options = options;
     this.scanManager = scanManager;
+
+    if (!this.options.timeout) {
+      logger.warn(
+        `Warning: It looks like you've been running polling without "timeout" option.`
+      );
+      logger.warn(
+        `The recommended way to install polling with a minimal timeout: 10-20min.`
+      );
+    }
   }
 
   public async start(breakpoint: Breakpoint): Promise<void> {
     ok(breakpoint, 'You should choose a breakpoint for polling.');
 
     try {
+      logger.log('Starting polling...');
+
       if (this.options.timeout) {
         this.setTimeout();
       }
@@ -45,7 +58,7 @@ export class DefaultPolling implements Polling {
 
   public async stop(): Promise<void> {
     if (!this._active) {
-      console.log('Polling has been terminated by timeout.');
+      logger.log('Polling has been terminated by timeout.');
     }
     this._active = false;
     clearTimeout(this.timeoutDescriptor);
@@ -57,6 +70,7 @@ export class DefaultPolling implements Polling {
       () => (this._active = false),
       timeoutInMs
     );
+    logger.debug(`The polling timeout has been set to %d ms.`, timeoutInMs);
   }
 
   private async *poll(): AsyncIterableIterator<CountIssuesBySeverity[]> {
@@ -98,7 +112,13 @@ export class DefaultPolling implements Polling {
   }
 
   private delay(): Promise<void> {
-    const interval = this.toMilliseconds(this.options.interval) ?? 5000;
+    const interval =
+      this.toMilliseconds(this.options.interval) ?? this.defaultInterval;
+
+    if (interval < this.defaultInterval) {
+      logger.warn(`Warning: polling interval is too small.`);
+      logger.warn(`The recommended way to set polling interval to 10s.`);
+    }
 
     return new Promise<void>((resolve) => setTimeout(resolve, interval));
   }

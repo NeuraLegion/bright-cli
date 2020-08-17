@@ -2,6 +2,7 @@ import { AgentStatusUpdated, Bus, RabbitMQBus } from '../Bus';
 import { DefaultHandlerRegistry, SendRequestHandler } from '../Handlers';
 import { DefaultRequestExecutor } from '../RequestExecutor';
 import { Helpers } from '../Utils/Helpers';
+import logger from '../Utils/Logger';
 import { Arguments, Argv, CommandModule } from 'yargs';
 
 export class RunAgent implements CommandModule {
@@ -90,7 +91,7 @@ export class RunAgent implements CommandModule {
         new AgentStatusUpdated(args.agent as string, 'connected')
       );
     } catch (e) {
-      console.error(`Error during "agent": ${e.error || e.message}`);
+      logger.error(`Error during "agent": ${e.error || e.message}`);
       await bus.publish(
         new AgentStatusUpdated(args.agent as string, 'disconnected')
       );

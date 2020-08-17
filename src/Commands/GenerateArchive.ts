@@ -1,13 +1,14 @@
-import { DefaultParserFactory, Parser, SpecType } from '../Archive';
-import { FilenameFactory } from '../Utils/FilenameFactory';
+import {
+  DefaultParserFactory,
+  HarSplitter,
+  Parser,
+  SpecType
+} from '../Archive';
 import { Helpers } from '../Utils/Helpers';
+import logger from '../Utils/Logger';
 import { Arguments, Argv, CommandModule } from 'yargs';
-import { Entry, Har } from 'har-format';
-import { promisify } from 'util';
+import { Har } from 'har-format';
 import { basename } from 'path';
-import { writeFile as write } from 'fs';
-
-const writeFile = promisify(write);
 
 export class GenerateArchive implements CommandModule {
   public readonly command = 'archive:generate';
@@ -75,38 +76,18 @@ export class GenerateArchive implements CommandModule {
 
       const { log } = JSON.parse(content) as Har;
 
-      console.log(`${log.entries.length ?? 0} requests were prepared.`);
+      logger.log(`${log.entries.length ?? 0} requests were prepared.`);
 
-      const chunks: Entry[][] =
-        (args.split as number) > 0
-          ? Helpers.split(
-              log.entries,
-              log.entries.length / (args.split as number)
-            )
-          : [log.entries];
+      const harSplitter = new HarSplitter(args.archive as string);
 
-      const fileNameFactory = new FilenameFactory();
-
-      const fileNames: string[] = await Promise.all(
-        chunks.map(async (items: Entry[]) => {
-          const fileName: string = fileNameFactory.generatorFilename(
-            args.archive as string
-          );
-          await writeFile(
-            fileName,
-            JSON.stringify({ log: { ...log, entries: items } }),
-            {
-              encoding: 'utf8'
-            }
-          );
-
-          return fileName;
-        })
+      const fileNames: string[] = await harSplitter.split(
+        args.split as number,
+        { log }
       );
 
       const plural: boolean = fileNames.length > 1;
 
-      console.log(
+      logger.log(
         `${fileNames.map((name: string) => basename(name))} ${
           plural ? 'archives' : 'archive'
         } ${plural ? 'were' : 'was'} created on base ${basename(
@@ -115,7 +96,7 @@ export class GenerateArchive implements CommandModule {
       );
       process.exit(0);
     } catch (e) {
-      console.error(`Error during "archive:generate" run: ${e.message}`);
+      logger.error(`Error during "archive:generate" run: ${e.message}`);
       process.exit(1);
     }
   }

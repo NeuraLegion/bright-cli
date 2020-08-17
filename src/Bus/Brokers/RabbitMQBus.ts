@@ -2,12 +2,10 @@ import { Handler, HandlerRegistry, HandlerType } from '../Handler';
 import { Event, EventType } from '../Event';
 import { Bus } from '../Bus';
 import { Proxy } from '../Proxy';
+import logger from '../../Utils/Logger';
 import { AmqpConnectionManager, ChannelWrapper } from 'amqp-connection-manager';
 import { Channel, ConsumeMessage } from 'amqplib';
-import debug, { Debugger } from 'debug';
 import { ok } from 'assert';
-
-const log: Debugger = debug('nexploit-cli:bus');
 
 export interface RabbitMQBusOptions {
   url?: string;
@@ -36,7 +34,7 @@ export class RabbitMQBus implements Bus {
     await this.client?.close();
     delete this.client;
 
-    log('Event bus disconnected from RabbitMQ server');
+    logger.log('Event bus disconnected from %s', this.options.url);
   }
 
   public async init(): Promise<void> {
@@ -63,15 +61,20 @@ export class RabbitMQBus implements Bus {
     this.client.on('connect', () => clearTimeout(connectTimer));
 
     if (typeof this.options?.connectTimeout === 'number' && !connectTimer) {
-      connectTimer = setTimeout(
-        () => void this.destroy(),
-        this.options.connectTimeout
-      );
+      connectTimer = setTimeout(() => {
+        logger.error(
+          'Event bus terminated by timeout (%dms)',
+          this.options.connectTimeout
+        );
+        this.destroy();
+      }, this.options.connectTimeout);
     }
 
     await this.createConsumerChannel();
 
-    log('Event bus connected to Redis server: %j', this.options);
+    logger.debug('Event bus connected to RabbitMQ: %j', this.options);
+
+    logger.log('Event bus connected to %s', this.options.url);
   }
 
   public async subscribe(handler: HandlerType): Promise<void> {
@@ -105,7 +108,11 @@ export class RabbitMQBus implements Bus {
       events.map((event: T) => {
         const eventName: string = this.getEventName(event);
 
-        log('Emits %s event with following payload: %j', eventName, event);
+        logger.debug(
+          'Emits %s event with following payload: %j',
+          eventName,
+          event
+        );
 
         return this.channel.publish(
           this.options.exchange,
@@ -121,7 +128,7 @@ export class RabbitMQBus implements Bus {
   }
 
   protected async subscribeTo(eventName: string): Promise<void> {
-    log(
+    logger.debug(
       'Binds the queue %s to %s by %s routing key.',
       this.options.clientQueue,
       this.options.exchange,
@@ -150,7 +157,11 @@ export class RabbitMQBus implements Bus {
 
         const event: Event = JSON.parse(content.toString());
 
-        log('Emits %s event with following payload: %j', routingKey, event);
+        logger.debug(
+          'Emits %s event with following payload: %j',
+          routingKey,
+          event
+        );
 
         const handler: Handler<Event> | undefined = this.handlers.get(
           routingKey
@@ -175,7 +186,12 @@ export class RabbitMQBus implements Bus {
 
       this.channel.ack(message);
     } catch (err) {
-      log('Error processing message: %j. Details: %s', message, err);
+      logger.debug('Error processing message: %j. Details: %s', message, err);
+      logger.error(
+        'Cannot process message with correlation ID: %s.',
+        message.properties.correlationId
+      );
+      logger.error('Error: %s', err.message);
       this.channel.nack(message, false, false);
     }
   }
@@ -198,7 +214,7 @@ export class RabbitMQBus implements Bus {
         ''
       )
     ]);
-    log(
+    logger.debug(
       'Binds the queue %s to %s.',
       this.options.deadLetterQueue,
       this.options.deadLetterExchange
@@ -244,5 +260,10 @@ export class RabbitMQBus implements Bus {
       }),
       channel.prefetch(1)
     ]);
+    logger.debug(
+      'Binds the queue %s to %s.',
+      this.options.clientQueue,
+      this.options.exchange
+    );
   }
 }
