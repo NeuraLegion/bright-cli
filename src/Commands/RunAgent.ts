@@ -1,11 +1,11 @@
-import { RabbitMQBus } from '../Bus';
+import { AgentStatusUpdated, Bus, RabbitMQBus } from '../Bus';
 import { DefaultHandlerRegistry, SendRequestHandler } from '../Handlers';
 import { DefaultRequestExecutor } from '../RequestExecutor';
 import { Helpers } from '../Utils/Helpers';
 import { Arguments, Argv, CommandModule } from 'yargs';
 
 export class RunAgent implements CommandModule {
-  public readonly command = 'agent [options] <scan>';
+  public readonly command = 'agent [options] <agent>';
   public readonly describe = 'Request to start a agent by its ID.';
 
   public builder(args: Argv): Argv {
@@ -52,7 +52,16 @@ export class RunAgent implements CommandModule {
   }
 
   public async handler(args: Arguments): Promise<void> {
+    let bus: Bus;
     try {
+      const stop: () => Promise<void> = async (): Promise<void> => {
+        await bus.publish(
+          new AgentStatusUpdated(args.agent as string, 'disconnected')
+        );
+        await bus.destroy();
+        process.exit(0);
+      };
+      process.on('SIGTERM', stop).on('SIGINT', stop).on('SIGHUP', stop);
       const requestExecutor = new DefaultRequestExecutor({
         maxRedirects: 20,
         timeout: 5000,
@@ -60,7 +69,7 @@ export class RunAgent implements CommandModule {
         headers: Helpers.parseHeaders(args.header as string[])
       });
       const handlerRegistry = new DefaultHandlerRegistry(requestExecutor);
-      const bus = new RabbitMQBus(
+      bus = new RabbitMQBus(
         {
           deadLetterQueue: 'dl',
           deadLetterExchange: 'DeadLetterExchange',
@@ -76,8 +85,15 @@ export class RunAgent implements CommandModule {
       await bus.init();
 
       await bus.subscribe(SendRequestHandler);
+
+      await bus.publish(
+        new AgentStatusUpdated(args.agent as string, 'connected')
+      );
     } catch (e) {
       console.error(`Error during "agent": ${e.error || e.message}`);
+      await bus.publish(
+        new AgentStatusUpdated(args.agent as string, 'disconnected')
+      );
       process.exit(1);
     }
   }
