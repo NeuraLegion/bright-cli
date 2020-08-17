@@ -1,7 +1,6 @@
-import { split } from '../Utils/split';
-import { generatorFileNameFactory } from '../Utils/generateFileName';
 import { DefaultParserFactory, Parser, SpecType } from '../Archive';
-import { parseHeaders } from '../Utils/parserHeaders';
+import { FilenameFactory } from '../Utils/FilenameFactory';
+import { Helpers } from '../Utils/Helpers';
 import { Arguments, Argv, CommandModule } from 'yargs';
 import { Entry, Har } from 'har-format';
 import { promisify } from 'util';
@@ -68,7 +67,7 @@ export class GenerateArchive implements CommandModule {
         pool: args.pool as number,
         proxyUrl: args.proxy as string,
         baseUrl: args.target as string,
-        headers: parseHeaders(args.header as string[])
+        headers: Helpers.parseHeaders(args.header as string[])
       });
 
       const parser: Parser = parserFactory.create(SpecType.NEXMOCK);
@@ -80,16 +79,19 @@ export class GenerateArchive implements CommandModule {
 
       const chunks: Entry[][] =
         (args.split as number) > 0
-          ? split(log.entries, log.entries.length / (args.split as number))
+          ? Helpers.split(
+              log.entries,
+              log.entries.length / (args.split as number)
+            )
           : [log.entries];
 
-      const generateFileName: (
-        filePath: string
-      ) => string = generatorFileNameFactory();
+      const fileNameFactory = new FilenameFactory();
 
       const fileNames: string[] = await Promise.all(
         chunks.map(async (items: Entry[]) => {
-          const fileName: string = generateFileName(args.archive as string);
+          const fileName: string = fileNameFactory.generatorFilename(
+            args.archive as string
+          );
           await writeFile(
             fileName,
             JSON.stringify({ log: { ...log, entries: items } }),

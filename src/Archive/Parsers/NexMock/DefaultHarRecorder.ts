@@ -1,5 +1,5 @@
-import { split } from '../../../Utils/split';
 import { HarRecorder } from './HarRecorder';
+import { Helpers } from '../../../Utils/Helpers';
 import { CaptureHar } from '@neuralegion/capture-har';
 import request, { Options, OptionsWithUrl } from 'request';
 import { SocksProxyAgent } from 'socks-proxy-agent';
@@ -33,7 +33,10 @@ export class DefaultHarRecorder implements HarRecorder {
 
   public async record(data: Options[]): Promise<string> {
     const requests: Options[] = Array.isArray(data) ? data : [data];
-    const chunks: Options[][] = split<Options[], Options>(requests, this.pool);
+    const chunks: Options[][] = Helpers.split<Options[], Options>(
+      requests,
+      this.pool
+    );
 
     await chunks.reduce(
       (total: Promise<void>, partOfRequests: Options[]) =>

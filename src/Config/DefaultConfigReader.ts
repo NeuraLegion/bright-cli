@@ -1,5 +1,5 @@
 import { CliConfig, ConfigReader } from './ConfigReader';
-import { omit } from '../Utils/omit';
+import { Helpers } from '../Utils/Helpers';
 import { sync } from 'find-up';
 import path from 'path';
 import fs from 'fs';
@@ -55,7 +55,7 @@ export class DefaultConfigReader implements ConfigReader {
   }
 
   private configure(map: { [key: string]: unknown }): void {
-    Object.entries(omit(map)).map(([key, value]: [string, unknown]) =>
+    Object.entries(Helpers.omit(map)).map(([key, value]: [string, unknown]) =>
       this.config.set(
         key as keyof CliConfig,
         value as CliConfig[keyof CliConfig]

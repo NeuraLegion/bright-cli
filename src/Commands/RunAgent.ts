@@ -1,7 +1,7 @@
 import { RabbitMQBus } from '../Bus';
 import { DefaultHandlerRegistry, SendRequestHandler } from '../Handlers';
 import { DefaultRequestExecutor } from '../RequestExecutor';
-import { parseHeaders } from '../Utils/parserHeaders';
+import { Helpers } from '../Utils/Helpers';
 import { Arguments, Argv, CommandModule } from 'yargs';
 
 export class RunAgent implements CommandModule {
@@ -57,7 +57,7 @@ export class RunAgent implements CommandModule {
         maxRedirects: 20,
         timeout: 5000,
         proxyUrl: args.proxy as string,
-        headers: parseHeaders(args.header as string[])
+        headers: Helpers.parseHeaders(args.header as string[])
       });
       const handlerRegistry = new DefaultHandlerRegistry(requestExecutor);
       const bus = new RabbitMQBus(

@@ -1,6 +1,5 @@
-import { parseHeaders } from '../Utils/parserHeaders';
 import { RestScans, Module, ScanConfig, TestType } from '../Scan';
-import { toArray } from '../Utils/toArray';
+import { Helpers } from '../Utils/Helpers';
 import { Arguments, Argv, CommandModule } from 'yargs';
 
 export class RunScan implements CommandModule {
@@ -50,8 +49,8 @@ export class RunScan implements CommandModule {
           'A list of specific urls that should be included into crawler.'
       })
       .option('test', {
-        choices: toArray(TestType),
-        default: toArray(TestType),
+        choices: Helpers.toArray(TestType),
+        default: Helpers.toArray(TestType),
         array: true,
         describe: 'A list of tests which you want to run during a scan.'
       })
@@ -87,7 +86,7 @@ export class RunScan implements CommandModule {
       .option('module', {
         default: Module.DAST,
         requiresArg: true,
-        choices: toArray(Module),
+        choices: Helpers.toArray(Module),
         describe:
           'The dast module tests for specific scenarios, mainly OWASP top 10 and other common scenarios. ' +
           'The fuzzer module generates various scenarios to test for unknown vulnerabilities, ' +
@@ -130,7 +129,7 @@ export class RunScan implements CommandModule {
         module: args.module,
         tests: args.test,
         hostsFilter: args.hostFilter,
-        headers: parseHeaders(args.header as string[]),
+        headers: Helpers.parseHeaders(args.header as string[]),
         crawlerUrls: args.crawler,
         fileId: args.archive,
         agents: args.agent,

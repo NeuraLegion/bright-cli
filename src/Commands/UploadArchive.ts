@@ -5,7 +5,7 @@ import {
   Spec,
   SpecType
 } from '../Archive';
-import { parseHeaders } from '../Utils/parserHeaders';
+import { Helpers } from '../Utils/Helpers';
 import { Arguments, Argv, CommandModule } from 'yargs';
 
 export class UploadArchive implements CommandModule {
@@ -75,7 +75,7 @@ export class UploadArchive implements CommandModule {
         pool: args.pool as number,
         proxyUrl: args.proxy as string,
         baseUrl: args.target as string,
-        headers: parseHeaders(args.header as string[])
+        headers: Helpers.parseHeaders(args.header as string[])
       });
 
       const parser: Parser = parserFactory.create(args.type as SpecType);
@@ -92,8 +92,8 @@ export class UploadArchive implements CommandModule {
         filename,
         content,
         discard: args.discard as boolean,
-        headers: parseHeaders(args.header as string[]),
-        variables: parseHeaders(args.variable as string[]),
+        headers: Helpers.parseHeaders(args.header as string[]),
+        variables: Helpers.parseHeaders(args.variable as string[]),
         type: args.type as SpecType
       };
 
