@@ -217,6 +217,8 @@ This command allows you to specify one or more of the discovery strategies, for 
 | `--archive=archiveID`, `-a=archiveID` | The Archive ID, which can be received via the `archive:upload` command. |
 | `--crawler=url`, `-c=url` | Allows to specify a list of specific urls that should be included during crawler discovery. |
 | `--agent=uuid` | Allows to specify a list of agent UUIDs that should be connected with the scan. |
+| `--smart` | Use automatic smart decisions such as: parameter skipping, detection phases, etc. to minimize scan time. When turned off, all the tests will be run on all the parameters, which increases the coverage at the expense of scan time. |
+| `--param=path/query/fragment/header/body` | Defines which part of the request to attack. See details: [here](https://kb.neuralegion.com/#/user-guide/scans/new-scan?id=target-parameter-locations-url-scoping). Default: `body`, `query` and `fragment` |
 | `--module=dast/fuzzer` | The `dast` module tests for specific scenarios, such as OWASP top 10 and other common scenarios. The `fuzzer` module generates various new scenarios to test for unknown vulnerabilities, providing automated AI guided fuzz-testing. Default: `dast` |
 | `--host-filter=hostOrIp`, `-F=hostOrIp` | The list of specific hosts that should be included in the scan. |
 | `--header=extraHeader`, `-H=extraHeader` | Extra headers to be passed with the Archive file. Also, it can be used to remove a header by providing a name without content, for example: `-H "Host:"`. **WARNING**: headers set with this option overide the archive headers and will be set in all the requests |

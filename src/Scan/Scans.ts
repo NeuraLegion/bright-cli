@@ -45,6 +45,14 @@ export enum Module {
   FUZZER = 'fuzzer'
 }
 
+export enum AttackParamLocation {
+  PATH = 'path',
+  QUERY = 'query',
+  FRAGMENT = 'fragment',
+  HEADER = 'header',
+  BODY = 'body'
+}
+
 export interface ScanConfig {
   name: string;
   module: Module;
@@ -52,6 +60,8 @@ export interface ScanConfig {
   tests: TestType[];
   poolSize?: number;
   fileId?: string;
+  attackParamLocations?: AttackParamLocation[];
+  smart?: boolean;
   build?: {
     service: string;
     buildNumber?: number;

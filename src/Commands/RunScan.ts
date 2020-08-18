@@ -1,6 +1,7 @@
 import { RestScans, Module, ScanConfig, TestType } from '../Scan';
 import { Helpers } from '../Utils/Helpers';
 import logger from '../Utils/Logger';
+import { AttackParamLocation } from '../Scan/Scans';
 import { Arguments, Argv, CommandModule } from 'yargs';
 
 export class RunScan implements CommandModule {
@@ -106,13 +107,29 @@ export class RunScan implements CommandModule {
         describe:
           'A list of specific headers that should be included into request.'
       })
+      .option('smart', {
+        boolean: true,
+        describe:
+          'Use automatic smart decisions such as: parameter skipping, detection phases, etc. to minimize scan time.'
+      })
+      .option('param', {
+        array: true,
+        default: [
+          AttackParamLocation.BODY,
+          AttackParamLocation.QUERY,
+          AttackParamLocation.FRAGMENT
+        ],
+        requiresArg: true,
+        choices: Helpers.toArray(AttackParamLocation),
+        describe: 'Defines which part of the request to attack.'
+      })
       .group(['archive', 'crawler'], 'Discovery Options')
       .group(
         ['service', 'build-number', 'vcs', 'project', 'user'],
         'Build Options'
       )
       .group(
-        ['host-filter', 'header', 'module', 'agent', 'test'],
+        ['host-filter', 'header', 'module', 'agent', 'test', 'smart'],
         'Additional Options'
       );
   }
@@ -134,6 +151,8 @@ export class RunScan implements CommandModule {
         crawlerUrls: args.crawler,
         fileId: args.archive,
         agents: args.agent,
+        smart: args.smart,
+        attackParamLocations: args.param,
         build: args.service
           ? {
               service: args.service,
