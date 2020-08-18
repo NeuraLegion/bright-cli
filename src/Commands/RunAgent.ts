@@ -44,7 +44,9 @@ export class RunAgent implements CommandModule {
       .option('headers', {
         requiresArg: true,
         conflicts: ['header'],
-        describe: 'A json of headers that should be included into request.'
+        default: '{}',
+        describe:
+          'JSON string which contains header list, which is initially empty and consists of zero or more name and value pairs.'
       })
       .option('proxy', {
         describe: 'SOCKS4 or SOCKS5 url to proxy all traffic'
@@ -66,13 +68,19 @@ export class RunAgent implements CommandModule {
         process.exit(0);
       };
       process.on('SIGTERM', stop).on('SIGINT', stop).on('SIGHUP', stop);
+
+      const headers: Record<string, string> = (args.header as string[])?.length
+        ? Helpers.parseHeaders(args.header as string[])
+        : JSON.parse(args.headers as string);
+
       const requestExecutor = new DefaultRequestExecutor({
-        maxRedirects: 20,
+        headers,
         timeout: 5000,
-        proxyUrl: args.proxy as string,
-        headers: Helpers.parseHeaders(args.header as string[])
+        maxRedirects: 20,
+        proxyUrl: args.proxy as string
       });
       const handlerRegistry = new DefaultHandlerRegistry(requestExecutor);
+
       bus = new RabbitMQBus(
         {
           deadLetterQueue: 'dl',

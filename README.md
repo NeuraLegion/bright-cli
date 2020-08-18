@@ -270,6 +270,7 @@ docker run neuralegion/repeater \
 | `--api-key=yourApiKey`, `-K=yourApiKey` | The unique identifier used to authenticate a user. It can be issued in your organization dashboard |
 | `--bus=eventBus` | NexPloit Event Bus URL. Default: `amqps://amq.nexploit.app:5672` |
 | `--header=extraHeader`, `-H=extraHeader` | Extra headers to be passed with each request. Also, it can be used to remove a header by providing a name without content, for example: `-H "Host:"`. **WARNING**: headers set with this option override the original headers and will be set in all the requests |
+| `--headers=json` | JSON string which contains header list, which is initially empty and consists of zero or more name and value pairs.. **WARNING**: headers set with this option override the original headers and will be set in all the requests. |
 | `--proxy=proxyUrl` | SOCKS4 or SOCKS5 url to proxy all traffic |
 
 

@@ -31,5 +31,5 @@ ENV HEADERS=${HEADERS}
 ARG BUS="amqps://amq.nexploit.app:5672"
 ENV BUS=${BUS}
 
-ENTRYPOINT [ "nexploit-cli", "agent", "--api-key", "$API_KEY", "--bus", "$BUS", "--headers", "$HEADERS", "$AGENT_ID" ]
-CMD ["nexploit-cli"]
+ENTRYPOINT [ "nexploit-cli" ]
+CMD ["nexploit-cli", "scan:run", "--api-key", "$API_KEY", "--bus", "$BUS", "--headers", "$HEADERS", "$AGENT_ID"]

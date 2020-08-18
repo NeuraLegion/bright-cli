@@ -51,7 +51,14 @@ export class DefaultConfigReader implements ConfigReader {
   }
 
   public toJSON(): CliConfig {
-    return (Object.fromEntries(this.config.entries()) as unknown) as CliConfig;
+    return [...this.config.entries()].reduce(
+      (acc: CliConfig, [key, value]: [string, unknown]) => {
+        acc[key] = value;
+
+        return acc;
+      },
+      {} as CliConfig
+    );
   }
 
   private configure(map: { [key: string]: unknown }): void {
