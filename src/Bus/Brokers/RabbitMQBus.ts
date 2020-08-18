@@ -197,8 +197,7 @@ export class RabbitMQBus implements Bus {
             message.properties.replyTo,
             Buffer.from(JSON.stringify(response)),
             {
-              correlationId: message.properties.correlationId,
-              contentType: 'application/json'
+              correlationId: message.properties.correlationId
             }
           );
         }

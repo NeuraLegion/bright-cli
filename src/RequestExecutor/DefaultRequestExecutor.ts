@@ -45,6 +45,16 @@ export class DefaultRequestExecutor implements RequestExecutor {
         body: response.body
       });
     } catch (err) {
+      if (err.response) {
+        const { response } = err;
+
+        return new ScriptResult({
+          status: response.statusCode,
+          headers: response.headers,
+          body: response.body
+        });
+      }
+
       const message = err.cause?.message ?? err.message;
       const errorCode = err.cause?.code ?? err.error?.syscall;
 

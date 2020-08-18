@@ -7,7 +7,6 @@ export class SendRequestHandler
   constructor(private readonly requestExecutor: RequestExecutor) {}
 
   public async handle(event: ExecuteScript): Promise<ForwardResponse> {
-    console.log(event);
     const response: ScriptResult = await this.requestExecutor.execute(
       new Script(event)
     );
@@ -15,9 +14,7 @@ export class SendRequestHandler
     return new ForwardResponse(
       response.status,
       response.headers,
-      response.body,
-      response.message,
-      response.errorCode
+      response.body
     );
   }
 }
