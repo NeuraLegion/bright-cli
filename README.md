@@ -18,7 +18,7 @@ Some NexPloit CLI features:
     + [Upload Archive](#-upload-archive)
     + [Generate Archive based on NexMock](#-generate-archive-based-on-nexmock)
     + [Run Scan](#-run-scan)
-    + [Run Scan](#-start-agent)
+    + [Start agent](#-start-agent)
     + [Check Scan's status](#-check-scan-status)
     + [Stop Scan](#-stop-scan)
     + [Retest Scan](#-retest-scan)
