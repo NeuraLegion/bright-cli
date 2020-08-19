@@ -1,6 +1,16 @@
 import { ok } from 'assert';
 
 export class Helpers {
+  public static selectEnumValue(
+    enumType: Record<string, string>,
+    caseAgnosticValue: string
+  ): string | undefined {
+    return Object.values(enumType).find(
+      (x: string) =>
+        x.toLowerCase().trim() === caseAgnosticValue.toLowerCase().trim()
+    );
+  }
+
   public static omit<T, K extends keyof T>(data: T): Omit<T, undefined | null> {
     return (Object.entries(data) as [K, T[K]][]).reduce(
       (acc: Omit<T, undefined | null>, [k, v]: [K, T[K]]) =>

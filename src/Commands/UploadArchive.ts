@@ -33,9 +33,13 @@ export class UploadArchive implements CommandModule {
       .option('type', {
         alias: 't',
         requiresArg: true,
-        describe: 'HAR, OAS, or Postman-type spec.',
-        choices: [SpecType.OPENAPI, SpecType.HAR, SpecType.POSTMAN],
-        default: SpecType.HAR,
+        describe: 'The specification type',
+        choices: [
+          SpecType.OPENAPI,
+          SpecType.HAR,
+          SpecType.POSTMAN
+        ].map((x: string) => x.toLowerCase()),
+        default: SpecType.HAR.toLowerCase(),
         demandOption: true
       })
       .option('discard', {
@@ -95,7 +99,7 @@ export class UploadArchive implements CommandModule {
         discard: args.discard as boolean,
         headers: Helpers.parseHeaders(args.header as string[]),
         variables: Helpers.parseHeaders(args.variable as string[]),
-        type: args.type as SpecType
+        type: Helpers.selectEnumValue(SpecType, args.type as string) as SpecType
       };
 
       let archiveId: string | undefined;
