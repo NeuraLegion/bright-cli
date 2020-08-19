@@ -19,17 +19,5 @@ RUN npm config -g set user $(whoami)
 
 RUN npm i -g -q @neuralegion/nexploit-cli
 
-ARG API_KEY
-ENV API_KEY=${API_KEY}
-
-ARG AGENT_ID
-ENV AGENT_ID=${AGENT_ID}
-
-ARG HEADERS="{}"
-ENV HEADERS=${HEADERS}
-
-ARG BUS="amqps://amq.nexploit.app:5672"
-ENV BUS=${BUS}
-
 ENTRYPOINT [ "nexploit-cli" ]
-CMD ["nexploit-cli", "scan:run", "--api-key", "$API_KEY", "--bus", "$BUS", "--headers", "$HEADERS", "$AGENT_ID"]
+CMD ["agent"]
