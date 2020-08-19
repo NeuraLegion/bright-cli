@@ -3,6 +3,7 @@ import { Event, EventType } from '../Event';
 import { Bus } from '../Bus';
 import { Proxy } from '../Proxy';
 import logger from '../../Utils/Logger';
+import { RabbitMQErrorHandler } from './RabbitMQErrorHandler';
 import { AmqpConnectionManager, ChannelWrapper } from 'amqp-connection-manager';
 import { Channel, ConsumeMessage } from 'amqplib';
 import { ok } from 'assert';
@@ -26,6 +27,9 @@ export class RabbitMQBus implements Bus {
   private client: AmqpConnectionManager;
   private channel: ChannelWrapper;
   private readonly handlers = new Map<string, Handler<Event>>();
+  private readonly DEFAULT_RECONNECT_TIMES = 20;
+  private readonly DEFAULT_RECONNECT_TIMEOUT = 1;
+  private errorHandler?: RabbitMQErrorHandler;
 
   constructor(
     private readonly options: RabbitMQBusOptions,
@@ -33,6 +37,9 @@ export class RabbitMQBus implements Bus {
   ) {}
 
   public async destroy(): Promise<void> {
+    this.errorHandler?.stop();
+    delete this.errorHandler;
+
     await this.channel?.close();
     delete this.channel;
 
@@ -55,31 +62,31 @@ export class RabbitMQBus implements Bus {
     this.client = await require('amqp-connection-manager').connect(
       [this.prepareUrl()],
       {
-        heartbeatIntervalInSeconds: 1,
+        reconnectTimeInSeconds: this.DEFAULT_RECONNECT_TIMEOUT,
         connectionOptions: {
           socket: await proxy?.open(this.options.url)
         }
       }
     );
 
-    let connectTimer: NodeJS.Timeout;
+    this.errorHandler = new RabbitMQErrorHandler(
+      this.DEFAULT_RECONNECT_TIMES,
+      this.client,
+      (reconnectTimes: number) =>
+        logger.warn(
+          'Failed to connect to event bus, retrying in %d second (attempt %d/%d)',
+          this.DEFAULT_RECONNECT_TIMEOUT,
+          reconnectTimes,
+          this.DEFAULT_RECONNECT_TIMES
+        )
+    );
 
-    this.client.on('connect', () => clearTimeout(connectTimer));
-
-    if (typeof this.options?.connectTimeout === 'number' && !connectTimer) {
-      connectTimer = setTimeout(() => {
-        logger.error(
-          'Event bus terminated by timeout (%dms)',
-          this.options.connectTimeout
-        );
-        this.destroy();
-      }, this.options.connectTimeout);
-    }
-
-    await this.createConsumerChannel();
+    await Promise.race([
+      this.createConsumerChannel(),
+      this.errorHandler.listen()
+    ]);
 
     logger.debug('Event bus connected to RabbitMQ: %j', this.options);
-
     logger.log('Event bus connected to %s', this.options.url);
   }
 
