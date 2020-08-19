@@ -1,3 +1,4 @@
+import logger from '../Utils/Logger';
 import { CommandModule } from 'yargs';
 import { exec, ExecException } from 'child_process';
 
@@ -56,15 +57,15 @@ export class VersionCommand implements CommandModule {
       .trim();
 
     if (localNpmVersion) {
-      console.log('Local installed version:', localNpmVersion);
+      logger.log('Local installed version:', localNpmVersion);
     } else {
-      console.log('No local installed NexPloit was found.');
+      logger.warn('No local installed NexPloit was found.');
     }
 
     if (globalNpmVersion) {
-      console.log('Global installed NexPloit version:', globalNpmVersion);
+      logger.log('Global installed NexPloit version:', globalNpmVersion);
     } else {
-      console.log('No global installed was found.');
+      logger.warn('No global installed was found.');
     }
 
     if (
@@ -72,7 +73,7 @@ export class VersionCommand implements CommandModule {
       globalNpmVersion &&
       localNpmVersion !== globalNpmVersion
     ) {
-      console.log(
+      logger.warn(
         'To avoid issues with CLI please make sure your global and local NexPloit versions match, ' +
           'or you are using locally installed NexPloit instead of global one.'
       );

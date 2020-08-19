@@ -1,19 +1,14 @@
 import {
-  InlineHeaders,
-  NexMockParser,
-  NexMockToRequestsParser,
-  RequestCrawler
-} from '../Parsers';
-import { split } from '../Utils/split';
-import { generatorFileNameFactory } from '../Utils/generateFileName';
-import { FileExistingValidator, NexMockValidator } from '../Validators';
-import { Options } from 'request';
+  DefaultParserFactory,
+  HarSplitter,
+  Parser,
+  SpecType
+} from '../Archive';
+import { Helpers } from '../Utils/Helpers';
+import logger from '../Utils/Logger';
 import { Arguments, Argv, CommandModule } from 'yargs';
-import { promisify } from 'util';
+import { Har } from 'har-format';
 import { basename } from 'path';
-import { writeFile as writeFileOld } from 'fs';
-
-const writeFile = promisify(writeFileOld);
 
 export class GenerateArchive implements CommandModule {
   public readonly command = 'archive:generate';
@@ -68,49 +63,31 @@ export class GenerateArchive implements CommandModule {
 
   public async handler(args: Arguments): Promise<void> {
     try {
-      const nexMockRequestsParser: NexMockToRequestsParser = new NexMockToRequestsParser(
-        {
-          url: args.target as string,
-          headers: new InlineHeaders().parse(args.header as string[])
-        },
-        new NexMockParser(new NexMockValidator(), new FileExistingValidator())
-      );
-      const requestOptions: Options[] = await nexMockRequestsParser.parse(
-        args.mockfile as string
-      );
-      console.log(`${requestOptions.length} requests were prepared.`);
+      const parserFactory = new DefaultParserFactory({
+        timeout: args.timeout as number,
+        pool: args.pool as number,
+        proxyUrl: args.proxy as string,
+        baseUrl: args.target as string,
+        headers: Helpers.parseHeaders(args.header as string[])
+      });
 
-      const chunks: Options[][] =
-        (args.split as number) > 0
-          ? split(
-              requestOptions,
-              requestOptions.length / (args.split as number)
-            )
-          : [requestOptions];
+      const parser: Parser = parserFactory.create(SpecType.NEXMOCK);
+      const { content } = await parser.parse(args.mockfile as string);
 
-      const generateFileName: (
-        filePath: string
-      ) => string = generatorFileNameFactory();
+      const { log } = JSON.parse(content) as Har;
 
-      const fileNames: string[] = await Promise.all(
-        chunks.map(async (items: Options[]) => {
-          const crawler: RequestCrawler = new RequestCrawler({
-            timeout: args.timeout as number,
-            pool: args.pool as number
-          });
-          const harFile: string = await crawler.parse(items);
-          const fileName: string = generateFileName(args.archive as string);
-          await writeFile(fileName, harFile, {
-            encoding: 'utf8'
-          });
+      logger.log(`${log.entries.length ?? 0} requests were prepared.`);
 
-          return fileName;
-        })
+      const harSplitter = new HarSplitter(args.archive as string);
+
+      const fileNames: string[] = await harSplitter.split(
+        args.split as number,
+        { log }
       );
 
       const plural: boolean = fileNames.length > 1;
 
-      console.log(
+      logger.log(
         `${fileNames.map((name: string) => basename(name))} ${
           plural ? 'archives' : 'archive'
         } ${plural ? 'were' : 'was'} created on base ${basename(
@@ -119,7 +96,7 @@ export class GenerateArchive implements CommandModule {
       );
       process.exit(0);
     } catch (e) {
-      console.error(`Error during "archive:generate" run: ${e.message}`);
+      logger.error(`Error during "archive:generate" run: ${e.message}`);
       process.exit(1);
     }
   }

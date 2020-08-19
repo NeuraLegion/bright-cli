@@ -1,12 +1,7 @@
-import { InlineHeaders } from '../Parsers';
-import {
-  FailureError,
-  Module,
-  RunStrategyConfig,
-  ServicesApiFactory,
-  TestType,
-  toArray
-} from '../Strategy';
+import { RestScans, Module, ScanConfig, TestType } from '../Scan';
+import { Helpers } from '../Utils/Helpers';
+import logger from '../Utils/Logger';
+import { AttackParamLocation } from '../Scan/Scans';
 import { Arguments, Argv, CommandModule } from 'yargs';
 
 export class RunScan implements CommandModule {
@@ -25,6 +20,9 @@ export class RunScan implements CommandModule {
         describe: 'NexPloit API-key',
         requiresArg: true,
         demandOption: true
+      })
+      .option('proxy', {
+        describe: 'SOCKS4 or SOCKS5 url to proxy all traffic'
       })
       .option('name', {
         alias: 'n',
@@ -53,8 +51,8 @@ export class RunScan implements CommandModule {
           'A list of specific urls that should be included into crawler.'
       })
       .option('test', {
-        choices: toArray(TestType),
-        default: toArray(TestType),
+        choices: Helpers.toArray(TestType),
+        default: Helpers.toArray(TestType),
         array: true,
         describe: 'A list of tests which you want to run during a scan.'
       })
@@ -90,7 +88,7 @@ export class RunScan implements CommandModule {
       .option('module', {
         default: Module.DAST,
         requiresArg: true,
-        choices: toArray(Module),
+        choices: Helpers.toArray(Module),
         describe:
           'The dast module tests for specific scenarios, mainly OWASP top 10 and other common scenarios. ' +
           'The fuzzer module generates various scenarios to test for unknown vulnerabilities, ' +
@@ -109,57 +107,68 @@ export class RunScan implements CommandModule {
         describe:
           'A list of specific headers that should be included into request.'
       })
+      .option('smart', {
+        boolean: true,
+        describe:
+          'Use automatic smart decisions such as: parameter skipping, detection phases, etc. to minimize scan time.'
+      })
+      .option('param', {
+        array: true,
+        default: [
+          AttackParamLocation.BODY,
+          AttackParamLocation.QUERY,
+          AttackParamLocation.FRAGMENT
+        ],
+        requiresArg: true,
+        choices: Helpers.toArray(AttackParamLocation),
+        describe: 'Defines which part of the request to attack.'
+      })
       .group(['archive', 'crawler'], 'Discovery Options')
       .group(
         ['service', 'build-number', 'vcs', 'project', 'user'],
         'Build Options'
       )
       .group(
-        ['host-filter', 'header', 'module', 'agent', 'test'],
+        ['host-filter', 'header', 'module', 'agent', 'test', 'smart'],
         'Additional Options'
       );
   }
 
   public async handler(args: Arguments): Promise<void> {
     try {
-      const headerParser = new InlineHeaders();
-      const scanId: string = await new ServicesApiFactory(
-        args.api as string,
-        args.apiKey as string
-      )
-        .createScanManager()
-        .create({
-          name: args.name,
-          module: args.module,
-          tests: args.test,
-          hostsFilter: args.hostFilter,
-          headers: headerParser.parse(args.header as string[]),
-          crawlerUrls: args.crawler,
-          fileId: args.archive,
-          agents: args.agent,
-          build: args.service
-            ? {
-                service: args.service,
-                buildNumber: args.buildNumber,
-                project: args.project,
-                user: args.user,
-                vcs: args.vcs
-              }
-            : undefined
-        } as RunStrategyConfig);
+      const scanManager = new RestScans({
+        baseUrl: args.api as string,
+        apiKey: args.apiKey as string,
+        proxyUrl: args.proxy as string
+      });
 
-      console.log(scanId);
+      const scanId: string = await scanManager.create({
+        name: args.name,
+        module: args.module,
+        tests: args.test,
+        hostsFilter: args.hostFilter,
+        headers: Helpers.parseHeaders(args.header as string[]),
+        crawlerUrls: args.crawler,
+        fileId: args.archive,
+        agents: args.agent,
+        smart: args.smart,
+        attackParamLocations: args.param,
+        build: args.service
+          ? {
+              service: args.service,
+              buildNumber: args.buildNumber,
+              project: args.project,
+              user: args.user,
+              vcs: args.vcs
+            }
+          : undefined
+      } as ScanConfig);
+
+      logger.log(scanId);
 
       process.exit(0);
     } catch (e) {
-      if (e instanceof FailureError) {
-        console.error(`Scan failure during "scan:run": ${e.message}`);
-        process.exit(50);
-
-        return;
-      }
-
-      console.error(`Error during "scan:run" run: ${e.error || e.message}`);
+      logger.error(`Error during "scan:run": ${e.error || e.message}`);
       process.exit(1);
     }
   }

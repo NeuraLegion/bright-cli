@@ -1,0 +1,1 @@
+export { RabbitMQBus } from './RabbitMQBus';

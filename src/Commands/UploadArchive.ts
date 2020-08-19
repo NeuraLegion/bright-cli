@@ -1,5 +1,12 @@
-import { InlineHeaders } from '../Parsers';
-import { Discovery, ServicesApiFactory } from '../Strategy';
+import {
+  DefaultParserFactory,
+  Parser,
+  RestArchives,
+  Spec,
+  SpecType
+} from '../Archive';
+import { Helpers } from '../Utils/Helpers';
+import logger from '../Utils/Logger';
 import { Arguments, Argv, CommandModule } from 'yargs';
 
 export class UploadArchive implements CommandModule {
@@ -20,12 +27,19 @@ export class UploadArchive implements CommandModule {
         requiresArg: true,
         demandOption: true
       })
-      .option('discovery', {
+      .option('proxy', {
+        describe: 'SOCKS4 or SOCKS5 url to proxy all traffic'
+      })
+      .option('type', {
         alias: 't',
         requiresArg: true,
-        describe: 'Archive-type scan or OAS-type scan.',
-        choices: ['archive', 'oas'],
-        default: 'archive',
+        describe: 'The specification type',
+        choices: [
+          SpecType.OPENAPI,
+          SpecType.HAR,
+          SpecType.POSTMAN
+        ].map((x: string) => x.toLowerCase()),
+        default: SpecType.HAR.toLowerCase(),
         demandOption: true
       })
       .option('discard', {
@@ -42,6 +56,13 @@ export class UploadArchive implements CommandModule {
         describe:
           'A list of specific headers that should be included into request.'
       })
+      .option('variable', {
+        alias: 'V',
+        default: [],
+        array: true,
+        describe:
+          'A list of specific variables that should be included into request. Only for Postman'
+      })
       .positional('file', {
         describe:
           "A collection your app's http/websockets logs into HAR file. " +
@@ -54,21 +75,45 @@ export class UploadArchive implements CommandModule {
 
   public async handler(args: Arguments): Promise<void> {
     try {
-      const archiveId: string = await new ServicesApiFactory(
-        args.api as string,
-        args.apiKey as string
-      )
-        .createUploadStrategyFactory()
-        .create(args.discovery as Discovery)
-        .upload({
-          path: args.file as string,
-          discard: args.discard as boolean,
-          headers: new InlineHeaders().parse(args.header as string[])
-        });
-      console.log(archiveId);
+      const parserFactory = new DefaultParserFactory({
+        timeout: args.timeout as number,
+        pool: args.pool as number,
+        proxyUrl: args.proxy as string,
+        baseUrl: args.target as string,
+        headers: Helpers.parseHeaders(args.header as string[])
+      });
+
+      const parser: Parser = parserFactory.create(args.type as SpecType);
+
+      const { content, filename } = await parser.parse(args.file as string);
+
+      const archives = new RestArchives({
+        baseUrl: args.api as string,
+        apiKey: args.apiKey as string,
+        proxyUrl: args.proxy as string
+      });
+
+      const spec: Spec = {
+        filename,
+        content,
+        discard: args.discard as boolean,
+        headers: Helpers.parseHeaders(args.header as string[]),
+        variables: Helpers.parseHeaders(args.variable as string[]),
+        type: Helpers.selectEnumValue(SpecType, args.type as string) as SpecType
+      };
+
+      let archiveId: string | undefined;
+
+      if (args.type === SpecType.HAR) {
+        archiveId = await archives.upload(spec);
+      } else {
+        archiveId = await archives.convertAndUpload(spec);
+      }
+
+      logger.log(archiveId);
       process.exit(0);
     } catch (e) {
-      console.error(`Error during "archive:generate" run: ${e.message}`);
+      logger.error(`Error during "archive:generate": ${e.message}`);
       process.exit(1);
     }
   }

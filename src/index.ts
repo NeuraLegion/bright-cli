@@ -1,13 +1,15 @@
+import 'reflect-metadata';
 import {
   GenerateArchive,
   PollingScanStatus,
   RetestScan,
+  RunAgent,
   RunScan,
   StopScan,
   UploadArchive,
   VersionCommand
 } from './Commands';
-import { CliBuilder } from './Config';
+import { CliBuilder, DefaultConfigReader } from './Config';
 
 const cli: CliBuilder = new CliBuilder({
   colors: true,
@@ -15,13 +17,17 @@ const cli: CliBuilder = new CliBuilder({
 });
 
 cli
-  .build(
-    new VersionCommand(),
-    new GenerateArchive(),
-    new PollingScanStatus(),
-    new RunScan(),
-    new RetestScan(),
-    new StopScan(),
-    new UploadArchive()
-  )
+  .build({
+    configReader: new DefaultConfigReader(),
+    commands: [
+      new RunAgent(),
+      new VersionCommand(),
+      new GenerateArchive(),
+      new PollingScanStatus(),
+      new RunScan(),
+      new RetestScan(),
+      new StopScan(),
+      new UploadArchive()
+    ]
+  })
   .wrap(null).argv;

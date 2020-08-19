@@ -1,4 +1,5 @@
-import { FailureError, ServicesApiFactory } from '../Strategy';
+import { RestScans } from '../Scan';
+import logger from '../Utils/Logger';
 import { Arguments, Argv, CommandModule } from 'yargs';
 
 export class StopScan implements CommandModule {
@@ -18,6 +19,9 @@ export class StopScan implements CommandModule {
         requiresArg: true,
         demandOption: true
       })
+      .option('proxy', {
+        describe: 'SOCKS4 or SOCKS5 url to proxy all traffic'
+      })
       .positional('scan', {
         describe: 'ID of an existing scan which you want to stop.',
         type: 'string'
@@ -26,20 +30,17 @@ export class StopScan implements CommandModule {
 
   public async handler(args: Arguments): Promise<void> {
     try {
-      await new ServicesApiFactory(args.api as string, args.apiKey as string)
-        .createScanManager()
-        .stop(args.scan as string);
+      const scanManager = new RestScans({
+        baseUrl: args.api as string,
+        apiKey: args.apiKey as string,
+        proxyUrl: args.proxy as string
+      });
+
+      await scanManager.stop(args.scan as string);
 
       process.exit(0);
     } catch (e) {
-      if (e instanceof FailureError) {
-        console.error(`Scan failure during "scan:run": ${e.message}`);
-        process.exit(50);
-
-        return;
-      }
-
-      console.error(`Error during "scan:run" run: ${e.error || e.message}`);
+      logger.error(`Error during "scan:stop": ${e.error || e.message}`);
       process.exit(1);
     }
   }
