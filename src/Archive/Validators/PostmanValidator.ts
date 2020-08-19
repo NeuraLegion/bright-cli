@@ -1,4 +1,5 @@
 import { Validator } from './Validator';
+import logger from '../../Utils/Logger';
 import Ajv from 'ajv';
 import { ValidateFunction } from 'ajv';
 import betterAjvErrors from 'better-ajv-errors';
@@ -69,10 +70,10 @@ export class PostmanValidator implements Validator<any> {
     }
 
     if (!(await validate(collection))) {
-      console.error(
+      logger.error(
         betterAjvErrors(validate.schema, collection, validate.errors, {
           indent: 2
-        })
+        }) as any
       );
 
       throw new Error(`The Postman Collection file is corrupted.`);

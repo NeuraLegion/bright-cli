@@ -1,4 +1,5 @@
 import { Validator } from './Validator';
+import logger from '../../Utils/Logger';
 import Ajv from 'ajv';
 import { ValidateFunction } from 'ajv';
 import semver from 'semver';
@@ -55,10 +56,10 @@ export class OasValidator implements Validator<any> {
     const validate: ValidateFunction = this.ajv.getSchema(schemaId);
 
     if (!(await validate(spec))) {
-      console.error(
+      logger.error(
         betterAjvErrors(validate.schema, spec, validate.errors, {
           indent: 2
-        })
+        }) as any
       );
       throw new Error(`The OAS file is corrupted.`);
     }

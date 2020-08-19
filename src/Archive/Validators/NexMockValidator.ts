@@ -1,5 +1,6 @@
 import { Validator } from './Validator';
 import { MockRequest } from '../Parsers';
+import logger from '../../Utils/Logger';
 import Ajv from 'ajv';
 import { ValidateFunction } from 'ajv';
 import betterAjvErrors from 'better-ajv-errors';
@@ -20,10 +21,10 @@ export class NexMockValidator implements Validator<MockRequest[]> {
     const validate: ValidateFunction = this.ajv.getSchema('nexmock');
 
     if (!(await validate(data))) {
-      console.error(
+      logger.error(
         betterAjvErrors(validate.schema, data, validate.errors, {
           indent: 2
-        })
+        }) as any
       );
       throw new Error(`The NexMock file is corrupted.`);
     }

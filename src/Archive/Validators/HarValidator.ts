@@ -1,4 +1,5 @@
 import { Validator } from './Validator';
+import logger from '../../Utils/Logger';
 import { Entry, Har } from 'har-format';
 import Ajv from 'ajv';
 import { ValidateFunction } from 'ajv';
@@ -23,10 +24,10 @@ export class HarValidator implements Validator<Har> {
     const validate: ValidateFunction = this.ajv.getSchema('har');
 
     if (!(await validate(data))) {
-      console.error(
+      logger.error(
         betterAjvErrors(validate.schema, data, validate.errors, {
           indent: 2
-        })
+        }) as any
       );
       throw new Error(`The HAR file is corrupted.`);
     }
