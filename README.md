@@ -162,7 +162,7 @@ The command will output an ID of a new archive, which you can use to run a new s
 |---|:---|
 | `--api-key=yourApiKey`, `-K=yourApiKey` | The unique identifier used to authenticate a user. It can be issued in your organization dashboard |
 | `--proxy=proxyUrl` | SOCKS4 or SOCKS5 url to proxy all traffic |
-| `--type=har/oas/postman` | The specification type. Helps determine the best way to parse passed files. Default: `har`|
+| `--type=har/openapi/postman` | The specification type. Helps determine the best way to parse passed files. Default: `har`|
 | `--discard=false/true`, `-d=false/true` | When `true`, removes an archive from the cloud storage after the scan is finished running. Default: `true` |
 | `--header=extraHeader`, `-H=extraHeader` | Extra headers to be passed with the OAS/Postman file. Also, it can be used to remove a header by providing a name without content, for example: `-H "Host:"`. **WARNING**: headers set with this option override the archive headers and will be set in all the requests |
 | `--variable=envVariable`, `-V=envVariable` | Environment variables to be passed with the Postman file.  |

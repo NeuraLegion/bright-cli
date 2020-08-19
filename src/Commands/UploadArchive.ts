@@ -70,7 +70,8 @@ export class UploadArchive implements CommandModule {
         type: 'string',
         normalize: true
       })
-      .group(['header'], 'OAS Options');
+      .group(['header'], 'OAS Options')
+      .group(['header', 'variable'], 'Postman Options');
   }
 
   public async handler(args: Arguments): Promise<void> {
@@ -83,7 +84,11 @@ export class UploadArchive implements CommandModule {
         headers: Helpers.parseHeaders(args.header as string[])
       });
 
-      const parser: Parser = parserFactory.create(args.type as SpecType);
+      const type = Helpers.selectEnumValue(
+        SpecType,
+        args.type as string
+      ) as SpecType;
+      const parser: Parser = parserFactory.create(type);
 
       const { content, filename } = await parser.parse(args.file as string);
 
@@ -94,17 +99,17 @@ export class UploadArchive implements CommandModule {
       });
 
       const spec: Spec = {
-        filename,
+        type,
         content,
+        filename,
         discard: args.discard as boolean,
         headers: Helpers.parseHeaders(args.header as string[]),
-        variables: Helpers.parseHeaders(args.variable as string[]),
-        type: Helpers.selectEnumValue(SpecType, args.type as string) as SpecType
+        variables: Helpers.parseHeaders(args.variable as string[])
       };
 
       let archiveId: string | undefined;
 
-      if (args.type === SpecType.HAR) {
+      if (type === SpecType.HAR) {
         archiveId = await archives.upload(spec);
       } else {
         archiveId = await archives.convertAndUpload(spec);
