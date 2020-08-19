@@ -240,7 +240,7 @@ You also can use Docker image to run it. For example, you can use Docker Compose
 version: '3'
 services:
   repeater:
-    image: neuralegion/repeater:latest
+    image: neuralegion/agent:latest
     restart: always
     environment:
       API_KEY: my-api-key
