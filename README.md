@@ -226,7 +226,7 @@ This command allows you to specify one or more of the discovery strategies, for 
 
 ### 🕵️ Start agent
 
-`nexploit-cli agent [options] <agent>` starts an agent to connect it to the scans
+`nexploit-cli agent [options]` starts an agent to connect it to the scans
 
 > ✴ Allows to multiple scans under single agent, decreasing the need for multiple agents.
 
@@ -240,35 +240,30 @@ You also can use Docker image to run it. For example, you can use Docker Compose
 version: '3'
 services:
   repeater:
-    image: neuralegion/agent:latest
+    image: 'neuralegion/agent'
     restart: always
     environment:
-      API_KEY: my-api-key
-      AGENT_ID: my-agent-id
-      HEADERS: { "X-Header": "my-header" }
+      API_KEY: 'my-api-key'
+      AGENT_ID: 'my-agent-id'
+      AGENT_HEADERS: '{ "X-Header": "my-header" }'
 ```
 
 or using Docker CLI directly
 
 ```bash
 docker run neuralegion/agent \
-  -e 'API_KEY=my-api-key' \
-  -e 'AGENT_ID=my-agent-id'
+  -e 'AGENT_API_KEY=my-api-key' \
+  -e 'AGENT_ID=my-agent-id' \
+  -e 'AGENT_HEADERS={ "X-Header": "my-header" }'
 ```
 
-> ✴ The agent requires `API_KEY` with the scope `agents:write:repeater`
-
-#### Arguments
-
-| Argument  |  Description |
-|---|:---|
-| `<agent>` | The ID of an existing agent which you want to use. |
-
+> ✴ The agent requires `AGENT_API_KEY` with the scope `agents:write:repeater`
 
 #### Options
 
 | Option  |   Description |
 |---|:---|
+| `--id=agentId` | The ID of an existing agent which you want to use. |
 | `--api-key=yourApiKey`, `-K=yourApiKey` | The unique identifier used to authenticate a user. It can be issued in your organization dashboard |
 | `--bus=eventBus` | NexPloit Event Bus URL. Default: `amqps://amq.nexploit.app:5672` |
 | `--header=extraHeader`, `-H=extraHeader` | Extra headers to be passed with each request. Also, it can be used to remove a header by providing a name without content, for example: `-H "Host:"`. **WARNING**: headers set with this option override the original headers and will be set in all the requests |

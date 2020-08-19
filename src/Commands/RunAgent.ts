@@ -6,7 +6,7 @@ import logger from '../Utils/Logger';
 import { Arguments, Argv, CommandModule } from 'yargs';
 
 export class RunAgent implements CommandModule {
-  public readonly command = 'agent [options] <agent>';
+  public readonly command = 'agent';
   public readonly describe = 'Starts an agent by its ID.';
 
   public builder(args: Argv): Argv {
@@ -27,10 +27,10 @@ export class RunAgent implements CommandModule {
         requiresArg: true,
         demandOption: true
       })
-      .option('api-key', {
-        alias: 'K',
-        describe: 'NexPloit API-key',
-        requiresArg: true,
+      .option('id', {
+        describe:
+          'ID of an existing agent which you want to use to run a new scan.',
+        type: 'string',
         demandOption: true
       })
       .option('header', {
@@ -51,12 +51,7 @@ export class RunAgent implements CommandModule {
       .option('proxy', {
         describe: 'SOCKS4 or SOCKS5 url to proxy all traffic'
       })
-      .positional('agent', {
-        describe:
-          'ID of an existing agent which you want to use to run a new scan.',
-        type: 'string',
-        demandOption: true
-      })
+      .env('AGENT')
       .exitProcess(false);
   }
 
@@ -86,12 +81,12 @@ export class RunAgent implements CommandModule {
           deadLetterQueue: 'dl',
           deadLetterExchange: 'DeadLetterExchange',
           exchange: 'EventBus',
-          clientQueue: `agent:${args.agent as string}`,
+          clientQueue: `agent:${args.id as string}`,
           connectTimeout: 10000,
           url: args.bus as string,
           proxyUrl: args.proxy as string,
           credentials: {
-            username: args.agent as string,
+            username: args.id as string,
             password: args.apiKey as string
           }
         },
