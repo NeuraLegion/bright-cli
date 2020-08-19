@@ -240,7 +240,7 @@ You also can use Docker image to run it. For example, you can use Docker Compose
 version: '3'
 services:
   repeater:
-    image: neuralegion/repeater:latest
+    image: neuralegion/agent:latest
     restart: always
     environment:
       API_KEY: my-api-key
@@ -251,7 +251,7 @@ services:
 or using Docker CLI directly
 
 ```bash
-docker run neuralegion/repeater \
+docker run neuralegion/agent \
   -e 'API_KEY=my-api-key' \
   -e 'AGENT_ID=my-agent-id'
 ```
