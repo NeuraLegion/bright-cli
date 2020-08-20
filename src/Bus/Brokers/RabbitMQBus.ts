@@ -141,7 +141,7 @@ export class RabbitMQBus implements Bus {
         this.DEFAULT_RECONNECT_TIMEOUT * 1000
       );
 
-      await backoff.execute(() => this.reconnect());
+      await backoff.execute(() => this.connect());
     } catch (err) {
       (this.options.onError ?? this.onError)(err);
     }
