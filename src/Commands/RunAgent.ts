@@ -5,6 +5,11 @@ import { Helpers } from '../Utils/Helpers';
 import logger from '../Utils/Logger';
 import { Arguments, Argv, CommandModule } from 'yargs';
 
+const onError = (e: Error) => {
+  logger.error(`Error during "agent": ${e.message}`);
+  process.exit(1);
+};
+
 export class RunAgent implements CommandModule {
   public readonly command = 'agent';
   public readonly describe = 'Starts an agent by its ID.';
@@ -78,6 +83,7 @@ export class RunAgent implements CommandModule {
 
       bus = new RabbitMQBus(
         {
+          onError,
           exchange: 'EventBus',
           clientQueue: `agent:${args.id as string}`,
           connectTimeout: 10000,
@@ -95,8 +101,7 @@ export class RunAgent implements CommandModule {
 
       await bus.subscribe(SendRequestHandler);
     } catch (e) {
-      logger.error(`Error during "agent": ${e.error || e.message}`);
-      process.exit(1);
+      onError(e);
     }
   }
 }

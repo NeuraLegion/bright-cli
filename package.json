@@ -21,7 +21,6 @@
   "dependencies": {
     "@neuralegion/capture-har": "^0.3.2",
     "ajv": "^6.12.3",
-    "amqp-connection-manager": "^3.2.0",
     "amqplib": "^0.6.0",
     "better-ajv-errors": "^0.6.7",
     "debug": "^4.1.1",
@@ -43,7 +42,6 @@
   "devDependencies": {
     "@commitlint/cli": "^9.1.1",
     "@commitlint/config-conventional": "^9.1.1",
-    "@types/amqp-connection-manager": "^2.0.10",
     "@types/amqplib": "^0.5.13",
     "@types/chai": "^4.2.12",
     "@types/chalk": "^2.2.0",
