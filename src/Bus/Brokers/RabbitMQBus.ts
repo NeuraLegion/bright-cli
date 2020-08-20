@@ -13,8 +13,6 @@ export interface RabbitMQBusOptions {
   url?: string;
   exchange?: string;
   clientQueue?: string;
-  deadLetterExchange?: string;
-  deadLetterQueue?: string;
   connectTimeout?: number;
   proxyUrl?: string;
   credentials?: {
@@ -179,32 +177,36 @@ export class RabbitMQBus implements Bus {
   private async consumeReceived(message: ConsumeMessage): Promise<void> {
     try {
       if (!message.fields.redelivered) {
-        const { content, fields } = message;
+        const { content, fields, properties } = message;
         const { routingKey } = fields;
+        const { correlationId, replyTo, type } = properties;
+
+        const eventType =
+          routingKey === this.options.clientQueue ? type : routingKey;
 
         const event: Event = JSON.parse(content.toString());
 
         logger.debug(
           'Emits %s event with following payload: %j',
-          routingKey,
+          eventType,
           event
         );
 
         const handler: Handler<Event> | undefined = this.handlers.get(
-          routingKey
+          eventType
         );
 
-        ok(handler, `Cannot find a handler for ${routingKey} event.`);
+        ok(handler, `Cannot find a handler for ${eventType} event.`);
 
         const response: Event | undefined = await handler.handle(event);
 
         // eslint-disable-next-line max-depth
         if (response) {
           await this.channel.sendToQueue(
-            message.properties.replyTo,
+            replyTo,
             Buffer.from(JSON.stringify(response)),
             {
-              correlationId: message.properties.correlationId
+              correlationId
             }
           );
         }
@@ -222,31 +224,6 @@ export class RabbitMQBus implements Bus {
     }
   }
 
-  private async bindDeadLetterToQueue(channel: Channel): Promise<void> {
-    await Promise.all([
-      channel.assertExchange(this.options.deadLetterExchange, 'fanout', {
-        durable: true
-      }),
-      channel.assertQueue(this.options.deadLetterQueue, {
-        expires: 100000,
-        messageTtl: 15000,
-        durable: true,
-        exclusive: false,
-        autoDelete: false
-      }),
-      channel.bindQueue(
-        this.options.deadLetterQueue,
-        this.options.deadLetterExchange,
-        ''
-      )
-    ]);
-    logger.debug(
-      'Binds the queue %s to %s.',
-      this.options.deadLetterQueue,
-      this.options.deadLetterExchange
-    );
-  }
-
   private async createConsumerChannel(): Promise<void> {
     if (!this.channel) {
       this.channel = this.client.createChannel({
@@ -255,7 +232,6 @@ export class RabbitMQBus implements Bus {
       await this.channel.addSetup((channel: Channel) =>
         Promise.all([
           this.bindExchangesToQueue(channel),
-          this.bindDeadLetterToQueue(channel),
           this.startBasicConsume(channel)
         ])
       );
@@ -279,7 +255,6 @@ export class RabbitMQBus implements Bus {
         durable: true
       }),
       channel.assertQueue(this.options.clientQueue, {
-        deadLetterExchange: this.options.deadLetterExchange,
         durable: true,
         exclusive: false,
         autoDelete: true

@@ -78,8 +78,6 @@ export class RunAgent implements CommandModule {
 
       bus = new RabbitMQBus(
         {
-          deadLetterQueue: 'dl',
-          deadLetterExchange: 'DeadLetterExchange',
           exchange: 'EventBus',
           clientQueue: `agent:${args.id as string}`,
           connectTimeout: 10000,
