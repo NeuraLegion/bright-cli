@@ -3,9 +3,14 @@ import { Event, EventType } from '../Event';
 import { Bus } from '../Bus';
 import { Proxy } from '../Proxy';
 import logger from '../../Utils/Logger';
-import { RabbitMQErrorHandler } from './RabbitMQErrorHandler';
-import { AmqpConnectionManager, ChannelWrapper } from 'amqp-connection-manager';
-import { Channel, ConsumeMessage } from 'amqplib';
+import { RabbitBackoff } from './RabbitBackoff';
+import {
+  Channel,
+  ConfirmChannel,
+  connect,
+  Connection,
+  ConsumeMessage
+} from 'amqplib';
 import { ok } from 'assert';
 import { format, parse, UrlWithParsedQuery } from 'url';
 
@@ -15,6 +20,7 @@ export interface RabbitMQBusOptions {
   clientQueue?: string;
   connectTimeout?: number;
   proxyUrl?: string;
+  onError?: (err: Error) => unknown;
   credentials?: {
     username: string;
     password: string;
@@ -22,12 +28,12 @@ export interface RabbitMQBusOptions {
 }
 
 export class RabbitMQBus implements Bus {
-  private client: AmqpConnectionManager;
-  private channel: ChannelWrapper;
+  private client: Connection;
+  private channel: ConfirmChannel;
   private readonly handlers = new Map<string, Handler<Event>>();
   private readonly DEFAULT_RECONNECT_TIMES = 20;
-  private readonly DEFAULT_RECONNECT_TIMEOUT = 1;
-  private errorHandler?: RabbitMQErrorHandler;
+  private readonly DEFAULT_RECONNECT_TIMEOUT = 5;
+  private readonly DEFAULT_HEARTBEAT_INTERVAL = 5;
 
   constructor(
     private readonly options: RabbitMQBusOptions,
@@ -35,14 +41,9 @@ export class RabbitMQBus implements Bus {
   ) {}
 
   public async destroy(): Promise<void> {
-    this.errorHandler?.stop();
-    delete this.errorHandler;
-
     await this.channel?.close();
-    delete this.channel;
-
     await this.client?.close();
-    delete this.client;
+    this.clear();
 
     logger.log('Event bus disconnected from %s', this.options.url);
   }
@@ -52,40 +53,13 @@ export class RabbitMQBus implements Bus {
       return;
     }
 
-    const proxy: Proxy | undefined = this.options.proxyUrl
-      ? new Proxy(this.options.proxyUrl)
-      : undefined;
-
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
-    this.client = await require('amqp-connection-manager').connect(
-      [this.prepareUrl()],
-      {
-        reconnectTimeInSeconds: this.DEFAULT_RECONNECT_TIMEOUT,
-        connectionOptions: {
-          socket: await proxy?.open(this.options.url)
-        }
-      }
-    );
-
-    this.errorHandler = new RabbitMQErrorHandler(
+    const backoff = new RabbitBackoff(
       this.DEFAULT_RECONNECT_TIMES,
-      this.client,
-      (reconnectTimes: number) =>
-        logger.warn(
-          'Failed to connect to event bus, retrying in %d second (attempt %d/%d)',
-          this.DEFAULT_RECONNECT_TIMEOUT,
-          reconnectTimes,
-          this.DEFAULT_RECONNECT_TIMES
-        )
+      1000,
+      this.DEFAULT_RECONNECT_TIMEOUT * 1000
     );
 
-    await Promise.race([
-      this.createConsumerChannel(),
-      this.errorHandler.listen()
-    ]);
-
-    logger.debug('Event bus connected to RabbitMQ: %j', this.options);
-    logger.log('Event bus connected to %s', this.options.url);
+    await backoff.execute(() => this.connect());
   }
 
   public async subscribe(handler: HandlerType): Promise<void> {
@@ -138,20 +112,68 @@ export class RabbitMQBus implements Bus {
     );
   }
 
-  protected async subscribeTo(eventName: string): Promise<void> {
+  private async subscribeTo(eventName: string): Promise<void> {
     logger.debug(
       'Binds the queue %s to %s by %s routing key.',
       this.options.clientQueue,
       this.options.exchange,
       eventName
     );
-    await this.channel.addSetup((channel: Channel) =>
-      channel.bindQueue(
-        this.options.clientQueue,
-        this.options.exchange,
-        eventName
-      )
+    await this.channel.bindQueue(
+      this.options.clientQueue,
+      this.options.exchange,
+      eventName
     );
+  }
+
+  private onError(err: Error): void {
+    logger.error(err.message);
+    process.exit(1);
+  }
+
+  private async reconnect(): Promise<void> {
+    try {
+      this.clear();
+
+      const backoff = new RabbitBackoff(
+        this.DEFAULT_RECONNECT_TIMES,
+        1000,
+        this.DEFAULT_RECONNECT_TIMEOUT * 1000
+      );
+
+      await backoff.execute(() => this.reconnect());
+    } catch (err) {
+      (this.options.onError ?? this.onError)(err);
+    }
+  }
+
+  private clear(): void {
+    this.channel?.removeAllListeners();
+    delete this.channel;
+
+    this.client?.removeAllListeners();
+    delete this.client;
+  }
+
+  private async connect(): Promise<void> {
+    const proxy: Proxy | undefined = this.options.proxyUrl
+      ? new Proxy(this.options.proxyUrl)
+      : undefined;
+
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    this.client = await connect(this.prepareUrl(), {
+      timeout: this.options.connectTimeout,
+      socket: await proxy?.open(this.options.url)
+    });
+
+    this.client.on('close', (reason: Error) =>
+      reason ? this.reconnect() : undefined
+    );
+
+    await this.createConsumerChannel();
+
+    logger.debug('Event bus connected to RabbitMQ: %j', this.options);
+    logger.log('Event bus connected to %s', this.options.url);
   }
 
   private prepareUrl(): string {
@@ -163,7 +185,11 @@ export class RabbitMQBus implements Bus {
       url.auth = `${username}:${password}`;
     }
 
-    url.query = { ...url.query, frameMax: '0' };
+    url.query = {
+      ...url.query,
+      frameMax: '0',
+      heartbeat: `${this.DEFAULT_HEARTBEAT_INTERVAL}`
+    };
 
     return format(url);
   }
@@ -226,16 +252,10 @@ export class RabbitMQBus implements Bus {
 
   private async createConsumerChannel(): Promise<void> {
     if (!this.channel) {
-      this.channel = this.client.createChannel({
-        json: false
-      });
-      await this.channel.addSetup((channel: Channel) =>
-        Promise.all([
-          this.bindExchangesToQueue(channel),
-          this.startBasicConsume(channel)
-        ])
-      );
-      await this.channel.waitForConnect();
+      this.channel = await this.client.createConfirmChannel();
+      await this.bindExchangesToQueue(this.channel);
+      await this.startBasicConsume(this.channel);
+      await this.channel.waitForConfirms();
     }
   }
 

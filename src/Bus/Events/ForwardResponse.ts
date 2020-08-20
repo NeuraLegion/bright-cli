@@ -11,14 +11,7 @@ export class ForwardResponse implements Event {
     body: string
   ) {
     this.status_code = status;
-    this.headers = Object.fromEntries(
-      Object.entries(
-        headers ?? {}
-      ).map(([key, value]: [string, string | string[]]) => [
-        key,
-        [].concat(value)
-      ])
-    );
+    this.headers = headers;
     this.body = body;
   }
 }
