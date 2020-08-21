@@ -50,6 +50,6 @@ jobs:
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GPR_TOKEN }}
 
-      - run: docker build . --file Dockerfile --tag "neuralegion/agent:$VERSION"
+      - run: docker build . --file Dockerfile --tag "neuralegion/repeater:$VERSION"
       - run: docker login --username=${{ secrets.DOCKER_USER }} --password=${{ secrets.DOCKER_TOKEN }}
-      - run: docker push neuralegion/agent
+      - run: docker push neuralegion/repeater
