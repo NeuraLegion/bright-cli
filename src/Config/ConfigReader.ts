@@ -1,13 +1,13 @@
 export interface CliConfig {
-  apiKey: string;
-  url?: string;
+  token?: string;
+  api?: string;
   proxy?: string;
   bus?: string;
   agent?: string;
 }
 
 export interface ConfigReader {
-  load(cwd: string): this;
+  load(rcPath: string): this;
 
   get<T extends keyof CliConfig>(key: T): CliConfig[T];
 

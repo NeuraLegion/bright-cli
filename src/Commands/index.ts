@@ -5,4 +5,4 @@ export { UploadArchive } from './UploadArchive';
 export { RetestScan } from './RetestScan';
 export { StopScan } from './StopScan';
 export { PollingScanStatus } from './PollingScanStatus';
-export { RunAgent } from './RunAgent';
+export { RunRepeater } from './RunRepeater';

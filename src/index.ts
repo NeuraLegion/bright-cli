@@ -3,7 +3,7 @@ import {
   GenerateArchive,
   PollingScanStatus,
   RetestScan,
-  RunAgent,
+  RunRepeater,
   RunScan,
   StopScan,
   UploadArchive,
@@ -20,7 +20,7 @@ cli
   .build({
     configReader: new DefaultConfigReader(),
     commands: [
-      new RunAgent(),
+      new RunRepeater(),
       new VersionCommand(),
       new GenerateArchive(),
       new PollingScanStatus(),

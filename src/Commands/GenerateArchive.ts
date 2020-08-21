@@ -11,25 +11,21 @@ import { Har } from 'har-format';
 import { basename } from 'path';
 
 export class GenerateArchive implements CommandModule {
-  public readonly command = 'archive:generate';
+  public readonly command = 'archive:generate [options] <mockfile>';
   public readonly describe = 'Generates a new archive on base unit-tests.';
 
   public builder(args: Argv): Argv {
     return args
-      .option('mockfile', {
-        alias: 'm',
-        normalize: true,
-        describe: 'Mock file.',
-        demandOption: true
-      })
       .option('pool', {
         alias: 'p',
         number: true,
+        requiresArg: true,
         default: 250,
         describe: 'Size of the worker pool.'
       })
       .option('timeout', {
         number: true,
+        requiresArg: true,
         default: 5000,
         describe:
           'Time to wait for a server to send response headers (and start the response body) before aborting the request.'
@@ -37,27 +33,36 @@ export class GenerateArchive implements CommandModule {
       .option('split', {
         alias: 's',
         number: true,
+        requiresArg: true,
         default: 1,
         describe:
           'Number of the HAR chunks. Allows to split a mock file to into multiple HAR files.'
       })
-      .option('archive', {
-        alias: 'f',
+      .option('output', {
+        alias: 'o',
         normalize: true,
+        requiresArg: true,
         describe: 'Name of the archive.',
         demandOption: true
       })
       .option('target', {
-        alias: 't',
+        alias: 'T',
+        requiresArg: true,
         describe: 'Target hostname or IP address.',
         demandOption: true
       })
       .option('header', {
         alias: 'H',
+        requiresArg: true,
         default: [],
         array: true,
         describe:
           'A list of specific headers that should be included into request.'
+      })
+      .positional('mockfile', {
+        normalize: true,
+        describe: 'Mock file.',
+        demandOption: true
       });
   }
 
@@ -78,7 +83,7 @@ export class GenerateArchive implements CommandModule {
 
       logger.log(`${log.entries.length ?? 0} requests were prepared.`);
 
-      const harSplitter = new HarSplitter(args.archive as string);
+      const harSplitter = new HarSplitter(args.output as string);
 
       const fileNames: string[] = await harSplitter.split(
         args.split as number,
@@ -96,7 +101,7 @@ export class GenerateArchive implements CommandModule {
       );
       process.exit(0);
     } catch (e) {
-      logger.error(`Error during "archive:generate" run: ${e.message}`);
+      logger.error(`Error during "archive:generate": ${e.message}`);
       process.exit(1);
     }
   }
