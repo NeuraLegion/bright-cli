@@ -36,23 +36,42 @@ export class CliBuilder {
     commands: CommandModule[];
     configReader: DefaultConfigReader;
   }): Argv {
-    const config: CliConfig = configReader.load(this.cwd).toJSON();
-
     // eslint-disable-next-line @typescript-eslint/no-var-requires
     const cli: Argv = require('yargs')
+      .option('config', {
+        requiresArg: true,
+        describe: 'Path to the file with configuration',
+        config: true,
+        default: configReader.discovery(this.cwd),
+        configParser: (configPath: string): CliConfig =>
+          configReader.load(configPath).toJSON()
+      })
+      .option('api', {
+        default: 'https://nexploit.app/',
+        requiresArg: true,
+        demandOption: true,
+        describe: 'NexPloit base URL'
+      })
+      .option('config', {
+        requiresArg: true,
+        describe: 'Path to the file with configuration'
+      })
+      .option('proxy', {
+        requiresArg: true,
+        describe: 'SOCKS4 or SOCKS5 URL to proxy all traffic'
+      })
       .usage('Usage: $0 <command> [options] [<file | scan>]')
       .pkgConf('nexploit', this._cwd)
       .example(
         '$0 archive:generate --mockfile=.mockfile --name=archive.har',
         'output har file on base your mock requests'
-      )
-      .config(config);
+      );
 
     return commands
       .reduce((acc: Argv, item: CommandModule) => acc.command(item), cli)
       .recommendCommands()
       .demandCommand(1)
-      .strict(false)
+      .strict(true)
       .alias('v', 'version')
       .help('help')
       .alias('h', 'help');

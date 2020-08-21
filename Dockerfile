@@ -1,7 +1,7 @@
 FROM node:10-alpine as base
 
 LABEL org.opencontainers.image.vendor="NeuraLegion"
-LABEL org.opencontainers.image.title="Agent"
+LABEL org.opencontainers.image.title="Repeater"
 LABEL org.opencontainers.image.source="https://github.com/NeuraLegion/nexploit-cli"
 LABEL org.opencontainers.image.authors="Arten Derevnjuk <artem.derevnjuk@neuralegion.com>"
 
@@ -20,4 +20,4 @@ RUN npm config -g set user $(whoami)
 RUN npm i -g -q @neuralegion/nexploit-cli
 
 ENTRYPOINT [ "nexploit-cli" ]
-CMD ["agent"]
+CMD ["repeater"]

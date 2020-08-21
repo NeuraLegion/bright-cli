@@ -8,22 +8,16 @@ export class StopScan implements CommandModule {
 
   public builder(args: Argv): Argv {
     return args
-      .option('api', {
-        default: 'https://nexploit.app/',
-        hidden: true,
-        describe: 'NexPloit base url'
-      })
-      .option('api-key', {
-        alias: 'K',
+      .option('token', {
+        alias: 't',
         describe: 'NexPloit API-key',
         requiresArg: true,
         demandOption: true
       })
-      .option('proxy', {
-        describe: 'SOCKS4 or SOCKS5 url to proxy all traffic'
-      })
       .positional('scan', {
         describe: 'ID of an existing scan which you want to stop.',
+        requiresArg: true,
+        demandOption: true,
         type: 'string'
       });
   }
@@ -32,7 +26,7 @@ export class StopScan implements CommandModule {
     try {
       const scanManager = new RestScans({
         baseUrl: args.api as string,
-        apiKey: args.apiKey as string,
+        apiKey: args.token as string,
         proxyUrl: args.proxy as string
       });
 

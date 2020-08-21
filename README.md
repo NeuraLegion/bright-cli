@@ -10,19 +10,19 @@ Some NexPloit CLI features:
 
 ## Table of Contents
 
- * [Installing NexPloit CLI](#installing-nexploit-cli)
- * [CLI command-language syntax](#cli-command-language-syntax)
- * [Configuration files](#configuration-files)
- * [Quick Start](#-quick-start)
- * [Command Overview](#command-overview)
-    + [Upload Archive](#-upload-archive)
-    + [Generate Archive based on NexMock](#-generate-archive-based-on-nexmock)
-    + [Run Scan](#-run-scan)
-    + [Start agent](#-start-agent)
-    + [Check Scan's status](#-check-scan-status)
-    + [Stop Scan](#-stop-scan)
-    + [Retest Scan](#-retest-scan)
- * [License](#-license)
+- [Installing NexPloit CLI](#installing-nexploit-cli)
+- [CLI command-language syntax](#cli-command-language-syntax)
+- [Configuration files](#configuration-files)
+- [Quick Start](#-quick-start)
+- [Command Overview](#command-overview)
+  - [Upload Archive](#-upload-archive)
+  - [Generate Archive based on NexMock](#-generate-archive-based-on-nexmock)
+  - [Run Scan](#-run-scan)
+  - [Start repeater](#-start-repeater)
+  - [Check Scan's status](#-check-scan-status)
+  - [Stop Scan](#-stop-scan)
+  - [Retest Scan](#-retest-scan)
+- [License](#-license)
 
 ## Installing NexPloit CLI
 
@@ -33,6 +33,7 @@ Install the CLI using the npm package manager:
 ```bash
 npm install -g @neuralegion/nexploit-cli
 ```
+
 For details about changes between versions, and information about updates on previous releases, see the Releases tab on GitHub: https://github.com/NeuraLegion/nexploit-cli/releases
 
 ## CLI command-language syntax
@@ -41,27 +42,39 @@ NexPloit CLI accepts a wide variety of configuration arguments, run `nexploit-cl
 Configuration arguments in the command-line must be passed after the program command that NexPloit CLI is executing.
 
 `nexploit-cli command_name required_arg [optional_arg] [options]`
-* Most commands, and some options, have aliases. Aliases are shown in the syntax statement for each command.
-* Option names are prefixed with a double dash (--). Option aliases are prefixed with a single dash (-). Arguments are not prefixed. For example:
+
+- Most commands, and some options, have aliases. Aliases are shown in the syntax statement for each command.
+- Option names are prefixed with a double dash (--). Option aliases are prefixed with a single dash (-). Arguments are not prefixed. For example:
+
 ```bash
-nexploit-cli scan:stop --api-key my-api-kye my-scan-id
+nexploit-cli scan:stop --token my-api-tye my-scan-id
 ```
-* Typically, the generated artifact can be given as an argument to the command or specified with the `--archive` option (See `archive:generate`).
+
+- Typically, the generated artifact can be given as an argument to the command or specified with the `--output` option (See `archive:generate`).
+
+#### Common options
+
+NexPloit CLI provides multiple global options which can affect the behaviour of each command.
+
+| Option                | Description                                                                                                                                                                                                                                              |
+| --------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `--config=configPath` | Path to the file with configuration. By default, CLI tries to discovery config in package.json in the root directory of your application or the separate file by known name in working dir. For details, see [Configuration files](#configuration-files) |
+| `--api=proxyUrl`      | NexPloit base URL. Default: `https://nexploit.app/`                                                                                                                                                                                                      |
+| `--proxy=proxyUrl`    | SOCKS4 or SOCKS5 url to proxy all traffic                                                                                                                                                                                                                |
 
 ## Configuration files
 
 Any configuration options that can be set via the command line can also be specified in the `nexploit` stanza of your package.json, or within a seperate configuration file - a variety of flavors are available:
 
-| File name       | File Association |
-|-----------------|------------------|
-| `.nexploit`        | JSON             |
-| `.nexploit.json`   | JSON             |
-| `.nexploit.yaml`   | YAML             |
-| `.nexploit.yml`    | YAML             |
+| File name            | File Association |
+| -------------------- | ---------------- |
+| `.nexploit`          | JSON             |
+| `.nexploit.json`     | JSON             |
+| `.nexploit.yaml`     | YAML             |
+| `.nexploit.yml`      | YAML             |
 | `nexploit.config.js` | CommonJS export  |
 
-See `nexploit-cli --help` for all options available.
-You can set these in any of the files listed above, or from the command line.
+See `nexploit-cli --help` for all options available. You can set these in any of the files listed above, or from the command line.
 
 ## 🚀 Quick Start
 
@@ -83,13 +96,13 @@ If you already have a prepared mock file, you can generate a HAR file with the f
 
 ```bash
 nexploit-cli archive:generate \
-    --mockfile .nexmock \
-    --archive archive.har \
+    --output archive.har \
     --target url-tested-application \
-    --header "Authorization: Bearer my-jwt-authentication-token"
+    --header "Authorization: Bearer my-jwt-authentication-token" \
+    .nexmock
 ```
 
-Where `mockfile` is the path to your mockfile and `archive` is the path to save the HAR file to.
+Where `mockfile` is the path to your mockfile and `output` is the path to save the HAR file to.
 
 The [archive:generate](#-generate-archive-based-on-nexmock) command will generate a new archive at the archive path:
 
@@ -106,7 +119,7 @@ During the creating of the archive, you can edit the `.nexploitrc.json` file and
 
 ```json
 {
-  "api-key": "my-jwt-authentication-token",
+  "token": "my-jwt-authentication-token",
   "api": "https://nexploit.app",
   "bus": "amqps://amq.nexploit.app:5672"
 }
@@ -114,7 +127,7 @@ During the creating of the archive, you can edit the `.nexploitrc.json` file and
 
 > ✴ You can also declare one of following .nexploitrc, .nexploitrc.json, .nexploitrc.yml, .nexploitrc.yaml, nexploit.config.js files.
 
-However, most of the time you'll only need to configure api-key, target and maybe host-filter options.
+However, most of the time you'll only need to configure token, bus and maybe proxy options.
 
 Once the configuration is completed, upload the .HAR (or OAS) file with:
 
@@ -130,7 +143,7 @@ The [archive:upload](#-upload-archive) command will output an ID of a new archiv
 nexploit-cli scan:run \
       --name scan-name \
       --archive received-archive-id \
-      --api-key my-jwt-authentication-token
+      --token my-jwt-authentication-token
 ```
 
 That's it, a new scan will be initiated immediately (or queued) in the [NexPloit application UI](https://nexploit.app).
@@ -142,9 +155,9 @@ This section contains information on using NexPloit CLI's commands.
 
 ### 📥 Upload Archive
 
-`nexploit-cli archive:upload [options] <file>` uploads passed HAR (or OAS) into your [NeuraLegion Storage](https://nexploit.app/storage).
+`nexploit-cli archive:upload [options] <file>` uploads passed HAR (or OAS/Postman) into your [NeuraLegion Storage](https://nexploit.app/storage).
 
-> ✴ If you plan to upload OAS file to the storage, you can specify a different discovery option by setting the `--discovery` to `oas`.
+> ✴ If you plan to upload OAS file to the storage, you can specify a different discovery option by setting the `--type` to `oas`.
 
 The command will output an ID of a new archive, which you can use to run a new scan.
 
@@ -152,56 +165,59 @@ The command will output an ID of a new archive, which you can use to run a new s
 
 #### Arguments
 
-| Argument  |  Description |
-|---|:---|
+| Argument | Description                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| -------- | :---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `<file>` | A collection of your app's http/websockets logs exported into a HAR file. Typically, you can use any browser's dev tools, NeuraLegion's [browser extension](https://chrome.google.com/webstore/detail/nexploit/pgmogkjcjlgjnconlkocehfadbkimjbg) or [Cypress plugin](https://www.npmjs.com/package/@neuralegion/cypress-har-generator) to generate them. In addition, you can use an OAS file that describes your public API. |
 
 #### Options
 
-| Option  |   Description |
-|---|:---|
-| `--api-key=yourApiKey`, `-K=yourApiKey` | The unique identifier used to authenticate a user. It can be issued in your organization dashboard |
-| `--proxy=proxyUrl` | SOCKS4 or SOCKS5 url to proxy all traffic |
-| `--type=har/openapi/postman` | The specification type. Helps determine the best way to parse passed files. Default: `har`|
-| `--discard=false/true`, `-d=false/true` | When `true`, removes an archive from the cloud storage after the scan is finished running. Default: `true` |
-| `--header=extraHeader`, `-H=extraHeader` | Extra headers to be passed with the OAS/Postman file. Also, it can be used to remove a header by providing a name without content, for example: `-H "Host:"`. **WARNING**: headers set with this option override the archive headers and will be set in all the requests |
-| `--variable=envVariable`, `-V=envVariable` | Environment variables to be passed with the Postman file.  |
+| Option                                                 | Description                                                                                                                                                                                                                                                              |
+| ------------------------------------------------------ | :----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `--token=yourApiKey`, `-t=yourApiKey`                  | The unique identifier used to authenticate a user. It can be issued in your organization dashboard                                                                                                                                                                       |
+| `--type=har/openapi/postman`, `-T=har/openapi/postman` | The specification type. Helps determine the best way to parse passed files. Default: `har`                                                                                                                                                                               |
+| `--discard=false/true`, `-d=false/true`                | When `true`, removes an archive from the cloud storage after the scan is finished running. Default: `true`                                                                                                                                                               |
+| `--header=extraHeader`, `-H=extraHeader`               | Extra headers to be passed with the OAS/Postman file. Also, it can be used to remove a header by providing a name without content, for example: `-H "Host:"`. **WARNING**: headers set with this option override the archive headers and will be set in all the requests |
+| `--variable=envVariable`, `-V=envVariable`             | Environment variables to be passed with the Postman file.                                                                                                                                                                                                                |
 
 ### 🛠️ Generate Archive Based on NexMock
 
-`nexploit-cli archive:generate [options]` creates HTTP Archive (HAR) files from mock requests generated by 
-unit-testing and other local automations. 
+`nexploit-cli archive:generate [options]` creates HTTP Archive (HAR) files from mock requests generated by
+unit-testing and other local automations.
 Supports the latest [NexMock](https://www.npmjs.com/package/@neuralegion/nexmock) API and provides additional features to help you generate HAR files during CI/CD workflows with ease.
 
 Provides the ability to split NexMock file into multiply HAR files. For this purpose, you should specify the `--split` option, which accepts the number of pieces to split into.
 
 ```bash
 nexploit-cli archive:generate \
-  -m .nexmock \
-  -f archive.har \
+  -o archive.har \
   -t url-tested-application \
-  -s 4
+  -s 4 \
+  .nexmock
 ```
 
-This command will create 4 .HAR files which comply with following pattern: `<basename>(_<number>)?.<extension>`. 
+This command will create 4 .HAR files which comply with following pattern: `<basename>(_<number>)?.<extension>`.
 E.g. `archive.har`, `archive_2.har` and etc.
+
+#### Arguments
+
+| Argument     | Description                                                                                                                                               |
+| ------------ | :-------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `<mockfile>` | A NexMock file is obtained from the NexMock Reporters. See [E2E Guide](https://github.com/NeuraLegion/nexploit-cli/wiki/End-to-End-Guide#karma-or-mocha). |
 
 #### Options
 
-| Option  |   Description |
-|---|:---|
-| `--archive=newArchivePath`, `-f=newArchivePath` | The path where the new archives will be created, relative to the new workspace root. |
-| `--proxy=proxyUrl` | SOCKS4 or SOCKS5 url to proxy all traffic |
-| `--mockfile=nexmockPath`, `-m=nexmockPath` | A NexMock file is obtained from the NexMock Reporters. See [E2E Guide](https://github.com/NeuraLegion/nexploit-cli/wiki/End-to-End-Guide#karma-or-mocha) |
-| `--target=hostnameOrIp`, `-t=hostnameOrIp` | The target hostname or IP address. |
-| `--header=extraHeader`, `-H=extraHeader` | Extra headers to be passed with the NexMock file. Also, it can be used to remove a header by providing a name without content, for example: `-H "Host:"`. **WARNING**: headers set with this option overide the archive headers and will be set in all the requests |
-| `--pool=size`, `-p=size` | The size of the worker pool. Indicates how many requests NexPloit CLI can performs in parallel. Default: `250` |
-| `--timeout=milliseconds` | The time to wait for a server to send response headers (and start the response body) before aborting the request. Default: `5000` |
-| `--split=numberPieces`, `-s=numberPieces` | The number of the HAR pieces. Allows to split a NexMock file into multiple HAR files. Default: `1` |
+| Option                                         | Description                                                                                                                                                                                                                                                         |
+| ---------------------------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `--output=newArchivePath`, `-o=newArchivePath` | The path where the new archives will be created, relative to the new workspace root.                                                                                                                                                                                |
+| `--target=hostnameOrIp`, `-T=hostnameOrIp`     | The target hostname or IP address.                                                                                                                                                                                                                                  |
+| `--header=extraHeader`, `-H=extraHeader`       | Extra headers to be passed with the NexMock file. Also, it can be used to remove a header by providing a name without content, for example: `-H "Host:"`. **WARNING**: headers set with this option overide the archive headers and will be set in all the requests |
+| `--pool=size`, `-p=size`                       | The size of the worker pool. Indicates how many requests NexPloit CLI can performs in parallel. Default: `250`                                                                                                                                                      |
+| `--timeout=milliseconds`                       | The time to wait for a server to send response headers (and start the response body) before aborting the request. Default: `5000`                                                                                                                                   |
+| `--split=numberPieces`, `-s=numberPieces`      | The number of the HAR pieces. Allows to split a NexMock file into multiple HAR files. Default: `1`                                                                                                                                                                  |
 
 ### 🏃 Run Scan
 
-`nexploit-cli scan:run [options]` starts a new scan with the received configuration. 
+`nexploit-cli scan:run [options]` starts a new scan with the received configuration.
 
 > ✴ If you don't have enough available engines, the scan will be placed in the queue. The new scan will start, if you manually stop another running scan or when it is done.
 
@@ -209,30 +225,29 @@ This command allows you to specify one or more of the discovery strategies, for 
 
 #### Options
 
-| Option  |   Description |
-|---|:---|
-| `--api-key=yourApiKey`, `-K=yourApiKey` | The unique identifier used to authenticate a user. It can be issued in your organization dashboard |
-| `--proxy=proxyUrl` | SOCKS4 or SOCKS5 url to proxy all traffic |
-| `--name=extraHeader`, `-n=extraHeader` | The name of the scan. |
-| `--archive=archiveID`, `-a=archiveID` | The Archive ID, which can be received via the `archive:upload` command. |
-| `--crawler=url`, `-c=url` | Allows to specify a list of specific urls that should be included during crawler discovery. |
-| `--agent=uuid` | Allows to specify a list of agent UUIDs that should be connected with the scan. |
-| `--smart` | Use automatic smart decisions such as: parameter skipping, detection phases, etc. to minimize scan time. When turned off, all the tests will be run on all the parameters, which increases the coverage at the expense of scan time. |
-| `--param=path/query/fragment/header/body` | Defines which part of the request to attack. See details: [here](https://kb.neuralegion.com/#/user-guide/scans/new-scan?id=target-parameter-locations-url-scoping). Default: `body`, `query` and `fragment` |
-| `--module=dast/fuzzer` | The `dast` module tests for specific scenarios, such as OWASP top 10 and other common scenarios. The `fuzzer` module generates various new scenarios to test for unknown vulnerabilities, providing automated AI guided fuzz-testing. Default: `dast` |
-| `--host-filter=hostOrIp`, `-F=hostOrIp` | The list of specific hosts that should be included in the scan. |
-| `--header=extraHeader`, `-H=extraHeader` | Extra headers to be passed with the Archive file. Also, it can be used to remove a header by providing a name without content, for example: `-H "Host:"`. **WARNING**: headers set with this option overide the archive headers and will be set in all the requests |
-| `--test=test` | Allows specifying a list of relevant tests to execute during a scan, for example: `--tests default_login_location dom_xss` |
+| Option                                    | Description                                                                                                                                                                                                                                                         |
+| ----------------------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `--token=yourApiKey`, `-t=yourApiKey`     | The unique identifier used to authenticate a user. It can be issued in your organization dashboard                                                                                                                                                                  |
+| `--name=extraHeader`, `-n=extraHeader`    | The name of the scan.                                                                                                                                                                                                                                               |
+| `--archive=archiveID`, `-a=archiveID`     | The Archive ID, which can be received via the `archive:upload` command.                                                                                                                                                                                             |
+| `--crawler=url`, `-c=url`                 | Allows to specify a list of specific urls that should be included during crawler discovery.                                                                                                                                                                         |
+| `--agent=uuid`                            | Allows to specify a list of agent UUIDs that should be connected with the scan.                                                                                                                                                                                     |
+| `--smart`                                 | Use automatic smart decisions such as: parameter skipping, detection phases, etc. to minimize scan time. When turned off, all the tests will be run on all the parameters, which increases the coverage at the expense of scan time.                                |
+| `--param=path/query/fragment/header/body` | Defines which part of the request to attack. See details: [here](https://kb.neuralegion.com/#/user-guide/scans/new-scan?id=target-parameter-locations-url-scoping). Default: `body`, `query` and `fragment`                                                         |
+| `--module=dast/fuzzer`                    | The `dast` module tests for specific scenarios, such as OWASP top 10 and other common scenarios. The `fuzzer` module generates various new scenarios to test for unknown vulnerabilities, providing automated AI guided fuzz-testing. Default: `dast`               |
+| `--host-filter=hostOrIp`, `-F=hostOrIp`   | The list of specific hosts that should be included in the scan.                                                                                                                                                                                                     |
+| `--header=extraHeader`, `-H=extraHeader`  | Extra headers to be passed with the Archive file. Also, it can be used to remove a header by providing a name without content, for example: `-H "Host:"`. **WARNING**: headers set with this option overide the archive headers and will be set in all the requests |
+| `--test=test`                             | Allows specifying a list of relevant tests to execute during a scan, for example: `--tests default_login_location dom_xss`                                                                                                                                          |
 
-### 🕵️ Start agent
+### 🕵️ Start repeater
 
-`nexploit-cli agent [options]` starts an agent to connect it to the scans
+`nexploit-cli repeater [options]` starts an on-prem agent to connect it to the scans
 
-> ✴ Allows to multiple scans under single agent, decreasing the need for multiple agents.
+> ✴ Allows to multiple scans under single on-prem agent, decreasing the need to run multiple repeaters.
 
 Repeater allows you to run NexPloit scans without exposing your ports outside. Also, it can be useful, if you want to run a local scan without deploying.
 
-> ✴ The agent requires the ability to have an outbound connection to amq.nexploit.app via the AMQ protocol (over TLS) using port 5672
+> ✴ The repeater requires the ability to have an outbound connection to amq.nexploit.app via the AMQ protocol (over TLS) using port 5672
 
 You also can use Docker image to run it. For example, you can use Docker Compose. It's a tool for defining and running multi-container Docker applications. You can download it from [official Docker page](https://docs.docker.com/compose/install/).
 
@@ -240,58 +255,69 @@ You also can use Docker image to run it. For example, you can use Docker Compose
 version: '3'
 services:
   repeater:
-    image: 'neuralegion/agent'
+    image: 'neuralegion/repeater'
     restart: always
     environment:
-      API_KEY: 'my-api-key'
-      AGENT_ID: 'my-agent-id'
-      AGENT_HEADERS: '{ "X-Header": "my-header" }'
+      REPEATER_TOKEN: 'my-api-tey'
+      REPEATER_AGENT: 'my-agent-id'
+      REPEATER_HEADERS: '{ "X-Header": "my-header" }'
 ```
 
 or using Docker CLI directly
 
 ```bash
-docker run neuralegion/agent \
-  -e 'AGENT_API_KEY=my-api-key' \
-  -e 'AGENT_ID=my-agent-id' \
-  -e 'AGENT_HEADERS={ "X-Header": "my-header" }'
+docker run neuralegion/repeater \
+  -e 'REPEATER_TOKEN=my-api-tey' \
+  -e 'REPEATER_AGENT=my-agent-id' \
+  -e 'REPEATER_HEADERS={ "X-Header": "my-header" }'
 ```
 
-> ✴ The agent requires `AGENT_API_KEY` with the scope `agents:write:repeater`
+> ✴ The repeater requires `REPEATER_TOKEN` with the scope `agents:write:repeater`
+
+You can use the same options which are provided by CLI. You just need to prefix them with `REPEATER_`. List of available env variables you can set:
+
+- `REPEATER_TOKEN`
+- `REPEATER_AGENT`
+- `REPEATER_HEADERS`
+- `REPEATER_PROXY`
+- `REPEATER_BUS`
+
+If you need to pass headers option, e.g. `Cookie` and `Authorization`, you could use the `REPEATER_HEADERS` variable in JSON format, e.g.
+
+```
+REPEATER_HEADERS='{"Cookie": "PHPSESSID=298zf09hf012fh2; csrftoken=u32t4o3tb3gg43; _gat=1", "Authorization": "Basic username:password"}'
+```
 
 #### Options
 
-| Option  |   Description |
-|---|:---|
-| `--id=agentId` | The ID of an existing agent which you want to use. |
-| `--api-key=yourApiKey`, `-K=yourApiKey` | The unique identifier used to authenticate a user. It can be issued in your organization dashboard |
-| `--bus=eventBus` | NexPloit Event Bus URL. Default: `amqps://amq.nexploit.app:5672` |
+| Option                                   | Description                                                                                                                                                                                                                                                       |
+| ---------------------------------------- | :---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `--agent=agentId`                        | The ID of an existing agent which you want to use.                                                                                                                                                                                                                |
+| `--token=yourApiKey`, `-t=yourApiKey`    | The unique identifier used to authenticate a user. It can be issued in your organization dashboard                                                                                                                                                                |
+| `--bus=eventBus`                         | NexPloit Event Bus URL. Default: `amqps://amq.nexploit.app:5672`                                                                                                                                                                                                  |
 | `--header=extraHeader`, `-H=extraHeader` | Extra headers to be passed with each request. Also, it can be used to remove a header by providing a name without content, for example: `-H "Host:"`. **WARNING**: headers set with this option override the original headers and will be set in all the requests |
-| `--headers=json` | JSON string which contains header list, which is initially empty and consists of zero or more name and value pairs.. **WARNING**: headers set with this option override the original headers and will be set in all the requests. |
-| `--proxy=proxyUrl` | SOCKS4 or SOCKS5 url to proxy all traffic |
-
+| `--headers=json`                         | JSON string which contains header list, which is initially empty and consists of zero or more name and value pairs.. **WARNING**: headers set with this option override the original headers and will be set in all the requests.                                 |
 
 ### 🚓 Check Scan Status
 
 `nexploit-cli scan:polling [options] <scan>` configures an ongoing polling of a scan's status, and helps you follow its progress during CI/CD flows.
 
-After the launch, it will check the scan's status most of the time.  If the scan finds at least of one medium severity issue, NexPloit CLI will finish with exit code `50`.
+After the launch, it will check the scan's status most of the time. If the scan finds at least of one medium severity issue, NexPloit CLI will finish with exit code `50`.
 
 #### Arguments
 
-| Argument  |  Description |
-|---|:---|
+| Argument | Description                                         |
+| -------- | :-------------------------------------------------- |
 | `<scan>` | The ID of an existing scan which you want to check. |
 
 #### Options
 
-| Option  |   Description |
-|---|:---|
-| `--api-key=yourApiKey`, `-K=yourApiKey` | The unique identifier used to authenticate a user. It can be issued in your organization dashboard |
-| `--proxy=proxyUrl` | SOCKS4 or SOCKS5 url to proxy all traffic |
-| `--breakpoint=any / medium-issue / high-issue.` | A conditional breakpoint that allows to finish the process with exit code `50` only after fulfilling the predefined condition. Default: `any`|
-| `--interval=milliseconds.` | The period of time between the end of a timeout period or completion of a scan status request, and the next request for status. Eg: 60, "2min", "10h", "7d". A numeric value is interpreted as a milliseconds count. Default: `5000` |
-| `--timeout=milliseconds.` | The allowed maximum time for a polling to end normally. Eg: 60, "2min", "10h", "7d". A numeric value is interpreted as a milliseconds count. |
+| Option                                          | Description                                                                                                                                                                                                                          |
+| ----------------------------------------------- | :----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `--token=yourApiKey`, `-t=yourApiKey`           | The unique identifier used to authenticate a user. It can be issued in your organization dashboard                                                                                                                                   |
+| `--breakpoint=any / medium_issue / high_issue.` | A conditional breakpoint that allows to finish the process with exit code `50` only after fulfilling the predefined condition. Default: `any`                                                                                        |
+| `--interval=milliseconds.`                      | The period of time between the end of a timeout period or completion of a scan status request, and the next request for status. Eg: 60, "2min", "10h", "7d". A numeric value is interpreted as a milliseconds count. Default: `5000` |
+| `--timeout=milliseconds.`                       | The allowed maximum time for a polling to end normally. Eg: 60, "2min", "10h", "7d". A numeric value is interpreted as a milliseconds count.                                                                                         |
 
 ### 🛑 Stop Scan
 
@@ -299,16 +325,15 @@ After the launch, it will check the scan's status most of the time.  If the scan
 
 #### Arguments
 
-| Argument  |  Description |
-|---|:---|
+| Argument | Description                                        |
+| -------- | :------------------------------------------------- |
 | `<scan>` | The ID of an existing scan which you want to stop. |
 
 #### Options
 
-| Option  |   Description |
-|---|:---|
-| `--api-key=yourApiKey`, `-K=yourApiKey` | The unique identifier used to authenticate a user. It can be issued in your organization dashboard |
-| `--proxy=proxyUrl` | SOCKS4 or SOCKS5 url to proxy all traffic |
+| Option                                | Description                                                                                        |
+| ------------------------------------- | :------------------------------------------------------------------------------------------------- |
+| `--token=yourApiKey`, `-t=yourApiKey` | The unique identifier used to authenticate a user. It can be issued in your organization dashboard |
 
 ### 🔁 Retest Scan
 
@@ -316,16 +341,15 @@ After the launch, it will check the scan's status most of the time.  If the scan
 
 #### Arguments
 
-| Argument  |  Description |
-|---|:---|
+| Argument | Description                                          |
+| -------- | :--------------------------------------------------- |
 | `<scan>` | The ID of an existing scan which you want to re-run. |
 
 #### Options
 
-| Option  |   Description |
-|---|:---|
-| `--proxy=proxyUrl` | SOCKS4 or SOCKS5 url to proxy all traffic |
-| `--api-key=yourApiKey`, `-K=yourApiKey` | The unique identifier used to authenticate a user that can be issued in your organization dashboard |
+| Option                                | Description                                                                                         |
+| ------------------------------------- | :-------------------------------------------------------------------------------------------------- |
+| `--token=yourApiKey`, `-t=yourApiKey` | The unique identifier used to authenticate a user that can be issued in your organization dashboard |
 
 ## 📝 License
 

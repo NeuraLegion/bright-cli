@@ -15,23 +15,14 @@ export class UploadArchive implements CommandModule {
 
   public builder(args: Argv): Argv {
     return args
-      .option('api', {
-        default: 'https://nexploit.app/',
-        hidden: true,
-        global: true,
-        describe: 'NexPloit base url'
-      })
-      .option('api-key', {
-        alias: 'K',
+      .option('token', {
+        alias: 't',
         describe: 'NexPloit API-key',
         requiresArg: true,
         demandOption: true
       })
-      .option('proxy', {
-        describe: 'SOCKS4 or SOCKS5 url to proxy all traffic'
-      })
       .option('type', {
-        alias: 't',
+        alias: 'T',
         requiresArg: true,
         describe: 'The specification type',
         choices: [
@@ -52,6 +43,7 @@ export class UploadArchive implements CommandModule {
       .option('header', {
         alias: 'H',
         default: [],
+        requiresArg: true,
         array: true,
         describe:
           'A list of specific headers that should be included into request.'
@@ -59,6 +51,7 @@ export class UploadArchive implements CommandModule {
       .option('variable', {
         alias: 'V',
         default: [],
+        requiresArg: true,
         array: true,
         describe:
           'A list of specific variables that should be included into request. Only for Postman'
@@ -68,6 +61,7 @@ export class UploadArchive implements CommandModule {
           "A collection your app's http/websockets logs into HAR file. " +
           'Usually you can use browser dev tools or our browser web extension',
         type: 'string',
+        demandOption: true,
         normalize: true
       })
       .group(['header'], 'OAS Options')
@@ -94,7 +88,7 @@ export class UploadArchive implements CommandModule {
 
       const archives = new RestArchives({
         baseUrl: args.api as string,
-        apiKey: args.apiKey as string,
+        apiKey: args.token as string,
         proxyUrl: args.proxy as string
       });
 

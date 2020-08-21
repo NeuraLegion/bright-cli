@@ -5,24 +5,16 @@ import { AttackParamLocation } from '../Scan/Scans';
 import { Arguments, Argv, CommandModule } from 'yargs';
 
 export class RunScan implements CommandModule {
-  public readonly command = 'scan:run';
+  public readonly command = 'scan:run [options]';
   public readonly describe = 'Start a new scan for the received configuration.';
 
   public builder(args: Argv): Argv {
     return args
-      .option('api', {
-        default: 'https://nexploit.app/',
-        hidden: true,
-        describe: 'NexPloit base url'
-      })
-      .option('api-key', {
-        alias: 'K',
+      .option('token', {
+        alias: 't',
         describe: 'NexPloit API-key',
         requiresArg: true,
         demandOption: true
-      })
-      .option('proxy', {
-        describe: 'SOCKS4 or SOCKS5 url to proxy all traffic'
       })
       .option('name', {
         alias: 'n',
@@ -138,7 +130,7 @@ export class RunScan implements CommandModule {
     try {
       const scanManager = new RestScans({
         baseUrl: args.api as string,
-        apiKey: args.apiKey as string,
+        apiKey: args.token as string,
         proxyUrl: args.proxy as string
       });
 

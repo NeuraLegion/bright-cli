@@ -15,19 +15,11 @@ export class PollingScanStatus implements CommandModule {
 
   public builder(args: Argv): Argv {
     return args
-      .option('api', {
-        default: 'https://nexploit.app/',
-        hidden: true,
-        describe: 'NexPloit base url'
-      })
-      .option('api-key', {
-        alias: 'K',
+      .option('token', {
+        alias: 't',
         describe: 'NexPloit API-key',
         requiresArg: true,
         demandOption: true
-      })
-      .option('proxy', {
-        describe: 'SOCKS4 or SOCKS5 url to proxy all traffic'
       })
       .option('interval', {
         requiresArg: true,
@@ -43,6 +35,7 @@ export class PollingScanStatus implements CommandModule {
           'Eg: 60, "2min", "10h", "7d". A numeric value is interpreted as a milliseconds count.'
       })
       .option('breakpoint', {
+        alias: 'b',
         choices: Helpers.toArray(BreakpointType),
         string: true,
         describe:
@@ -61,7 +54,7 @@ export class PollingScanStatus implements CommandModule {
     try {
       const scanManager = new RestScans({
         baseUrl: args.api as string,
-        apiKey: args.apiKey as string,
+        apiKey: args.token as string,
         proxyUrl: args.proxy as string
       });
       const polling = new DefaultPolling({

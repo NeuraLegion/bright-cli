@@ -18,15 +18,13 @@ export class DefaultConfigReader implements ConfigReader {
     this.config = new Map<keyof CliConfig, CliConfig[keyof CliConfig]>();
   }
 
-  public load(cwd: string): this {
-    const rcPath: string | null = sync(this.rcOptions, {
+  public discovery(cwd: string): string | undefined {
+    return sync(this.rcOptions, {
       cwd
     });
+  }
 
-    if (!rcPath) {
-      return this;
-    }
-
+  public load(rcPath: string): this {
     const rcExt: string = path.extname(rcPath.toLowerCase());
 
     if (rcExt === '.js') {
