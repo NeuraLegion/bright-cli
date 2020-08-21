@@ -50,13 +50,12 @@ export class Helpers {
       'First argument must be an instance of String.'
     );
 
-    return header
-      ? (header
-          .split(':', 2)
-          .map((item: string) => decodeURIComponent(item.trim())) as [
-          string,
-          string
-        ])
-      : undefined;
+    if (header) {
+      const [key, ...values]: string[] = header.split(':');
+
+      return [key, values.join(':')].map((item: string) =>
+        decodeURIComponent(item.trim())
+      ) as [string, string];
+    }
   }
 }
