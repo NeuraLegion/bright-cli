@@ -202,7 +202,7 @@ export class RabbitMQBus implements Bus {
 
   private async consumeReceived(message: ConsumeMessage): Promise<void> {
     try {
-      if (!message.fields.redelivered) {
+      if (message) {
         const { content, fields, properties } = message;
         const { routingKey } = fields;
         const { correlationId, replyTo, type } = properties;
@@ -228,7 +228,7 @@ export class RabbitMQBus implements Bus {
 
         // eslint-disable-next-line max-depth
         if (response) {
-          await this.channel.sendToQueue(
+          this.channel.sendToQueue(
             replyTo,
             Buffer.from(JSON.stringify(response)),
             {
@@ -237,8 +237,6 @@ export class RabbitMQBus implements Bus {
           );
         }
       }
-
-      this.channel.ack(message);
     } catch (err) {
       logger.debug('Error processing message: %j. Details: %s', message, err);
       logger.error(
@@ -246,7 +244,6 @@ export class RabbitMQBus implements Bus {
         message.properties.correlationId
       );
       logger.error('Error: %s', err.message);
-      this.channel.nack(message, false, false);
     }
   }
 
@@ -264,23 +261,21 @@ export class RabbitMQBus implements Bus {
       this.options.clientQueue,
       (msg: ConsumeMessage | null) => this.consumeReceived(msg),
       {
-        noAck: false
+        noAck: true
       }
     );
   }
 
   private async bindExchangesToQueue(channel: Channel): Promise<void> {
-    await Promise.all([
-      channel.assertExchange(this.options.exchange, 'direct', {
-        durable: true
-      }),
-      channel.assertQueue(this.options.clientQueue, {
-        durable: true,
-        exclusive: false,
-        autoDelete: true
-      }),
-      channel.prefetch(1)
-    ]);
+    await channel.assertExchange(this.options.exchange, 'direct', {
+      durable: true
+    });
+    await channel.assertQueue(this.options.clientQueue, {
+      durable: true,
+      exclusive: false,
+      autoDelete: true
+    });
+    await channel.prefetch(0);
     logger.debug(
       'Binds the queue %s to %s.',
       this.options.clientQueue,
