@@ -16,10 +16,10 @@
 ## 🚀 Quick Start
 Before you can use **NexPloit CLI** make sure you have the following:
 - An active user on www.nexploit.app
-- A valid `REPEATER-TOKEN`
+- A valid `TOKEN`
   - For the quick start these scopes are required: `agents:write:repeater`, `scans:run` and `scans:read`
   - More info about [setting up an API key](https://kb.neuralegion.com/#/user-guide/organization-administration/details-and-policies#managing-organization-api-keys)
-- An active `REPEATER-TOKEN`
+- An active `AGENT_ID`
   - More info about [Setting up a New Agent](https://kb.neuralegion.com/#/user-guide/agents/overview.md)
 
 #### 1. Install NexPloit CLI globally
@@ -36,19 +36,18 @@ This will show you a list of possible commands for NexPloit CLI, for a full list
 #### 2. Activate the Repeater
 ```bash
 nexploit-cli repeater \
-  --token REPEATER-TOKEN \
-  --id REPEATER-ID \
+  --token {TOKEN} \
+  --agent {AGENT_ID} \
   --bus amqps://amq.nexploit.app:5672
 ```
 
 #### 3. Start a new scan with a Crawler
 ```bash
 nexploit-cli scan:run \
-  --token REPEATER-TOKEN \
-  --repeater REPEATER-ID \
+  --token {TOKEN} \
+  --agent {AGENT_ID} \
   --name "My First Scan" \
   --crawler https://www.example.com \
-  --host-filter https://www.example.com \
   --smart
 ```
 This command will initialize a new scan engine in the cloud, which will start scanning the target via the local [Repeater](https://kb.neuralegion.com/#/deployment/repeater).
