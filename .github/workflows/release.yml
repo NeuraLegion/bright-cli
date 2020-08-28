@@ -17,13 +17,6 @@ jobs:
           node-version: 12
 
       - run: npm ci -q
-      - run: npm run build
-
-      - run: npm run pack:win
-      - run: npm run pack:linux
-      - run: npm run pack:mac
-
-      - name: Semantic release
-        run: npx semantic-release
+      - run: npm run semantic-release
         env:
           GITHUB_TOKEN: ${{ secrets.GPR_TOKEN }}

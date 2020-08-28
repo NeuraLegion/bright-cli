@@ -1,10 +1,15 @@
 import { Validator } from './Validator';
 import logger from '../../Utils/Logger';
-import Ajv from 'ajv';
-import { ValidateFunction } from 'ajv';
+import collectionV2Draft7 from 'schemas/postman/draft-07/v2.0.0/collection.json';
+import collectionV2Draft4 from 'schemas/postman/draft-04/v2.0.0/collection.json';
+import collectionDraft7 from 'schemas/postman/draft-07/v2.1.0/collection.json';
+import collectionDraft4 from 'schemas/postman/draft-04/v2.1.0/collection.json';
+import Ajv, { ValidateFunction } from 'ajv';
 import betterAjvErrors from 'better-ajv-errors';
+import schemaDraft04 from 'ajv/lib/refs/json-schema-draft-04.json';
+import schemaDraft07 from 'ajv/lib/refs/json-schema-draft-07.json';
 import { ok } from 'assert';
-import { join, parse } from 'path';
+import { parse } from 'path';
 
 export class PostmanValidator implements Validator<any> {
   private readonly ajv: Ajv.Ajv;
@@ -14,15 +19,15 @@ export class PostmanValidator implements Validator<any> {
     'https://schema.getpostman.com/json/collection/v2.0.0/',
     'https://schema.getpostman.com/json/collection/v2.1.0/'
   ];
-  private readonly META_SCHEMAS: ReadonlyArray<string> = [
-    'ajv/lib/refs/json-schema-draft-04.json',
-    'ajv/lib/refs/json-schema-draft-07.json'
+  private readonly META_SCHEMAS: ReadonlyArray<unknown> = [
+    schemaDraft04,
+    schemaDraft07
   ];
-  private readonly PATH_TO_SCHEMAS: ReadonlyArray<string> = [
-    'schemas/postman/draft-07/v2.0.0/collection.json',
-    'schemas/postman/draft-07/v2.1.0/collection.json',
-    'schemas/postman/draft-04/v2.0.0/collection.json',
-    'schemas/postman/draft-04/v2.1.0/collection.json'
+  private readonly SCHEMAS: ReadonlyArray<unknown> = [
+    collectionV2Draft7,
+    collectionV2Draft4,
+    collectionDraft7,
+    collectionDraft4
   ];
 
   constructor() {
@@ -32,20 +37,11 @@ export class PostmanValidator implements Validator<any> {
       meta: false,
       schemaId: 'auto'
     });
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
-    const ajvFormats = require('ajv/lib/compile/formats.js');
-    this.ajv.addFormat('uriref', ajvFormats.full['uri-reference']);
-    this.META_SCHEMAS.forEach((x: string) =>
-      // eslint-disable-next-line @typescript-eslint/no-var-requires
-      this.ajv.addMetaSchema(require(x))
-    );
+    []
+      .concat(this.META_SCHEMAS, this.SCHEMAS)
+      .forEach((x: unknown) => this.ajv.addMetaSchema(x as any));
     (this.ajv as any)._refs['http://json-schema.org/schema'] =
       'http://json-schema.org/draft-04/schema'; // optional, using unversioned URI is out of spec
-    this.PATH_TO_SCHEMAS.forEach((x: string) => {
-      // eslint-disable-next-line @typescript-eslint/no-var-requires
-      const schema = require(join('../../../', x));
-      this.ajv.addSchema(schema);
-    });
   }
 
   public async validate(collection: any): Promise<void | never> {

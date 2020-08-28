@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi" xmlns:util="http://schemas.microsoft.com/wix/UtilExtension">
+  <?define ProductName="NexPloit CLI" ?>
+  <?define ProductAuthor="NeuraLegion" ?>
+  <?define ProductVersion="0.0.0" ?>
+  <?define ProductDescription="$(var.ProductName) is a CLI tool that can initialize, stop, polling and maintain scans in $(var.ProductAuthor)s solutions (Such as NexPloit)." ?>
+  <?define RegistryKeyPath="SOFTWARE\$(var.ProductName)" ?>
+  <?define SourceDir="..\..\bin\win" ?>
+  <?define RepoDir="$(var.SourceDir)\..\.." ?>
+  <Product Id="*" Name="$(var.ProductName)" UpgradeCode="74b15b74-a063-4524-ae83-69ad421be456" Language="1033" Codepage="1252" Version="$(var.ProductVersion)" Manufacturer="$(var.ProductAuthor)">
+    <Package InstallerVersion="200" Compressed="yes" InstallScope="perMachine" />
+    <Property Id="PREVIOUSVERSIONSINSTALLED" Secure="yes" />
+    <Property Id="ARPPRODUCTICON" Value="NexPloitIcon" />
+    <Property Id="ApplicationFolderName" Value="nexploit-cli" />
+    <Property Id="WIXUI_INSTALLDIR" Value="INSTALLDIR" />
+    <Property Id="INSTALLDIR" Secure="yes">
+      <RegistrySearch Id="InstallPathRegistry" Type="raw" Root="HKLM" Key="$(var.RegistryKeyPath)" Name="InstallPath" />
+      <RegistrySearch Id="InstallPathRegistryCU" Type="raw" Root="HKCU" Key="$(var.RegistryKeyPath)" Name="InstallPath" />
+    </Property>
+    <Media Id="1" Cabinet="nexploitcli.cab" EmbedCab="yes" />
+    <CustomAction Id="NewVersionError" Error="A later version of $(var.ProductName) is already installed. Setup will now exit." />
+    <Upgrade Id="47c07a3a-42ef-4213-a85d-8f5a59077c28">
+      <UpgradeVersion Property="PREVIOUSVERSIONSINSTALLED" IncludeMinimum="yes" IncludeMaximum="yes" Minimum="0.0.0" Maximum="$(var.ProductVersion)" />
+    </Upgrade>
+    <InstallExecuteSequence>
+      <RemoveExistingProducts After="InstallValidate" />
+    </InstallExecuteSequence>
+    <Icon Id="NexPloitIcon" SourceFile="$(var.RepoDir)\tools\resources\logo.ico" />
+    <Icon Id="WixUIInfoIco" SourceFile="$(var.RepoDir)\tools\resources\logo.ico" />
+    <Directory Id="TARGETDIR" Name="SourceDir">
+      <Directory Id="ProgramMenuFolder">
+        <Directory Id="ProgramMenuDir" Name="$(var.ProductName)">
+          <Component Id="StartMenuShortcuts" Guid="F1935C40-798D-47D2-9D47-3D8C4C300F7E">
+            <!-- RegistryValue needed because every Component must have a KeyPath.
+                                            Because of ICE43, the Root must be HKCU. -->
+            <RegistryValue Root="HKCU" Key="$(var.RegistryKeyPath)\Components" Type="integer" Value="1" KeyPath="yes" />
+            <util:InternetShortcut Id="OnlineWebsiteShortcut" Name="$(var.ProductName) repository" Target="https://github.com/NeuraLegion/nexploit-cli" Type="url" />
+            <util:InternetShortcut Id="OnlineDocumentationShortcut" Name="$(var.ProductName) documentation" Target="https://kb.neuralegion.com/#/nexploit-cli/overview" Type="url" />
+            <Shortcut Id="UninstallProduct" Name="Uninstall $(var.ProductName)" Target="[System64Folder]msiexec.exe" Arguments="/x [ProductCode]" />
+            <RemoveFolder Id="ProgramMenuDir" On="uninstall" />
+          </Component>
+        </Directory>
+      </Directory>
+      <Directory Id="ProgramFiles64Folder" Name="PFiles">
+        <Directory Id="INSTALLDIR" Name="NexPloitCLI">
+          <Component Id="Executable" Guid="89962590-24E4-4E05-BA3F-2C98866D54BC" DiskId="1">
+            <File Id="nexploitcli.exe" Name="nexploit-cli.exe" KeyPath="yes" Source="$(var.SourceDir)\nexploit-cli.exe">
+              <Shortcut Id="ExeShortcut" Directory="ProgramMenuDir" Name="$(var.ProductName)" Icon="NexPloitIcon" WorkingDirectory="INSTALLDIR" IconIndex="0" />
+            </File>
+          </Component>
+          <Component Id="RegistryEntries" Guid="">
+            <RegistryValue Root="HKLM" Key="$(var.RegistryKeyPath)" Name="InstallPath" Type="string" Value="[INSTALLDIR]" KeyPath="yes" />
+            <RegistryValue Root="HKLM" Key="$(var.RegistryKeyPath)" Name="Version" Type="string" Value="$(var.ProductVersion)" />
+          </Component>
+          <Component Id="EnvironmentPath" Guid="">
+            <RegistryValue Root="HKLM" Key="$(var.RegistryKeyPath)\Components" Name="EnvironmentPathNexPloit" Type="integer" Value="1" KeyPath="yes" />
+            <Environment Id="EnvironmentPath" Action="set" Name="PATH" Part="last" System="yes" Value="[INSTALLDIR]" />
+          </Component>
+        </Directory>
+      </Directory>
+    </Directory>
+    <Feature Id="NexPloitRuntime" Level="1" Absent="disallow" Title="$(var.ProductName)" ConfigurableDirectory="INSTALLDIR" Description="Install $(var.ProductName) (nexploit-cli.exe).">
+      <ComponentRef Id="Executable" />
+      <ComponentRef Id="RegistryEntries" />
+      <ComponentRef Id="StartMenuShortcuts" />
+      <ComponentRef Id="EnvironmentPath" />
+    </Feature>
+    <WixVariable Id="WixUICostingPopupOptOut" Value="0" />
+    <WixVariable Id="WixUILicenseRtf" Value="$(var.RepoDir)\tools\msi\LICENSE.rtf" />
+    <UI Id="InstallUI">
+      <TextStyle Id="WixUI_Font_Normal" FaceName="Tahoma" Size="8" />
+      <TextStyle Id="WixUI_Font_Bigger" FaceName="Tahoma" Size="12" />
+      <TextStyle Id="WixUI_Font_Title" FaceName="Tahoma" Size="9" Bold="yes" />
+      <Property Id="DefaultUIFont" Value="WixUI_Font_Normal" />
+      <Property Id="WixUI_Mode" Value="InstallDir" />
+      <DialogRef Id="BrowseDlg" />
+      <DialogRef Id="DiskCostDlg" />
+      <DialogRef Id="ErrorDlg" />
+      <DialogRef Id="FatalError" />
+      <DialogRef Id="FilesInUse" />
+      <DialogRef Id="MsiRMFilesInUse" />
+      <DialogRef Id="PrepareDlg" />
+      <DialogRef Id="ProgressDlg" />
+      <DialogRef Id="ResumeDlg" />
+      <DialogRef Id="UserExit" />
+      <Publish Dialog="BrowseDlg" Control="OK" Event="DoAction" Value="WixUIValidatePath" Order="3">1</Publish>
+      <Publish Dialog="BrowseDlg" Control="OK" Event="SpawnDialog" Value="InvalidDirDlg" Order="4"><![CDATA[NOT WIXUI_DONTVALIDATEPATH AND WIXUI_INSTALLDIR_VALID<>"1"]]></Publish>
+      <Publish Dialog="ExitDialog" Control="Finish" Event="EndDialog" Value="Return" Order="999">1</Publish>
+      <Publish Dialog="WelcomeDlg" Control="Next" Event="NewDialog" Value="LicenseAgreementDlg">NOT Installed</Publish>
+      <Publish Dialog="WelcomeDlg" Control="Next" Event="NewDialog" Value="VerifyReadyDlg">Installed AND PATCH</Publish>
+      <Publish Dialog="LicenseAgreementDlg" Control="Back" Event="NewDialog" Value="WelcomeDlg">1</Publish>
+      <Publish Dialog="LicenseAgreementDlg" Control="Next" Event="NewDialog" Value="InstallDirDlg">LicenseAccepted = "1"</Publish>
+      <Publish Dialog="InstallDirDlg" Control="Back" Event="NewDialog" Value="LicenseAgreementDlg">1</Publish>
+      <Publish Dialog="InstallDirDlg" Control="Next" Event="SetTargetPath" Value="[WIXUI_INSTALLDIR]" Order="1">1</Publish>
+      <Publish Dialog="InstallDirDlg" Control="Next" Event="DoAction" Value="WixUIValidatePath" Order="2">NOT WIXUI_DONTVALIDATEPATH</Publish>
+      <Publish Dialog="InstallDirDlg" Control="Next" Event="SpawnDialog" Value="InvalidDirDlg" Order="3"><![CDATA[NOT WIXUI_DONTVALIDATEPATH AND WIXUI_INSTALLDIR_VALID<>"1"]]></Publish>
+      <Publish Dialog="InstallDirDlg" Control="Next" Event="NewDialog" Value="VerifyReadyDlg" Order="4">WIXUI_DONTVALIDATEPATH OR WIXUI_INSTALLDIR_VALID="1"</Publish>
+      <Publish Dialog="InstallDirDlg" Control="ChangeFolder" Property="_BrowseProperty" Value="[WIXUI_INSTALLDIR]" Order="1">1</Publish>
+      <Publish Dialog="InstallDirDlg" Control="ChangeFolder" Event="SpawnDialog" Value="BrowseDlg" Order="2">1</Publish>
+      <Publish Dialog="VerifyReadyDlg" Control="Back" Event="NewDialog" Value="InstallDirDlg" Order="1">NOT Installed</Publish>
+      <Publish Dialog="VerifyReadyDlg" Control="Back" Event="NewDialog" Value="MaintenanceTypeDlg" Order="2">Installed AND NOT PATCH</Publish>
+      <Publish Dialog="VerifyReadyDlg" Control="Back" Event="NewDialog" Value="WelcomeDlg" Order="2">Installed AND PATCH</Publish>
+      <Publish Dialog="MaintenanceWelcomeDlg" Control="Next" Event="NewDialog" Value="MaintenanceTypeDlg">1</Publish>
+      <Publish Dialog="MaintenanceTypeDlg" Control="RepairButton" Event="NewDialog" Value="VerifyReadyDlg">1</Publish>
+      <Publish Dialog="MaintenanceTypeDlg" Control="RemoveButton" Event="NewDialog" Value="VerifyReadyDlg">1</Publish>
+      <Publish Dialog="MaintenanceTypeDlg" Control="Back" Event="NewDialog" Value="MaintenanceWelcomeDlg">1</Publish>
+      <Property Id="ARPNOMODIFY" Value="1" />
+      <Property Id="WIXUI_EXITDIALOGOPTIONALTEXT" Value="$(var.ProductName) has been succesfully installed.  To run $(var.ProductName) open command prompt (cmd.exe), and run 'nexploit-cli'. See https://neuralegion.com for information about the license." />
+    </UI>
+    <UIRef Id="InstallUI" />
+  </Product>
+</Wix>

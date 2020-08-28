@@ -6,23 +6,8 @@ on:
       - 'v*'
 
 jobs:
-  prepare:
+  build:
     runs-on: ubuntu-latest
-    outputs:
-      project_version: ${{ steps.project_version.outputs.value }}
-      project: ${{ steps.project.outputs.value }}
-    steps:
-      - id: project_version
-        run: echo ::set-output name=value::${GITHUB_REF/refs\/tags\//}
-      - id: project
-        run: echo ::set-output name=value::$(echo ${GITHUB_REPOSITORY#*/} | tr A-Z a-z)
-
-  deploy:
-    runs-on: ubuntu-latest
-    needs: prepare
-    env:
-      PROJECT: ${{ needs.prepare.outputs.project }}
-      VERSION: ${{ needs.prepare.outputs.project_version }}
     steps:
       - uses: actions/checkout@v2
         with:
@@ -33,9 +18,37 @@ jobs:
           node-version: 12
           registry-url: 'https://registry.npmjs.org'
 
+      - run: echo :set-env name=VERSION::${GITHUB_REF/refs\/tags\//}
       - run: npm ci -q
       - run: npm run build
       - run: npm version --no-git-tag-version "$VERSION"
+      - run: npm run pack:win
+
+      - uses: actions/upload-artifact@v2
+        with:
+          name: build
+          path: |
+            dist
+            package.json
+            README.md
+            LICENSE
+            tools
+            schemas
+            bin
+
+  deploy:
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - uses: actions/download-artifact@v2
+        with:
+          name: build
+
+      - uses: actions/setup-node@v1
+        with:
+          node-version: 12
+          registry-url: 'https://registry.npmjs.org'
+
       - run: npm publish
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
@@ -50,6 +63,30 @@ jobs:
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GPR_TOKEN }}
 
-      - run: docker build . --file Dockerfile --tag "neuralegion/repeater:$VERSION"
+      - run: echo :set-env name=VERSION::${GITHUB_REF/refs\/tags\//}
+      - run: docker build . --file Dockerfile --build-arg VERSION=$VERSION -t "neuralegion/repeater:$VERSION" -t "neuralegion/repeater:latest"
       - run: docker login --username=${{ secrets.DOCKER_USER }} --password=${{ secrets.DOCKER_TOKEN }}
       - run: docker push neuralegion/repeater
+
+  publish:
+    runs-on: windows-latest
+    needs: build
+    steps:
+      - uses: actions/download-artifact@v2
+        with:
+          name: build
+
+      - run: |
+          curl -OLS https://github.com/wixtoolset/wix3/releases/download/wix3111rtm/wix311.exe
+          .\wix311.exe /install /quiet /norestart
+
+      - run: .\tools\msi\build.ps1
+        shell: pwsh
+        continue-on-error: true
+
+      - uses: svenstaro/upload-release-action@v2
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file: .\bin\win\nexploit-cli.msi
+          asset_name: nexploit-cli.msi
+          tag: ${{ github.ref }}

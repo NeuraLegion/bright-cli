@@ -4,8 +4,13 @@ import Ajv from 'ajv';
 import { ValidateFunction } from 'ajv';
 import semver from 'semver';
 import betterAjvErrors from 'better-ajv-errors';
+import schemaV2 from 'schemas/openapi/v2.0/schema.json';
+import schemaV3 from 'schemas/openapi/v3.0/schema.json';
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-ignore
+import ajvFormats from 'ajv/lib/compile/formats';
+import draft4 from 'ajv/lib/refs/json-schema-draft-04.json';
 import { ok } from 'assert';
-import { join } from 'path';
 
 export class OasValidator implements Validator<any> {
   private readonly ajv: Ajv.Ajv;
@@ -14,10 +19,8 @@ export class OasValidator implements Validator<any> {
     [2, 'http://swagger.io/v2/schema.json#'],
     [3, 'https://spec.openapis.org/oas/3.0/schema/2019-04-02']
   ]);
-  private readonly PATH_TO_SCHEMAS: ReadonlyArray<string> = [
-    'schemas/openapi/v2.0/schema.json',
-    'schemas/openapi/v3.0/schema.json'
-  ];
+  private readonly SCHEMAS: ReadonlyArray<any> = [schemaV2, schemaV3];
+
   constructor() {
     this.ajv = new Ajv({
       allErrors: true,
@@ -27,18 +30,11 @@ export class OasValidator implements Validator<any> {
       async: true,
       schemaId: 'auto'
     });
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
-    const ajvFormats = require('ajv/lib/compile/formats.js');
     this.ajv.addFormat('uriref', ajvFormats.full['uri-reference']);
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
-    this.ajv.addMetaSchema(require('ajv/lib/refs/json-schema-draft-04.json'));
+    this.ajv.addMetaSchema(draft4);
     (this.ajv as any)._refs['http://json-schema.org/schema'] =
       'http://json-schema.org/draft-04/schema'; // optional, using unversioned URI is out of spec
-    this.PATH_TO_SCHEMAS.forEach((x: string) => {
-      // eslint-disable-next-line @typescript-eslint/no-var-requires
-      const schema = require(join('../../../', x));
-      this.ajv.addSchema(schema);
-    });
+    this.SCHEMAS.forEach((x: any) => this.ajv.addSchema(x));
   }
 
   public async validate(spec: any): Promise<void | never> {
