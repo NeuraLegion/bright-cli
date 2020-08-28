@@ -36,18 +36,7 @@
         "releasedLabels": false,
         "failTitle": false,
         "failComment": false,
-        "successComment": false,
-        "assets": [
-          {
-            "path": "bin/win64/nexploit-cli.exe",
-            "label": "nexploit-cli-windows-x64.exe"
-          },
-          { "path": "bin/mac/nexploit-cli", "label": "nexploit-cli-mac-x64" },
-          {
-            "path": "bin/linux/nexploit-cli",
-            "label": "nexploit-cli-linux-x64"
-          }
-        ]
+        "successComment": false
       }
     ]
   ],

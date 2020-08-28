@@ -117,7 +117,6 @@
     "test": "mocha -r ts-node/register -r tsconfig-paths/register src/**/*.spec.ts",
     "build": "webpack --config webpack.config.js --mode=production",
     "semantic-release": "semantic-release",
-    "prepublishOnly": "npm run build",
     "pack:win": "nexe -o bin/win/nexploit-cli.exe -t windows-x64-10.16.0 --rc {CompanyName: 'NeuraLegion', ProductName: 'NexPloit CLI', OriginalFilename: 'nexploit-cli.exe'} dist/index.js",
     "pack:mac": "nexe -o bin/mac/nexploit-cli -t mac-x64-10.19.0 dist/index.js ",
     "pack:linux": "nexe -o bin/linux/nexploit-cli -t linux-x64-10.20.1 dist/index.js"
