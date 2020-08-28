@@ -39,9 +39,11 @@ export class Helpers {
   public static parseHeaders(headers: string[] = []): Record<string, string> {
     ok(Array.isArray(headers), 'First argument must be an instance of Array.');
 
-    return Object.fromEntries(
-      headers.map((value: string) => this.parseHeader(value))
-    );
+    return headers.reduce((acc: Record<string, string>, value: string) => {
+      const [key, header]: [string, string] = this.parseHeader(value);
+
+      return { ...acc, [key]: header };
+    }, {});
   }
 
   private static parseHeader(header: string): [string, string] | undefined {
