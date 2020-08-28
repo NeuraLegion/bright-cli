@@ -43,7 +43,9 @@ jobs:
           name: build
           path: |
             dist
+            Dockerfile
             package.json
+            package-lock.json
             README.md
             LICENSE
             tools

@@ -1,26 +1,9 @@
-FROM node:10-alpine as base
+## [6.0.4](https://github.com/NeuraLegion/nexploit-cli/compare/v6.0.3...v6.0.4) (2020-08-28)
 
-ARG VERSION
 
-LABEL org.opencontainers.image.vendor="NeuraLegion"
-LABEL org.opencontainers.image.title="Repeater"
-LABEL org.opencontainers.image.source="https://github.com/NeuraLegion/nexploit-cli"
-LABEL org.opencontainers.image.authors="Arten Derevnjuk <artem.derevnjuk@neuralegion.com>"
-LABEL org.opencontainers.image.version="$VERSION"
+### Bug Fixes
 
-# a few environment variables to make NPM installs easier
-# good colors for most applications
-ENV TERM xterm
+* **utils:** use the reducer to build objects from entries ([#79](https://github.com/NeuraLegion/nexploit-cli/issues/79)) ([c3c0a90c](https://github.com/NeuraLegion/nexploit-cli/commit/c3c0a90c4711068806bb9a075dfe438f2edd7034)), closes [#78](https://github.com/NeuraLegion/nexploit-cli/issues/78)
 
-# avoid million NPM install messages
-ENV npm_config_loglevel warn
-# allow installing when the main user is root
-ENV npm_config_unsafe_perm true
 
-RUN echo "whoami: $(whoami)"
-RUN npm config -g set user $(whoami)
 
-RUN npm i -g -q @neuralegion/nexploit-cli@${NODE_AUTH_TOKEN}
-
-ENTRYPOINT [ "nexploit-cli" ]
-CMD ["repeater"]
