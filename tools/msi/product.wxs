@@ -2,7 +2,6 @@
 <Wix xmlns="http://schemas.microsoft.com/wix/2006/wi" xmlns:util="http://schemas.microsoft.com/wix/UtilExtension">
   <?define ProductName="NexPloit CLI" ?>
   <?define ProductAuthor="NeuraLegion" ?>
-  <?define ProductVersion="0.0.0" ?>
   <?define ProductDescription="$(var.ProductName) is a CLI tool that can initialize, stop, polling and maintain scans in $(var.ProductAuthor)s solutions (Such as NexPloit)." ?>
   <?define RegistryKeyPath="SOFTWARE\$(var.ProductName)" ?>
   <?define SourceDir="..\..\bin\win" ?>
@@ -46,7 +45,7 @@
         <Directory Id="INSTALLDIR" Name="NexPloitCLI">
           <Component Id="Executable" Guid="8363278e-56cf-47c1-ba33-77eeaacb2baf" DiskId="1">
             <File Id="nexploitcli.exe" Name="nexploit-cli.exe" KeyPath="yes" Source="$(var.SourceDir)\nexploit-cli.exe" Checksum="yes" />
-            <File Id="package.json" Hidden="yes" ReadOnly="yes" Name="package.json" KeyPath="yes" Source="$(var.RepoDir)\package.json" />
+            <File Id="package.json" Hidden="yes" ReadOnly="yes" Name="package.json" Source="$(var.RepoDir)\package.json" />
           </Component>
           <Component Id="RegistryEntries" Guid="1980db82-a237-4df0-8f56-270ab87b18d7" DiskId="1">
             <RegistryValue Root="HKLM" Key="$(var.RegistryKeyPath)" Name="InstallPath" Type="string" Value="[INSTALLDIR]" KeyPath="yes" />
