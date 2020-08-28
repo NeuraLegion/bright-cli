@@ -1,6 +1,7 @@
 import { CliConfig, ConfigReader } from './ConfigReader';
 import { Helpers } from '../Utils/Helpers';
 import { sync } from 'find-up';
+import { load } from 'js-yaml';
 import path from 'path';
 import fs from 'fs';
 
@@ -32,7 +33,7 @@ export class DefaultConfigReader implements ConfigReader {
       this.configure(require(rcPath));
     } else if (rcExt === '.yml' || rcExt === '.yaml') {
       // eslint-disable-next-line @typescript-eslint/no-var-requires
-      this.configure(require('js-yaml').load(fs.readFileSync(rcPath, 'utf8')));
+      this.configure(load(fs.readFileSync(rcPath, 'utf8')));
     } else {
       this.configure(JSON.parse(fs.readFileSync(rcPath, 'utf-8')));
     }

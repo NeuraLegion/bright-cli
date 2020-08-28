@@ -3,7 +3,7 @@
     "baseUrl": ".",
     "outDir": "dist",
     "target": "es2015",
-    "lib": ["es2020"],
+    "lib": ["es2016"],
     "newLine": "LF",
     "module": "commonjs",
     "moduleResolution": "node",

@@ -1,9 +1,12 @@
 FROM node:10-alpine as base
 
+ARG VERSION
+
 LABEL org.opencontainers.image.vendor="NeuraLegion"
 LABEL org.opencontainers.image.title="Repeater"
 LABEL org.opencontainers.image.source="https://github.com/NeuraLegion/nexploit-cli"
 LABEL org.opencontainers.image.authors="Arten Derevnjuk <artem.derevnjuk@neuralegion.com>"
+LABEL org.opencontainers.image.version="$VERSION"
 
 # a few environment variables to make NPM installs easier
 # good colors for most applications
@@ -17,7 +20,7 @@ ENV npm_config_unsafe_perm true
 RUN echo "whoami: $(whoami)"
 RUN npm config -g set user $(whoami)
 
-RUN npm i -g -q @neuralegion/nexploit-cli
+RUN npm i -g -q @neuralegion/nexploit-cli@${NODE_AUTH_TOKEN}
 
 ENTRYPOINT [ "nexploit-cli" ]
 CMD ["repeater"]
