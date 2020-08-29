@@ -4,6 +4,7 @@ import logger from '../../Utils/Logger';
 import Ajv from 'ajv';
 import { ValidateFunction } from 'ajv';
 import betterAjvErrors from 'better-ajv-errors';
+import schema from 'schemas/nexmock/schema.json';
 
 export class NexMockValidator implements Validator<MockRequest[]> {
   private readonly ajv: Ajv.Ajv;
@@ -14,7 +15,7 @@ export class NexMockValidator implements Validator<MockRequest[]> {
       async: true
     });
     // eslint-disable-next-line @typescript-eslint/no-var-requires
-    this.ajv.addSchema(require('../../../schemas/nexmock/schema.json'));
+    this.ajv.addSchema(schema);
   }
 
   public async validate(data: MockRequest[]): Promise<void | never> {
