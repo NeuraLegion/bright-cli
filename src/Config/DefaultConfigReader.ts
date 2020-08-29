@@ -2,8 +2,9 @@ import { CliConfig, ConfigReader } from './ConfigReader';
 import { Helpers } from '../Utils/Helpers';
 import { sync } from 'find-up';
 import { load } from 'js-yaml';
-import path from 'path';
-import fs from 'fs';
+import { extname } from 'path';
+import { readFileSync } from 'fs';
+import { Context, createContext, Script } from 'vm';
 
 export class DefaultConfigReader implements ConfigReader {
   private readonly rcOptions: string[] = [
@@ -26,16 +27,14 @@ export class DefaultConfigReader implements ConfigReader {
   }
 
   public load(rcPath: string): this {
-    const rcExt: string = path.extname(rcPath.toLowerCase());
+    const rcExt: string = extname(rcPath.toLowerCase());
 
     if (rcExt === '.js') {
-      // eslint-disable-next-line @typescript-eslint/no-var-requires
-      this.configure(require(rcPath));
+      this.configure(this.loadCommonJsModule(rcPath));
     } else if (rcExt === '.yml' || rcExt === '.yaml') {
-      // eslint-disable-next-line @typescript-eslint/no-var-requires
-      this.configure(load(fs.readFileSync(rcPath, 'utf8')));
+      this.configure(load(readFileSync(rcPath, 'utf8')));
     } else {
-      this.configure(JSON.parse(fs.readFileSync(rcPath, 'utf-8')));
+      this.configure(JSON.parse(readFileSync(rcPath, 'utf-8')));
     }
 
     return this;
@@ -58,6 +57,30 @@ export class DefaultConfigReader implements ConfigReader {
       },
       {} as CliConfig
     );
+  }
+
+  private loadCommonJsModule(filename: string): Record<string, unknown> {
+    const code: string = readFileSync(filename, { encoding: 'utf8' });
+    const script: Script = new Script(code, {
+      filename,
+      timeout: 100
+    });
+    const vmModule: { exports: any } = { exports: {} };
+    const context: Context = createContext({
+      exports: vmModule.exports,
+      module: vmModule
+    });
+
+    script.runInNewContext(context);
+
+    const config: Record<string, unknown> | (() => Record<string, unknown>) =
+      context.module?.exports ?? context.exports;
+
+    if (typeof config === 'function') {
+      return config();
+    }
+
+    return config;
   }
 
   private configure(map: { [key: string]: unknown }): void {

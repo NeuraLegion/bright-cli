@@ -30,40 +30,48 @@
     <Directory Id="TARGETDIR" Name="SourceDir">
       <Directory Id="ProgramMenuFolder">
         <Directory Id="ProgramMenuDir" Name="$(var.ProductName)">
-          <Component Id="StartMenuShortcuts" Guid="F1935C40-798D-47D2-9D47-3D8C4C300F7E">
+          <Component Id="StartMenuShortcuts" Guid="e2f00ece-05ec-4bfe-9607-f438c6ac43eb" DiskId="1">
             <!-- RegistryValue needed because every Component must have a KeyPath.
                                             Because of ICE43, the Root must be HKCU. -->
             <RegistryValue Root="HKCU" Key="$(var.RegistryKeyPath)\Components" Type="integer" Value="1" KeyPath="yes" />
             <util:InternetShortcut Id="OnlineWebsiteShortcut" Name="$(var.ProductName) repository" Target="https://github.com/NeuraLegion/nexploit-cli" Type="url" />
             <util:InternetShortcut Id="OnlineDocumentationShortcut" Name="$(var.ProductName) documentation" Target="https://kb.neuralegion.com/#/nexploit-cli/overview" Type="url" />
             <Shortcut Id="UninstallProduct" Name="Uninstall $(var.ProductName)" Target="[System64Folder]msiexec.exe" Arguments="/x [ProductCode]" />
+            <Shortcut Id="ExeShortcut" Name="$(var.ProductName)" Icon="NexPloitIcon" Target="[INSTALLDIR]nexploit-cli.exe" WorkingDirectory="INSTALLDIR" IconIndex="0" />
             <RemoveFolder Id="ProgramMenuDir" On="uninstall" />
           </Component>
         </Directory>
       </Directory>
       <Directory Id="ProgramFiles64Folder" Name="PFiles">
         <Directory Id="INSTALLDIR" Name="NexPloitCLI">
-          <Component Id="Executable" Guid="89962590-24E4-4E05-BA3F-2C98866D54BC" DiskId="1">
-            <File Id="nexploitcli.exe" Name="nexploit-cli.exe" KeyPath="yes" Source="$(var.SourceDir)\nexploit-cli.exe">
-              <Shortcut Id="ExeShortcut" Directory="ProgramMenuDir" Name="$(var.ProductName)" Icon="NexPloitIcon" WorkingDirectory="INSTALLDIR" IconIndex="0" />
-            </File>
+          <Component Id="Executable" Guid="8363278e-56cf-47c1-ba33-77eeaacb2baf" DiskId="1">
+            <File Id="nexploitcli.exe" Name="nexploit-cli.exe" KeyPath="yes" Source="$(var.SourceDir)\nexploit-cli.exe" Checksum="yes" />
+            <File Id="package.json" Hidden="yes" ReadOnly="yes" Name="package.json" KeyPath="yes" Source="$(var.RepoDir)\package.json" />
           </Component>
-          <Component Id="RegistryEntries" Guid="">
+          <Component Id="RegistryEntries" Guid="1980db82-a237-4df0-8f56-270ab87b18d7" DiskId="1">
             <RegistryValue Root="HKLM" Key="$(var.RegistryKeyPath)" Name="InstallPath" Type="string" Value="[INSTALLDIR]" KeyPath="yes" />
             <RegistryValue Root="HKLM" Key="$(var.RegistryKeyPath)" Name="Version" Type="string" Value="$(var.ProductVersion)" />
           </Component>
-          <Component Id="EnvironmentPath" Guid="">
-            <RegistryValue Root="HKLM" Key="$(var.RegistryKeyPath)\Components" Name="EnvironmentPathNexPloit" Type="integer" Value="1" KeyPath="yes" />
+          <Component Id="EnvironmentPath" Guid="016e4294-b4be-40eb-ae00-f75ec4f1d108" DiskId="1">
+            <RegistryValue Root="HKLM" Key="$(var.RegistryKeyPath)\Components" Name="EnvironmentPath" Type="integer" Value="1" KeyPath="yes" />
             <Environment Id="EnvironmentPath" Action="set" Name="PATH" Part="last" System="yes" Value="[INSTALLDIR]" />
+          </Component>
+          <Component Id="Readme" DiskId="1" Guid="fd8d35cc-2478-4ec9-ad24-e4223721b0f6">
+            <File Id="Readme" Name="README.md" Source="$(var.RepoDir)\README.md" />
+          </Component>
+          <Component Id="License" DiskId="1" Guid="cf0b8704-625c-4bfe-af8e-7441ebab0c06">
+            <File Id="License" Name="LICENSE" Source="$(var.RepoDir)\LICENSE" />
           </Component>
         </Directory>
       </Directory>
     </Directory>
     <Feature Id="NexPloitRuntime" Level="1" Absent="disallow" Title="$(var.ProductName)" ConfigurableDirectory="INSTALLDIR" Description="Install $(var.ProductName) (nexploit-cli.exe).">
-      <ComponentRef Id="Executable" />
       <ComponentRef Id="RegistryEntries" />
-      <ComponentRef Id="StartMenuShortcuts" />
       <ComponentRef Id="EnvironmentPath" />
+      <ComponentRef Id="Executable" />
+      <ComponentRef Id="Readme" />
+      <ComponentRef Id="License" />
+      <ComponentRef Id="StartMenuShortcuts" />
     </Feature>
     <WixVariable Id="WixUICostingPopupOptOut" Value="0" />
     <WixVariable Id="WixUILicenseRtf" Value="$(var.RepoDir)\tools\msi\LICENSE.rtf" />
@@ -105,7 +113,7 @@
       <Publish Dialog="MaintenanceTypeDlg" Control="RemoveButton" Event="NewDialog" Value="VerifyReadyDlg">1</Publish>
       <Publish Dialog="MaintenanceTypeDlg" Control="Back" Event="NewDialog" Value="MaintenanceWelcomeDlg">1</Publish>
       <Property Id="ARPNOMODIFY" Value="1" />
-      <Property Id="WIXUI_EXITDIALOGOPTIONALTEXT" Value="$(var.ProductName) has been succesfully installed.  To run $(var.ProductName) open command prompt (cmd.exe), and run 'nexploit-cli'. See https://neuralegion.com for information about the license." />
+      <Property Id="WIXUI_EXITDIALOGOPTIONALTEXT" Value="$(var.ProductName) has been succesfully installed. To run $(var.ProductName) open command prompt (cmd.exe), and run 'nexploit-cli'." />
     </UI>
     <UIRef Id="InstallUI" />
   </Product>

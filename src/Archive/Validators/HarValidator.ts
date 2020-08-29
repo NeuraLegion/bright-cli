@@ -4,6 +4,7 @@ import { Entry, Har } from 'har-format';
 import Ajv from 'ajv';
 import { ValidateFunction } from 'ajv';
 import betterAjvErrors from 'better-ajv-errors';
+import schema from 'schemas/har/schema.json';
 import { parse, Url } from 'url';
 
 export class HarValidator implements Validator<Har> {
@@ -16,8 +17,7 @@ export class HarValidator implements Validator<Har> {
       jsonPointers: true,
       extendRefs: true
     });
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
-    this.ajv.addSchema(require('../../../schemas/har/schema.json'));
+    this.ajv.addSchema(schema);
   }
 
   public async validate(data: Har): Promise<void | never> {
