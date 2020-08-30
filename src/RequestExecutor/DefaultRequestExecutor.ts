@@ -2,6 +2,7 @@ import { RequestExecutor } from './RequestExecutor';
 import { ScriptResult } from './ScriptResult';
 import { Script } from './Script';
 import logger from '../Utils/Logger';
+import { Helpers } from '../Utils/Helpers';
 import request from 'request-promise';
 import { Response } from 'request';
 import { SocksProxyAgent } from 'socks-proxy-agent';
@@ -29,12 +30,12 @@ export class DefaultRequestExecutor implements RequestExecutor {
     try {
       const response: Response = await request({
         gzip: true,
-        url: script.url,
+        url: Helpers.encodeURL(script.url),
         strictSSL: false,
         agent: this.agent,
         body: script.body,
-        method: script.method,
-        headers: { ...script.headers, ...(this.options.headers ?? {}) },
+        method: script.method?.toUpperCase(),
+        headers: { ...script.headers, ...this.options.headers },
         timeout: this.options.timeout,
         resolveWithFullResponse: true,
         maxRedirects: this.options.maxRedirects

@@ -46,6 +46,18 @@ export class Helpers {
     }, {});
   }
 
+  public static encodeURL(str: string): string {
+    let decodedStr: string;
+
+    try {
+      decodedStr = decodeURI(str);
+    } catch {
+      throw new Error(`Malformed URI sequence: ${str}`);
+    }
+
+    return encodeURI(decodedStr).replace(/%5B/g, '[').replace(/%5D/g, ']');
+  }
+
   private static parseHeader(header: string): [string, string] | undefined {
     ok(
       typeof header === 'string',
