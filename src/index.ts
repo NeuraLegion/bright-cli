@@ -1,3 +1,4 @@
+process.env.UV_THREADPOOL_SIZE = String(1024);
 import 'reflect-metadata';
 import {
   GenerateArchive,

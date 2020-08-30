@@ -228,13 +228,19 @@ export class RabbitMQBus implements Bus {
 
         // eslint-disable-next-line max-depth
         if (response) {
-          this.channel.sendToQueue(
+          const sendResult: boolean = this.channel.sendToQueue(
             replyTo,
             Buffer.from(JSON.stringify(response)),
             {
               correlationId
             }
           );
+
+          // eslint-disable-next-line max-depth
+          if (!sendResult) {
+            console.log(sendResult);
+            await new Promise((resolve) => this.channel.once('drain', resolve));
+          }
         }
       }
     } catch (err) {
