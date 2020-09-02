@@ -32,8 +32,9 @@ export class RabbitMQBus implements Bus {
   private channel: ConfirmChannel;
   private readonly handlers = new Map<string, Handler<Event>>();
   private readonly DEFAULT_RECONNECT_TIMES = 20;
-  private readonly DEFAULT_RECONNECT_TIMEOUT = 5;
+  private readonly DEFAULT_RECONNECT_TIMEOUT = 10;
   private readonly DEFAULT_HEARTBEAT_INTERVAL = 5;
+  private consumerTag?: string;
 
   constructor(
     private readonly options: RabbitMQBusOptions,
@@ -41,11 +42,24 @@ export class RabbitMQBus implements Bus {
   ) {}
 
   public async destroy(): Promise<void> {
-    await this.channel?.close();
-    await this.client?.close();
-    this.clear();
+    try {
+      if (this.channel) {
+        await this.channel.cancel(this.consumerTag);
 
-    logger.log('Event bus disconnected from %s', this.options.url);
+        await this.channel.waitForConfirms();
+        await this.channel.close();
+      }
+
+      await this.client?.close();
+
+      this.clear();
+
+      logger.log('Event bus disconnected from %s', this.options.url);
+    } catch (err) {
+      logger.error('Cannot terminate event bus gracefully');
+      logger.debug('Event bus terminated.');
+      logger.debug('Error on disconnect: %s', err.message);
+    }
   }
 
   public async init(): Promise<void> {
@@ -148,6 +162,8 @@ export class RabbitMQBus implements Bus {
   }
 
   private clear(): void {
+    delete this.consumerTag;
+
     this.channel?.removeAllListeners();
     delete this.channel;
 
@@ -165,6 +181,10 @@ export class RabbitMQBus implements Bus {
       timeout: this.options.connectTimeout,
       socket: await proxy?.open(this.options.url)
     });
+
+    this.client.on('error', (err: Error) =>
+      logger.debug(`Unexpected error: %s`, err.message)
+    );
 
     this.client.on('close', (reason: Error) =>
       reason ? this.reconnect() : undefined
@@ -228,19 +248,14 @@ export class RabbitMQBus implements Bus {
 
         // eslint-disable-next-line max-depth
         if (response) {
-          const sendResult: boolean = this.channel.sendToQueue(
+          this.channel?.sendToQueue(
             replyTo,
             Buffer.from(JSON.stringify(response)),
             {
-              correlationId
+              correlationId,
+              mandatory: true
             }
           );
-
-          // eslint-disable-next-line max-depth
-          if (!sendResult) {
-            console.log(sendResult);
-            await new Promise((resolve) => this.channel.once('drain', resolve));
-          }
         }
       }
     } catch (err) {
@@ -258,18 +273,18 @@ export class RabbitMQBus implements Bus {
       this.channel = await this.client.createConfirmChannel();
       await this.bindExchangesToQueue(this.channel);
       await this.startBasicConsume(this.channel);
-      await this.channel.waitForConfirms();
     }
   }
 
   private async startBasicConsume(channel: Channel): Promise<void> {
-    await channel.consume(
+    const { consumerTag } = await channel.consume(
       this.options.clientQueue,
       (msg: ConsumeMessage | null) => this.consumeReceived(msg),
       {
         noAck: true
       }
     );
+    this.consumerTag = consumerTag;
   }
 
   private async bindExchangesToQueue(channel: Channel): Promise<void> {
