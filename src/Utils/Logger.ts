@@ -5,7 +5,7 @@ const log: Debugger = debug('nexploit-cli');
 
 export class Logger {
   get logLevel(): string {
-    return process.env.npm_config_loglevel || 'notice';
+    return process.env.LOGLEVEL || 'notice';
   }
 
   public error(message: string, ...args: any[]): void {
