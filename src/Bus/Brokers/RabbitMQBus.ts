@@ -103,6 +103,10 @@ export class RabbitMQBus implements Bus {
       return;
     }
 
+    if (!this.channel) {
+      return;
+    }
+
     await Promise.all(
       events.map((event: T) => {
         const eventName: string = this.getEventName(event);
@@ -118,6 +122,7 @@ export class RabbitMQBus implements Bus {
           eventName,
           Buffer.from(JSON.stringify(event)),
           {
+            contentType: 'application/json',
             mandatory: true,
             persistent: true
           }
