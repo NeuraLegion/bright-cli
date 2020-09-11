@@ -74,7 +74,6 @@ export class RunRepeater implements CommandModule {
       const requestExecutor = new DefaultRequestExecutor({
         headers,
         timeout: 10000,
-        maxRedirects: 20,
         proxyUrl: args.proxy as string
       });
       const handlerRegistry = new DefaultHandlerRegistry(requestExecutor);

@@ -13,7 +13,6 @@ export class DefaultRequestExecutor implements RequestExecutor {
 
   constructor(
     private readonly options: {
-      maxRedirects?: number;
       timeout?: number;
       proxyUrl?: string;
       headers?: Record<string, string | string[]>;
@@ -38,7 +37,7 @@ export class DefaultRequestExecutor implements RequestExecutor {
         headers: { ...script.headers, ...this.options.headers },
         timeout: this.options.timeout,
         resolveWithFullResponse: true,
-        maxRedirects: this.options.maxRedirects
+        followRedirect: false
       });
 
       return new ScriptResult({
