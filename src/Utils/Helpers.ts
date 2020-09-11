@@ -52,7 +52,7 @@ export class Helpers {
     try {
       decodedStr = decodeURI(str);
     } catch {
-      throw new Error(`Malformed URI sequence: ${str}`);
+      decodedStr = str;
     }
 
     return encodeURI(decodedStr).replace(/%5B/g, '[').replace(/%5D/g, ']');
