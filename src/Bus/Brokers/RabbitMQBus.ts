@@ -33,7 +33,7 @@ export class RabbitMQBus implements Bus {
   private readonly handlers = new Map<string, Handler<Event>>();
   private readonly DEFAULT_RECONNECT_TIMES = 20;
   private readonly DEFAULT_RECONNECT_TIMEOUT = 10;
-  private readonly DEFAULT_HEARTBEAT_INTERVAL = 5;
+  private readonly DEFAULT_HEARTBEAT_INTERVAL = 30;
   private consumerTag?: string;
 
   constructor(
