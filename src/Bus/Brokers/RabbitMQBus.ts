@@ -271,6 +271,9 @@ export class RabbitMQBus implements Bus {
   private async createConsumerChannel(): Promise<void> {
     if (!this.channel) {
       this.channel = await this.client.createConfirmChannel();
+      this.channel.on('error', (reason: Error) =>
+        logger.error('Unexpected error: %s', reason)
+      );
       await this.bindExchangesToQueue(this.channel);
       await this.startBasicConsume(this.channel);
     }
