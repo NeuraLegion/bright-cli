@@ -7,15 +7,5 @@ import { Component } from '@angular/core';
 })
 export class AppComponent {
   title = 'Connectivity Wizard';
-  authToken: string;
-  repeaterId: string;
-
-  onSubmit(): void {
-    const actionPayload = {
-      authToken: this.authToken,
-      repeaterId: this.repeaterId
-    };
-    console.log (actionPayload);
-  }
 }
 
