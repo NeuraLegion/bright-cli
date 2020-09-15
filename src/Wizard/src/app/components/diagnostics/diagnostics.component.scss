@@ -1,1 +1,15 @@
 @import "../main/main.component.scss";
+
+h3 {
+    color: $primary-orange;
+}
+
+.form-control {
+    width: 90%;
+    height: 9rem;
+    margin: 0px;
+}
+
+.buttons-container {
+    margin-left: 3rem !important;
+}

@@ -6,4 +6,10 @@ import { Component } from '@angular/core';
   styleUrls: ['./diagnostics.component.scss']
 })
 
-export class DiagnosticsComponent {}
+export class DiagnosticsComponent {
+  checkbox = {
+    amqConnection: true,
+    httpsConnection: false,
+    authValidation: false
+  };
+}
