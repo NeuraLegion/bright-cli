@@ -1,58 +1,20 @@
-$primary-grey: #939598;
-$primary-blue: #0ba9b8;
-$primary-orange: #ef4036;
-$neutral-grey: #e6e7e8;
+@import "../../app.component.scss";
 
-div {
-    display:inline-block;
-    float: left;
-    margin: 2rem;
-    font-family: 'saira';
-
-    .logo {
-        width: 20rem;
-        height:2rem;
-        float: left;
-        padding-right: 2rem;    
-    }
-
-    h2 {
-        float: left;
-        font-size: 2.5em;
-        width: 30rem;
-        color: $primary-grey;
-    }
-}
-
-.content-container {
-    margin-top: -2rem;
-    width: 55rem;
-    height: 20rem;
-}
-
-.main-container {
-    max-width: 60rem;
-    min-height: 40rem;
-    border-style: solid;
-    border-width: medium;
-    border-color: $primary-grey;
-    border-radius: 20px;
-}
 
 .buttons-container {
     display: flex;
     justify-content: space-between;
     margin-left: 1.5rem;
     min-width: 52rem;
+}
 
-    .button {
-        color: White;
-        width:8em;
-        height:3em;
-        background-color: $primary-blue;
-        border-radius: 10px;
-        border-color: White;
-    }
+.button {
+    color: White;
+    width:8em;
+    height:3em;
+    background-color: $primary-blue;
+    border-radius: 10px;
+    border-color: White;
 }
 
 .form-control {

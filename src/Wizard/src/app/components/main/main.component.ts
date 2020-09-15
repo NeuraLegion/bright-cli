@@ -11,9 +11,7 @@ export class MainComponent {
   authToken: string;
   repeaterId: string;
 
-  constructor(
-    private router: Router
-  ) {}
+  constructor(private router: Router) {}
 
   onSubmit(): void {
     const actionPayload = {

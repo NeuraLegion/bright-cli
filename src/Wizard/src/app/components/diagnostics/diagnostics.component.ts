@@ -1,4 +1,5 @@
 import { Component } from '@angular/core';
+import { Router } from '@angular/router';
 
 @Component({
   selector: 'app-diagnostics',
@@ -7,9 +8,16 @@ import { Component } from '@angular/core';
 })
 
 export class DiagnosticsComponent {
+
+  constructor(private router: Router) {}
+
   checkbox = {
     amqConnection: true,
     httpsConnection: false,
     authValidation: false
   };
+
+  next () {
+    this.router.navigateByUrl('scan');
+  }
 }

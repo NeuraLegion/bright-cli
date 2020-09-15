@@ -1,0 +1,24 @@
+<div class="content-container">
+  <h3>START YOUR FIRST SCAN</h3>
+  <h4>
+    This last step is meant to validate the connection to yor local target
+    application.<br />
+    Please provide the target URL:
+  </h4>
+  <form (ngSubmit)="onSubmit()" ngNativeValidate>
+    <div class="form-control">
+      <div class="form-group">
+        <label for="url">Target URL: </label>
+        <input [(ngModel)]="targetUrl" name="url" type="text" required id="url"/>
+      </div>
+    </div>
+    <div class="button-scan">
+      <button type="submit" class="button">Start Scan</button>
+    </div>
+  </form>
+</div>
+
+<div class="buttons-container">
+  <button class="button">Prev</button>
+  <button type="submit" class="button">Next</button>
+</div>
