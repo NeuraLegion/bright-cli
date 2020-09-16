@@ -18,3 +18,28 @@ h3 {
 .button-move {
     margin-left: 12rem;  
 }
+
+input[type=checkbox] {
+    display: none;
+}
+
+label:before {
+    background: linear-gradient(to bottom, #fff 0px, #e6e6e6 100%) repeat scroll 0 0 rgba(0, 0, 0, 0);
+    height: 1.2rem;
+    width: 1.2rem;
+    display: inline-block;
+    outline:1px solid black;
+    margin-right: 1rem;
+}
+
+input[type=checkbox] + label:before {
+    content: '';
+    color:  #96be0a;
+    font-size: 20px;
+    line-height: 20px;
+    text-align: center;
+}
+
+input[type=checkbox]:checked + label:before {
+    content: '✓';
+}

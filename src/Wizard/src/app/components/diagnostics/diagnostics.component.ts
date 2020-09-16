@@ -17,6 +17,8 @@ export class DiagnosticsComponent {
     authValidation: false
   };
 
+  restartScan(): void{ }
+
   next(): void {
     this.router.navigateByUrl('scan');
   }
