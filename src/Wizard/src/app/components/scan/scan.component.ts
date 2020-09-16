@@ -1,4 +1,5 @@
 import { Component } from '@angular/core';
+import { Router } from '@angular/router';
 
 @Component({
   selector: 'app-scan',
@@ -8,8 +9,17 @@ import { Component } from '@angular/core';
 
 export class ScanComponent {
 
+  constructor(private router: Router) {}
+
   targetUrl: string = '{{url}}';
 
-  onSubmit(): void{}
+  onSubmit(): void{ }
 
+  prev(): void {
+    this.router.navigateByUrl('diagnostics');
+  }
+
+  next(): void {
+    this.router.navigateByUrl('success');
+  }
 }

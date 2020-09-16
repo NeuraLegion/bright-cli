@@ -20,4 +20,8 @@ export class DiagnosticsComponent {
   next(): void {
     this.router.navigateByUrl('scan');
   }
+
+  prev(): void {
+    this.router.navigateByUrl('');
+  }
 }
