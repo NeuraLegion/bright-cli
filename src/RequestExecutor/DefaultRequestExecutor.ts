@@ -7,6 +7,7 @@ import request from 'request-promise';
 import { Response } from 'request';
 import { SocksProxyAgent } from 'socks-proxy-agent';
 import { parse } from 'url';
+import { OutgoingMessage } from 'http';
 
 export class DefaultRequestExecutor implements RequestExecutor {
   private readonly agent?: SocksProxyAgent;
@@ -27,6 +28,10 @@ export class DefaultRequestExecutor implements RequestExecutor {
 
   public async execute(script: Script): Promise<ScriptResult> {
     try {
+      const rawHeaders: Record<string, string | string[]> = {
+        ...script.headers,
+        ...this.options.headers
+      };
       const response: Response = await request({
         gzip: true,
         url: Helpers.encodeURL(script.url),
@@ -34,11 +39,12 @@ export class DefaultRequestExecutor implements RequestExecutor {
         agent: this.agent,
         body: script.body,
         method: script.method?.toUpperCase(),
-        headers: { ...script.headers, ...this.options.headers },
         timeout: this.options.timeout,
         resolveWithFullResponse: true,
         followRedirect: false
-      });
+      }).on('request', (req: OutgoingMessage) =>
+        this.setHeaders(req, rawHeaders)
+      );
 
       return new ScriptResult({
         status: response.statusCode,
@@ -71,5 +77,33 @@ export class DefaultRequestExecutor implements RequestExecutor {
         errorCode
       });
     }
+  }
+
+  private setHeaders(
+    req: OutgoingMessage,
+    rawHeaders: Record<string, string | string[]>
+  ): void {
+    const symbols: symbol[] = Object.getOwnPropertySymbols(req);
+    const kOutHeaders: symbol = symbols.find(
+      (item) => item.toString() === 'Symbol(kOutHeaders)'
+    );
+
+    if (!req.headersSent && kOutHeaders && rawHeaders) {
+      const headers = (req[kOutHeaders] =
+        req[kOutHeaders] ?? Object.create(null));
+
+      this.mergeHeaders(rawHeaders, headers);
+    }
+  }
+
+  private mergeHeaders(
+    src: Record<string, string | string[]>,
+    dest: Record<string, [string, string | string[]]>
+  ) {
+    Object.entries(src).forEach(([key, value]: [string, string | string[]]) => {
+      if (key) {
+        dest[key.toLowerCase()] = [key, value ?? ''];
+      }
+    });
   }
 }
