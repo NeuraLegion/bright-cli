@@ -4,17 +4,21 @@
 .buttons-container {
     display: flex;
     justify-content: space-between;
-    margin-left: 1.5rem;
-    min-width: 52rem;
+    margin-left: 0rem;
+    width: 52rem;
 }
 
-.button {
+button {
     color: White;
     width:8em;
     height:3em;
     background-color: $primary-blue;
     border-radius: 10px;
     border-color: White;
+}
+
+.button-prev {
+    background-color: $primary-grey !important;
 }
 
 .form-control {
@@ -31,4 +35,14 @@
         margin: 0px;
         display: inline-block;
     }
+}
+
+.gap {
+    height: 13.5rem;
+}
+
+.button-scan {
+    width:10em;
+    height:4em;
+    background-color: $secondary-blue;
 }

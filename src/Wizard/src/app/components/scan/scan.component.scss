@@ -1,10 +1,23 @@
 @import "../main/main.component.scss";
 
 .buttons-container {
-    margin-left: 3rem !important;
-    margin-top: 4rem;
+    margin-left: 2rem !important;
+    margin-bottom: 5rem;
 }
 
-.button {
-    margin-top: .6rem;
+.button-move {
+    margin-top: 0.5rem;
+}
+
+.form-control {
+    margin: 0px;
+}
+
+.progress {
+    width: 94%;
+    height: 14rem;
+}
+
+.content-container {
+    height: 15rem !important;
 }

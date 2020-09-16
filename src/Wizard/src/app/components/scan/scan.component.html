@@ -12,13 +12,19 @@
         <input [(ngModel)]="targetUrl" name="url" type="text" required id="url"/>
       </div>
     </div>
-    <div class="button-scan">
-      <button type="submit" class="button">Start Scan</button>
+    <div class="button-move">
+      <button type="submit" class="button-scan">Start Scan</button>
     </div>
   </form>
 </div>
+<div class="content-container">
+  <h4>PROGRESS</h4>
+  <div class="form-control progress">
+    <div>SOME PROGRESS INFORMATION WILL BE HERE</div>
+  </div>
+</div>
 
 <div class="buttons-container">
-  <button class="button">Prev</button>
-  <button type="submit" class="button">Next</button>
+  <button class="button-prev">Prev</button>
+  <button type="submit">Next</button>
 </div>

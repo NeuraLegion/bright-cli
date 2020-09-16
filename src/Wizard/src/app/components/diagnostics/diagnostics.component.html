@@ -4,15 +4,16 @@
   <input type="checkbox" [checked]="checkbox.amqConnection"/>
   <span>Connection to amq.nexploit.app port 5672</span><br/>
   <input type="checkbox" [checked]="checkbox.httpsConnection"/>
-  <span>Connection to nexploit.app port 443</span><br />
+  <span>Connection to nexploit.app port 443</span>
+  <button class="button-scan button-move">Restart Scan</button><br/>
   <input type="checkbox" [checked]="checkbox.authValidation"/>
   <span>Valid authentication credentials</span>
-  <h4>Progress</h4>
+  <h4>PROGRESS</h4>
   <div class="form-control">
     <div>SOME PROGRESS INFORMATION WILL BE HERE</div>
   </div>
 </div>
 <div class="buttons-container">
-  <button class="button">Prev</button>
+  <button  class="button-prev">Prev</button>
   <button type="submit" class="button" (click)="next()">Next</button>
 </div>

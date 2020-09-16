@@ -2,10 +2,10 @@ $primary-grey: #939598;
 $primary-blue: #0ba9b8;
 $primary-orange: #ef4036;
 $neutral-grey: #e6e7e8;
+$secondary-blue: #2a81bc;
 
 div {
     display:inline-block;
-    float: left;
     margin: 2rem;
     font-family: 'saira';
 
@@ -32,7 +32,7 @@ div {
 
 .main-container {
     max-width: 60rem;
-    min-height: 40rem;
+    height: 45rem;
     border-style: solid;
     border-width: medium;
     border-color: $primary-grey;
@@ -41,4 +41,5 @@ div {
 
 .header-container {
     margin-bottom: -0.5rem;
+    margin-top: auto;
 }
