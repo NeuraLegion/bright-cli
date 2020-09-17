@@ -1,5 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
+import { ConnectivityStatus } from 'src/app/app.model';
 import { AppService } from 'src/app/app.service';
 
 @Component({
@@ -13,15 +14,11 @@ export class DiagnosticsComponent implements OnInit {
   constructor(private router: Router,
               protected service: AppService) {}
 
-  checkbox = {
-    amqConnection: true,
-    httpsConnection: false,
-    authValidation: false
-  };
+  status: ConnectivityStatus;
 
   ngOnInit() {
-    this.service.getConnectivityStatus().subscribe((response: any) => {
-      console.log (response);
+    this.service.getConnectivityStatus().subscribe((response: ConnectivityStatus) => {
+      this.status = response;
     }, error => {
       console.log (error);
     });

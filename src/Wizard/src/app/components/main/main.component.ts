@@ -1,5 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
+import { Tokens } from 'src/app/app.model';
 import { AppService } from 'src/app/app.service';
 
 @Component({
@@ -17,8 +18,9 @@ export class MainComponent implements OnInit {
 
   ngOnInit() {
     console.log('Welcome');
-    this.service.getTokens().subscribe((response: any) => {
-      console.log (response);
+    this.service.getTokens().subscribe((response: Tokens) => {
+      this.authToken = response.authToken;
+      this.repeaterId = response.repeaterId;
     }, error => {
       console.log (error);
     });
