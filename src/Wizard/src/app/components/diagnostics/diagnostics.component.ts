@@ -1,5 +1,6 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
+import { AppService } from 'src/app/app.service';
 
 @Component({
   selector: 'app-diagnostics',
@@ -7,15 +8,24 @@ import { Router } from '@angular/router';
   styleUrls: ['./diagnostics.component.scss']
 })
 
-export class DiagnosticsComponent {
+export class DiagnosticsComponent implements OnInit {
 
-  constructor(private router: Router) {}
+  constructor(private router: Router,
+              protected service: AppService) {}
 
   checkbox = {
     amqConnection: true,
     httpsConnection: false,
     authValidation: false
   };
+
+  ngOnInit() {
+    this.service.getConnectivityStatus().subscribe((response: any) => {
+      console.log (response);
+    }, error => {
+      console.log (error);
+    });
+  }
 
   restartScan(): void{ }
 

@@ -1,17 +1,28 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
+import { AppService } from 'src/app/app.service';
 
 @Component({
   selector: 'app-main',
   templateUrl: './main.component.html',
   styleUrls: ['./main.component.scss']
 })
-export class MainComponent {
+export class MainComponent implements OnInit {
   title = 'Connectivity Wizard';
   authToken: string;
   repeaterId: string;
 
-  constructor(private router: Router) {}
+  constructor(private router: Router,
+              protected service: AppService) {}
+
+  ngOnInit() {
+    console.log('Welcome');
+    this.service.getTokens().subscribe((response: any) => {
+      console.log (response);
+    }, error => {
+      console.log (error);
+    });
+  }
 
   onSubmit(): void {
     const actionPayload = {
@@ -19,6 +30,11 @@ export class MainComponent {
       repeaterId: this.repeaterId
     };
     this.router.navigateByUrl('diagnostics');
+    this.service.saveTokens(actionPayload).subscribe((response: any) => {
+      console.log (response);
+    }, error => {
+      console.log (error);
+    });
   }
 
   onIconClick(inputId, spanId): void {

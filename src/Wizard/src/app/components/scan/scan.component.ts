@@ -1,5 +1,6 @@
 import { Component } from '@angular/core';
 import { Router } from '@angular/router';
+import { AppService } from 'src/app/app.service';
 
 @Component({
   selector: 'app-scan',
@@ -9,11 +10,18 @@ import { Router } from '@angular/router';
 
 export class ScanComponent {
 
-  constructor(private router: Router) {}
+  constructor(private router: Router,
+              protected service: AppService) {}
 
   targetUrl: string = '{{url}}';
 
-  onSubmit(): void{ }
+  onSubmit(): void { 
+    this.service.startScan(this.targetUrl).subscribe((response: any) => {
+      console.log (response);
+    }, error => {
+      console.log (error);
+    });
+  }
 
   prev(): void {
     this.router.navigateByUrl('diagnostics');
