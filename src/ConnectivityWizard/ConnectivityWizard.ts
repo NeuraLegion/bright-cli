@@ -3,7 +3,6 @@ import Router from 'koa-router';
 import json from 'koa-json';
 import bodyParser from 'koa-bodyparser';
 import serve from 'koa-static';
-import send from 'koa-send';
 
 import { Tokens } from './Tokens';
 import { ConnectivityStatus } from './ConnectivityStatus';
@@ -61,14 +60,14 @@ export class ConnectivityWizard {
             ctx.body = resp;
             await next();
         });
-        console.log(__dirname + '/../../client');
-        this.app.use(serve(__dirname + '/../../client'));
+        console.log(__dirname + '/../Wizard/dist/Wizard');
+        this.app.use(serve(__dirname + '/../Wizard/dist/Wizard'));
         this.app.use(json());
         this.app.use(bodyParser());
         this.app.use(router.routes());
-        this.app.use(async function (ctx: Koa.Context) {
-            await send(ctx, 'client/index.html');
-        });
+        // this.app.use(async function (ctx: Koa.Context) {
+        //     await send(ctx, 'Wizard/dist/Wizard/index.html');
+        // });
 
         this.app.listen(3000);
     }
