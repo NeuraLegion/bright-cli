@@ -8,9 +8,12 @@ import {
   RunScan,
   StopScan,
   UploadArchive,
-  VersionCommand
+  VersionCommand,
+  Configure
 } from './Commands';
 import { CliBuilder, DefaultConfigReader } from './Config';
+
+console.log(__dirname);
 
 const cli: CliBuilder = new CliBuilder({
   colors: true,
@@ -28,7 +31,8 @@ cli
       new RunScan(),
       new RetestScan(),
       new StopScan(),
-      new UploadArchive()
+      new UploadArchive(),
+      new Configure()
     ]
   })
   .wrap(null).argv;
