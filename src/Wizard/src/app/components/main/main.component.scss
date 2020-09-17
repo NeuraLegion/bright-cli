@@ -46,3 +46,12 @@ button {
     height:4em;
     background-color: $secondary-blue;
 }
+
+.field-icon {
+    float: right;
+    margin-left: -2rem;
+    margin-top: .4rem;
+    position: relative;
+    z-index: 2;
+  }
+  

@@ -20,5 +20,14 @@ export class MainComponent {
     };
     this.router.navigateByUrl('diagnostics');
   }
+
+  onIconClick(inputId, spanId): void {
+    const toggleEye = document.querySelector(`#${spanId}`);
+    const inputField = document.querySelector(`#${inputId}`);
+
+    const type = inputField.getAttribute('type') === 'password' ? 'text' : 'password';
+    inputField.setAttribute('type', type);
+    toggleEye.classList.toggle('fa-eye-slash');
+  }
 }
 
