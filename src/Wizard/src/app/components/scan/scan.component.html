@@ -20,11 +20,11 @@
 <div class="content-container">
   <h4>PROGRESS</h4>
   <div class="form-control progress">
-    <div>{{progressMsg}}</div>
+    <div>{{tryMsg}} <br/> {{progressMsg}}</div>
   </div>
 </div>
 
 <div class="buttons-container">
   <button class="button-prev" (click)="prev()">Prev</button>
-  <button (click)="next()">Next</button>
+  <button (click)="next()" [disabled]="!scanStarted">Next</button>
 </div>
