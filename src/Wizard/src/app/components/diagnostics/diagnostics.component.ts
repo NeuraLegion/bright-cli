@@ -11,6 +11,10 @@ import { AppService } from 'src/app/app.service';
 
 export class DiagnosticsComponent implements OnInit {
 
+  tcpMsg = 'Validating that the connection to amq.nexploit.app at port 5672 is open';
+  httpsMsg = 'Validating that the connection to nexploit.app at port 443 is open';
+  authMsg = 'Verifying provided Token and Repeater ID';
+
   constructor(private router: Router,
               protected service: AppService) {}
 

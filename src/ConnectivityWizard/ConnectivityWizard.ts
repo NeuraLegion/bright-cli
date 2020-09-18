@@ -38,13 +38,16 @@ export class ConnectivityWizard {
         router.get('/api/connectivty-status', async function (ctx: Koa.Context, next: Koa.Next) {
             let res: ConnectivityStatus = {
                 auth: {
-                    ok: true
+                    ok: true,
+                    msg: 'success'
                 },
                 https: {
-                    ok: true
+                    ok: true,
+                    msg: 'success'
                 },
                 tcp: {
-                    ok: true
+                    ok: true,
+                    msg: 'success'
                 }
             };
             ctx.body = res;

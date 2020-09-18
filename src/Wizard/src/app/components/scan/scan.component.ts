@@ -14,10 +14,12 @@ export class ScanComponent {
               protected service: AppService) {}
 
   targetUrl: string = '{{url}}';
+  progressMsg = '';
 
   onSubmit(): void {
     this.service.startScan(this.targetUrl).subscribe((response: any) => {
       this.service.saveScanId(response.scanId);
+      this.progressMsg = `Trying to reach ${this.targetUrl}...`;
     }, error => {
       console.log (error);
     });
