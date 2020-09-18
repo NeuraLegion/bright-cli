@@ -15,9 +15,9 @@ export class ScanComponent {
 
   targetUrl: string = '{{url}}';
 
-  onSubmit(): void { 
+  onSubmit(): void {
     this.service.startScan(this.targetUrl).subscribe((response: any) => {
-      console.log (response);
+      this.service.saveScanId(response.scanId);
     }, error => {
       console.log (error);
     });

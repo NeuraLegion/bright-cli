@@ -1,16 +1,25 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
+import { AppService } from 'src/app/app.service';
 
 @Component({
   selector: 'app-success',
   templateUrl: './success.component.html',
   styleUrls: ['./success.component.scss']
 })
-export class SuccessComponent {
+export class SuccessComponent implements OnInit {
 
-  scanId: string = 'A123B456';
+  scanId: string;
 
-  constructor(private router: Router) {}
+  constructor(private router: Router,
+              protected service: AppService) {}
+
+  ngOnInit() {
+    this.service.dataString$.subscribe(
+      data => {
+        this.scanId = data;
+      });
+  }
 
   finish(): void {}
 

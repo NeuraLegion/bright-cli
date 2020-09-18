@@ -1,12 +1,17 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import { BehaviorSubject, Observable } from 'rxjs';
 
 @Injectable({
   providedIn: 'root'
 })
 export class AppService {
   constructor(private http: HttpClient) {}
+
+  // Observable string source
+  private dataStringSource = new BehaviorSubject<any>(undefined);
+  // Observable string stream
+  dataString$ = this.dataStringSource.asObservable();
 
   getTokens(): Observable<any> {
     return this.http.get<any>(`/api/tokens`);
@@ -22,5 +27,9 @@ export class AppService {
 
   startScan(payload: any): Observable<any> {
     return this.http.post<any>(`/api/scan`, payload);
+  }
+
+  saveScanId(value): void{
+    this.dataStringSource.next(value);
   }
 }
