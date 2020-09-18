@@ -28,7 +28,7 @@ export class DiagnosticsComponent implements OnInit {
     });
   }
 
-  restartScan(): void{ }
+  restartTest(): void{ }
 
   next(): void {
     this.router.navigateByUrl('scan');

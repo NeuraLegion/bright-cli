@@ -1,12 +1,12 @@
 <div class="content-container">
   <h3>RUNNING CONNECTIVITY DIAGNOSTICS</h3>
   <h4>Please wait as we perform some tests</h4>
-  <input type="checkbox" [checked]="status.auth.ok" disabled/><label for="cb"></label>
+  <input type="checkbox" [checked]="status.tcp.ok" disabled/><label for="cb"></label>
   <span>Connection to amq.nexploit.app port 5672</span><br/>
   <input type="checkbox" [checked]="status.https.ok" disabled/><label for="cb"></label>
   <span>Connection to nexploit.app port 443</span>
-  <button class="button-scan button-move" (click)="restartScan()">Restart Scan</button><br/>
-  <input type="checkbox" [checked]="status.tcp.ok" disabled/><label for="cb"></label>
+  <button class="button-scan button-move" (click)="restartTest()">Restart Test</button><br/>
+  <input type="checkbox" [checked]="status.auth.ok" disabled/><label for="cb"></label>
   <span>Valid authentication credentials</span>
   <h4>PROGRESS</h4>
   <div class="form-control">

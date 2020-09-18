@@ -31,9 +31,9 @@ export class MainComponent implements OnInit {
       authToken: this.authToken,
       repeaterId: this.repeaterId
     };
-    this.router.navigateByUrl('diagnostics');
     this.service.saveTokens(actionPayload).subscribe((response: any) => {
       console.log (response);
+      this.router.navigateByUrl('diagnostics');
     }, error => {
       console.log (error);
     });
