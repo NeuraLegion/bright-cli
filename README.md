@@ -1,6 +1,6 @@
 # NexPloit CLI
 
-**NexPloit CLI** is a Command Line Interface ([CLI](https://en.wikipedia.org/wiki/Command-line_interface)) tool for [NeuraLegion's solutions](www.neuralegion.com). You can use **NexPloit CLI** for full control over scans such as: initialize, stop, poll, maintain and more. In addition, **NexPloit CLI** can serve as a [Repeater](https://kb.neuralegion.com/#/deployment/repeater) to scan local targets, without exposing them to the internet.
+**NexPloit CLI** is a Command Line Interface ([CLI](https://en.wikipedia.org/wiki/Command-line_interface)) tool for [NeuraLegion's solutions](https://www.neuralegion.com). You can use **NexPloit CLI** for full control over scans such as: initialize, stop, poll, maintain and more. In addition, **NexPloit CLI** can serve as a [Repeater](https://kb.neuralegion.com/#/deployment/repeater) to scan local targets, without exposing them to the internet.
 
 ##### Features:
 - Supports official API
