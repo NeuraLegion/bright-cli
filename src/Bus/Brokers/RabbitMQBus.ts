@@ -33,7 +33,7 @@ export class RabbitMQBus implements Bus {
   private readonly handlers = new Map<string, Handler<Event>>();
   private readonly DEFAULT_RECONNECT_TIMES = 20;
   private readonly DEFAULT_RECONNECT_TIMEOUT = 10;
-  private readonly DEFAULT_HEARTBEAT_INTERVAL = 5;
+  private readonly DEFAULT_HEARTBEAT_INTERVAL = 30;
   private consumerTag?: string;
 
   constructor(
@@ -103,6 +103,10 @@ export class RabbitMQBus implements Bus {
       return;
     }
 
+    if (!this.channel) {
+      return;
+    }
+
     await Promise.all(
       events.map((event: T) => {
         const eventName: string = this.getEventName(event);
@@ -118,6 +122,7 @@ export class RabbitMQBus implements Bus {
           eventName,
           Buffer.from(JSON.stringify(event)),
           {
+            contentType: 'application/json',
             mandatory: true,
             persistent: true
           }

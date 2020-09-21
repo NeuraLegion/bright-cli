@@ -22,10 +22,11 @@ export class RunScan implements CommandModule {
         requiresArg: true,
         demandOption: true
       })
-      .option('agent', {
+      .option('repeater', {
+        alias: 'agent',
         requiresArg: true,
         array: true,
-        describe: 'ID of any agents connected with the scan.'
+        describe: 'ID of any repeaters connected with the scan.'
       })
       .option('archive', {
         alias: 'a',
@@ -84,7 +85,7 @@ export class RunScan implements CommandModule {
         describe:
           'The dast module tests for specific scenarios, mainly OWASP top 10 and other common scenarios. ' +
           'The fuzzer module generates various scenarios to test for unknown vulnerabilities, ' +
-          'providing automated AI led fuzzing testing. This module can be coupled with the agent to find additional vulnerabilities.'
+          'providing automated AI led fuzzing testing. This module can be coupled with the repeater to find additional vulnerabilities.'
       })
       .option('host-filter', {
         alias: 'F',
@@ -121,7 +122,7 @@ export class RunScan implements CommandModule {
         'Build Options'
       )
       .group(
-        ['host-filter', 'header', 'module', 'agent', 'test', 'smart'],
+        ['host-filter', 'header', 'module', 'repeater', 'test', 'smart'],
         'Additional Options'
       );
   }
@@ -142,7 +143,7 @@ export class RunScan implements CommandModule {
         headers: Helpers.parseHeaders(args.header as string[]),
         crawlerUrls: args.crawler,
         fileId: args.archive,
-        agents: args.agent,
+        repeaters: args.repeater,
         smart: args.smart,
         attackParamLocations: args.param,
         build: args.service

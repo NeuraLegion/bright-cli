@@ -125,6 +125,12 @@
         "avoidEscape": true
       }
     ],
+    "@typescript-eslint/no-shadow": [
+      "error",
+      {
+        "hoist": "all"
+      }
+    ],
     "@typescript-eslint/typedef": [
       "error",
       {
@@ -170,12 +176,6 @@
     "no-eval": "error",
     "no-new-wrappers": "error",
     "no-restricted-syntax": ["error", "ForInStatement"],
-    "no-shadow": [
-      "error",
-      {
-        "hoist": "all"
-      }
-    ],
     "no-throw-literal": "error",
     "no-undef-init": "error",
     "object-shorthand": "error",

@@ -1,8 +1,8 @@
 import { Event } from '../Event';
 
-export class AgentStatusUpdated implements Event {
+export class RepeaterStatusUpdated implements Event {
   constructor(
-    public readonly agentId: string,
+    public readonly repeaterId: string,
     public readonly status: 'connected' | 'disconnected'
   ) {}
 }
