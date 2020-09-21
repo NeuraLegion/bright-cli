@@ -89,8 +89,8 @@ export class ConnectivityWizard {
         });
 
         console.log(process.argv);
-        console.log(__dirname + '/../Wizard/dist/Wizard');
-        this.app.use(serve(__dirname + '/../Wizard/dist/Wizard'));
+        console.log(__dirname + '/../../Wizard/dist/Wizard');
+        this.app.use(serve(__dirname + '/../../Wizard/dist/Wizard'));
         this.app.use(json());
         this.app.use(bodyParser());
         this.app.use(router.routes());
