@@ -2,9 +2,9 @@
   <h3>RUNNING CONNECTIVITY DIAGNOSTICS</h3>
   <h4>Please wait as we perform some tests</h4>
   <input type="checkbox" [checked]="status? status.tcp.ok : false" disabled/><label for="cb"></label>
-  <span>Connection to amq.nexploit.app port 5672</span><br/>
+  <span>Connection to <b>amq.nexploit.app</b> at <b>port 5672</b></span><br/>
   <input type="checkbox" [checked]="status? status.https.ok: false" disabled/><label for="cb"></label>
-  <span>Connection to nexploit.app port 443</span>
+  <span>Connection to <b>nexploit.app</b> at <b>port 443</b></span>
   <button class="button-scan button-move" (click)="restartTest()">Restart Test</button><br/>
   <input type="checkbox" [checked]="status? status.auth.ok : false" disabled/><label for="cb"></label>
   <span>Valid authentication credentials</span>
