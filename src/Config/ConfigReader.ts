@@ -3,7 +3,7 @@ export interface CliConfig {
   api?: string;
   proxy?: string;
   bus?: string;
-  agent?: string;
+  id?: string;
 }
 
 export interface ConfigReader {
