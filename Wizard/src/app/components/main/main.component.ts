@@ -19,6 +19,10 @@ export class MainComponent implements OnInit {
   ngOnInit() {
     console.log('Welcome');
     this.service.getTokens().subscribe((response: Tokens) => {
+      if (response.authToken !== '' && response.repeaterId !== '') {
+        this.onIconClick('token', 'toggleEye-1');
+        this.onIconClick('repeater', 'toggleEye-2');
+      }
       this.authToken = response.authToken;
       this.repeaterId = response.repeaterId;
     }, error => {
@@ -32,7 +36,6 @@ export class MainComponent implements OnInit {
       repeaterId: this.repeaterId
     };
     this.service.saveTokens(actionPayload).subscribe((response: any) => {
-      console.log (response);
       this.router.navigateByUrl('diagnostics');
     }, error => {
       console.log (error);

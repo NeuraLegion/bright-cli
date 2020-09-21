@@ -17,11 +17,18 @@ export class SuccessComponent implements OnInit {
   ngOnInit() {
     this.service.dataString$.subscribe(
       data => {
-        this.scanId = data;
+        this.scanId = data.scanId;
       });
   }
 
-  finish(): void {}
+  finish(): void {
+    this.service.finishProcess({}).subscribe((response: any) => {
+      console.log (response);
+    }, error => {
+      console.log (error);
+      alert('Wizard Completed! Do not close console window.');
+    });
+  }
 
   prev(): void {
     this.router.navigateByUrl('scan');

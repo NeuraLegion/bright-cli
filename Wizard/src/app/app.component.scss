@@ -3,6 +3,8 @@ $primary-blue: #0ba9b8;
 $primary-orange: #ef4036;
 $neutral-grey: #e6e7e8;
 $secondary-blue: #2a81bc;
+$all-good-green: #348c41;
+$error-red: #be1e32;
 
 div {
     display:inline-block;
@@ -42,4 +44,12 @@ div {
 .header-container {
     margin-bottom: -0.5rem;
     margin-top: auto;
+}
+
+.success {
+    color: $all-good-green;
+}
+
+.fail {
+    color: $error-red;
 }
