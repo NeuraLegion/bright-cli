@@ -15,21 +15,21 @@ import * as httpReq from 'request';
 import * as os from 'os';
 import * as fs from 'fs';
 import * as path from 'path';
-
-
+import * as child_processes from 'child_process';
+import logger from '../Utils/Logger';
 import { URL } from 'url';
 import { ClientRequest, IncomingMessage } from 'http';
 
 export class ConnectivityWizard {
+    private authTestEndpoint: string = 'https://nexploit.app/api/v1/repeaters/user';
+    private httpTestEndpoint: string = 'https://nexploit.app:443';
+    private tcpTestFQDN: string = 'amq.nexploit.app';
+    private tcptTestPort: number = 5672;
+
     private app: Koa;
     constructor() {
         this.app = new Koa();
-        
-        // this.app.use(async (ctx: { body: string; }) => {
-        //   ctx.body = 'Hello World';
-        // });
   
-    
         let router: Router = new Router();
         router.get('/api/tokens', async (ctx: Koa.Context, next: Koa.Next) => {
             let resp: Tokens = this.readTokens();
@@ -46,7 +46,7 @@ export class ConnectivityWizard {
 
         router.post('/api/connectivty-status', async (ctx: Koa.Context, next: Koa.Next) => {
             let req = <ConnectivityTest><unknown>ctx.request.body;
-            console.log(`Calling connectivity status test with type ${req}`)
+            logger.debug(`Calling connectivity status test with type ${req}`)
             switch (req.type) {
                 case "tcp":
                     let tcpRes: boolean = await this.testTCPConnection();
@@ -85,12 +85,14 @@ export class ConnectivityWizard {
         });
 
         router.post('/api/finish', async () => {
+            logger.debug('Finish wizard, terminating the process');
+            
             process.exit(0);
         });
 
-        console.log(process.argv);
-        console.log(__dirname + '/../Wizard/dist/Wizard');
-        this.app.use(serve(__dirname + '/../Wizard/dist/Wizard'));
+        const staticPath: string = __dirname + '/../Wizard/dist/Wizard';
+        logger.debug(staticPath);
+        this.app.use(serve(staticPath));
         this.app.use(json());
         this.app.use(bodyParser());
         this.app.use(router.routes());
@@ -102,7 +104,7 @@ export class ConnectivityWizard {
     }
 
     private async testAuthConnection(): Promise<boolean> {
-        const url: URL = new URL(`https://nexploit.app/api/v1/agents/user`);
+        const url: URL = new URL(this.authTestEndpoint);
         const timeoutMs = 30 * 1000; // 30 seconds
         const tokens: Tokens = this.readTokens();
         return new Promise<boolean>((resolve) => {
@@ -120,69 +122,64 @@ export class ConnectivityWizard {
                 }
             );
             req.on('error', ()=> {
-                console.log('auth req error handler called');
+                logger.error('Auth HTTP connection failed. Could not make HTTP call to auth endpoint.');
                 resolve(false);
             });
             setTimeout(() => {
-                console.log('calling auth call destroy');
+                logger.debug('testAuthConnection reached timeout. Destroying the HTTP connecttion.');
                 req.destroy();
-                console.log('auth call destroy called');
             }, timeoutMs);
         });
     }
 
     private async testHTTPConnection(): Promise<boolean> {
-        const url: URL = new URL(`https://nexploit.app:443`);
+        const url: URL = new URL(this.httpTestEndpoint);
         const timeoutMs = 30 * 1000; // 30 seconds
         return new Promise<boolean>((resolve) => {
             let req: ClientRequest = https.get(url, (res: IncomingMessage) =>{
-                console.log(`received message`);
                 res.on('data', ()=>{
-                    console.log('data handler called');
+                    logger.debug('Http connectivity test - received data the connection.The connection is succesfull.');
                     resolve(true);
                 });
                 res.on('end', ()=> {
-                    console.log('end handler called');
+                    logger.debug('Http connectivity test - connection closed by server. The connection is succesfull.');
                     resolve(true);
                 });
                 res.on('error', ()=> {
-                    console.log('resp error handler called');
+                    logger.debug('Http connectivity test - received HTTP error code on connection. The connection is succesfull.');
                     resolve(true);
                 });
             });
             req.on('error', ()=> {
-                console.log('req error handler called');
+                logger.debug('Http connectivity test - received an error code on connection. The connection failed.');
                 resolve(false);
             });
             setTimeout(() => {
-                console.log('calling https destroy');
+                logger.debug('Http connectivity test - reached timeout. The connection failed.');
                 req.destroy();
-                console.log('https destroy called');
             }, timeoutMs);
         });
     }
 
     private async testTCPConnection(): Promise<boolean> {
-        const fqdn: string = 'amq.nexploit.app';
-        const port: number = 5672;
         const timeoutMs = 30 * 1000; // 30 seconds
 
         return new Promise<boolean>((resolve) => {
-            console.log('calling testTCP')
+            logger.debug(`TCP connectivity test - openning socket to ${this.tcpTestFQDN}:${this.tcptTestPort}`);
             let socket: Socket = new Socket();
             let timeout: NodeJS.Timeout = setTimeout(() => {
+                logger.debug(`TCP connectivity test - reached socket timeout. Connection failed.`);
                 socket.destroy();
                 resolve(false);
             }, timeoutMs);
-            socket.connect(port, fqdn, () => {
-                console.log('testTCP":: connection established successfully')
+            socket.connect(this.tcptTestPort, this.tcpTestFQDN, () => {
+                logger.debug(`TCP connectivity test - Connection succesfull.`);
                 socket.destroy();
                 clearTimeout(timeout);
                 resolve(true);     
             });
             socket.on('error', (err: Error) => {
-                console.log('testTCP":: connection failed')
-                console.log(err);
+                logger.debug(`TCP connectivity test - received socket error. Connection failed.`, err);
                 clearTimeout(timeout);
                 socket.destroy();
                 resolve(false);
@@ -192,20 +189,32 @@ export class ConnectivityWizard {
 
     private readTokens():Tokens {
         const p: string = path.join(os.homedir(), '.nexploit_auth');
+        logger.debug(`Reading saved tokens from file ${p}`);
         if (fs.existsSync(p)) {
+            logger.debug("File found. Returns the value");
             let result: Buffer = fs.readFileSync(p);
             return <Tokens><unknown>JSON.parse(result.toString('utf8'));
+        } else {
+            logger.debug("File doesn't exist. Returning empty values");
+            return {
+                authToken: "",
+                repeaterId: "",
+            };
         }
-        return {
-            authToken: "",
-            repeaterId: "",
-        };
     }
 
     private writeTokens(tokens: Tokens):void {
         const p: string = path.join(os.homedir(), '.nexploit_auth');
+        logger.debug(`Saving tokens to file ${p}`);
         fs.writeFileSync(p,JSON.stringify(tokens));
     }
 
-    
+    // private async executeRepeater(): Promise<boolean> {
+    //     let startArgs: string[] = process.argv.filter(x=>x != 'configure');
+    //     let p:child_processes.ChildProcess = child_processes.spawn(startArgs);
+    // }
+
+    // private async startScan(): Promise<string> {
+    //     return null;
+    // }
 }
