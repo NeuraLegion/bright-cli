@@ -15,7 +15,7 @@ import * as httpReq from 'request';
 import * as os from 'os';
 import * as fs from 'fs';
 import * as path from 'path';
-import * as child_processes from 'child_process';
+// import * as child_processes from 'child_process';
 import logger from '../Utils/Logger';
 import { URL } from 'url';
 import { ClientRequest, IncomingMessage } from 'http';
