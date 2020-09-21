@@ -11,9 +11,9 @@
   <h4>PROGRESS</h4>
   <div class="form-control">
     <div>
-      {{tcpMsg}}<br/>{{status? status.tcp.msg : ''}}<br/>
-      {{httpsMsg}}<br/>{{status? status.https.msg : ''}}<br/>
-      {{authMsg}}<br/>{{status? status.auth.msg : ''}}<br/>
+      {{tcpMsg}}<br/><span id="tcp">{{status? status.tcp.msg : ''}}</span><br/>
+      {{httpsMsg}}<br/><span id="http">{{status? status.https.msg : ''}}</span><br/>
+      {{authMsg}}<br/><span id="auth">{{status? status.auth.msg : ''}}</span><br/>
     </div>
   </div>
 </div>

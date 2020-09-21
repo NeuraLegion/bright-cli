@@ -49,6 +49,7 @@ export class ScanComponent implements OnInit {
       Possible reasons for communication failure:
       ● Outbound communication to the host is blocked by a Firewall or network
       settings`;
+      this.color('fail');
       console.log (error);
     });
   }
@@ -59,5 +60,10 @@ export class ScanComponent implements OnInit {
 
   next(): void {
     this.router.navigateByUrl('success');
+  }
+
+  color(status: string): void {
+    const resp = document.querySelector(`#response-communication`);
+    resp.classList.toggle(status);
   }
 }
