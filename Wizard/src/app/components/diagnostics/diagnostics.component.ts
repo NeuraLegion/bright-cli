@@ -38,22 +38,31 @@ export class DiagnosticsComponent implements OnInit {
   status: ConnectivityStatus;
 
   ngOnInit() {
-    this.restartTest();
+    this.restartTest(true);
   }
 
-  restartTest(): void{
+  restartTest(init: boolean): void{
     this.restartValues();
     this.service.getConnectivityStatus({type: 'tcp'}).subscribe((tcpRes: any) => {
       this.status.tcp = tcpRes;
       this.colorMessages (tcpRes, 'tcp');
+      if (!init) {
+        this.colorMessages (tcpRes, 'tcp');
+      }
       this.httpsMsg = `Validating that the connection to nexploit.app at port 443 is open`;
       this.service.getConnectivityStatus({type: 'http'}).subscribe((httpRes: any) => {
         this.status.https = httpRes;
         this.colorMessages (httpRes, 'http');
+        if (!init) {
+          this.colorMessages (httpRes, 'http');
+        }
         this.authMsg = 'Verifying provided Token and Repeater ID';
         this.service.getConnectivityStatus({type: 'auth'}).subscribe((authRes: any) => {
           this.status.auth = authRes;
           this.colorMessages (authRes, 'auth');
+          if (!init) {
+            this.colorMessages (authRes, 'auth');
+          }
         }, error => {
           console.log (error);
         });
