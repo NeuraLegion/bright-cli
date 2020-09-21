@@ -10,21 +10,25 @@ import { ScannedUrl } from './ScannedUrl';
 import { ScanId } from './ScanId';
 import { Socket } from 'net';
 import { ConnectivityTest } from './ConnectivityTest';
+
 import * as https from 'https';
 import * as httpReq from 'request';
 import * as os from 'os';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as child_processes from 'child_process';
+
 import logger, { Logger } from '../Utils/Logger';
 import { URL } from 'url';
 import { ClientRequest, IncomingMessage } from 'http';
+import getPort from 'get-port';
 
 export class ConnectivityWizard {
     private authTestEndpoint: string = 'https://nexploit.app/api/v1/repeaters/user';
     private httpTestEndpoint: string = 'https://nexploit.app:443';
     private tcpTestFQDN: string = 'amq.nexploit.app';
     private tcptTestPort: number = 5672;
+    private bindPort: number = 3000;
 
     private app: Koa;
     constructor() {
@@ -110,7 +114,11 @@ export class ConnectivityWizard {
         //     await send(ctx, 'Wizard/dist/Wizard/index.html');
         // });
 
-        this.app.listen(3000);
+        (async () => {
+            let selectedPort: number = await getPort({port: getPort.makeRange(this.bindPort, this.bindPort + 500)});
+            this.app.listen(selectedPort);
+            logger.log(`Please browse to http://localhost:${selectedPort} to begin the configurations of the Repeater`);
+        })();
     }
 
     private async testAuthConnection(): Promise<boolean> {
