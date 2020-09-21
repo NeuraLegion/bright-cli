@@ -33,7 +33,7 @@ export class AppService {
     return this.http.post<any>(`api/finish`, payload);
   }
 
-  saveScanId(value): void{
+  saveScanInfo(value): void{
     this.dataStringSource.next(value);
   }
 }

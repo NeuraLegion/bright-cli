@@ -17,7 +17,7 @@ export class SuccessComponent implements OnInit {
   ngOnInit() {
     this.service.dataString$.subscribe(
       data => {
-        this.scanId = data;
+        this.scanId = data.scanId;
       });
   }
 
