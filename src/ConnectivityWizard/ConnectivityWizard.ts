@@ -15,8 +15,8 @@ import * as httpReq from 'request';
 import * as os from 'os';
 import * as fs from 'fs';
 import * as path from 'path';
-// import * as child_processes from 'child_process';
-import logger from '../Utils/Logger';
+import * as child_processes from 'child_process';
+import logger, { Logger } from '../Utils/Logger';
 import { URL } from 'url';
 import { ClientRequest, IncomingMessage } from 'http';
 
@@ -75,17 +75,27 @@ export class ConnectivityWizard {
         });
         
         router.post('/api/scan', async (ctx: Koa.Context, next: Koa.Next) => {
-            let req = <ScannedUrl>ctx.req;
-            console.log(req.url);
-            let resp: ScanId = {
-                scanId: "500"
+            let req = <ScannedUrl>ctx.request.body;
+            let tokens: Tokens = this.readTokens();
+            let scanId: string = null;
+            
+            try {
+                scanId = await this.launchScan(req.url, tokens);
+            }
+            catch (err) {
+                ctx.status = 400;
+                return;
+            }
+            this.executeRepeater(tokens);
+            ctx.body = <ScanId>{
+                scanId: scanId
             };
-            ctx.body = resp;
             await next();
         });
 
         router.post('/api/finish', async () => {
             logger.debug('Finish wizard, terminating the process');
+            logger.log('A Repeater has been set up successfully on this machine, please keep this console window open to keep the Repeater running.');
             
             process.exit(0);
         });
@@ -209,12 +219,96 @@ export class ConnectivityWizard {
         fs.writeFileSync(p,JSON.stringify(tokens));
     }
 
-    // private async executeRepeater(): Promise<boolean> {
-    //     let startArgs: string[] = process.argv.filter(x=>x != 'configure');
-    //     let p:child_processes.ChildProcess = child_processes.spawn(startArgs);
-    // }
+    private executeRepeater(tokens: Tokens): boolean {
+        let nodeExec = this.getNodeExec();
 
-    // private async startScan(): Promise<string> {
-    //     return null;
-    // }
+        let startArgs: string[] = [... nodeExec.argv, "repeater", "--token", `"${tokens.authToken}"`, "--agent", `"${tokens.repeaterId}`];
+        logger.debug(`Launching process with cmd: ${nodeExec.cmd} and arguments: ${JSON.stringify(startArgs)}`);
+        
+        let p:child_processes.ChildProcess = child_processes.spawn(nodeExec.cmd, startArgs, {
+            detached: true
+        });
+
+        p.unref();
+
+        let singleLogger = new class SingleLogger {
+            private used: boolean;
+            private logger: Logger;
+
+            constructor(logger: Logger) {
+                this.logger = logger;
+            }
+            public log(msg: string): void {
+                if (!this.used) {
+                    this.logger.log(msg);
+                    this.used = true;
+                }
+            }
+        }(logger);
+
+        p.on('close', (code, signal) => {
+            singleLogger.log(`Repeater process closed with exit code ${code} due to ${signal} signal`);
+        });
+        p.on('error', (err:Error) => {
+            singleLogger.log(`Failed to start repeater process due to ${err.message}`);
+        });
+        p.on('exit', (code) => {
+            singleLogger.log(`Repeater process exited with exit code ${code}`);
+        });
+        logger.log(`Launched Repeater process (PID ${p.pid})`);
+
+        return true;
+    }
+
+    private async launchScan(url: string, tokens: Tokens): Promise<string> {
+        let nodeExec = this.getNodeExec();
+        let args: string[] = [ ... nodeExec.argv, 
+            "scan:run", 
+            "--token", `"${tokens.authToken}"`, 
+            "--name", '"My First Demo Scan"',
+            "--agent", `"${tokens.repeaterId}"`, 
+            "--crawler", url, 
+            "--smart", 
+            "--test", "header_security"];
+
+        logger.log(`Launching process with cmd: ${nodeExec.cmd} and arguments: ${JSON.stringify(args)}`);
+
+        return new Promise((resolve, rejects) =>{
+            let p:child_processes.ChildProcess = child_processes.spawn(nodeExec.cmd, args);
+            let output: string[] = [];
+            
+            p.stdout.on('data', (data)=>{
+                let line = data.toString();
+                logger.debug(`Scanner processes printed to stdout: ${line}`);
+                output.push(line);
+            });
+            p.stderr.on('data', (data)=>{
+                logger.warn(`Scanner printed an error to the console: ${data.toString()}`);
+            });
+            
+            p.on('error', (err:Error) => {
+                logger.warn(`Failed to start Scanner process due to ${err.message}`);
+                rejects();
+            });
+            p.on('exit', (code) => {
+                if (code != 0 || output.length == 0) {
+                    logger.warn(`Scan did not start succesfully. Process exited with code ${code} and output ${JSON.stringify(output)}`);
+                    rejects();
+                }
+                else {
+                    resolve(output.pop());
+                }
+            });
+    
+        });
+    }
+
+    private getNodeExec(): {cmd: string, argv: string[]} {
+        let startArgs: string[] = process.argv.filter(x=>x != 'configure');
+        let cmd: string = startArgs.shift();
+        return {
+            cmd: cmd,
+            argv: startArgs
+        };
+    }
 }
