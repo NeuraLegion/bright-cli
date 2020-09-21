@@ -26,6 +26,7 @@ export class ScanComponent implements OnInit {
           this.targetUrl = data.targetUrl;
           this.tryMsg = data.tryMsg;
           this.progressMsg = data.progressMsg;
+          this.color(data.status);
         }
       });
   }
@@ -40,16 +41,24 @@ export class ScanComponent implements OnInit {
         targetUrl: this.targetUrl,
         tryMsg: this.tryMsg,
         scanId: response.scanId,
-        progressMsg: this.progressMsg
+        progressMsg: this.progressMsg,
+        status: 'success'
       };
       this.service.saveScanInfo(scanInfo);
     }, error => {
+      this.scanStarted = true;
       this.progressMsg = `Connection to ${this.targetUrl} is blocked, please verify that the machine on
       which the Repeater is installed can reach the target server.
       Possible reasons for communication failure:
       ● Outbound communication to the host is blocked by a Firewall or network
       settings`;
-      this.color('fail');
+      const scanInfo = {
+        targetUrl: this.targetUrl,
+        tryMsg: this.tryMsg,
+        progressMsg: this.progressMsg,
+        status: 'fail'
+      };
+      this.service.saveScanInfo(scanInfo);
       console.log (error);
     });
   }

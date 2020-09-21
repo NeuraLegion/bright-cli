@@ -100,7 +100,7 @@ export class ConnectivityWizard {
             process.exit(0);
         });
 
-        const staticPath: string = __dirname + '/wizard-dist/Wizard';
+        const staticPath: string = process.cwd() + '/wizard-dist/Wizard';
         logger.debug(staticPath);
         this.app.use(serve(staticPath));
         this.app.use(json());
