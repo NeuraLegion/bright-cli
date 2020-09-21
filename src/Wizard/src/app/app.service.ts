@@ -29,6 +29,10 @@ export class AppService {
     return this.http.post<any>(`/api/scan`, payload);
   }
 
+  finishProcess(payload: any): Observable<any> {
+    return this.http.post<any>(`api/finish`, payload);
+  }
+
   saveScanId(value): void{
     this.dataStringSource.next(value);
   }
