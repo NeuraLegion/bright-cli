@@ -21,8 +21,8 @@ export class AppService {
     return this.http.post<any>(`api/tokens`, payload);
   }
 
-  getConnectivityStatus(): Observable<any> {
-    return this.http.get<any>(`/api/connectivty-status`);
+  getConnectivityStatus(type: any): Observable<any> {
+    return this.http.post<any>(`/api/connectivty-status`, type);
   }
 
   startScan(payload: any): Observable<any> {

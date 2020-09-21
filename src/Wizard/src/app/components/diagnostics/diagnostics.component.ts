@@ -12,8 +12,8 @@ import { AppService } from 'src/app/app.service';
 export class DiagnosticsComponent implements OnInit {
 
   tcpMsg = 'Validating that the connection to amq.nexploit.app at port 5672 is open';
-  httpsMsg = 'Validating that the connection to nexploit.app at port 443 is open';
-  authMsg = 'Verifying provided Token and Repeater ID';
+  httpsMsg = '';
+  authMsg = '';
 
   constructor(private router: Router,
               protected service: AppService) {}
@@ -21,14 +21,39 @@ export class DiagnosticsComponent implements OnInit {
   status: ConnectivityStatus;
 
   ngOnInit() {
-    this.service.getConnectivityStatus().subscribe((response: ConnectivityStatus) => {
-      this.status = response;
+    this.restartTest();
+  }
+
+  restartTest(): void{
+    this.restartValues();
+    this.service.getConnectivityStatus({type: 'tcp'}).subscribe((tcpRes: any) => {
+      this.status.tcp = tcpRes;
+      this.httpsMsg = 'Validating that the connection to nexploit.app at port 443 is open';
+      this.service.getConnectivityStatus({type: 'http'}).subscribe((httpRes: any) => {
+        this.status.https = httpRes;
+        this.authMsg = 'Verifying provided Token and Repeater ID';
+        this.service.getConnectivityStatus({type: 'auth'}).subscribe((authRes: any) => {
+          this.status.auth = authRes;
+        }, error => {
+          console.log (error);
+        });
+      }, error => {
+        console.log (error);
+      });
     }, error => {
       console.log (error);
     });
   }
 
-  restartTest(): void{ }
+  restartValues(): void {
+    this.httpsMsg = '';
+    this.authMsg = '';
+    this.status = {
+      auth: { ok: false },
+      https: { ok: false },
+      tcp: { ok: false }
+    };
+  }
 
   next(): void {
     this.router.navigateByUrl('scan');
