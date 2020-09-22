@@ -1,4 +1,4 @@
 export interface Tokens {
-    authToken: string;
-    repeaterId: string;
+  authToken: string;
+  repeaterId: string;
 }

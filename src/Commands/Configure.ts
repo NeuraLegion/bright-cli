@@ -1,6 +1,6 @@
 import logger from '../Utils/Logger';
-import { Arguments, Argv, CommandModule } from 'yargs';
 import { ConnectivityWizard } from '../ConnectivityWizard/ConnectivityWizard';
+import { Arguments, Argv, CommandModule } from 'yargs';
 
 export class Configure implements CommandModule {
   public readonly command = 'configure';
@@ -17,7 +17,8 @@ export class Configure implements CommandModule {
   public async handler(args: Arguments): Promise<void> {
     try {
       console.log(args.bus);
-      new ConnectivityWizard(args.bus as string);
+      // await new ConnectivityWizard().init(args.bus as string);
+      await new ConnectivityWizard().init();
     } catch (e) {
       logger.error(`Error during "configure": ${e.error || e.message}`);
       process.exit(1);

@@ -22,7 +22,7 @@ export class AppService {
   }
 
   getConnectivityStatus(type: any): Observable<any> {
-    return this.http.post<any>(`/api/connectivty-status`, type);
+    return this.http.post<any>(`/api/connectivity-status`, type);
   }
 
   startScan(payload: any): Observable<any> {
