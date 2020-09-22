@@ -18,7 +18,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as child_processes from 'child_process';
 
-import logger, { Logger } from '../Utils/Logger';
+import logger from '../Utils/Logger';
 import { URL } from 'url';
 import { ClientRequest, IncomingMessage } from 'http';
 import getPort from 'get-port';
@@ -29,22 +29,41 @@ export class ConnectivityWizard {
     private tcpTestFQDN: string = 'amq.nexploit.app';
     private tcptTestPort: number = 5672;
     private bindPort: number = 3000;
+    private processLaunchTimeout = 30 * 1000; // 30 seconds
 
     private app: Koa;
-    constructor() {
+    constructor(bus: string) {
+        if (bus) {
+            this.tcpTestFQDN = bus;
+        }
         this.app = new Koa();
   
         let router: Router = new Router();
         router.get('/api/tokens', async (ctx: Koa.Context, next: Koa.Next) => {
-            let resp: Tokens = this.readTokens();
-            ctx.body = resp;
+            try {
+                let resp: Tokens = this.readTokens();
+                ctx.body = resp;
+            }
+            catch (err) {
+                logger.error(`Failed to read tokens from file. Error: ${err.message}`);
+                ctx.status = 500;
+                return;
+            }
             await next();
         });
+        
         router.post('/api/tokens', async (ctx: Koa.Context, next: Koa.Next) => {
-            let req = <Tokens>ctx.request.body;
-            this.writeTokens(req);
-            let resp: Tokens = req;
-            ctx.body = resp;
+            try {
+                let req = <Tokens>ctx.request.body;
+                this.writeTokens(req);
+                let resp: Tokens = req;
+                ctx.body = resp;
+            }
+            catch (err) {
+                logger.error(`Failed to store tokens in file. Error: ${err.message}`);
+                ctx.status = 500;
+                return;
+            }
             await next();
         });
 
@@ -90,7 +109,10 @@ export class ConnectivityWizard {
                 ctx.status = 400;
                 return;
             }
-            this.executeRepeater(tokens);
+            if(!this.executeRepeater(tokens)) {
+                ctx.status = 500;
+                return;
+            }
             ctx.body = <ScanId>{
                 scanId: scanId
             };
@@ -110,10 +132,8 @@ export class ConnectivityWizard {
         this.app.use(json());
         this.app.use(bodyParser());
         this.app.use(router.routes());
-        // this.app.use(async function (ctx: Koa.Context) {
-        //     await send(ctx, 'Wizard/dist/Wizard/index.html');
-        // });
 
+        //select available port and launch http listener
         (async () => {
             let selectedPort: number = await getPort({port: getPort.makeRange(this.bindPort, this.bindPort + 500)});
             this.app.listen(selectedPort);
@@ -123,7 +143,6 @@ export class ConnectivityWizard {
 
     private async testAuthConnection(): Promise<boolean> {
         const url: URL = new URL(this.authTestEndpoint);
-        const timeoutMs = 30 * 1000; // 30 seconds
         const tokens: Tokens = this.readTokens();
         return new Promise<boolean>((resolve) => {
             let req: httpReq.Request = httpReq.post({
@@ -146,7 +165,7 @@ export class ConnectivityWizard {
             setTimeout(() => {
                 logger.debug('testAuthConnection reached timeout. Destroying the HTTP connecttion.');
                 req.destroy();
-            }, timeoutMs);
+            }, this.processLaunchTimeout);
         });
     }
 
@@ -180,8 +199,6 @@ export class ConnectivityWizard {
     }
 
     private async testTCPConnection(): Promise<boolean> {
-        const timeoutMs = 30 * 1000; // 30 seconds
-
         return new Promise<boolean>((resolve) => {
             logger.debug(`TCP connectivity test - openning socket to ${this.tcpTestFQDN}:${this.tcptTestPort}`);
             let socket: Socket = new Socket();
@@ -189,7 +206,7 @@ export class ConnectivityWizard {
                 logger.debug(`TCP connectivity test - reached socket timeout. Connection failed.`);
                 socket.destroy();
                 resolve(false);
-            }, timeoutMs);
+            }, this.processLaunchTimeout);
             socket.connect(this.tcptTestPort, this.tcpTestFQDN, () => {
                 logger.debug(`TCP connectivity test - Connection succesfull.`);
                 socket.destroy();
@@ -230,50 +247,52 @@ export class ConnectivityWizard {
     private executeRepeater(tokens: Tokens): boolean {
         let nodeExec = this.getNodeExec();
 
-        let startArgs: string[] = [... nodeExec.argv, "repeater", "--token", `"${tokens.authToken}"`, "--agent", `"${tokens.repeaterId}`];
-        logger.debug(`Launching process with cmd: ${nodeExec.cmd} and arguments: ${JSON.stringify(startArgs)}`);
-        
-        let p:child_processes.ChildProcess = child_processes.spawn(nodeExec.cmd, startArgs, {
-            detached: true
-        });
+        try {
+            let startArgs: string[] = [... nodeExec.argv, "repeater", "--token", `"${tokens.authToken}"`, "--agent", `"${tokens.repeaterId}`];
+            logger.debug(`Launching Repeater process with cmd: ${nodeExec.cmd} and arguments: ${JSON.stringify(startArgs)}`);
+            
+            let p:child_processes.ChildProcess = child_processes.spawn(nodeExec.cmd, startArgs, {
+                detached: true
+            });
 
-        p.stdout.on('data', (data)=>{
-            let line = data.toString();
-            console.log(`Repeater processes printed to stdout: ${line}`);
-        });
-        p.stderr.on('data', (data)=>{
-          console.log ("*** Repeater ***", data.toString());
-        });
+            p.stdout.on('data', (data)=>{
+                let line = data.toString();
+                logger.debug(`Repeater (stdout): ${line}`);
+            });
+            p.stderr.on('data', (data)=>{
+                let line = data.toString();
+                logger.error(`Repeater (stderr): ${line}`);
+            });
 
-        p.unref();
+            p.unref();
 
-        let singleLogger = new class SingleLogger {
-            private used: boolean;
-            private logger: Logger;
-
-            constructor(logger: Logger) {
-                this.logger = logger;
-            }
-            public log(msg: string): void {
-                if (!this.used) {
-                    this.logger.log(msg);
-                    this.used = true;
+            let singleLogger = new class SingleLogger {
+                private used: boolean;
+                public log(msg: string): void {
+                    if (!this.used) {
+                        logger.log(msg);
+                        this.used = true;
+                    }
                 }
-            }
-        }(logger);
+            };
 
-        p.on('close', (code, signal) => {
-            singleLogger.log(`Repeater process closed with exit code ${code} due to ${signal} signal`);
-        });
-        p.on('error', (err:Error) => {
-            singleLogger.log(`Failed to start repeater process due to ${err.message}`);
-        });
-        p.on('exit', (code) => {
-            singleLogger.log(`Repeater process exited with exit code ${code}`);
-        });
-        logger.log(`Launched Repeater process (PID ${p.pid})`);
+            p.on('close', (code, signal) => {
+                singleLogger.log(`Repeater process closed with exit code ${code} due to ${signal} signal`);
+            });
+            p.on('error', (err:Error) => {
+                singleLogger.log(`Failed to start repeater process due to ${err.message}`);
+            });
+            p.on('exit', (code) => {
+                singleLogger.log(`Repeater process exited with exit code ${code}`);
+            });
+            logger.log(`Launched Repeater process (PID ${p.pid})`);
 
-        return true;
+            return true;
+        }
+        catch (err) {
+            logger.error(`Failed to launch Repeater process. Error: ${err.message}`);
+            return false;
+        }
     }
 
     private async launchScan(url: string, tokens: Tokens): Promise<string> {
@@ -287,50 +306,52 @@ export class ConnectivityWizard {
             "--smart", 
             "--test", "header_security"];
 
-        logger.log(`Launching process with cmd: ${nodeExec.cmd} and arguments: ${JSON.stringify(args)}`);
+        logger.log(`Launching scanner process with cmd: ${nodeExec.cmd} and arguments: ${JSON.stringify(args)}`);
 
-        return new Promise((resolve, rejects) =>{
+        return new Promise((resolve, reject) =>{
             try {
                 let p:child_processes.ChildProcess = child_processes.spawn(nodeExec.cmd, args);
-                console.log ('Test1');
                 let output: string[] = [];
                 
                 p.stdout.on('data', (data)=>{
                     let line = data.toString();
-                    logger.debug(`Scanner processes printed to stdout: ${line}`);
+                    logger.debug(`Scanner (stdout): ${line}`);
                     output.push(line);
                 });
                 p.stderr.on('data', (data)=>{
-                  console.log (data.toString());
-                });
-                p.stderr.on('data', (data)=>{
-                    logger.warn(`Scanner printed an error to the console: ${data.toString()}`);
+                    let line = data.toString();
+                    logger.debug(`Scanner (stderr): ${line}`);
                 });
                 
                 p.on('error', (err:Error) => {
-                    console.log (`Failed to start Scanner process due to ${err.message}`);
                     logger.warn(`Failed to start Scanner process due to ${err.message}`);
-                    rejects();
+                    reject();
                 });
                 p.on('exit', (code) => {
                     if (code != 0 || output.length == 0) {
-                        console.log (`Scan did not start succesfully. Process exited with code ${code} and output ${JSON.stringify(output)}`);
                         logger.warn(`Scan did not start succesfully. Process exited with code ${code} and output ${JSON.stringify(output)}`);
-                        rejects();
+                        reject();
                     }
                     else {
                         resolve(output.pop());
                     }
                 });
             } catch (err){
-                console.log (err.message);
-                rejects();
+                logger.error(`Failed to launch Scanner process. Error message ${err.message}`);
+                reject();
             }
         });
     }
 
     private getNodeExec(): {cmd: string, argv: string[]} {
-        let startArgs: string[] = process.argv.filter(x=>x != 'configure');
+        let startArgs: string[] = [];
+        //to support standalone 'node ./dist/index.js configure' execution
+        for (let i:number = 0; i < process.argv.length; i++) {
+            if (process.argv[i] === 'configure') {
+                break;
+            }
+            startArgs.push(process.argv[i]);
+        }
         let cmd: string = startArgs.shift();
         return {
             cmd: cmd,
