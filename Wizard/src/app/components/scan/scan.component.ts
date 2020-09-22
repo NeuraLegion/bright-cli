@@ -13,9 +13,9 @@ export class ScanComponent implements OnInit {
   constructor(private router: Router,
               protected service: AppService) {}
 
-  targetUrl: string = '{{url}}';
-  progressMsg = '';
-  tryMsg = '';
+  targetUrl: string;
+  progressMsg: string;
+  tryMsg: string;
   scanStarted = false;
   errorOccurred = false;
   currentColor;
@@ -38,8 +38,7 @@ export class ScanComponent implements OnInit {
     this.tryMsg = `Trying to reach ${this.targetUrl}...`;
     this.scanStarted = true;
     this.service.startScan({url: this.targetUrl}).subscribe((response: any) => {
-      this.progressMsg = `Communication test to ${this.targetUrl} completed successfully, and a demo scan has
-      started, click on Next to continue.`;
+      this.progressMsg = `Communication test to ${this.targetUrl} completed successfully, and a demo scan has started, click on Next to continue.`;
       this.currentColor = 'success';
       const scanInfo = {
         targetUrl: this.targetUrl,
@@ -58,11 +57,10 @@ export class ScanComponent implements OnInit {
         case 500:
           break;
       }
-      this.progressMsg = this.progressMsg + `Connection to ${this.targetUrl} is blocked, please verify that the machine on
-      which the Repeater is installed can reach the target server.
+      this.progressMsg = this.progressMsg + `Connection to ${this.targetUrl} is blocked, please verify that the
+      machine on which the Repeater is installed can reach the target server.
       Possible reasons for communication failure:
-      ● Outbound communication to the host is blocked by a Firewall or network
-      settings`;
+      ● Outbound communication to the host is blocked by a Firewall or network settings`;
       this.currentColor = 'fail';
       const scanInfo = {
         targetUrl: this.targetUrl,
