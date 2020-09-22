@@ -33,7 +33,7 @@ export class ScanComponent implements OnInit {
 
   onSubmit(): void {
     this.tryMsg = `Trying to reach ${this.targetUrl}...`;
-    this.service.startScan(this.targetUrl).subscribe((response: any) => {
+    this.service.startScan({url: this.targetUrl}).subscribe((response: any) => {
       this.scanStarted = true;
       this.progressMsg = `Communication test to ${this.targetUrl} completed successfully, and a demo scan has
       started, click on Next to continue.`;
