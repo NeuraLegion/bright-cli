@@ -28,9 +28,10 @@ export class ScanComponent implements OnInit {
           this.targetUrl = data.targetUrl;
           this.tryMsg = data.tryMsg;
           this.progressMsg = data.progressMsg;
-          this.color(data.status);
+          this.currentColor = data.status;
         }
       });
+      this.color(this.currentColor);
   }
 
   onSubmit(): void {
@@ -43,6 +44,7 @@ export class ScanComponent implements OnInit {
       this.service.startScan({url: this.targetUrl}).subscribe((response: any) => {
         this.progressMsg = `Communication test to ${this.targetUrl} completed successfully, and a demo scan has started, click on Next to continue.`;
         this.currentColor = 'success';
+        this.color(this.currentColor);
         const scanInfo = {
           targetUrl: this.targetUrl,
           tryMsg: this.tryMsg,
@@ -65,6 +67,7 @@ export class ScanComponent implements OnInit {
         Possible reasons for communication failure:
         ● Outbound communication to the host is blocked by a Firewall or network settings`;
         this.currentColor = 'fail';
+        this.color(this.currentColor);
         const scanInfo = {
           targetUrl: this.targetUrl,
           tryMsg: this.tryMsg,
