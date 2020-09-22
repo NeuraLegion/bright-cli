@@ -18,6 +18,7 @@ export class ScanComponent implements OnInit {
   tryMsg = '';
   scanStarted = false;
   errorOccurred = false;
+  currentColor;
 
   ngOnInit() {
     this.service.dataString$.subscribe(
@@ -27,6 +28,7 @@ export class ScanComponent implements OnInit {
           this.targetUrl = data.targetUrl;
           this.tryMsg = data.tryMsg;
           this.progressMsg = data.progressMsg;
+          this.color(data.status);
         }
       });
   }
@@ -36,14 +38,15 @@ export class ScanComponent implements OnInit {
     this.tryMsg = `Trying to reach ${this.targetUrl}...`;
     this.scanStarted = true;
     this.service.startScan({url: this.targetUrl}).subscribe((response: any) => {
-      this.color('success');
       this.progressMsg = `Communication test to ${this.targetUrl} completed successfully, and a demo scan has
       started, click on Next to continue.`;
+      this.currentColor = 'success';
       const scanInfo = {
         targetUrl: this.targetUrl,
         tryMsg: this.tryMsg,
         scanId: response.scanId,
-        progressMsg: this.progressMsg
+        progressMsg: this.progressMsg,
+        status: 'success'
       };
       this.service.saveScanInfo(scanInfo);
     }, error => {
@@ -55,12 +58,19 @@ export class ScanComponent implements OnInit {
         case 500:
           break;
       }
-      this.color('fail');
       this.progressMsg = this.progressMsg + `Connection to ${this.targetUrl} is blocked, please verify that the machine on
       which the Repeater is installed can reach the target server.
       Possible reasons for communication failure:
       ● Outbound communication to the host is blocked by a Firewall or network
       settings`;
+      this.currentColor = 'fail';
+      const scanInfo = {
+        targetUrl: this.targetUrl,
+        tryMsg: this.tryMsg,
+        progressMsg: this.progressMsg,
+        status: 'fail'
+      };
+      this.service.saveScanInfo(scanInfo);
     });
   }
 
@@ -78,10 +88,8 @@ export class ScanComponent implements OnInit {
   }
 
   restartValues(): void {
-    if (this.errorOccurred) {
-      this.color('fail');
-    } else if (this.scanStarted) {
-      this.color('success');
+    if (this.currentColor) {
+      this.color(this.currentColor);
     }
     this.errorOccurred = false;
     this.progressMsg = '';
