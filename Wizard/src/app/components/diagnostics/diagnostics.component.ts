@@ -17,21 +17,15 @@ export class DiagnosticsComponent implements OnInit {
   authMsg = '';
 
   failure = {
-    tcp: `Connection to amq.nexploit.app:5672 is blocked, please verify that the
-    machine on which the Repeater is installed can reach the remote server.
-    Possible reasons for communication failure:
-    ● Outbound communication to the host is blocked by a Firewall or network
-    settings`,
-    http: `Connection to nexploit.app:443 is blocked, please verify that the machine on
-    which the Repeater is installed can reach the remote server.
-    Possible reasons for communication failure:
-    ● Outbound communication to the host is blocked by a Firewall or network
-    settings`,
-    auth:`Invalid Token or Repeater ID , please make sure you are using the correct
-    details provided to you.
-    If you need further assistance, please reach out to your NeuraLegion
-    technical support contact.`
-  } ;
+    tcp: `Connection to amq.nexploit.app:5672 is blocked, please verify that the machine on which the
+    Repeater is installed can reach the remote server. Possible reasons for communication failure:
+    ● Outbound communication to the host is blocked by a Firewall or network settings.`,
+    http: `Connection to nexploit.app:443 is blocked, please verify that the machine on which the 
+    Repeater is installed can reach the remote server. Possible reasons for communication failure:
+    ● Outbound communication to the host is blocked by a Firewall or network settings.`,
+    auth: `Invalid Token or Repeater ID , please make sure you are using the correct details provided to you.
+    If you need further assistance, please reach out to your NeuraLegion technical support contact.`
+  };
 
   constructor(private router: Router,
               protected service: AppService) {}
