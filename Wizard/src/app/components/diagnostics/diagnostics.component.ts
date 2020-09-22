@@ -12,6 +12,7 @@ import { AppService } from 'src/app/app.service';
 export class DiagnosticsComponent implements OnInit {
 
   tcpMsg = 'Validating that the connection to amq.nexploit.app at port 5672 is open';
+  errorOccurred = false;
   httpsMsg = '';
   authMsg = '';
 
@@ -80,6 +81,7 @@ export class DiagnosticsComponent implements OnInit {
       response.msg = 'Success';
       msg.classList.toggle('success');
     } else {
+      this.errorOccurred = true;
       switch (id) {
         case 'tcp':
           response.msg = this.failure.tcp;

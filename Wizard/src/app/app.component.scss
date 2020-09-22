@@ -53,3 +53,8 @@ div {
 .fail {
     color: $error-red;
 }
+
+button:disabled {
+    color: $primary-grey;
+    background-color: $neutral-grey;
+}

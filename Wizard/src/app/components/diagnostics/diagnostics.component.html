@@ -11,13 +11,13 @@
   <h4>PROGRESS</h4>
   <div class="form-control">
     <div>
-      {{tcpMsg}}<br/><span id="tcp">{{status? status.tcp.msg : ''}}</span><br/>
-      {{httpsMsg}}<br/><span id="http">{{status? status.https.msg : ''}}</span><br/>
-      {{authMsg}}<br/><span id="auth">{{status? status.auth.msg : ''}}</span><br/>
+      {{tcpMsg}}<br/><span id="tcp" class="span-msg">{{status? status.tcp.msg : ''}}</span><br/>
+      {{httpsMsg}}<br/><span id="http" class="span-msg">{{status? status.https.msg : ''}}</span><br/>
+      {{authMsg}}<br/><span id="auth" class="span-msg">{{status? status.auth.msg : ''}}</span><br/>
     </div>
   </div>
   <div class="buttons-container">
     <button  class="button-prev" (click)="prev()">Prev</button>
-    <button type="submit" class="button" (click)="next()">Next</button>
+    <button type="submit" class="button" [disabled]="errorOccurred" (click)="next()">Next</button>
   </div>
 </div>

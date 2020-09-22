@@ -6,6 +6,7 @@
     justify-content: space-between;
     margin-left: 0rem;
     width: 52rem;
+    margin-top: 0rem;
 }
 
 button {
@@ -13,12 +14,11 @@ button {
     width:8em;
     height:3em;
     background-color: $primary-blue;
-    border-radius: 10px;
-    border-color: $primary-grey;
+    border-radius: 5px;
 }
 
 .button-prev {
-    background-color: $primary-grey !important;
+    background-color: $primary-grey;
 }
 
 .form-control {

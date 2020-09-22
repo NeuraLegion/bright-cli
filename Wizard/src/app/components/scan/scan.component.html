@@ -27,5 +27,5 @@
 
 <div class="buttons-container">
   <button class="button-prev" (click)="prev()">Prev</button>
-  <button (click)="next()" [disabled]="!scanStarted">Next</button>
+  <button (click)="next()" [disabled]="!scanStarted || errorOccurred">Next</button>
 </div>

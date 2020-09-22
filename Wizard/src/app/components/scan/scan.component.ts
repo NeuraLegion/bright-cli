@@ -17,6 +17,7 @@ export class ScanComponent implements OnInit {
   progressMsg = '';
   tryMsg = '';
   scanStarted = false;
+  errorOccurred = false;
 
   ngOnInit() {
     this.service.dataString$.subscribe(
@@ -47,6 +48,7 @@ export class ScanComponent implements OnInit {
       this.service.saveScanInfo(scanInfo);
     }, error => {
       this.scanStarted = true;
+      this.errorOccurred = true;
       this.progressMsg = `Connection to ${this.targetUrl} is blocked, please verify that the machine on
       which the Repeater is installed can reach the target server.
       Possible reasons for communication failure:
