@@ -34,42 +34,46 @@ export class ScanComponent implements OnInit {
   }
 
   onSubmit(): void {
-    this.restartValues();
-    this.tryMsg = `Trying to reach ${this.targetUrl}...`;
-    this.scanStarted = true;
-    this.service.startScan({url: this.targetUrl}).subscribe((response: any) => {
-      this.progressMsg = `Communication test to ${this.targetUrl} completed successfully, and a demo scan has started, click on Next to continue.`;
-      this.currentColor = 'success';
-      const scanInfo = {
-        targetUrl: this.targetUrl,
-        tryMsg: this.tryMsg,
-        scanId: response.scanId,
-        progressMsg: this.progressMsg,
-        status: 'success'
-      };
-      this.service.saveScanInfo(scanInfo);
-    }, error => {
-      this.errorOccurred = true;
-      switch (error.status) {
-        case 400:
-          this.progressMsg = `Please check that the target URL is valid. `;
-          break;
-        case 500:
-          break;
-      }
-      this.progressMsg = this.progressMsg + `Connection to ${this.targetUrl} is blocked, please verify that the
-      machine on which the Repeater is installed can reach the target server.
-      Possible reasons for communication failure:
-      ● Outbound communication to the host is blocked by a Firewall or network settings`;
-      this.currentColor = 'fail';
-      const scanInfo = {
-        targetUrl: this.targetUrl,
-        tryMsg: this.tryMsg,
-        progressMsg: this.progressMsg,
-        status: 'fail'
-      };
-      this.service.saveScanInfo(scanInfo);
-    });
+    if (this.targetUrl === null) {
+      console.log('Error, target URL is invalid');
+    } else {
+      this.restartValues();
+      this.tryMsg = `Trying to reach ${this.targetUrl}...`;
+      this.scanStarted = true;
+      this.service.startScan({url: this.targetUrl}).subscribe((response: any) => {
+        this.progressMsg = `Communication test to ${this.targetUrl} completed successfully, and a demo scan has started, click on Next to continue.`;
+        this.currentColor = 'success';
+        const scanInfo = {
+          targetUrl: this.targetUrl,
+          tryMsg: this.tryMsg,
+          scanId: response.scanId,
+          progressMsg: this.progressMsg,
+          status: 'success'
+        };
+        this.service.saveScanInfo(scanInfo);
+      }, error => {
+        this.errorOccurred = true;
+        switch (error.status) {
+          case 400:
+            this.progressMsg = `Please check that the target URL is valid. `;
+            break;
+          case 500:
+            break;
+        }
+        this.progressMsg = this.progressMsg + `Connection to ${this.targetUrl} is blocked, please verify that the
+        machine on which the Repeater is installed can reach the target server.
+        Possible reasons for communication failure:
+        ● Outbound communication to the host is blocked by a Firewall or network settings`;
+        this.currentColor = 'fail';
+        const scanInfo = {
+          targetUrl: this.targetUrl,
+          tryMsg: this.tryMsg,
+          progressMsg: this.progressMsg,
+          status: 'fail'
+        };
+        this.service.saveScanInfo(scanInfo);
+      });
+    }
   }
 
   prev(): void {

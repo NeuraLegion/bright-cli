@@ -31,15 +31,19 @@ export class MainComponent implements OnInit {
   }
 
   onSubmit(): void {
-    const actionPayload = {
-      authToken: this.authToken,
-      repeaterId: this.repeaterId
-    };
-    this.service.saveTokens(actionPayload).subscribe((response: any) => {
-      this.router.navigateByUrl('diagnostics');
-    }, error => {
-      console.log (error);
-    });
+    if (this.authToken === null || this.repeaterId == null) {
+      console.log ('Error, tokens are invalid');
+    } else {
+      const actionPayload = {
+        authToken: this.authToken,
+        repeaterId: this.repeaterId
+      };
+      this.service.saveTokens(actionPayload).subscribe((response: any) => {
+        this.router.navigateByUrl('diagnostics');
+      }, error => {
+        console.log (error);
+      });
+    }
   }
 
   onIconClick(inputId, spanId): void {
