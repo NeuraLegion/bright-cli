@@ -237,6 +237,14 @@ export class ConnectivityWizard {
             detached: true
         });
 
+        p.stdout.on('data', (data)=>{
+            let line = data.toString();
+            console.log(`Repeater processes printed to stdout: ${line}`);
+        });
+        p.stderr.on('data', (data)=>{
+          console.log ("*** Repeater ***", data.toString());
+        });
+
         p.unref();
 
         let singleLogger = new class SingleLogger {
@@ -282,32 +290,42 @@ export class ConnectivityWizard {
         logger.log(`Launching process with cmd: ${nodeExec.cmd} and arguments: ${JSON.stringify(args)}`);
 
         return new Promise((resolve, rejects) =>{
-            let p:child_processes.ChildProcess = child_processes.spawn(nodeExec.cmd, args);
-            let output: string[] = [];
-            
-            p.stdout.on('data', (data)=>{
-                let line = data.toString();
-                logger.debug(`Scanner processes printed to stdout: ${line}`);
-                output.push(line);
-            });
-            p.stderr.on('data', (data)=>{
-                logger.warn(`Scanner printed an error to the console: ${data.toString()}`);
-            });
-            
-            p.on('error', (err:Error) => {
-                logger.warn(`Failed to start Scanner process due to ${err.message}`);
-                rejects();
-            });
-            p.on('exit', (code) => {
-                if (code != 0 || output.length == 0) {
-                    logger.warn(`Scan did not start succesfully. Process exited with code ${code} and output ${JSON.stringify(output)}`);
+            try {
+                let p:child_processes.ChildProcess = child_processes.spawn(nodeExec.cmd, args);
+                console.log ('Test1');
+                let output: string[] = [];
+                
+                p.stdout.on('data', (data)=>{
+                    let line = data.toString();
+                    logger.debug(`Scanner processes printed to stdout: ${line}`);
+                    output.push(line);
+                });
+                p.stderr.on('data', (data)=>{
+                  console.log (data.toString());
+                });
+                p.stderr.on('data', (data)=>{
+                    logger.warn(`Scanner printed an error to the console: ${data.toString()}`);
+                });
+                
+                p.on('error', (err:Error) => {
+                    console.log (`Failed to start Scanner process due to ${err.message}`);
+                    logger.warn(`Failed to start Scanner process due to ${err.message}`);
                     rejects();
-                }
-                else {
-                    resolve(output.pop());
-                }
-            });
-    
+                });
+                p.on('exit', (code) => {
+                    if (code != 0 || output.length == 0) {
+                        console.log (`Scan did not start succesfully. Process exited with code ${code} and output ${JSON.stringify(output)}`);
+                        logger.warn(`Scan did not start succesfully. Process exited with code ${code} and output ${JSON.stringify(output)}`);
+                        rejects();
+                    }
+                    else {
+                        resolve(output.pop());
+                    }
+                });
+            } catch (err){
+                console.log (err.message);
+                rejects();
+            }
         });
     }
 
