@@ -3,14 +3,13 @@ import { ConnectivityTest, TestType } from '../Entities/ConnectivityTest';
 import { ItemStatus } from '../Entities/ConnectivityStatus';
 import { TokensOperations } from '../TokensOperations';
 import logger from '../../Utils/Logger';
-import Koa from 'koa';
 import { Connectivity } from '../Connectivity/Connectivity';
 import { HTTPConnectivity } from '../Connectivity/HTTPConnectivity';
 import { TCPConnectivity } from '../Connectivity/TCPConnectivity';
 import { AMQConnectivity } from '../Connectivity/AMQConnectivity';
+import Koa from 'koa';
 
 export class ConnectivityEndpoint implements Endpoint {
-
   private connectivityTests: Map<TestType, Connectivity> = new Map();
 
   constructor(tokenOps: TokensOperations) {
@@ -25,6 +24,7 @@ export class ConnectivityEndpoint implements Endpoint {
     ctx.body = <ItemStatus>{
       ok: await this.connectivityTests.get(req.type).test()
     };
+
     return;
   }
 }

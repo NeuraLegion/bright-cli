@@ -59,7 +59,7 @@ export class ScanEndpoint implements Endpoint {
         '--agent',
         `"${tokens.repeaterId}`
       ];
-      logger.log(
+      logger.debug(
         `Launching Repeater process with cmd: ${
           node_exec.cmd
         } and arguments: ${JSON.stringify(startArgs)}`
@@ -126,7 +126,7 @@ export class ScanEndpoint implements Endpoint {
       'header_security'
     ];
 
-    logger.log(
+    logger.debug(
       `Launching scanner process with cmd: ${
         nodeExec.cmd
       } and arguments: ${JSON.stringify(args)}`

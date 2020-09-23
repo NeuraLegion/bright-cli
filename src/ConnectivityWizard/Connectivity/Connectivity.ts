@@ -1,3 +1,3 @@
 export interface Connectivity {
-    test(): Promise<boolean>;
-};
+  test(): Promise<boolean>;
+}
