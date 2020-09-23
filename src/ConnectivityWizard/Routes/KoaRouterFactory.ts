@@ -8,20 +8,25 @@ import { FinishEndpoint } from '../Endpoints/FinishEndpoint';
 import { TokensOperations } from '../TokensOperations';
 import Koa from 'koa';
 import Router from 'koa-router';
+import { URL } from 'url';
+import { TestType } from '../Entities/ConnectivityTest';
 
 export class KoaRouterFactory implements RouterFactory {
-  private readonly tokensOperations = new TokensOperations();
-  private readonly getTokensEndpoint = new GetTokensEndpoint(
-    this.tokensOperations
-  );
-  private readonly setTokenEndpoint = new SetTokensEndpoint(
-    this.tokensOperations
-  );
-  private readonly setConnectivityEndpoint = new ConnectivityEndpoint(
-    this.tokensOperations
-  );
-  private readonly setScanEndpoint = new ScanEndpoint(this.tokensOperations);
-  private readonly setFinishEndpoint = new FinishEndpoint();
+  private tokensOperations: TokensOperations;
+  private getTokensEndpoint: GetTokensEndpoint;
+  private setTokenEndpoint: SetTokensEndpoint;
+  private setConnectivityEndpoint: ConnectivityEndpoint;
+  private setScanEndpoint: ScanEndpoint;
+  private setFinishEndpoint: FinishEndpoint;
+
+  constructor(options: Map<TestType, URL>) {
+    this.tokensOperations = new TokensOperations();
+    this.getTokensEndpoint = new GetTokensEndpoint(this.tokensOperations);
+    this.setTokenEndpoint = new SetTokensEndpoint(this.tokensOperations);
+    this.setConnectivityEndpoint = new ConnectivityEndpoint(this.tokensOperations, options);
+    this.setScanEndpoint = new ScanEndpoint(this.tokensOperations);
+    this.setFinishEndpoint = new FinishEndpoint();
+  }
 
   public async createRouter(): Promise<Router> {
     const router: Router = new Router();

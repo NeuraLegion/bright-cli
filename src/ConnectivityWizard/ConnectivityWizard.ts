@@ -3,14 +3,16 @@ import { KoaRouterFactory } from './Routes/KoaRouterFactory';
 import { KoaAppFactory } from './KoaAppFactory';
 import Koa from 'koa';
 import getPort from 'get-port';
+import { TestType } from './Entities/ConnectivityTest';
+import { URL } from 'url';
 
 export class ConnectivityWizard {
   private readonly bind_port: number = 3000;
   private readonly range_size: number = 500;
   private app: Koa;
 
-  public async init(): Promise<void> {
-    const routesFactory = new KoaRouterFactory();
+  public async init(options: Map<TestType, URL>): Promise<void> {
+    const routesFactory = new KoaRouterFactory(options);
     this.app = await new KoaAppFactory(routesFactory).createApp();
 
     //select available port and launch http listener

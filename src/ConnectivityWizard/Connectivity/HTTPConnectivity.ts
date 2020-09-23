@@ -6,15 +6,17 @@ import { ClientRequest } from 'http';
 import { URL } from 'url';
 
 export class HTTPConnectivity implements Connectivity {
-  private readonly http_test_endpoint: string = 'https://nexploit.app:443';
   private readonly connection_timeout = 30 * 1000; // 30 seconds
+  private url: URL;
+
+  constructor(url: URL) {
+    this.url = url;
+  }
 
   public async test(): Promise<boolean> {
-    const url: URL = new URL(this.http_test_endpoint);
-
     return new Promise<boolean>((resolve) => {
       const req: ClientRequest =
-        url.protocol === 'https:' ? https.get(url) : http.get(url);
+        this.url.protocol === 'https:' ? https.get(this.url) : http.get(this.url);
 
       req.once('response', () => {
         logger.debug(

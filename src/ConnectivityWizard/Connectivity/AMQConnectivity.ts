@@ -7,23 +7,22 @@ import { URL } from 'url';
 
 export class AMQConnectivity implements Connectivity {
   private readonly connection_timeout = 30 * 1000; // 30 seconds
-  private readonly authTestEndpoint: string =
-    'https://nexploit.app/api/v1/repeaters/user';
 
+  private authEndpoint: URL;
   private tokenOperations: TokensOperations;
 
-  constructor(tokensOperations: TokensOperations) {
+  constructor(tokensOperations: TokensOperations, url: URL) {
     this.tokenOperations = tokensOperations;
+    this.authEndpoint = url;
   }
 
   public async test(): Promise<boolean> {
-    const url: URL = new URL(this.authTestEndpoint);
     const tokens: Tokens = this.tokenOperations.readTokens();
 
     return new Promise<boolean>((resolve) => {
       const req: httpReq.Request = httpReq.post(
         {
-          url,
+          url: this.authEndpoint,
           timeout: this.connection_timeout,
           rejectUnauthorized: false,
           form: {

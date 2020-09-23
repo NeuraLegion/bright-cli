@@ -13,8 +13,6 @@ import {
 } from './Commands';
 import { CliBuilder, DefaultConfigReader } from './Config';
 
-console.log(__dirname);
-
 const cli: CliBuilder = new CliBuilder({
   colors: true,
   cwd: process.cwd()
