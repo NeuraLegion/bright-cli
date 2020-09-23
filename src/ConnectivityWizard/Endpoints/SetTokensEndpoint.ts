@@ -1,5 +1,5 @@
 import { Endpoint } from './Endpoint';
-import { Tokens } from '../Tokens';
+import { Tokens } from '../Entities/Tokens';
 import { TokensOperations } from '../TokensOperations';
 import logger from '../../Utils/Logger';
 import Koa from 'koa';

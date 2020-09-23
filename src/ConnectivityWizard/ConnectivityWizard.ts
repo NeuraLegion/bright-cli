@@ -6,6 +6,7 @@ import getPort from 'get-port';
 
 export class ConnectivityWizard {
   private readonly bind_port: number = 3000;
+  private readonly range_size: number = 500;
   private app: Koa;
 
   public async init(): Promise<void> {
@@ -14,7 +15,7 @@ export class ConnectivityWizard {
 
     //select available port and launch http listener
     const selected_port: number = await getPort({
-      port: getPort.makeRange(this.bind_port, this.bind_port + 500)
+      port: getPort.makeRange(this.bind_port, this.bind_port + this.range_size)
     });
 
     this.app.listen(selected_port);

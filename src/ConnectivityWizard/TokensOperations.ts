@@ -1,4 +1,4 @@
-import { Tokens } from './Tokens';
+import { Tokens } from './Entities/Tokens';
 import logger from '../Utils/Logger';
 import os from 'os';
 import fs from 'fs';

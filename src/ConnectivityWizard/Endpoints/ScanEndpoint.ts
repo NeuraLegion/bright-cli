@@ -1,7 +1,7 @@
 import { Endpoint } from './Endpoint';
-import { ScannedUrl } from '../ScannedUrl';
-import { Tokens } from '../Tokens';
-import { ScanId } from '../ScanId';
+import { ScannedUrl } from '../Entities/ScannedUrl';
+import { Tokens } from '../Entities/Tokens';
+import { ScanId } from '../Entities/ScanId';
 import { TokensOperations } from '../TokensOperations';
 import logger from '../../Utils/Logger';
 import Koa from 'koa';
