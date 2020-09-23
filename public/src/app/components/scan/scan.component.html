@@ -24,7 +24,7 @@
       <ng-template [ngIf]="scanStarted || currentColor">
         Trying to reach {{url}}...<br/>
       </ng-template>
-      <p id="response-communication" class="response"> {{progressMsg}} </p>
+      <p id="response-communication" class="response" [ngClass]="(currentColor == 'success')? 'success':'fail'"> {{progressMsg}} </p>
   </div>
   </div>
 </div>

@@ -46,9 +46,6 @@ export class ScanComponent implements OnInit {
           this.scanFinished = false;
         }
       });
-    if (this.currentColor) {
-      this.color(this.currentColor);
-    }
   }
 
   initForm(): void{
@@ -64,18 +61,17 @@ export class ScanComponent implements OnInit {
     if (this.targetForm.controls[TARGET_URL].value === null) {
       console.log('Error, target URL is invalid');
     } else {
-      this.restartValues();
+      this.resetValues();
       this.service.startScan({url: this.targetForm.controls[TARGET_URL].value}).subscribe((response: any) => {
         this.scanFinished = true;
         this.progressMsg = `Communication test to ${this.targetForm.controls[TARGET_URL].value} completed successfully, and a demo scan has started, click on Next to continue.`;
         this.currentColor = Status.SUCCESS;
-        this.color(this.currentColor);
         const scanInfo = {
           targetUrl: this.targetForm.controls[TARGET_URL].value,
           url: this.url,
           scanId: response.scanId,
           progressMsg: this.progressMsg,
-          status: Status.SUCCESS
+          status: this.currentColor
         };
         this.service.saveScanInfo(scanInfo);
       }, error => {
@@ -92,12 +88,11 @@ export class ScanComponent implements OnInit {
         Possible reasons for communication failure:
         ● Outbound communication to the host is blocked by a Firewall or network settings`;
         this.currentColor = Status.FAIL;
-        this.color(this.currentColor);
         const scanInfo = {
           targetUrl: this.targetForm.controls[TARGET_URL].value,
           url: this.url,
           progressMsg: this.progressMsg,
-          status: Status.FAIL
+          status: this.currentColor
         };
         this.service.saveScanInfo(scanInfo);
       });
@@ -112,15 +107,7 @@ export class ScanComponent implements OnInit {
     this.router.navigateByUrl('success');
   }
 
-  color(status: string): void {
-    const resp = document.querySelector(`#response-communication`);
-    resp.classList.toggle(status);
-  }
-
-  restartValues(): void {
-    if (this.currentColor) {
-      this.color(this.currentColor);
-    }
+  resetValues(): void {
     this.errorOccurred = false;
     this.progressMsg = '';
   }
