@@ -11,13 +11,21 @@
     <span>Valid authentication credentials</span>
   </form>
   <h4 class="upper">Progress</h4>
-  <div class="form-control">
-    <div>
-      {{tcpMsg}}<br/><span id="tcp" class="span-msg">{{status? status.tcp.msg : ''}}</span><br/>
-      {{httpsMsg}}<br/><span id="http" class="span-msg">{{status? status.https.msg : ''}}</span><br/>
-      {{authMsg}}<br/><span id="auth" class="span-msg">{{status? status.auth.msg : ''}}</span><br/>
+  <ng-container>
+    <div class="form-control">
+      <div>
+        <ng-template [ngIf]="status.tcp">
+          {{tcpMsg}}<br/><span id="tcp" class="span-msg">{{status.tcp.msg}}</span><br/>
+        </ng-template>
+        <ng-template [ngIf]="status.https">
+          {{httpsMsg}}<br/><span id="http" class="span-msg">{{status.https.msg}}</span><br/>
+        </ng-template>
+        <ng-template [ngIf]="status.auth">
+          {{authMsg}}<br/><span id="auth" class="span-msg">{{status.auth.msg}}</span><br/>
+        </ng-template>
+      </div>
     </div>
-  </div>
+  </ng-container>
   <div class="buttons-container">
     <button  class="button-prev" (click)="prev()">Prev</button>
     <button type="submit" class="button" [disabled]="!scanFinished || errorOccurred" (click)="next()">Next</button>
