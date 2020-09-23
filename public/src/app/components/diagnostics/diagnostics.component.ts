@@ -36,26 +36,26 @@ export class DiagnosticsComponent implements OnInit {
     this.restartTest(true);
   }
 
-  restartTest(init: boolean): void{
+  restartTest(sourceInit: boolean): void{
     this.restartValues();
     this.service.getConnectivityStatus({type: 'tcp'}).subscribe((tcpRes: any) => {
       this.status.tcp = tcpRes;
       this.colorMessages (tcpRes, 'tcp');
-      if (!init) {
+      if (!sourceInit) {
         this.colorMessages (tcpRes, 'tcp');
       }
       this.httpsMsg = `Validating that the connection to nexploit.app at port 443 is open`;
       this.service.getConnectivityStatus({type: 'http'}).subscribe((httpRes: any) => {
         this.status.https = httpRes;
         this.colorMessages (httpRes, 'http');
-        if (!init) {
+        if (!sourceInit) {
           this.colorMessages (httpRes, 'http');
         }
         this.authMsg = 'Verifying provided Token and Repeater ID';
         this.service.getConnectivityStatus({type: 'auth'}).subscribe((authRes: any) => {
           this.status.auth = authRes;
           this.colorMessages (authRes, 'auth');
-          if (!init) {
+          if (!sourceInit) {
             this.colorMessages (authRes, 'auth');
           }
         }, error => {

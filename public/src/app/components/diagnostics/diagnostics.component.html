@@ -1,5 +1,5 @@
 <div class="content-container">
-  <h3>RUNNING CONNECTIVITY DIAGNOSTICS</h3>
+  <h3 class="upper">Running connectivity diagnostics</h3>
   <h4>Please wait as we perform some tests</h4>
   <input type="checkbox" [checked]="status? status.tcp.ok : false" disabled/><label for="cb"></label>
   <span>Connection to <b>amq.nexploit.app</b> at <b>port 5672</b></span><br/>
@@ -8,7 +8,7 @@
   <button class="button-scan button-move" (click)="restartTest(false)">Restart Test</button><br/>
   <input type="checkbox" [checked]="status? status.auth.ok : false" disabled/><label for="cb"></label>
   <span>Valid authentication credentials</span>
-  <h4>PROGRESS</h4>
+  <h4 class="upper">Progress</h4>
   <div class="form-control">
     <div>
       {{tcpMsg}}<br/><span id="tcp" class="span-msg">{{status? status.tcp.msg : ''}}</span><br/>

@@ -58,3 +58,9 @@ button:disabled {
     color: $primary-grey;
     background-color: $neutral-grey;
 }
+
+h3, h4 {
+    &.upper {
+        text-transform: uppercase;
+    }
+}
