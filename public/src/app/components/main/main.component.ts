@@ -2,6 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 import { Tokens } from 'src/app/app.model';
 import { AppService } from 'src/app/app.service';
+import { VisibilityToggle } from '../../shared/VisibilityToggle';
 
 @Component({
   selector: 'app-main',
@@ -9,6 +10,7 @@ import { AppService } from 'src/app/app.service';
   styleUrls: ['./main.component.scss']
 })
 export class MainComponent implements OnInit {
+  visibilityToggle = new VisibilityToggle();
   title = 'Connectivity Wizard';
   authToken: string;
   repeaterId: string;
@@ -20,8 +22,8 @@ export class MainComponent implements OnInit {
     console.log('Welcome');
     this.service.getTokens().subscribe((response: Tokens) => {
       if (response.authToken !== '' && response.repeaterId !== '') {
-        this.onIconClick('token', 'toggleEye-1');
-        this.onIconClick('repeater', 'toggleEye-2');
+        this.visibilityToggle.toggleEye('token', 'toggleEye-1');
+        this.visibilityToggle.toggleEye('repeater', 'toggleEye-2');
       }
       this.authToken = response.authToken;
       this.repeaterId = response.repeaterId;
@@ -47,12 +49,7 @@ export class MainComponent implements OnInit {
   }
 
   onIconClick(inputId, spanId): void {
-    const toggleEye = document.querySelector(`#${spanId}`);
-    const inputField = document.querySelector(`#${inputId}`);
-
-    const type = inputField.getAttribute('type') === 'password' ? 'text' : 'password';
-    inputField.setAttribute('type', type);
-    toggleEye.classList.toggle('fa-eye-slash');
+    this.visibilityToggle.toggleEye(inputId, spanId);
   }
 }
 
