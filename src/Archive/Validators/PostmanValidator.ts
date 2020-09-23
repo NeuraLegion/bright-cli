@@ -1,9 +1,9 @@
 import { Validator } from './Validator';
 import logger from '../../Utils/Logger';
-import collectionV2Draft7 from '/Users/gil/dev/github/nexploit-cli/schemas/postman/draft-07/v2.0.0/collection.json';
-import collectionV2Draft4 from '/Users/gil/dev/github/nexploit-cli/schemas/postman/draft-04/v2.0.0/collection.json';
-import collectionDraft7 from '/Users/gil/dev/github/nexploit-cli/schemas/postman/draft-07/v2.1.0/collection.json';
-import collectionDraft4 from '/Users/gil/dev/github/nexploit-cli/schemas/postman/draft-04/v2.1.0/collection.json';
+import collectionV2Draft7 from 'schemas/postman/draft-07/v2.0.0/collection.json';
+import collectionV2Draft4 from 'schemas/postman/draft-04/v2.0.0/collection.json';
+import collectionDraft7 from 'schemas/postman/draft-07/v2.1.0/collection.json';
+import collectionDraft4 from 'schemas/postman/draft-04/v2.1.0/collection.json';
 import Ajv, { ValidateFunction } from 'ajv';
 import betterAjvErrors from 'better-ajv-errors';
 import schemaDraft04 from 'ajv/lib/refs/json-schema-draft-04.json';
