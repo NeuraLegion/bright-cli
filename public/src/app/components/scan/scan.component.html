@@ -5,11 +5,11 @@
     application.<br />
     Please provide the target URL:
   </h4>
-  <form (ngSubmit)="onSubmit()" ngNativeValidate>
+  <form (ngSubmit)="onSubmit()" [formGroup]="targetForm" ngNativeValidate>
     <div class="form-control">
       <div class="form-group">
         <label for="url">Target URL:</label>
-        <input [(ngModel)]="targetUrl" name="url" type="url" required id="url" oninvalid="this.setCustomValidity('Type target URL. Example - http://my.server.com:8080')" oninput="setCustomValidity('')"/>
+        <input  formControlName="targetUrl" name="url" type="url" required id="url" oninvalid="this.setCustomValidity('Type target URL. Example - http://my.server.com:8080')" oninput="setCustomValidity('')"/>
       </div>
     </div>
     <div class="button-move">
