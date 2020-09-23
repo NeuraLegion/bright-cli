@@ -29,7 +29,7 @@ export class DiagnosticsComponent implements OnInit {
 
   ngOnInit() {
     this.initForm();
-    this.restartTest(true);
+    this.restartTest();
   }
 
   initForm(): void{
@@ -40,32 +40,23 @@ export class DiagnosticsComponent implements OnInit {
     });
   }
 
-  restartTest(sourceInit: boolean): void{
-    this.restartValues();
+  restartTest(): void{
+    this.resetValues();
     this.service.getConnectivityStatus({type: Protocol.TCP}).subscribe((tcpRes: any) => {
       this.testsForm.controls[Protocol.TCP].setValue(tcpRes.ok);
       this.status.tcp = tcpRes;
-      this.colorMessages (tcpRes, Protocol.TCP);
-      if (!sourceInit) {
-        this.colorMessages (tcpRes, Protocol.TCP);
-      }
+      this.updateMessages (tcpRes, Protocol.TCP);
       this.httpsMsg = `Validating that the connection to nexploit.app at port 443 is open`;
       this.service.getConnectivityStatus({type: Protocol.HTTP}).subscribe((httpRes: any) => {
         this.testsForm.controls[Protocol.HTTP].setValue(httpRes.ok);
         this.status.https = httpRes;
-        this.colorMessages (httpRes, Protocol.HTTP);
-        if (!sourceInit) {
-          this.colorMessages (httpRes, Protocol.HTTP);
-        }
+        this.updateMessages (httpRes, Protocol.HTTP);
         this.authMsg = 'Verifying provided Token and Repeater ID';
         this.service.getConnectivityStatus({type: Protocol.AUTH}).subscribe((authRes: any) => {
           this.testsForm.controls[Protocol.AUTH].setValue(authRes.ok);
           this.scanFinished = true;
           this.status.auth = authRes;
-          this.colorMessages (authRes, Protocol.AUTH);
-          if (!sourceInit) {
-            this.colorMessages (authRes, Protocol.AUTH);
-          }
+          this.updateMessages (authRes, Protocol.AUTH);
         }, error => {
           console.log (error);
         });
@@ -77,11 +68,9 @@ export class DiagnosticsComponent implements OnInit {
     });
   }
 
-  colorMessages(response: any, id: string): void {
-    const msg = document.querySelector(`#${id}`);
+  updateMessages(response: any, id: string): void {
     if (response.ok) {
       response.msg = 'Success';
-      msg.classList.toggle('success');
     } else {
       this.errorOccurred = true;
       switch (id) {
@@ -95,11 +84,10 @@ export class DiagnosticsComponent implements OnInit {
           response.msg = this.protocol.transform(Protocol.AUTH);
           break;
       }
-      msg.classList.toggle('fail');
     }
   }
 
-  restartValues(): void {
+  resetValues(): void {
     this.scanFinished = false;
     this.httpsMsg = '';
     this.authMsg = '';

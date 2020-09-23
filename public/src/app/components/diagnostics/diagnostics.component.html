@@ -6,7 +6,7 @@
     <span>Connection to <b>amq.nexploit.app</b> at <b>port 5672</b></span><br/>
     <input type="checkbox" formControlName="http"/><label for="cb"></label>
     <span>Connection to <b>nexploit.app</b> at <b>port 443</b></span>
-    <button class="button-scan button-move" (click)="restartTest(false)">Restart Test</button><br/>
+    <button class="button-scan button-move" (click)="restartTest()">Restart Test</button><br/>
     <input type="checkbox" formControlName="auth"/><label for="cb"></label>
     <span>Valid authentication credentials</span>
   </form>
@@ -15,13 +15,13 @@
     <div class="form-control">
       <div>
         <ng-template [ngIf]="status.tcp">
-          {{tcpMsg}}<br/><span id="tcp" class="span-msg">{{status.tcp.msg}}</span><br/>
+          {{tcpMsg}}<br/><span id="tcp" class="span-msg" [ngClass]="status.tcp.ok? 'success':'fail'">{{status.tcp.msg}}</span><br/>
         </ng-template>
         <ng-template [ngIf]="status.https">
-          {{httpsMsg}}<br/><span id="http" class="span-msg">{{status.https.msg}}</span><br/>
+          {{httpsMsg}}<br/><span id="http" class="span-msg" [ngClass]="status.https.ok? 'success':'fail'">{{status.https.msg}}</span><br/>
         </ng-template>
         <ng-template [ngIf]="status.auth">
-          {{authMsg}}<br/><span id="auth" class="span-msg">{{status.auth.msg}}</span><br/>
+          {{authMsg}}<br/><span id="auth" class="span-msg" [ngClass]="status.auth.ok? 'success':'fail'">{{status.auth.msg}}</span><br/>
         </ng-template>
       </div>
     </div>
