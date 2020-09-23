@@ -16,7 +16,7 @@ export class ScanComponent implements OnInit {
   targetUrl: string;
   progressMsg: string;
   tryMsg: string;
-  scanStarted = false;
+  scanFinished = false;
   errorOccurred = false;
   currentColor;
 
@@ -24,7 +24,7 @@ export class ScanComponent implements OnInit {
     this.service.dataString$.subscribe(
       data => {
         if (data) {
-          this.scanStarted = true;
+          this.scanFinished = true;
           this.targetUrl = data.targetUrl;
           this.tryMsg = data.tryMsg;
           this.progressMsg = data.progressMsg;
@@ -35,13 +35,14 @@ export class ScanComponent implements OnInit {
   }
 
   onSubmit(): void {
+    this.scanFinished = false;
     if (this.targetUrl === null) {
       console.log('Error, target URL is invalid');
     } else {
       this.restartValues();
       this.tryMsg = `Trying to reach ${this.targetUrl}...`;
-      this.scanStarted = true;
       this.service.startScan({url: this.targetUrl}).subscribe((response: any) => {
+        this.scanFinished = true;
         this.progressMsg = `Communication test to ${this.targetUrl} completed successfully, and a demo scan has started, click on Next to continue.`;
         this.currentColor = 'success';
         this.color(this.currentColor);

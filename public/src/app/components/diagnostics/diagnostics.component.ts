@@ -15,6 +15,7 @@ export class DiagnosticsComponent implements OnInit {
   errorOccurred = false;
   httpsMsg = '';
   authMsg = '';
+  scanFinished = false;
 
   failure = {
     tcp: `Connection to amq.nexploit.app:5672 is blocked, please verify that the machine on which the
@@ -53,6 +54,7 @@ export class DiagnosticsComponent implements OnInit {
         }
         this.authMsg = 'Verifying provided Token and Repeater ID';
         this.service.getConnectivityStatus({type: 'auth'}).subscribe((authRes: any) => {
+          this.scanFinished = true;
           this.status.auth = authRes;
           this.colorMessages (authRes, 'auth');
           if (!sourceInit) {
@@ -92,6 +94,7 @@ export class DiagnosticsComponent implements OnInit {
   }
 
   restartValues(): void {
+    this.scanFinished = false;
     this.httpsMsg = '';
     this.authMsg = '';
     this.status = {

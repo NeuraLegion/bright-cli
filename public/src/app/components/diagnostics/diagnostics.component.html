@@ -18,6 +18,6 @@
   </div>
   <div class="buttons-container">
     <button  class="button-prev" (click)="prev()">Prev</button>
-    <button type="submit" class="button" [disabled]="errorOccurred" (click)="next()">Next</button>
+    <button type="submit" class="button" [disabled]="!scanFinished || errorOccurred" (click)="next()">Next</button>
   </div>
 </div>
