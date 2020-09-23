@@ -6,9 +6,10 @@ import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { NgModule } from '@angular/core';
 import { BrowserModule } from '@angular/platform-browser';
 import { HttpClientModule } from '@angular/common/http';
+import { DiagnosticsComponent } from './components/diagnostics/diagnostics.component';
 
 @NgModule({
-  declarations: [AppComponent, MainComponent, ScanComponent],
+  declarations: [AppComponent, MainComponent, ScanComponent, DiagnosticsComponent],
   imports: [BrowserModule, FormsModule, AppRoutingModule, HttpClientModule, ReactiveFormsModule],
   providers: [],
   bootstrap: [AppComponent]

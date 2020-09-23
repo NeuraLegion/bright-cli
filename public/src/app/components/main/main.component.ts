@@ -42,7 +42,7 @@ export class MainComponent implements OnInit {
   initForm(): void{
     this.mainForm = this.formBuilder.group({
       authToken: ['', [Validators.required]],
-      repeaterId: ['', [Validators.required]],
+      repeaterId: ['', [Validators.required]]
     });
   }
 
