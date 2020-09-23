@@ -4,12 +4,12 @@
     Please fill in the following information which was provided to you as part
     of the PoC kickoff email.
   </h3>
-  <form (ngSubmit)="onSubmit()" ngNativeValidate>
+  <form [formGroup]="mainForm" (ngSubmit)="onSubmit()" ngNativeValidate>
     <div class="form-control">
       <div class="form-group">
         <label for="token">Auth Token: </label>
         <input
-          [(ngModel)]="authToken"
+          formControlName="authToken"
           name="token"
           type="text"
           required
@@ -20,7 +20,7 @@
       <div class="form-group">
         <label for="repeater">Repeater ID: </label>
         <input
-          [(ngModel)]="repeaterId"
+          formControlName="repeaterId"
           name="repeater"
           type="text"
           required
