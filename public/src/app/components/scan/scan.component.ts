@@ -4,6 +4,10 @@ import { Router } from '@angular/router';
 import { AppService } from 'src/app/app.service';
 
 const TARGET_URL = 'targetUrl';
+export enum Status {
+  SUCCESS = 'success',
+  FAIL = 'fail'
+}
 
 @Component({
   selector: 'app-scan',
@@ -29,11 +33,15 @@ export class ScanComponent implements OnInit {
     this.service.dataString$.subscribe(
       data => {
         if (data) {
-          this.scanFinished = true;
           this.tryMsg = data.tryMsg;
           this.progressMsg = data.progressMsg;
           this.currentColor = data.status;
           this.targetForm.controls[TARGET_URL].setValue(data.targetUrl);
+        }
+        if (this.currentColor === Status.SUCCESS) {
+          this.scanFinished = true;
+        } else {
+          this.scanFinished = false;
         }
       });
     this.color(this.currentColor);
@@ -55,14 +63,14 @@ export class ScanComponent implements OnInit {
       this.service.startScan({url: this.targetForm.controls[TARGET_URL].value}).subscribe((response: any) => {
         this.scanFinished = true;
         this.progressMsg = `Communication test to ${this.targetForm.controls[TARGET_URL].value} completed successfully, and a demo scan has started, click on Next to continue.`;
-        this.currentColor = 'success';
+        this.currentColor = Status.SUCCESS;
         this.color(this.currentColor);
         const scanInfo = {
           targetUrl: this.targetForm.controls[TARGET_URL].value,
           tryMsg: this.tryMsg,
           scanId: response.scanId,
           progressMsg: this.progressMsg,
-          status: 'success'
+          status: Status.SUCCESS
         };
         this.service.saveScanInfo(scanInfo);
       }, error => {
@@ -78,13 +86,13 @@ export class ScanComponent implements OnInit {
         machine on which the Repeater is installed can reach the target server.
         Possible reasons for communication failure:
         ● Outbound communication to the host is blocked by a Firewall or network settings`;
-        this.currentColor = 'fail';
+        this.currentColor = Status.FAIL;
         this.color(this.currentColor);
         const scanInfo = {
           targetUrl: this.targetForm.controls[TARGET_URL].value,
           tryMsg: this.tryMsg,
           progressMsg: this.progressMsg,
-          status: 'fail'
+          status: Status.FAIL
         };
         this.service.saveScanInfo(scanInfo);
       });
