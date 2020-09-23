@@ -2,6 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 import { ConnectivityStatus } from 'src/app/app.model';
 import { AppService } from 'src/app/app.service';
+import { ProtocolMessage, Protocol } from '../../shared/ProtocolMessage';
 
 @Component({
   selector: 'app-diagnostics',
@@ -17,20 +18,10 @@ export class DiagnosticsComponent implements OnInit {
   authMsg = '';
   scanFinished = false;
 
-  failure = {
-    tcp: `Connection to amq.nexploit.app:5672 is blocked, please verify that the machine on which the
-    Repeater is installed can reach the remote server. Possible reasons for communication failure:
-    ● Outbound communication to the host is blocked by a Firewall or network settings.`,
-    http: `Connection to nexploit.app:443 is blocked, please verify that the machine on which the 
-    Repeater is installed can reach the remote server. Possible reasons for communication failure:
-    ● Outbound communication to the host is blocked by a Firewall or network settings.`,
-    auth: `Invalid Token or Repeater ID , please make sure you are using the correct details provided to you.
-    If you need further assistance, please reach out to your NeuraLegion technical support contact.`
-  };
-
   constructor(private router: Router,
               protected service: AppService) {}
 
+  protocol = new ProtocolMessage();
   status: ConnectivityStatus;
 
   ngOnInit() {
@@ -80,13 +71,13 @@ export class DiagnosticsComponent implements OnInit {
       this.errorOccurred = true;
       switch (id) {
         case 'tcp':
-          response.msg = this.failure.tcp;
+          response.msg = this.protocol.transform(Protocol.TCP);
           break;
         case 'http':
-          response.msg = this.failure.http;
+          response.msg = this.protocol.transform(Protocol.HTTP);
           break;
         case 'auth':
-          response.msg = this.failure.auth;
+          response.msg = this.protocol.transform(Protocol.AUTH);
           break;
       }
       msg.classList.toggle('fail');
