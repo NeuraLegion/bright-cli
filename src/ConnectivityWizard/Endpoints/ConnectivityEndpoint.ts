@@ -4,7 +4,7 @@ import { ItemStatus } from '../ConnectivityStatus';
 import { Tokens } from '../Tokens';
 import { TokensOperations } from '../TokensOperations';
 import Koa from 'koa';
-import logger from 'src/Utils/Logger';
+import logger from '../../Utils/Logger';
 import httpReq from 'request';
 import { URL } from 'url';
 import { Socket } from 'net';
@@ -96,7 +96,7 @@ export class ConnectivityEndpoint implements Endpoint {
 
     return new Promise<boolean>((resolve) => {
       const req: ClientRequest =
-        url.protocol === 'https' ? https.get(url) : http.get(url);
+        url.protocol === 'https:' ? https.get(url) : http.get(url);
 
       req.once('response', () => {
         logger.debug(

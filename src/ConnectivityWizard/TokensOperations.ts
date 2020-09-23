@@ -1,5 +1,5 @@
 import { Tokens } from './Tokens';
-import logger from 'src/Utils/Logger';
+import logger from '../Utils/Logger'
 import os from 'os';
 import fs from 'fs';
 import path from 'path';

@@ -3,7 +3,7 @@ import Koa from 'koa';
 import json from 'koa-json';
 import bodyParser from 'koa-bodyparser';
 import serve from 'koa-static';
-import logger from 'src/Utils/Logger';
+import logger from '../Utils/Logger';
 
 export class KoaAppFactory {
   private routerFactory: RouterFactory;

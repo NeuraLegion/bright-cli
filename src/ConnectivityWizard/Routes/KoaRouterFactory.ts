@@ -54,6 +54,6 @@ export class KoaRouterFactory implements RouterFactory {
       await next();
     });
 
-    return null;
+    return router;
   }
 }

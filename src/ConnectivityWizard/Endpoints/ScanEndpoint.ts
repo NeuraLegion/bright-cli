@@ -3,7 +3,7 @@ import { ScannedUrl } from '../ScannedUrl';
 import { Tokens } from '../Tokens';
 import { ScanId } from '../ScanId';
 import { TokensOperations } from '../TokensOperations';
-import logger from 'src/Utils/Logger';
+import logger from '../../Utils/Logger';
 import Koa from 'koa';
 import child_processes from 'child_process';
 
