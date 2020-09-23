@@ -20,7 +20,12 @@
 <div class="content-container">
   <h4 class="upper">Progress</h4>
     <div class="form-control progress">
-    <div>{{tryMsg}} <br/> <p id="response-communication" class="response"> {{progressMsg}} </p></div>
+      <div>
+      <ng-template [ngIf]="scanStarted || currentColor">
+        Trying to reach {{url}}...<br/>
+      </ng-template>
+      <p id="response-communication" class="response"> {{progressMsg}} </p>
+  </div>
   </div>
 </div>
 <div class="gap"></div>

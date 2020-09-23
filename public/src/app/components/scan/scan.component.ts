@@ -23,17 +23,19 @@ export class ScanComponent implements OnInit {
 
   targetForm: FormGroup;
   progressMsg: string;
-  tryMsg: string;
+  url: string;
+  scanStarted;
   scanFinished = false;
   errorOccurred = false;
   currentColor;
 
   ngOnInit() {
+    this.scanStarted = false;
     this.initForm();
     this.service.dataString$.subscribe(
       data => {
         if (data) {
-          this.tryMsg = data.tryMsg;
+          this.url = data.url;
           this.progressMsg = data.progressMsg;
           this.currentColor = data.status;
           this.targetForm.controls[TARGET_URL].setValue(data.targetUrl);
@@ -44,7 +46,9 @@ export class ScanComponent implements OnInit {
           this.scanFinished = false;
         }
       });
-    this.color(this.currentColor);
+    if (this.currentColor) {
+      this.color(this.currentColor);
+    }
   }
 
   initForm(): void{
@@ -54,12 +58,13 @@ export class ScanComponent implements OnInit {
   }
 
   onSubmit(): void {
+    this.scanStarted = true;
     this.scanFinished = false;
+    this.url = `${this.targetForm.controls[TARGET_URL].value}`;
     if (this.targetForm.controls[TARGET_URL].value === null) {
       console.log('Error, target URL is invalid');
     } else {
       this.restartValues();
-      this.tryMsg = `Trying to reach ${this.targetForm.controls[TARGET_URL].value}...`;
       this.service.startScan({url: this.targetForm.controls[TARGET_URL].value}).subscribe((response: any) => {
         this.scanFinished = true;
         this.progressMsg = `Communication test to ${this.targetForm.controls[TARGET_URL].value} completed successfully, and a demo scan has started, click on Next to continue.`;
@@ -67,7 +72,7 @@ export class ScanComponent implements OnInit {
         this.color(this.currentColor);
         const scanInfo = {
           targetUrl: this.targetForm.controls[TARGET_URL].value,
-          tryMsg: this.tryMsg,
+          url: this.url,
           scanId: response.scanId,
           progressMsg: this.progressMsg,
           status: Status.SUCCESS
@@ -90,7 +95,7 @@ export class ScanComponent implements OnInit {
         this.color(this.currentColor);
         const scanInfo = {
           targetUrl: this.targetForm.controls[TARGET_URL].value,
-          tryMsg: this.tryMsg,
+          url: this.url,
           progressMsg: this.progressMsg,
           status: Status.FAIL
         };
