@@ -1,8 +1,8 @@
 import { Endpoint } from './Endpoint';
 import { Tokens } from '../Tokens';
 import { TokensOperations } from '../TokensOperations';
-import Koa from 'koa';
 import logger from '../../Utils/Logger';
+import Koa from 'koa';
 
 export class SetTokensEndpoint implements Endpoint {
   private tokenOperations: TokensOperations;

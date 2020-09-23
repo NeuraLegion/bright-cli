@@ -9,6 +9,7 @@ import child_processes from 'child_process';
 
 export class ScanEndpoint implements Endpoint {
   private tokenOperations: TokensOperations;
+  private repeaterProcess: child_processes.ChildProcess;
 
   constructor(tokenOps: TokensOperations) {
     this.tokenOperations = tokenOps;
@@ -19,6 +20,12 @@ export class ScanEndpoint implements Endpoint {
     const tokens: Tokens = this.tokenOperations.readTokens();
     let scan_id: string = null;
 
+    if (!this.executeRepeater(tokens)) {
+      ctx.throw('Could not execute Repeater');
+
+      return;
+    }
+
     try {
       scan_id = await this.launchScan(req.url, tokens);
     } catch (err) {
@@ -26,17 +33,21 @@ export class ScanEndpoint implements Endpoint {
 
       return;
     }
-    if (!this.executeRepeater(tokens)) {
-      ctx.throw('Could not execute Repeater');
 
-      return;
-    }
     ctx.body = <ScanId>{
       scanId: scan_id
     };
   }
 
   private executeRepeater(tokens: Tokens): boolean {
+    if (this.repeaterProcess != null && this.repeaterProcess.exitCode == null) {
+      logger.debug(
+        `Repeater process is still runnning (PID ${this.repeaterProcess.pid}). Skippiing spawning another one`
+      );
+
+      return true;
+    }
+
     const node_exec = this.getNodeExec();
 
     try {
@@ -48,50 +59,46 @@ export class ScanEndpoint implements Endpoint {
         '--agent',
         `"${tokens.repeaterId}`
       ];
-      logger.debug(
+      logger.log(
         `Launching Repeater process with cmd: ${
           node_exec.cmd
         } and arguments: ${JSON.stringify(startArgs)}`
       );
 
-      const p: child_processes.ChildProcess = child_processes.spawn(
-        node_exec.cmd,
-        startArgs,
-        {
-          detached: true
-        }
-      );
+      this.repeaterProcess = child_processes.spawn(node_exec.cmd, startArgs, {
+        detached: true
+      });
 
-      p.stdout.on('data', (data) => {
+      this.repeaterProcess.stdout.on('data', (data) => {
         const line = data.toString();
         logger.debug(`Repeater (stdout): ${line}`);
       });
-      p.stderr.on('data', (data) => {
+      this.repeaterProcess.stderr.on('data', (data) => {
         const line = data.toString();
         logger.error(`Repeater (stderr): ${line}`);
       });
 
-      p.unref();
+      this.repeaterProcess.unref();
 
-      let fired: boolean = false;
+      let fired = false;
 
-      p.on('close', (code, signal) => {
+      this.repeaterProcess.on('close', (code, signal) => {
         !fired &&
           logger.log(
             `Repeater process closed with exit code ${code} due to ${signal} signal`
           );
         fired = true;
       });
-      p.on('error', (err: Error) => {
+      this.repeaterProcess.on('error', (err: Error) => {
         !fired &&
           logger.log(`Failed to start repeater process due to ${err.message}`);
         fired = true;
       });
-      p.on('exit', (code) => {
+      this.repeaterProcess.on('exit', (code) => {
         !fired && logger.log(`Repeater process exited with exit code ${code}`);
         fired = true;
       });
-      logger.log(`Launched Repeater process (PID ${p.pid})`);
+      logger.log(`Launched Repeater process (PID ${this.repeaterProcess.pid})`);
 
       return true;
     } catch (err) {

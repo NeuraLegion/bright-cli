@@ -1,9 +1,9 @@
 import { RouterFactory } from './Routes/RouterFactory';
+import logger from '../Utils/Logger';
 import Koa from 'koa';
 import json from 'koa-json';
 import bodyParser from 'koa-bodyparser';
 import serve from 'koa-static';
-import logger from '../Utils/Logger';
 
 export class KoaAppFactory {
   private routerFactory: RouterFactory;

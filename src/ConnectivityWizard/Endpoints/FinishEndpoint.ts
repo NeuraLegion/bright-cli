@@ -1,6 +1,6 @@
 import { Endpoint } from './Endpoint';
-import Koa from 'koa';
 import logger from '../../Utils/Logger';
+import Koa from 'koa';
 
 export class FinishEndpoint implements Endpoint {
   public handle(ctx: Koa.Context): Promise<void> {
