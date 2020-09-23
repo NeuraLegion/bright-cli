@@ -1,4 +1,5 @@
 import { Component, OnInit } from '@angular/core';
+import { FormBuilder, FormControl, FormGroup } from '@angular/forms';
 import { Router } from '@angular/router';
 import { ConnectivityStatus } from 'src/app/app.model';
 import { AppService } from 'src/app/app.service';
@@ -19,37 +20,51 @@ export class DiagnosticsComponent implements OnInit {
   scanFinished = false;
 
   constructor(private router: Router,
+              private formBuilder: FormBuilder,
               protected service: AppService) {}
 
+  testsForm: FormGroup;
   protocol = new ProtocolMessage();
   status: ConnectivityStatus;
 
   ngOnInit() {
+    this.initForm();
     this.restartTest(true);
+  }
+
+  initForm(): void{
+    this.testsForm = this.formBuilder.group({
+      tcp: new FormControl ({value: false, disabled: true}),
+      http: new FormControl ({value: false, disabled: true}),
+      auth: new FormControl ({value: false, disabled: true})
+    });
   }
 
   restartTest(sourceInit: boolean): void{
     this.restartValues();
-    this.service.getConnectivityStatus({type: 'tcp'}).subscribe((tcpRes: any) => {
+    this.service.getConnectivityStatus({type: Protocol.TCP}).subscribe((tcpRes: any) => {
+      this.testsForm.controls[Protocol.TCP].setValue(tcpRes.ok);
       this.status.tcp = tcpRes;
-      this.colorMessages (tcpRes, 'tcp');
+      this.colorMessages (tcpRes, Protocol.TCP);
       if (!sourceInit) {
-        this.colorMessages (tcpRes, 'tcp');
+        this.colorMessages (tcpRes, Protocol.TCP);
       }
       this.httpsMsg = `Validating that the connection to nexploit.app at port 443 is open`;
-      this.service.getConnectivityStatus({type: 'http'}).subscribe((httpRes: any) => {
+      this.service.getConnectivityStatus({type: Protocol.HTTP}).subscribe((httpRes: any) => {
+        this.testsForm.controls[Protocol.HTTP].setValue(httpRes.ok);
         this.status.https = httpRes;
-        this.colorMessages (httpRes, 'http');
+        this.colorMessages (httpRes, Protocol.HTTP);
         if (!sourceInit) {
-          this.colorMessages (httpRes, 'http');
+          this.colorMessages (httpRes, Protocol.HTTP);
         }
         this.authMsg = 'Verifying provided Token and Repeater ID';
-        this.service.getConnectivityStatus({type: 'auth'}).subscribe((authRes: any) => {
+        this.service.getConnectivityStatus({type: Protocol.AUTH}).subscribe((authRes: any) => {
+          this.testsForm.controls[Protocol.AUTH].setValue(authRes.ok);
           this.scanFinished = true;
           this.status.auth = authRes;
-          this.colorMessages (authRes, 'auth');
+          this.colorMessages (authRes, Protocol.AUTH);
           if (!sourceInit) {
-            this.colorMessages (authRes, 'auth');
+            this.colorMessages (authRes, Protocol.AUTH);
           }
         }, error => {
           console.log (error);
@@ -70,13 +85,13 @@ export class DiagnosticsComponent implements OnInit {
     } else {
       this.errorOccurred = true;
       switch (id) {
-        case 'tcp':
+        case Protocol.TCP:
           response.msg = this.protocol.transform(Protocol.TCP);
           break;
-        case 'http':
+        case Protocol.HTTP:
           response.msg = this.protocol.transform(Protocol.HTTP);
           break;
-        case 'auth':
+        case Protocol.AUTH:
           response.msg = this.protocol.transform(Protocol.AUTH);
           break;
       }
