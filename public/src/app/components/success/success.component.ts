@@ -10,11 +10,13 @@ import { AppService } from 'src/app/app.service';
 export class SuccessComponent implements OnInit {
 
   scanId: string;
+  processFinished;
 
   constructor(private router: Router,
               protected service: AppService) {}
 
   ngOnInit() {
+    this.processFinished = false;
     this.service.dataString$.subscribe(
       data => {
         this.scanId = data.scanId;
@@ -26,6 +28,7 @@ export class SuccessComponent implements OnInit {
       console.log (response);
     }, error => {
       console.log (error);
+      this.processFinished = true;
       alert('Wizard Completed! Do not close console window.');
     });
   }

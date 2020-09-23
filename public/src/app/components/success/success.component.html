@@ -11,7 +11,7 @@
 </div>
 <div class="content-container gap"></div>
 <div class="buttons-container">
-  <button class="button-prev" (click)="prev()">Prev</button>
-  <button (click)="finish()">Finish</button>
+  <button class="button-prev" (click)="prev()" [disabled]="processFinished">Prev</button>
+  <button (click)="finish()" [disabled]="processFinished">Finish</button>
 </div>
 
