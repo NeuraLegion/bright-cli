@@ -1,14 +1,10 @@
-import { Bus, RabbitMQBus } from '../Bus';
+import { Bus, RabbitMQBus, RepeaterStatusUpdated } from '../Bus';
 import { DefaultHandlerRegistry, SendRequestHandler } from '../Handlers';
 import { DefaultRequestExecutor } from '../RequestExecutor';
 import { Helpers } from '../Utils/Helpers';
 import logger from '../Utils/Logger';
 import { Arguments, Argv, CommandModule } from 'yargs';
-
-const onError = (e: Error) => {
-  logger.error(`Error during "repeater": ${e.message}`);
-  process.exit(1);
-};
+import Timer = NodeJS.Timer;
 
 export class RunRepeater implements CommandModule {
   public readonly command = 'repeater [options]';
@@ -27,9 +23,10 @@ export class RunRepeater implements CommandModule {
         requiresArg: true,
         demandOption: true
       })
-      .option('agent', {
+      .option('id', {
+        alias: 'agent',
         describe:
-          'ID of an existing agent which you want to use to run a new scan.',
+          'ID of an existing repeater which you want to use to run a new scan.',
         type: 'string',
         requiresArg: true,
         demandOption: true
@@ -54,7 +51,7 @@ export class RunRepeater implements CommandModule {
 
   public async handler(args: Arguments): Promise<void> {
     let bus: Bus;
-
+    let timer: Timer;
     let headers: Record<string, string> = {};
 
     try {
@@ -65,10 +62,21 @@ export class RunRepeater implements CommandModule {
       // noop
     }
 
+    const onError = (e: Error) => {
+      clearInterval(timer);
+      logger.error(`Error during "repeater": ${e.message}`);
+      process.exit(1);
+    };
+
     const stop: () => Promise<void> = async (): Promise<void> => {
+      clearInterval(timer);
+      await notify('disconnected');
       await bus.destroy();
       process.exit(0);
     };
+
+    const notify = (status: 'connected' | 'disconnected') =>
+      bus?.publish(new RepeaterStatusUpdated(args.id as string, status));
 
     try {
       const requestExecutor = new DefaultRequestExecutor({
@@ -82,12 +90,12 @@ export class RunRepeater implements CommandModule {
         {
           onError,
           exchange: 'EventBus',
-          clientQueue: `agent:${args.agent as string}`,
+          clientQueue: `agent:${args.id as string}`,
           connectTimeout: 10000,
           url: args.bus as string,
           proxyUrl: args.proxy as string,
           credentials: {
-            username: args.agent as string,
+            username: args.id as string,
             password: args.token as string
           }
         },
@@ -99,7 +107,12 @@ export class RunRepeater implements CommandModule {
       await bus.init();
 
       await bus.subscribe(SendRequestHandler);
+
+      timer = setInterval(() => notify('connected'), 10000);
+
+      await notify('connected');
     } catch (e) {
+      await notify('disconnected');
       onError(e);
     }
   }

@@ -73,7 +73,7 @@ export interface ScanConfig {
   headers?: { [p: string]: string };
   crawlerUrls?: string[];
   hostsFilter?: string[];
-  agents?: string[];
+  repeaters?: string[];
 }
 
 export enum IssueCategory {
