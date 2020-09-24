@@ -89,6 +89,7 @@ export class DiagnosticsComponent implements OnInit {
 
   resetValues(): void {
     this.scanFinished = false;
+    this.errorOccurred = false;
     this.httpsMsg = '';
     this.authMsg = '';
     this.status = {
