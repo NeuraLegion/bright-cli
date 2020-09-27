@@ -1,9 +1,8 @@
 import { Component, OnInit } from '@angular/core';
-import { FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { AbstractControl, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
 import { AppService } from 'src/app/app.service';
 
-const TARGET_URL = 'targetUrl';
 export enum Status {
   SUCCESS = 'success',
   FAIL = 'fail'
@@ -17,20 +16,26 @@ export enum Status {
 
 export class ScanComponent implements OnInit {
 
-  constructor(private router: Router,
+  constructor(private readonly router: Router,
               private formBuilder: FormBuilder,
-              protected service: AppService) {}
+              private readonly service: AppService) {}
 
   targetForm: FormGroup;
   progressMsg: string;
   url: string;
-  scanStarted;
-  scanFinished = false;
-  errorOccurred = false;
-  currentColor;
+  scanStarted: boolean;
+  scanFinished: boolean;
+  errorOccurred: boolean;
+  currentColor: Status;
 
-  ngOnInit() {
+  get targetUrl(): AbstractControl {
+    return this.targetForm.get('targetUrl');
+  }
+
+  ngOnInit(): void {
     this.scanStarted = false;
+    this.scanFinished = false;
+    this.errorOccurred = false;
     this.initForm();
     this.service.dataString$.subscribe(
       data => {
@@ -38,7 +43,7 @@ export class ScanComponent implements OnInit {
           this.url = data.url;
           this.progressMsg = data.progressMsg;
           this.currentColor = data.status;
-          this.targetForm.controls[TARGET_URL].setValue(data.targetUrl);
+          this.targetUrl.setValue(data.url);
         }
         if (this.currentColor === Status.SUCCESS) {
           this.scanFinished = true;
@@ -57,17 +62,16 @@ export class ScanComponent implements OnInit {
   onSubmit(): void {
     this.scanStarted = true;
     this.scanFinished = false;
-    this.url = `${this.targetForm.controls[TARGET_URL].value}`;
-    if (this.targetForm.controls[TARGET_URL].value === null) {
+    this.url = `${this.targetUrl.value}`;
+    if (this.url === null) {
       console.log('Error, target URL is invalid');
     } else {
       this.resetValues();
-      this.service.startScan({url: this.targetForm.controls[TARGET_URL].value}).subscribe((response: any) => {
+      this.service.startScan({url: this.url}).subscribe((response: any) => {
         this.scanFinished = true;
-        this.progressMsg = `Communication test to ${this.targetForm.controls[TARGET_URL].value} completed successfully, and a demo scan has started, click on Next to continue.`;
+        this.progressMsg = `Communication test to ${this.url} completed successfully, and a demo scan has started, click on Next to continue.`;
         this.currentColor = Status.SUCCESS;
         const scanInfo = {
-          targetUrl: this.targetForm.controls[TARGET_URL].value,
           url: this.url,
           scanId: response.scanId,
           progressMsg: this.progressMsg,
@@ -83,13 +87,12 @@ export class ScanComponent implements OnInit {
           case 500:
             break;
         }
-        this.progressMsg = this.progressMsg + `Connection to ${this.targetForm.controls[TARGET_URL].value} is blocked, please verify that the
+        this.progressMsg = this.progressMsg + `Connection to ${this.url} is blocked, please verify that the
         machine on which the Repeater is installed can reach the target server.
         Possible reasons for communication failure:
         ● Outbound communication to the host is blocked by a Firewall or network settings`;
         this.currentColor = Status.FAIL;
         const scanInfo = {
-          targetUrl: this.targetForm.controls[TARGET_URL].value,
           url: this.url,
           progressMsg: this.progressMsg,
           status: this.currentColor

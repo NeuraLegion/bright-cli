@@ -9,7 +9,7 @@
     <div class="form-control">
       <div class="form-group">
         <label for="url">Target URL:</label>
-        <input  formControlName="targetUrl" name="url" type="url" required id="url" oninvalid="this.setCustomValidity('Type target URL. Example - http://my.server.com:8080')" oninput="setCustomValidity('')"/>
+        <input  formControlName="targetUrl" name="url" type="url" required oninvalid="setCustomValidity('Type target URL. Example - http://my.server.com:8080')" oninput="setCustomValidity('')"/>
       </div>
     </div>
     <div class="button-move">
