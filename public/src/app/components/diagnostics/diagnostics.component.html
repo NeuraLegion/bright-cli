@@ -15,9 +15,9 @@
     <div class="form-control">
       <div>
         <ng-template ngFor let-type [ngForOf]="protocolTypes" let-i="index">
-          <br/><span class="span-msg">{{connectivityMessages[i]}}</span><br/>
+          <span class="span-msg">{{connectivityMessages[i]}}</span><br/>
           <ng-template [ngIf]="responseMessage">
-            <span id="type" class="span-msg" [ngClass]="responseMessage[type] === 'Success'? 'success':'fail'">{{responseMessage[type]}}</span>
+            <span id="type" class="span-msg" [ngClass]="responseMessage[type] === 'Success'? 'success':'fail'">{{responseMessage[type]}}</span><br/>
           </ng-template>
         </ng-template>
       </div>

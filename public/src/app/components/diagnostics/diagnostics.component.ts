@@ -64,45 +64,24 @@ export class DiagnosticsComponent implements OnInit {
     )
     .subscribe(([tcpRes, httpRes, authRes]) => {
       this.scanFinished = true;
-
-      this.testsForm.get([Protocol.TCP]).setValue(tcpRes.ok);
-      this.updateMessages (tcpRes, Protocol.TCP);
-
-      this.testsForm.get([Protocol.HTTP]).setValue(httpRes.ok);
-      this.updateMessages (httpRes, Protocol.HTTP);
-
-      this.testsForm.get([Protocol.AUTH]).setValue(authRes.ok);
-      this.updateMessages (authRes, Protocol.AUTH);
+      this.updateResponse (tcpRes, Protocol.TCP);
+      this.updateResponse (httpRes, Protocol.HTTP);
+      this.updateResponse (authRes, Protocol.AUTH);
     });
   }
 
-  updateMessages(response: any, id: string): void {
-      switch (id) {
-        case Protocol.TCP:
-          if (response.ok) {
-            this.responseMessage.tcp = 'Success';
-          } else {
-            this.errorOccurred = true;
-            this.responseMessage.tcp = this.protocol.transform(Protocol.TCP);
-          }
-          break;
-        case Protocol.HTTP:
-          if (response.ok) {
-            this.responseMessage.http = 'Success';
-          } else {
-            this.errorOccurred = true;
-            this.responseMessage.http = this.protocol.transform(Protocol.HTTP);
-          }
-          break;
-        case Protocol.AUTH:
-          if (response.ok) {
-            this.responseMessage.auth = 'Success';
-          } else {
-            this.errorOccurred = true;
-            this.responseMessage.auth = this.protocol.transform(Protocol.AUTH);
-          }
-          break;
+  updateResponse(response: any, id: string): void {
+    this.protocolTypes.forEach(type => {
+      if (type === id) {
+        this.testsForm.get([type]).setValue(response.ok);
+        if (response.ok) {
+          this.responseMessage[type] = 'Success';
+        } else {
+          this.errorOccurred = true;
+          this.responseMessage[type] = this.protocol.transform(type);
         }
+      }
+    });
   }
 
   resetValues(): void {
