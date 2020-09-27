@@ -3,9 +3,9 @@
   <h4>Please wait as we perform some tests</h4>
   <form [formGroup]="testsForm">
     <input type="checkbox" formControlName="tcp"/><label for="cb"></label>
-    <span>Connection to <b>amq.nexploit.app</b> at <b>port 5672</b></span><br/>
+    <span>Connection to <strong>amq.nexploit.app</strong> at <strong>port 5672</strong></span><br/>
     <input type="checkbox" formControlName="http"/><label for="cb"></label>
-    <span>Connection to <b>nexploit.app</b> at <b>port 443</b></span>
+    <span>Connection to <strong>nexploit.app</strong> at <strong>port 443</strong></span>
     <button class="button-scan button-move" (click)="restartTest()">Restart Test</button><br/>
     <input type="checkbox" formControlName="auth"/><label for="cb"></label>
     <span>Valid authentication credentials</span>

@@ -39,7 +39,7 @@ export class DiagnosticsComponent implements OnInit {
   testsForm: FormGroup;
   protocol = new ProtocolMessage();
 
-  ngOnInit() {
+  ngOnInit(): void {
     this.initForm();
     this.restartTest();
   }

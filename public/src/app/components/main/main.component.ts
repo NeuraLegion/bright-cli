@@ -27,7 +27,7 @@ export class MainComponent implements OnInit {
     return this.mainForm.get('authToken');
   }
 
-  ngOnInit() {
+  ngOnInit(): void{
     console.log('Welcome');
     this.initForm();
     this.service.getTokens().subscribe((response: Tokens) => {

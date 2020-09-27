@@ -15,7 +15,7 @@ export class SuccessComponent implements OnInit {
   constructor(private readonly router: Router,
               private readonly service: AppService) {}
 
-  ngOnInit() {
+  ngOnInit(): void {
     this.processFinished = false;
     this.service.dataString$.subscribe(
       data => {

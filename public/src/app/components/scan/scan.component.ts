@@ -32,7 +32,7 @@ export class ScanComponent implements OnInit {
     return this.targetForm.get('targetUrl');
   }
 
-  ngOnInit() {
+  ngOnInit(): void {
     this.scanStarted = false;
     this.scanFinished = false;
     this.errorOccurred = false;
