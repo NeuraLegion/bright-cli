@@ -24,7 +24,6 @@ export class AMQConnectivity implements Connectivity {
         {
           url: this.authEndpoint,
           timeout: this.connection_timeout,
-          rejectUnauthorized: false,
           form: {
             username: tokens.repeaterId,
             password: tokens.authToken

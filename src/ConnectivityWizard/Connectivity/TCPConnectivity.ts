@@ -23,6 +23,7 @@ export class TCPConnectivity implements Connectivity {
         `TCP connectivity test - openning socket to ${this.fqdn}:${this.port}`
       );
       const socket: Socket = new Socket();
+      socket.setNoDelay(false);
       socket.setTimeout(this.connection_timeout, () => {
         logger.debug(
           `TCP connectivity test - reached socket timeout. Connection failed.`
