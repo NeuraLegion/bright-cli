@@ -32,7 +32,7 @@ export class DiagnosticsComponent implements OnInit {
     auth: null
   };
 
-  constructor(private router: Router,
+  constructor(private readonly router: Router,
               private formBuilder: FormBuilder,
               private readonly service: AppService) {}
 
@@ -53,9 +53,6 @@ export class DiagnosticsComponent implements OnInit {
   }
 
   restartTest(): void {
-    console.log (this.protocolTypes);
-    console.log (this.connectivityMessages);
-
     this.resetValues();
     forkJoin([
       this.service.getConnectivityStatus({type: Protocol.TCP}),

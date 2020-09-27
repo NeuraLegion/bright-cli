@@ -3,15 +3,13 @@ export interface ItemStatus {
     msg?: string;
 }
 
-export interface ConnectivityStatus {
-    tcp: ItemStatus;
-    https: ItemStatus;
-    auth: ItemStatus;
-}
-
 export interface Tokens {
     authToken: string;
     repeaterId: string;
+}
+
+export interface Scan {
+    scanId: string;
 }
 
 export interface ConnectivityResponse {

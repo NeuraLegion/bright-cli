@@ -10,10 +10,10 @@ import { AppService } from 'src/app/app.service';
 export class SuccessComponent implements OnInit {
 
   scanId: string;
-  processFinished;
+  processFinished: boolean;
 
-  constructor(private router: Router,
-              protected service: AppService) {}
+  constructor(private readonly router: Router,
+              private readonly service: AppService) {}
 
   ngOnInit() {
     this.processFinished = false;
