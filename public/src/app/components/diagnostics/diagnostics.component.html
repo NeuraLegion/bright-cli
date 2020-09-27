@@ -14,14 +14,11 @@
   <ng-container>
     <div class="form-control">
       <div>
-        <ng-template [ngIf]="status.tcp">
-          {{tcpMsg}}<br/><span id="tcp" class="span-msg" [ngClass]="status.tcp.ok? 'success':'fail'">{{status.tcp.msg}}</span><br/>
-        </ng-template>
-        <ng-template [ngIf]="status.https">
-          {{httpsMsg}}<br/><span id="http" class="span-msg" [ngClass]="status.https.ok? 'success':'fail'">{{status.https.msg}}</span><br/>
-        </ng-template>
-        <ng-template [ngIf]="status.auth">
-          {{authMsg}}<br/><span id="auth" class="span-msg" [ngClass]="status.auth.ok? 'success':'fail'">{{status.auth.msg}}</span><br/>
+        <ng-template ngFor let-type [ngForOf]="protocolTypes" let-i="index">
+          <br/><span class="span-msg">{{connectivityMessages[i]}}</span><br/>
+          <ng-template [ngIf]="responseMessage">
+            <span id="type" class="span-msg" [ngClass]="responseMessage[type] === 'Success'? 'success':'fail'">{{responseMessage[type]}}</span>
+          </ng-template>
         </ng-template>
       </div>
     </div>

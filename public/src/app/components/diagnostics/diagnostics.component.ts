@@ -1,9 +1,16 @@
 import { Component, OnInit } from '@angular/core';
-import { FormBuilder, FormControl, FormGroup } from '@angular/forms';
+import { FormBuilder, FormGroup } from '@angular/forms';
 import { Router } from '@angular/router';
-import { ConnectivityStatus } from 'src/app/app.model';
+import { ConnectivityResponse } from 'src/app/app.model';
 import { AppService } from 'src/app/app.service';
 import { ProtocolMessage, Protocol } from '../../shared/ProtocolMessage';
+import { forkJoin } from 'rxjs';
+
+export enum ConnectivityMessages {
+  tcp = 'Validating that the connection to amq.nexploit.app at port 5672 is open',
+  http = 'Validating that the connection to nexploit.app at port 443 is open',
+  auth = 'Verifying provided Token and Repeater ID'
+}
 
 @Component({
   selector: 'app-diagnostics',
@@ -13,19 +20,24 @@ import { ProtocolMessage, Protocol } from '../../shared/ProtocolMessage';
 
 export class DiagnosticsComponent implements OnInit {
 
-  tcpMsg = 'Validating that the connection to amq.nexploit.app at port 5672 is open';
+  public readonly protocolTypes = Object.values(Protocol);
+  public readonly connectivityMessages = Object.values(ConnectivityMessages);
+
   errorOccurred = false;
-  httpsMsg = '';
-  authMsg = '';
   scanFinished = false;
+
+  responseMessage: ConnectivityResponse = {
+    tcp: null,
+    http: null,
+    auth: null
+  };
 
   constructor(private router: Router,
               private formBuilder: FormBuilder,
-              protected service: AppService) {}
+              private readonly service: AppService) {}
 
   testsForm: FormGroup;
   protocol = new ProtocolMessage();
-  status: ConnectivityStatus;
 
   ngOnInit() {
     this.initForm();
@@ -34,68 +46,75 @@ export class DiagnosticsComponent implements OnInit {
 
   initForm(): void{
     this.testsForm = this.formBuilder.group({
-      tcp: new FormControl ({value: false, disabled: true}),
-      http: new FormControl ({value: false, disabled: true}),
-      auth: new FormControl ({value: false, disabled: true})
+      [Protocol.TCP]: [false, { disabled: true }],
+      [Protocol.HTTP]: [false, { disabled: true }],
+      [Protocol.AUTH]: [false, { disabled: true }]
     });
   }
 
-  restartTest(): void{
+  restartTest(): void {
+    console.log (this.protocolTypes);
+    console.log (this.connectivityMessages);
+
     this.resetValues();
-    this.service.getConnectivityStatus({type: Protocol.TCP}).subscribe((tcpRes: any) => {
-      this.testsForm.controls[Protocol.TCP].setValue(tcpRes.ok);
-      this.status.tcp = tcpRes;
+    forkJoin([
+      this.service.getConnectivityStatus({type: Protocol.TCP}),
+      this.service.getConnectivityStatus({type: Protocol.HTTP}),
+      this.service.getConnectivityStatus({type: Protocol.AUTH})]
+    )
+    .subscribe(([tcpRes, httpRes, authRes]) => {
+      this.scanFinished = true;
+
+      this.testsForm.get([Protocol.TCP]).setValue(tcpRes.ok);
       this.updateMessages (tcpRes, Protocol.TCP);
-      this.httpsMsg = `Validating that the connection to nexploit.app at port 443 is open`;
-      this.service.getConnectivityStatus({type: Protocol.HTTP}).subscribe((httpRes: any) => {
-        this.testsForm.controls[Protocol.HTTP].setValue(httpRes.ok);
-        this.status.https = httpRes;
-        this.updateMessages (httpRes, Protocol.HTTP);
-        this.authMsg = 'Verifying provided Token and Repeater ID';
-        this.service.getConnectivityStatus({type: Protocol.AUTH}).subscribe((authRes: any) => {
-          this.testsForm.controls[Protocol.AUTH].setValue(authRes.ok);
-          this.scanFinished = true;
-          this.status.auth = authRes;
-          this.updateMessages (authRes, Protocol.AUTH);
-        }, error => {
-          console.log (error);
-        });
-      }, error => {
-        console.log (error);
-      });
-    }, error => {
-      console.log (error);
+
+      this.testsForm.get([Protocol.HTTP]).setValue(httpRes.ok);
+      this.updateMessages (httpRes, Protocol.HTTP);
+
+      this.testsForm.get([Protocol.AUTH]).setValue(authRes.ok);
+      this.updateMessages (authRes, Protocol.AUTH);
     });
   }
 
   updateMessages(response: any, id: string): void {
-    if (response.ok) {
-      response.msg = 'Success';
-    } else {
-      this.errorOccurred = true;
       switch (id) {
         case Protocol.TCP:
-          response.msg = this.protocol.transform(Protocol.TCP);
+          if (response.ok) {
+            this.responseMessage.tcp = 'Success';
+          } else {
+            this.errorOccurred = true;
+            this.responseMessage.tcp = this.protocol.transform(Protocol.TCP);
+          }
           break;
         case Protocol.HTTP:
-          response.msg = this.protocol.transform(Protocol.HTTP);
+          if (response.ok) {
+            this.responseMessage.http = 'Success';
+          } else {
+            this.errorOccurred = true;
+            this.responseMessage.http = this.protocol.transform(Protocol.HTTP);
+          }
           break;
         case Protocol.AUTH:
-          response.msg = this.protocol.transform(Protocol.AUTH);
+          if (response.ok) {
+            this.responseMessage.auth = 'Success';
+          } else {
+            this.errorOccurred = true;
+            this.responseMessage.auth = this.protocol.transform(Protocol.AUTH);
+          }
           break;
-      }
-    }
+        }
   }
 
   resetValues(): void {
     this.scanFinished = false;
     this.errorOccurred = false;
-    this.httpsMsg = '';
-    this.authMsg = '';
-    this.status = {
-      auth: { ok: false },
-      https: { ok: false },
-      tcp: { ok: false }
+    this.protocolTypes.forEach(type => {
+      this.testsForm.get([type]).setValue(false);
+    });
+    this.responseMessage = {
+      auth: null,
+      http: null,
+      tcp: null
     };
   }
 
