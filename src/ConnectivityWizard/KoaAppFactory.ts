@@ -4,6 +4,7 @@ import Koa from 'koa';
 import json from 'koa-json';
 import bodyParser from 'koa-bodyparser';
 import serve from 'koa-static';
+import send from 'koa-send';
 
 export class KoaAppFactory {
   private routerFactory: RouterFactory;
@@ -21,8 +22,11 @@ export class KoaAppFactory {
     this.app.use(serve(static_path));
     this.app.use(json());
     this.app.use(bodyParser());
+    this.app.use(async (ctx: Koa.Context, next: Koa.Next) => {
+      await send(ctx, '/index.html', { root: static_path });
+      await next();
+    });
     this.app.use((await this.routerFactory.createRouter()).routes());
-
     return this.app;
   }
 }

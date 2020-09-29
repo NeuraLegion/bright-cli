@@ -1,41 +1,76 @@
 import { Injectable } from '@angular/core';
 import { ActivatedRouteSnapshot, CanActivate, Router } from '@angular/router';
 
-export enum Path {
-  HOME = '/',
-  DIAGNOSTICS = 'diagnostics',
-  SCAN = 'scan',
-  SUCCESS = 'success'
-}
-
 @Injectable()
 export class RouteGuard implements CanActivate {
+  private static readonly HOME_PATH = '/';
+  private static readonly DIAGNOSTICS_PATH = '/diagnostics';
+  private static readonly SCAN_PATH = '/scan';
+  private static readonly SUCCESS_PATH = '/success';
+
+  private homeVisited: boolean = false;
+
   constructor(private readonly router: Router) {}
 
   canActivate(next: ActivatedRouteSnapshot): boolean {
-    const currentRoute = this.router.url;
-    const nextRoute = next.url[0] ? next.url[0].path : Path.HOME;
+    const currentRoute: string = this.router.url;
+    const nextRoute = next.url[0]
+      ? '/' + next.url[0].path
+      : RouteGuard.HOME_PATH;
+
     switch (currentRoute) {
-      case `/${Path.DIAGNOSTICS}`:
-        if (nextRoute === Path.SCAN || nextRoute === Path.HOME) {
-          return true;
-        } else {
-          return false;
-        }
-      case `/${Path.SCAN}`:
-        if (nextRoute === Path.SUCCESS || nextRoute === Path.DIAGNOSTICS) {
-          return true;
-        } else {
-          return false;
-        }
-      case `/${Path.SUCCESS}`:
-        if (nextRoute === Path.SCAN) {
-          return true;
-        } else {
-          return false;
-        }
+      case RouteGuard.HOME_PATH:
+        return this.validateHomePath(nextRoute);
+      case RouteGuard.DIAGNOSTICS_PATH:
+        return this.validateDiagnosticPath(nextRoute);
+      case RouteGuard.SCAN_PATH:
+        return this.validateScanPath(nextRoute);
+      case RouteGuard.SUCCESS_PATH:
+        return this.validateSuccessPath(nextRoute);
       default:
         return true;
+    }
+  }
+
+  private validateHomePath(nextRoute: string): boolean {
+    if (nextRoute === RouteGuard.HOME_PATH) {
+      this.homeVisited = true;
+
+      return true;
+    } else {
+      this.router.navigateByUrl(RouteGuard.HOME_PATH);
+
+      return false;
+    }
+  }
+
+  private validateDiagnosticPath(nextRoute: string): boolean {
+    if (
+      nextRoute === RouteGuard.SCAN_PATH ||
+      nextRoute === RouteGuard.HOME_PATH
+    ) {
+      return true;
+    } else {
+      return false;
+    }
+  }
+
+  private validateScanPath(nextRoute: string): boolean {
+    if (
+      nextRoute === RouteGuard.SUCCESS_PATH ||
+      nextRoute === RouteGuard.DIAGNOSTICS_PATH
+    ) {
+      return true;
+    } else {
+      return false;
+    }
+  }
+
+  private validateSuccessPath(nextRoute: string): boolean {
+    if (nextRoute === RouteGuard.SCAN_PATH) {
+      return true;
+    } else {
+      return false;
     }
   }
 }

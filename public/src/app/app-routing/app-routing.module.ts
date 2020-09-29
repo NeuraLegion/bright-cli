@@ -14,7 +14,8 @@ const routes: Routes = [
     canActivate: [RouteGuard]
   },
   { path: 'scan', component: ScanComponent, canActivate: [RouteGuard] },
-  { path: 'success', component: SuccessComponent, canActivate: [RouteGuard] }
+  { path: 'success', component: SuccessComponent, canActivate: [RouteGuard] },
+  { path: '**', component: MainComponent, canActivate: [RouteGuard] }
 ];
 
 @NgModule({
