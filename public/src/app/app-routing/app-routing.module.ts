@@ -1,10 +1,10 @@
-import { NgModule } from '@angular/core';
-import { RouterModule, Routes } from '@angular/router';
+import { RouteGuard } from './RouteGuard';
 import { DiagnosticsComponent } from '../components/diagnostics/diagnostics.component';
 import { MainComponent } from '../components/main/main.component';
 import { ScanComponent } from '../components/scan/scan.component';
 import { SuccessComponent } from '../components/success/success.component';
-import { RouteGuard } from './RouteGuard';
+import { NgModule } from '@angular/core';
+import { RouterModule, Routes } from '@angular/router';
 
 const routes: Routes = [
   { path: '', component: MainComponent, canActivate: [RouteGuard] },

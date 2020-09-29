@@ -1,3 +1,5 @@
+import { Status } from './components/scan/scan.component';
+
 export interface ItemStatus {
   ok: boolean;
   msg?: string;

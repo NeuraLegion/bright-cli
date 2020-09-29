@@ -1,15 +1,15 @@
+import { ProtocolMessage, Protocol } from '../../shared/ProtocolMessage';
 import { Component, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup } from '@angular/forms';
 import { Router } from '@angular/router';
-import { ConnectivityResponse } from 'src/app/app.model';
+import { ConnectivityResponse, ItemStatus } from 'src/app/app.model';
 import { AppService } from 'src/app/app.service';
-import { ProtocolMessage, Protocol } from '../../shared/ProtocolMessage';
 import { forkJoin } from 'rxjs';
 
 export enum ConnectivityMessages {
-  tcp = 'Validating that the connection to amq.nexploit.app at port 5672 is open',
-  http = 'Validating that the connection to nexploit.app at port 443 is open',
-  auth = 'Verifying provided Token and Repeater ID'
+  TCP = 'Validating that the connection to amq.nexploit.app at port 5672 is open',
+  HTTP = 'Validating that the connection to nexploit.app at port 443 is open',
+  AUTH = 'Verifying provided Token and Repeater ID'
 }
 
 @Component({
@@ -30,14 +30,14 @@ export class DiagnosticsComponent implements OnInit {
     auth: null
   };
 
+  public testsForm: FormGroup;
+  private readonly protocolMessage = new ProtocolMessage();
+
   constructor(
     private readonly router: Router,
     private formBuilder: FormBuilder,
     private readonly service: AppService
   ) {}
-
-  public testsForm: FormGroup;
-  private readonly protocolMessage = new ProtocolMessage();
 
   ngOnInit(): void {
     this.initForm();
@@ -58,7 +58,7 @@ export class DiagnosticsComponent implements OnInit {
       this.service.getConnectivityStatus({ type: Protocol.TCP }),
       this.service.getConnectivityStatus({ type: Protocol.HTTP }),
       this.service.getConnectivityStatus({ type: Protocol.AUTH })
-    ]).subscribe(([tcpRes, httpRes, authRes]) => {
+    ]).subscribe(([tcpRes, httpRes, authRes]: ItemStatus[]): void => {
       this.scanFinished = true;
       this.updateResponse(tcpRes, Protocol.TCP);
       this.updateResponse(httpRes, Protocol.HTTP);
@@ -66,7 +66,7 @@ export class DiagnosticsComponent implements OnInit {
     });
   }
 
-  updateResponse(response: any, id: string): void {
+  updateResponse(response: ItemStatus, id: string): void {
     this.protocolTypes.forEach((type) => {
       if (type === id) {
         this.testsForm.get([type]).setValue(response.ok);

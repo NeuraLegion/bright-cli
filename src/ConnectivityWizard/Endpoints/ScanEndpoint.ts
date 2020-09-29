@@ -177,7 +177,7 @@ export class ScanEndpoint implements Endpoint {
     //to support standalone 'node ./dist/index.js configure' execution
     for (let i = 0; i < process.argv.length; i++) {
       if (process.argv[i] === 'configure') {
-        break;
+      break;
       }
       startArgs.push(process.argv[i]);
     }

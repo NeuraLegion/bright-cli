@@ -1,3 +1,4 @@
+import { VisibilityToggle } from '../../shared/VisibilityToggle';
 import { Component, OnInit } from '@angular/core';
 import {
   AbstractControl,
@@ -8,7 +9,6 @@ import {
 import { Router } from '@angular/router';
 import { Tokens } from 'src/app/app.model';
 import { AppService } from 'src/app/app.service';
-import { VisibilityToggle } from '../../shared/VisibilityToggle';
 
 @Component({
   selector: 'app-main',
@@ -18,7 +18,7 @@ import { VisibilityToggle } from '../../shared/VisibilityToggle';
 export class MainComponent implements OnInit {
   public visibilityToggle = new VisibilityToggle();
   public mainForm: FormGroup;
-  private UUIDv4 = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/;
+  private UUID_V4 = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/;
 
   constructor(
     private readonly router: Router,
@@ -52,7 +52,7 @@ export class MainComponent implements OnInit {
   initForm(): void {
     this.mainForm = this.formBuilder.group({
       authToken: ['', [Validators.required]],
-      repeaterId: ['', [Validators.required, Validators.pattern(this.UUIDv4)]]
+      repeaterId: ['', [Validators.required, Validators.pattern(this.UUID_V4)]]
     });
   }
 
@@ -65,7 +65,7 @@ export class MainComponent implements OnInit {
         repeaterId: this.repeaterId.value
       };
       this.service.saveTokens(actionPayload).subscribe(
-        (response: any) => {
+        () => {
           this.router.navigateByUrl('diagnostics');
         },
         (error) => {

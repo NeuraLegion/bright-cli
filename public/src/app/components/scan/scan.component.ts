@@ -1,3 +1,4 @@
+import { ScanId } from '../../../../../src/ConnectivityWizard/Entities/ScanId';
 import { Component, OnInit } from '@angular/core';
 import {
   AbstractControl,
@@ -7,6 +8,13 @@ import {
 } from '@angular/forms';
 import { Router } from '@angular/router';
 import { AppService } from 'src/app/app.service';
+
+export interface ScanInfo {
+  url: string;
+  scanId: string;
+  progressMsg: string;
+  status: Status;
+}
 
 export enum Status {
   SUCCESS = 'success',
@@ -19,12 +27,6 @@ export enum Status {
   styleUrls: ['./scan.component.scss']
 })
 export class ScanComponent implements OnInit {
-  constructor(
-    private readonly router: Router,
-    private formBuilder: FormBuilder,
-    private readonly service: AppService
-  ) {}
-
   public targetForm: FormGroup;
   progressMsg: string;
   url: string;
@@ -32,6 +34,12 @@ export class ScanComponent implements OnInit {
   scanFinished: boolean;
   errorOccurred: boolean;
   currentColor: Status;
+
+  constructor(
+    private readonly router: Router,
+    private formBuilder: FormBuilder,
+    private readonly service: AppService
+  ) {}
 
   get targetUrl(): AbstractControl {
     return this.targetForm.get('targetUrl');
@@ -72,7 +80,7 @@ export class ScanComponent implements OnInit {
     } else {
       this.resetValues();
       this.service.startScan({ url: this.url }).subscribe(
-        (response: any) => {
+        (response: ScanId) => {
           this.scanFinished = true;
           this.progressMsg = this.transform(200);
           this.currentColor = Status.SUCCESS;
@@ -92,8 +100,8 @@ export class ScanComponent implements OnInit {
     }
   }
 
-  subscribeInfo(message: string, status: string, scanId?: string): void {
-    const scanInfo = {
+  subscribeInfo(message: string, status: Status, scanId?: string): void {
+    const scanInfo: ScanInfo = {
       url: this.url,
       scanId,
       progressMsg: message,
@@ -115,7 +123,7 @@ export class ScanComponent implements OnInit {
     this.progressMsg = '';
   }
 
-  setCustomValidity(element, message): void {
+  setCustomValidity(element: any, message: any): void {
     element.target.setCustomValidity(message);
   }
 

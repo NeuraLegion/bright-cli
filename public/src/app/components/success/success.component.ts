@@ -24,7 +24,7 @@ export class SuccessComponent implements OnInit {
   }
 
   finish(): void {
-    this.service.finishProcess({}).subscribe(
+    this.service.finishProcess().subscribe(
       (response: any) => {
         console.log(response);
       },
