@@ -1,4 +1,4 @@
-import { ItemStatus, Scan, Tokens } from './app.model';
+import { ItemStatus, ScanId, Tokens } from './app.model';
 import { ScannedUrl } from '../../../src/ConnectivityWizard/Entities/ScannedUrl';
 import { ConnectivityTest } from '../../../src/ConnectivityWizard/Entities/ConnectivityTest';
 import { ScanInfo } from './components/scan/scan.component';
@@ -17,7 +17,7 @@ export class AppService {
   private dataStringSource: BehaviorSubject<ScanInfo>;
 
   constructor(private readonly http: HttpClient) {
-    this.dataStringSource = new BehaviorSubject<any>(undefined);
+    this.dataStringSource = new BehaviorSubject<ScanInfo>(undefined);
     this.dataString$ = this.dataStringSource.asObservable();
   }
 
@@ -33,8 +33,8 @@ export class AppService {
     return this.http.post<ItemStatus>(`/api/connectivity-status`, type);
   }
 
-  startScan(payload: ScannedUrl): Observable<Scan> {
-    return this.http.post<Scan>(`/api/scan`, payload);
+  startScan(payload: ScannedUrl): Observable<ScanId> {
+    return this.http.post<ScanId>(`/api/scan`, payload);
   }
 
   finishProcess(): Observable<void> {

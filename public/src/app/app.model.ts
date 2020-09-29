@@ -1,18 +1,6 @@
-import { Status } from './components/scan/scan.component';
-
-export interface ItemStatus {
-  ok: boolean;
-  msg?: string;
-}
-
-export interface Tokens {
-  authToken: string;
-  repeaterId: string;
-}
-
-export interface Scan {
-  scanId: string;
-}
+export { ScanId } from '../../../src/ConnectivityWizard/Entities/ScanId';
+export { ItemStatus } from '../../../src/ConnectivityWizard/Entities/ConnectivityStatus';
+export { Tokens } from '../../../src/ConnectivityWizard/Entities/Tokens';
 
 export interface ConnectivityResponse {
   tcp: string;

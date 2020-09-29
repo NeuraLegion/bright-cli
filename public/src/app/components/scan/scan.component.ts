@@ -123,7 +123,7 @@ export class ScanComponent implements OnInit {
     this.progressMsg = '';
   }
 
-  setCustomValidity(element: any, message: any): void {
+  setCustomValidity(element: any, message: string): void {
     element.target.setCustomValidity(message);
   }
 
