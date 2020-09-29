@@ -1,5 +1,5 @@
 <div class="content-container">
-  <h3 class="upper">Start your first scan</h3>  
+  <h3 class="upper">Start your first scan</h3>
   <h4>
     This last step is meant to validate the connection to your local target
     application.<br />
@@ -9,7 +9,19 @@
     <div class="form-control">
       <div class="form-group">
         <label for="url">Target URL:</label>
-        <input formControlName="targetUrl" name="url" type="url" required (invalid)="setCustomValidity($event, 'Type target URL. Example - http://my.server.com:8080')" (input)="setCustomValidity($event, '')"/>
+        <input
+          formControlName="targetUrl"
+          name="url"
+          type="url"
+          required
+          (invalid)="
+            setCustomValidity(
+              $event,
+              'Type target URL. Example - http://my.server.com:8080'
+            )
+          "
+          (input)="setCustomValidity($event, '')"
+        />
       </div>
     </div>
     <div class="button-move">
@@ -19,18 +31,26 @@
 </div>
 <div class="content-container">
   <h4 class="upper">Progress</h4>
-    <div class="form-control progress">
-      <div>
+  <div class="form-control progress">
+    <div>
       <ng-template [ngIf]="scanStarted || currentColor">
-        Trying to reach {{url}}...<br/>
+        Trying to reach {{ url }}...<br />
       </ng-template>
-      <p id="response-communication" class="response" [ngClass]="(currentColor == 'success')? 'success':'fail'"> {{progressMsg}} </p>
-  </div>
+      <p
+        id="response-communication"
+        class="response"
+        [ngClass]="currentColor == 'success' ? 'success' : 'fail'"
+      >
+        {{ progressMsg }}
+      </p>
+    </div>
   </div>
 </div>
 <div class="gap"></div>
 
 <div class="buttons-container">
   <button class="button-prev" (click)="prev()">Prev</button>
-  <button (click)="next()" [disabled]="!scanFinished || errorOccurred">Next</button>
+  <button (click)="next()" [disabled]="!scanFinished || errorOccurred">
+    Next
+  </button>
 </div>

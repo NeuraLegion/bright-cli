@@ -10,8 +10,19 @@ import { DiagnosticsComponent } from './components/diagnostics/diagnostics.compo
 import { RouteGuard } from './app-routing/RouteGuard';
 
 @NgModule({
-  declarations: [AppComponent, MainComponent, ScanComponent, DiagnosticsComponent],
-  imports: [BrowserModule, FormsModule, AppRoutingModule, HttpClientModule, ReactiveFormsModule],
+  declarations: [
+    AppComponent,
+    MainComponent,
+    ScanComponent,
+    DiagnosticsComponent
+  ],
+  imports: [
+    BrowserModule,
+    FormsModule,
+    AppRoutingModule,
+    HttpClientModule,
+    ReactiveFormsModule
+  ],
   providers: [RouteGuard],
   bootstrap: [AppComponent]
 })

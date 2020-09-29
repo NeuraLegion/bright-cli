@@ -15,9 +15,13 @@
           required
           id="token"
           autocomplete="on"
-          [ngClass]="authToken.errors? 'error': 'clean'"
+          [ngClass]="authToken.errors ? 'error' : 'clean'"
         />
-        <span id="toggleEye-1" class="fa fa-fw fa-eye field-icon toggle-password" (click)="visibilityToggle.toggleEye('token', 'toggleEye-1')"></span>
+        <span
+          id="toggleEye-1"
+          class="fa fa-fw fa-eye field-icon toggle-password"
+          (click)="visibilityToggle.toggleEye('token', 'toggleEye-1')"
+        ></span>
       </div>
       <div class="form-group">
         <label for="repeater">Repeater ID:</label>
@@ -28,15 +32,25 @@
           required
           id="repeater"
           autocomplete="on"
-          [ngClass]="repeaterId.errors? 'error': 'clean'"
+          [ngClass]="repeaterId.errors ? 'error' : 'clean'"
         />
-        <span id="toggleEye-2" class="fa fa-fw fa-eye field-icon toggle-password" (click)="visibilityToggle.toggleEye('repeater', 'toggleEye-2')"></span>
-        </div>
+        <span
+          id="toggleEye-2"
+          class="fa fa-fw fa-eye field-icon toggle-password"
+          (click)="visibilityToggle.toggleEye('repeater', 'toggleEye-2')"
+        ></span>
+      </div>
     </div>
     <div class="content-container gap"></div>
     <div class="buttons-container">
       <button class="button-prev" disabled>Prev</button>
-      <button type="submit" [disabled]="repeaterId.errors || authToken.errors" class="button">Next</button>
+      <button
+        type="submit"
+        [disabled]="repeaterId.errors || authToken.errors"
+        class="button"
+      >
+        Next
+      </button>
     </div>
   </form>
 </div>

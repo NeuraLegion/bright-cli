@@ -1,5 +1,10 @@
 import { Component, OnInit } from '@angular/core';
-import { AbstractControl, FormBuilder, FormGroup, Validators } from '@angular/forms';
+import {
+  AbstractControl,
+  FormBuilder,
+  FormGroup,
+  Validators
+} from '@angular/forms';
 import { Router } from '@angular/router';
 import { AppService } from 'src/app/app.service';
 
@@ -13,12 +18,12 @@ export enum Status {
   templateUrl: './scan.component.html',
   styleUrls: ['./scan.component.scss']
 })
-
 export class ScanComponent implements OnInit {
-
-  constructor(private readonly router: Router,
-              private formBuilder: FormBuilder,
-              private readonly service: AppService) {}
+  constructor(
+    private readonly router: Router,
+    private formBuilder: FormBuilder,
+    private readonly service: AppService
+  ) {}
 
   public targetForm: FormGroup;
   progressMsg: string;
@@ -37,23 +42,22 @@ export class ScanComponent implements OnInit {
     this.scanFinished = false;
     this.errorOccurred = false;
     this.initForm();
-    this.service.dataString$.subscribe(
-      data => {
-        if (data) {
-          this.url = data.url;
-          this.progressMsg = data.progressMsg;
-          this.currentColor = data.status;
-          this.targetUrl.setValue(data.url);
-        }
-        if (this.currentColor === Status.SUCCESS) {
-          this.scanFinished = true;
-        } else {
-          this.scanFinished = false;
-        }
-      });
+    this.service.dataString$.subscribe((data) => {
+      if (data) {
+        this.url = data.url;
+        this.progressMsg = data.progressMsg;
+        this.currentColor = data.status;
+        this.targetUrl.setValue(data.url);
+      }
+      if (this.currentColor === Status.SUCCESS) {
+        this.scanFinished = true;
+      } else {
+        this.scanFinished = false;
+      }
+    });
   }
 
-  initForm(): void{
+  initForm(): void {
     this.targetForm = this.formBuilder.group({
       targetUrl: ['', [Validators.required]]
     });
@@ -67,17 +71,24 @@ export class ScanComponent implements OnInit {
       console.log('Error, target URL is invalid');
     } else {
       this.resetValues();
-      this.service.startScan({url: this.url}).subscribe((response: any) => {
-        this.scanFinished = true;
-        this.progressMsg = this.transform(200);
-        this.currentColor = Status.SUCCESS;
-        this.subscribeInfo(this.progressMsg, this.currentColor, response.scanId);
-      }, error => {
-        this.errorOccurred = true;
-        this.progressMsg = this.transform(error.status);
-        this.currentColor = Status.FAIL;
-        this.subscribeInfo(this.progressMsg, this.currentColor);
-      });
+      this.service.startScan({ url: this.url }).subscribe(
+        (response: any) => {
+          this.scanFinished = true;
+          this.progressMsg = this.transform(200);
+          this.currentColor = Status.SUCCESS;
+          this.subscribeInfo(
+            this.progressMsg,
+            this.currentColor,
+            response.scanId
+          );
+        },
+        (error) => {
+          this.errorOccurred = true;
+          this.progressMsg = this.transform(error.status);
+          this.currentColor = Status.FAIL;
+          this.subscribeInfo(this.progressMsg, this.currentColor);
+        }
+      );
     }
   }
 

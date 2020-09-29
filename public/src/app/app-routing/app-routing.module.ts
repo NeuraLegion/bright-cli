@@ -8,7 +8,11 @@ import { RouteGuard } from './RouteGuard';
 
 const routes: Routes = [
   { path: '', component: MainComponent, canActivate: [RouteGuard] },
-  { path: 'diagnostics', component: DiagnosticsComponent , canActivate: [RouteGuard]},
+  {
+    path: 'diagnostics',
+    component: DiagnosticsComponent,
+    canActivate: [RouteGuard]
+  },
   { path: 'scan', component: ScanComponent, canActivate: [RouteGuard] },
   { path: 'success', component: SuccessComponent, canActivate: [RouteGuard] }
 ];

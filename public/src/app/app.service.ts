@@ -34,7 +34,7 @@ export class AppService {
     return this.http.post<any>(`api/finish`, payload);
   }
 
-  saveScanInfo(value): void{
+  saveScanInfo(value): void {
     this.dataStringSource.next(value);
   }
 }

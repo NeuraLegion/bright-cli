@@ -2,12 +2,20 @@
   <h3 class="upper">Running connectivity diagnostics</h3>
   <h4>Please wait as we perform some tests</h4>
   <form [formGroup]="testsForm">
-    <input type="checkbox" formControlName="tcp"/><label for="cb"></label>
-    <span>Connection to <strong>amq.nexploit.app</strong> at <strong>port 5672</strong></span><br/>
-    <input type="checkbox" formControlName="http"/><label for="cb"></label>
-    <span>Connection to <strong>nexploit.app</strong> at <strong>port 443</strong></span>
-    <button class="button-scan button-move" (click)="restartTest()">Restart Test</button><br/>
-    <input type="checkbox" formControlName="auth"/><label for="cb"></label>
+    <input type="checkbox" formControlName="tcp" /><label for="cb"></label>
+    <span
+      >Connection to <strong>amq.nexploit.app</strong> at
+      <strong>port 5672</strong></span
+    ><br />
+    <input type="checkbox" formControlName="http" /><label for="cb"></label>
+    <span
+      >Connection to <strong>nexploit.app</strong> at
+      <strong>port 443</strong></span
+    >
+    <button class="button-scan button-move" (click)="restartTest()">
+      Restart Test</button
+    ><br />
+    <input type="checkbox" formControlName="auth" /><label for="cb"></label>
     <span>Valid authentication credentials</span>
   </form>
   <h4 class="upper">Progress</h4>
@@ -15,16 +23,31 @@
     <div class="form-control">
       <div>
         <ng-template ngFor let-type [ngForOf]="protocolTypes" let-i="index">
-          <span class="span-msg">{{connectivityMessages[i]}}</span><br/>
+          <span class="span-msg">{{ connectivityMessages[i] }}</span
+          ><br />
           <ng-template [ngIf]="responseMessage">
-            <span id="type" class="span-msg" [ngClass]="responseMessage[type] === 'Success'? 'success':'fail'">{{responseMessage[type]}}</span><br/>
+            <span
+              id="type"
+              class="span-msg"
+              [ngClass]="
+                responseMessage[type] === 'Success' ? 'success' : 'fail'
+              "
+              >{{ responseMessage[type] }}</span
+            ><br />
           </ng-template>
         </ng-template>
       </div>
     </div>
   </ng-container>
   <div class="buttons-container">
-    <button  class="button-prev" (click)="prev()">Prev</button>
-    <button type="submit" class="button" [disabled]="!scanFinished || errorOccurred" (click)="next()">Next</button>
+    <button class="button-prev" (click)="prev()">Prev</button>
+    <button
+      type="submit"
+      class="button"
+      [disabled]="!scanFinished || errorOccurred"
+      (click)="next()"
+    >
+      Next
+    </button>
   </div>
 </div>

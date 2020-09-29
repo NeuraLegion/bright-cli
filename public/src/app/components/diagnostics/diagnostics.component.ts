@@ -17,9 +17,7 @@ export enum ConnectivityMessages {
   templateUrl: './diagnostics.component.html',
   styleUrls: ['./diagnostics.component.scss']
 })
-
 export class DiagnosticsComponent implements OnInit {
-
   public readonly protocolTypes = Object.values(Protocol);
   public readonly connectivityMessages = Object.values(ConnectivityMessages);
 
@@ -32,9 +30,11 @@ export class DiagnosticsComponent implements OnInit {
     auth: null
   };
 
-  constructor(private readonly router: Router,
-              private formBuilder: FormBuilder,
-              private readonly service: AppService) {}
+  constructor(
+    private readonly router: Router,
+    private formBuilder: FormBuilder,
+    private readonly service: AppService
+  ) {}
 
   public testsForm: FormGroup;
   private readonly protocolMessage = new ProtocolMessage();
@@ -44,7 +44,7 @@ export class DiagnosticsComponent implements OnInit {
     this.restartTest();
   }
 
-  initForm(): void{
+  initForm(): void {
     this.testsForm = this.formBuilder.group({
       [Protocol.TCP]: [false, { disabled: true }],
       [Protocol.HTTP]: [false, { disabled: true }],
@@ -55,20 +55,19 @@ export class DiagnosticsComponent implements OnInit {
   restartTest(): void {
     this.resetValues();
     forkJoin([
-      this.service.getConnectivityStatus({type: Protocol.TCP}),
-      this.service.getConnectivityStatus({type: Protocol.HTTP}),
-      this.service.getConnectivityStatus({type: Protocol.AUTH})]
-    )
-    .subscribe(([tcpRes, httpRes, authRes]) => {
+      this.service.getConnectivityStatus({ type: Protocol.TCP }),
+      this.service.getConnectivityStatus({ type: Protocol.HTTP }),
+      this.service.getConnectivityStatus({ type: Protocol.AUTH })
+    ]).subscribe(([tcpRes, httpRes, authRes]) => {
       this.scanFinished = true;
-      this.updateResponse (tcpRes, Protocol.TCP);
-      this.updateResponse (httpRes, Protocol.HTTP);
-      this.updateResponse (authRes, Protocol.AUTH);
+      this.updateResponse(tcpRes, Protocol.TCP);
+      this.updateResponse(httpRes, Protocol.HTTP);
+      this.updateResponse(authRes, Protocol.AUTH);
     });
   }
 
   updateResponse(response: any, id: string): void {
-    this.protocolTypes.forEach(type => {
+    this.protocolTypes.forEach((type) => {
       if (type === id) {
         this.testsForm.get([type]).setValue(response.ok);
         if (response.ok) {
@@ -84,7 +83,7 @@ export class DiagnosticsComponent implements OnInit {
   resetValues(): void {
     this.scanFinished = false;
     this.errorOccurred = false;
-    this.protocolTypes.forEach(type => {
+    this.protocolTypes.forEach((type) => {
       this.testsForm.get([type]).setValue(false);
     });
     this.responseMessage = {
