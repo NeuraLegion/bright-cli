@@ -35,11 +35,11 @@ export class RouteGuard implements CanActivate {
   private validateHomePath(nextRoute: string): boolean {
     if (nextRoute === RouteGuard.HOME_PATH) {
       this.homeVisited = true;
-
+      return true;
+    } else if (nextRoute == RouteGuard.DIAGNOSTICS_PATH && this.homeVisited) {
       return true;
     } else {
       this.router.navigateByUrl(RouteGuard.HOME_PATH);
-
       return false;
     }
   }

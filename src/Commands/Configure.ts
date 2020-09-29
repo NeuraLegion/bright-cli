@@ -20,17 +20,20 @@ export class Configure implements CommandModule {
       .option('tcp-test', {
         default: Configure.DEFAULT_TCP_TEST_ENDPOINT,
         demandOption: false,
-        describe: `NexPloit Event Bus for connectivity test (e.g. ${Configure.DEFAULT_TCP_TEST_ENDPOINT})`
+        hidden: true,
+        describe: `NexPloit Event Bus for connectivity test`
       })
       .option('http-test', {
         default: Configure.DEFAULT_HTTP_TEST_ENDPOINT,
         demandOption: false,
-        describe: `NexPloit application for connectivity test (e.g. ${Configure.DEFAULT_HTTP_TEST_ENDPOINT})`
+        hidden: true,
+        describe: `NexPloit application for connectivity test`
       })
       .option('auth-test', {
         default: Configure.DEFAULT_AUTH_TEST_ENDPOINT,
         demandOption: false,
-        describe: `NexPloit event message authentication endpoint (e.g. ${Configure.DEFAULT_AUTH_TEST_ENDPOINT})`
+        hidden: true,
+        describe: `NexPloit event message authentication endpoint`
       });
   }
 
