@@ -7,11 +7,12 @@ import { NgModule } from '@angular/core';
 import { BrowserModule } from '@angular/platform-browser';
 import { HttpClientModule } from '@angular/common/http';
 import { DiagnosticsComponent } from './components/diagnostics/diagnostics.component';
+import { RouteGuard } from './app-routing/RouteGuard';
 
 @NgModule({
   declarations: [AppComponent, MainComponent, ScanComponent, DiagnosticsComponent],
   imports: [BrowserModule, FormsModule, AppRoutingModule, HttpClientModule, ReactiveFormsModule],
-  providers: [],
+  providers: [RouteGuard],
   bootstrap: [AppComponent]
 })
 export class AppModule {}

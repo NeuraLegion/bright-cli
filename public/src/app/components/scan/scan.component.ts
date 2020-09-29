@@ -69,37 +69,26 @@ export class ScanComponent implements OnInit {
       this.resetValues();
       this.service.startScan({url: this.url}).subscribe((response: any) => {
         this.scanFinished = true;
-        this.progressMsg = `Communication test to ${this.url} completed successfully, and a demo scan has started, click on Next to continue.`;
+        this.progressMsg = this.transform(200);
         this.currentColor = Status.SUCCESS;
-        const scanInfo = {
-          url: this.url,
-          scanId: response.scanId,
-          progressMsg: this.progressMsg,
-          status: this.currentColor
-        };
-        this.service.saveScanInfo(scanInfo);
+        this.subscribeInfo(this.progressMsg, this.currentColor, response.scanId);
       }, error => {
         this.errorOccurred = true;
-        switch (error.status) {
-          case 400:
-            this.progressMsg = `Please check that the target URL is valid. `;
-            break;
-          case 500:
-            break;
-        }
-        this.progressMsg = this.progressMsg + `Connection to ${this.url} is blocked, please verify that the
-        machine on which the Repeater is installed can reach the target server.
-        Possible reasons for communication failure:
-        ● Outbound communication to the host is blocked by a Firewall or network settings`;
+        this.progressMsg = this.transform(error.status);
         this.currentColor = Status.FAIL;
-        const scanInfo = {
-          url: this.url,
-          progressMsg: this.progressMsg,
-          status: this.currentColor
-        };
-        this.service.saveScanInfo(scanInfo);
+        this.subscribeInfo(this.progressMsg, this.currentColor);
       });
     }
+  }
+
+  subscribeInfo(message: string, status: string, scanId?: string): void {
+    const scanInfo = {
+      url: this.url,
+      scanId,
+      progressMsg: message,
+      status
+    };
+    this.service.saveScanInfo(scanInfo);
   }
 
   prev(): void {
@@ -117,5 +106,22 @@ export class ScanComponent implements OnInit {
 
   setCustomValidity(element, message): void {
     element.target.setCustomValidity(message);
+  }
+
+  transform(status: number): string | null {
+    switch (status) {
+      case 200:
+        return `Communication test to ${this.url} completed successfully, and a demo scan has started, click on Next to continue.`;
+      case 400:
+        return `Please check that the target URL is valid. Connection to ${this.url} is blocked, please verify that the
+        machine on which the Repeater is installed can reach the target server.
+        Possible reasons for communication failure:
+        ● Outbound communication to the host is blocked by a Firewall or network settings`;
+      case 500:
+        return `Connection to ${this.url} is blocked, please verify that the
+        machine on which the Repeater is installed can reach the target server.
+        Possible reasons for communication failure:
+        ● Outbound communication to the host is blocked by a Firewall or network settings`;
+    }
   }
 }

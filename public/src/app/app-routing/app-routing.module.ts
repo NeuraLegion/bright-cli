@@ -4,12 +4,13 @@ import { DiagnosticsComponent } from '../components/diagnostics/diagnostics.comp
 import { MainComponent } from '../components/main/main.component';
 import { ScanComponent } from '../components/scan/scan.component';
 import { SuccessComponent } from '../components/success/success.component';
+import { RouteGuard } from './RouteGuard';
 
 const routes: Routes = [
-  { path: '', component: MainComponent },
-  { path: 'diagnostics', component: DiagnosticsComponent },
-  { path: 'scan', component: ScanComponent },
-  { path: 'success', component: SuccessComponent }
+  { path: '', component: MainComponent, canActivate: [RouteGuard] },
+  { path: 'diagnostics', component: DiagnosticsComponent , canActivate: [RouteGuard]},
+  { path: 'scan', component: ScanComponent, canActivate: [RouteGuard] },
+  { path: 'success', component: SuccessComponent, canActivate: [RouteGuard] }
 ];
 
 @NgModule({
