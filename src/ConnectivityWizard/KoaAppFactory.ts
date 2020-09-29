@@ -17,7 +17,7 @@ export class KoaAppFactory {
     this.app = new Koa();
 
     const static_path: string = process.cwd() + '/wizard-dist/Wizard';
-    logger.debug(`Using static path for client ${static_path}`);
+    logger.debug('Using static path for client %s', static_path);
     this.app.use(serve(static_path));
     this.app.use(json());
     this.app.use(bodyParser());

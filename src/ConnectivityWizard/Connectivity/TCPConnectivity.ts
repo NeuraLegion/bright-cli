@@ -4,17 +4,19 @@ import { Socket } from 'net';
 import { URL } from 'url';
 
 export class TCPConnectivity implements Connectivity {
-  private readonly connection_timeout = 30 * 1000; // 30 seconds
-  
+  private readonly CONNECTION_TIMEOUT = 30 * 1000; // 30 seconds
+
   private fqdn: string;
   private port: number;
-  
+
   constructor(url: URL) {
-      if (!url || !url.hostname || !url.port) {
-        throw new Error('Missing proper endpoint and port for tcp connectivity test');
-      }
-      this.fqdn = url.hostname;
-      this.port = +url.port;
+    if (!url || !url.hostname || !url.port) {
+      throw new Error(
+        'Missing proper endpoint and port for tcp connectivity test'
+      );
+    }
+    this.fqdn = url.hostname;
+    this.port = +url.port;
   }
 
   public async test(): Promise<boolean> {
@@ -24,7 +26,7 @@ export class TCPConnectivity implements Connectivity {
       );
       const socket: Socket = new Socket();
       socket.setNoDelay(false);
-      socket.setTimeout(this.connection_timeout, () => {
+      socket.setTimeout(this.CONNECTION_TIMEOUT, () => {
         logger.debug(
           `TCP connectivity test - reached socket timeout. Connection failed.`
         );
@@ -32,7 +34,7 @@ export class TCPConnectivity implements Connectivity {
         resolve(false);
       });
       socket.connect(this.port, this.fqdn, () => {
-        logger.debug(`TCP connectivity test - Connection succesfull.`);
+        logger.debug('TCP connectivity test - Connection succesfull.');
         socket.destroy();
         resolve(true);
       });

@@ -6,10 +6,10 @@ import { ConnectivityEndpoint } from '../Endpoints/ConnectivityEndpoint';
 import { ScanEndpoint } from '../Endpoints/ScanEndpoint';
 import { FinishEndpoint } from '../Endpoints/FinishEndpoint';
 import { TokensOperations } from '../TokensOperations';
+import { TestType } from '../Entities/ConnectivityTest';
 import Koa from 'koa';
 import Router from 'koa-router';
 import { URL } from 'url';
-import { TestType } from '../Entities/ConnectivityTest';
 
 export class KoaRouterFactory implements RouterFactory {
   private tokensOperations: TokensOperations;
@@ -23,7 +23,10 @@ export class KoaRouterFactory implements RouterFactory {
     this.tokensOperations = new TokensOperations();
     this.getTokensEndpoint = new GetTokensEndpoint(this.tokensOperations);
     this.setTokenEndpoint = new SetTokensEndpoint(this.tokensOperations);
-    this.setConnectivityEndpoint = new ConnectivityEndpoint(this.tokensOperations, options);
+    this.setConnectivityEndpoint = new ConnectivityEndpoint(
+      this.tokensOperations,
+      options
+    );
     this.setScanEndpoint = new ScanEndpoint(this.tokensOperations);
     this.setFinishEndpoint = new FinishEndpoint();
   }

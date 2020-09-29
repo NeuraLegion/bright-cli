@@ -6,7 +6,7 @@ import { ClientRequest } from 'http';
 import { URL } from 'url';
 
 export class HTTPConnectivity implements Connectivity {
-  private readonly connection_timeout = 30 * 1000; // 30 seconds
+  private readonly CONNECTION_TIMEOUT = 30 * 1000; // 30 seconds
   private url: URL;
 
   constructor(url: URL) {
@@ -16,7 +16,9 @@ export class HTTPConnectivity implements Connectivity {
   public async test(): Promise<boolean> {
     return new Promise<boolean>((resolve) => {
       const req: ClientRequest =
-        this.url.protocol === 'https:' ? https.get(this.url) : http.get(this.url);
+        this.url.protocol === 'https:'
+          ? https.get(this.url)
+          : http.get(this.url);
 
       req.once('response', () => {
         logger.debug(
@@ -35,7 +37,7 @@ export class HTTPConnectivity implements Connectivity {
           'Http connectivity test - reached timeout. The connection failed.'
         );
         req.destroy();
-      }, this.connection_timeout);
+      }, this.CONNECTION_TIMEOUT);
     });
   }
 }

@@ -6,7 +6,7 @@ import httpReq from 'request';
 import { URL } from 'url';
 
 export class AMQConnectivity implements Connectivity {
-  private readonly connection_timeout = 30 * 1000; // 30 seconds
+  private readonly CONNECTION_TIMEOUT = 30 * 1000; // 30 seconds
 
   private authEndpoint: URL;
   private tokenOperations: TokensOperations;
@@ -23,7 +23,7 @@ export class AMQConnectivity implements Connectivity {
       const req: httpReq.Request = httpReq.post(
         {
           url: this.authEndpoint,
-          timeout: this.connection_timeout,
+          timeout: this.CONNECTION_TIMEOUT,
           form: {
             username: tokens.repeaterId,
             password: tokens.authToken

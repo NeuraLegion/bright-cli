@@ -14,14 +14,23 @@ export class ConnectivityEndpoint implements Endpoint {
   private connectivityTests: Map<TestType, Connectivity> = new Map();
 
   constructor(tokenOps: TokensOperations, endpoints: Map<TestType, URL>) {
-    this.connectivityTests.set('http', new HTTPConnectivity(endpoints.get('http')));
-    this.connectivityTests.set('tcp', new TCPConnectivity(endpoints.get('tcp')));
-    this.connectivityTests.set('auth', new AMQConnectivity(tokenOps, endpoints.get('auth')));
+    this.connectivityTests.set(
+      'http',
+      new HTTPConnectivity(endpoints.get('http'))
+    );
+    this.connectivityTests.set(
+      'tcp',
+      new TCPConnectivity(endpoints.get('tcp'))
+    );
+    this.connectivityTests.set(
+      'auth',
+      new AMQConnectivity(tokenOps, endpoints.get('auth'))
+    );
   }
 
   public async handle(ctx: Koa.Context): Promise<void> {
-    const req = <ConnectivityTest>(<unknown>ctx.request.body);
-    logger.debug(`Calling connectivity status test with type ${req}`);
+    const req = ctx.request.body as ConnectivityTest;
+    logger.debug('Calling connectivity status test with type %s', req.type);
     ctx.body = <ItemStatus>{
       ok: await this.connectivityTests.get(req.type).test()
     };

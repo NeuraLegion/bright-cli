@@ -5,11 +5,11 @@ import { ScanId } from '../Entities/ScanId';
 import { TokensOperations } from '../TokensOperations';
 import logger from '../../Utils/Logger';
 import Koa from 'koa';
-import child_processes from 'child_process';
+import { spawn, ChildProcess } from 'child_process';
 
 export class ScanEndpoint implements Endpoint {
   private tokenOperations: TokensOperations;
-  private repeaterProcess: child_processes.ChildProcess;
+  private repeaterProcess: ChildProcess;
 
   constructor(tokenOps: TokensOperations) {
     this.tokenOperations = tokenOps;
@@ -55,23 +55,23 @@ export class ScanEndpoint implements Endpoint {
         ...node_exec.argv,
         'repeater',
         '--token',
-        `"${tokens.authToken}"`,
+        tokens.authToken,
         '--agent',
-        `"${tokens.repeaterId}`
+        tokens.repeaterId
       ];
       logger.debug(
-        `Launching Repeater process with cmd: ${
-          node_exec.cmd
-        } and arguments: ${JSON.stringify(startArgs)}`
+        'Launching Repeater process with cmd: %s and arguments: %j',
+        node_exec.cmd,
+        startArgs
       );
 
-      this.repeaterProcess = child_processes.spawn(node_exec.cmd, startArgs, {
+      this.repeaterProcess = spawn(node_exec.cmd, startArgs, {
         detached: true
       });
 
       this.repeaterProcess.stdout.on('data', (data) => {
         const line = data.toString();
-        logger.debug(`Repeater (stdout): ${line}`);
+        logger.debug('Repeater (stdout): %s', line);
       });
       this.repeaterProcess.stderr.on('data', (data) => {
         const line = data.toString();
@@ -134,20 +134,17 @@ export class ScanEndpoint implements Endpoint {
 
     return new Promise((resolve, reject) => {
       try {
-        const p: child_processes.ChildProcess = child_processes.spawn(
-          nodeExec.cmd,
-          args
-        );
+        const p: ChildProcess = spawn(nodeExec.cmd, args);
         const output: string[] = [];
 
         p.stdout.on('data', (data: any) => {
           const line = data.toString();
-          logger.debug(`Scanner (stdout): ${line}`);
+          logger.debug('Scanner (stdout): %s', line);
           output.push(line);
         });
         p.stderr.on('data', (data: any) => {
           const line = data.toString();
-          logger.debug(`Scanner (stderr): ${line}`);
+          logger.debug('Scanner (stderr): %s', line);
         });
 
         p.on('error', (err: Error) => {

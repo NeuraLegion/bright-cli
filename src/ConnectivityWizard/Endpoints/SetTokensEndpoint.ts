@@ -15,8 +15,7 @@ export class SetTokensEndpoint implements Endpoint {
     try {
       const req = <Tokens>ctx.request.body;
       this.tokenOperations.writeTokens(req);
-      const resp: Tokens = req;
-      ctx.body = resp;
+      ctx.body = req;
     } catch (err) {
       logger.error(`Failed to store tokens in file. Error: ${err.message}`);
       ctx.throw('Failed to store tokens in file');
