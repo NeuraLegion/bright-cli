@@ -36,8 +36,8 @@ export class DiagnosticsComponent implements OnInit {
               private formBuilder: FormBuilder,
               private readonly service: AppService) {}
 
-  testsForm: FormGroup;
-  protocol = new ProtocolMessage();
+  public testsForm: FormGroup;
+  private readonly protocolMessage = new ProtocolMessage();
 
   ngOnInit(): void {
     this.initForm();
@@ -75,7 +75,7 @@ export class DiagnosticsComponent implements OnInit {
           this.responseMessage[type] = 'Success';
         } else {
           this.errorOccurred = true;
-          this.responseMessage[type] = this.protocol.transform(type);
+          this.responseMessage[type] = this.protocolMessage.transform(type);
         }
       }
     });

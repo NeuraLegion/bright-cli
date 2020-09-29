@@ -9,8 +9,8 @@ import { AppService } from 'src/app/app.service';
 })
 export class SuccessComponent implements OnInit {
 
-  scanId: string;
-  processFinished: boolean;
+  public scanId: string;
+  public processFinished: boolean;
 
   constructor(private readonly router: Router,
               private readonly service: AppService) {}

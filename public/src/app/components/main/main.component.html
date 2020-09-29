@@ -4,7 +4,7 @@
     Please fill in the following information which was provided to you as part
     of the PoC kickoff email.
   </h3>
-  <form [formGroup]="mainForm" (ngSubmit)="onSubmit()" ngNativeValidate>
+  <form [formGroup]="mainForm" (ngSubmit)="onSubmit()">
     <div class="form-control">
       <div class="form-group">
         <label for="token">Auth Token: </label>
@@ -14,25 +14,29 @@
           type="text"
           required
           id="token"
+          autocomplete="on"
+          [ngClass]="authToken.errors? 'error': 'clean'"
         />
-        <span id="toggleEye-1" class="fa fa-fw fa-eye field-icon toggle-password" (click)="onIconClick('token', 'toggleEye-1')"></span>
+        <span id="toggleEye-1" class="fa fa-fw fa-eye field-icon toggle-password" (click)="visibilityToggle.toggleEye('token', 'toggleEye-1')"></span>
       </div>
       <div class="form-group">
-        <label for="repeater">Repeater ID: </label>
+        <label for="repeater">Repeater ID:</label>
         <input
           formControlName="repeaterId"
           name="repeater"
           type="text"
           required
           id="repeater"
+          autocomplete="on"
+          [ngClass]="repeaterId.errors? 'error': 'clean'"
         />
-        <span id="toggleEye-2" class="fa fa-fw fa-eye field-icon toggle-password" (click)="onIconClick('repeater', 'toggleEye-2')"></span>
+        <span id="toggleEye-2" class="fa fa-fw fa-eye field-icon toggle-password" (click)="visibilityToggle.toggleEye('repeater', 'toggleEye-2')"></span>
         </div>
     </div>
     <div class="content-container gap"></div>
     <div class="buttons-container">
       <button class="button-prev" disabled>Prev</button>
-      <button type="submit" class="button">Next</button>
+      <button type="submit" [disabled]="repeaterId.errors || authToken.errors" class="button">Next</button>
     </div>
   </form>
 </div>

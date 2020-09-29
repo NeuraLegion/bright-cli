@@ -7,9 +7,10 @@ $all-good-green: #348c41;
 $error-red: #be1e32;
 
 div {
-    display:inline-block;
+    display: inline-block;
     margin: 2rem;
     font-family: 'saira';
+    vertical-align: top !important;
 
     .logo {
         width: 20rem;

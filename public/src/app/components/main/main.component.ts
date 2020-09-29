@@ -11,9 +11,9 @@ import { VisibilityToggle } from '../../shared/VisibilityToggle';
   styleUrls: ['./main.component.scss']
 })
 export class MainComponent implements OnInit {
-  visibilityToggle = new VisibilityToggle();
-  title = 'Connectivity Wizard';
-  mainForm: FormGroup;
+  public visibilityToggle = new VisibilityToggle();
+  public mainForm: FormGroup;
+  private UUIDv4 = (/^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/);
 
   constructor(private readonly router: Router,
               private formBuilder: FormBuilder,
@@ -28,13 +28,10 @@ export class MainComponent implements OnInit {
   }
 
   ngOnInit(): void{
-    console.log('Welcome');
+    console.log('Welcome to the Connectivity Wizard');
     this.initForm();
     this.service.getTokens().subscribe((response: Tokens) => {
-      if (response.authToken !== '' && response.repeaterId !== '') {
-        this.visibilityToggle.toggleEye('token', 'toggleEye-1');
-        this.visibilityToggle.toggleEye('repeater', 'toggleEye-2');
-      }
+      this.visibilityToggle.initialState (response);
       this.authToken.setValue(response.authToken);
       this.repeaterId.setValue(response.repeaterId);
     }, error => {
@@ -45,12 +42,12 @@ export class MainComponent implements OnInit {
   initForm(): void{
     this.mainForm = this.formBuilder.group({
       authToken: ['', [Validators.required]],
-      repeaterId: ['', [Validators.required]]
+      repeaterId: ['', [Validators.required, Validators.pattern(this.UUIDv4)]]
     });
   }
 
   onSubmit(): void {
-    if (this.authToken.value === null || this.repeaterId.value == null) {
+    if (!this.mainForm.valid) {
       console.log ('Error, tokens are invalid');
     } else {
       const actionPayload: Tokens = {
@@ -63,9 +60,5 @@ export class MainComponent implements OnInit {
         console.log (error);
       });
     }
-  }
-
-  onIconClick(inputId, spanId): void {
-    this.visibilityToggle.toggleEye(inputId, spanId);
   }
 }

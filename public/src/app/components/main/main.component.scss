@@ -61,5 +61,14 @@ input {
     margin-top: .4rem;
     position: relative;
     z-index: 2;
-  }
-  
+}
+
+input {
+    &.error {
+        border:2px solid $error-red;
+    }
+
+    &.clean {
+        border:2px solid -internal-light-dark(rgb(118, 118, 118), rgb(195, 195, 195));
+    }
+}

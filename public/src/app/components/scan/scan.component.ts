@@ -20,7 +20,7 @@ export class ScanComponent implements OnInit {
               private formBuilder: FormBuilder,
               private readonly service: AppService) {}
 
-  targetForm: FormGroup;
+  public targetForm: FormGroup;
   progressMsg: string;
   url: string;
   scanStarted: boolean;
@@ -63,7 +63,7 @@ export class ScanComponent implements OnInit {
     this.scanStarted = true;
     this.scanFinished = false;
     this.url = `${this.targetUrl.value}`;
-    if (this.url === null) {
+    if (!this.targetForm.valid) {
       console.log('Error, target URL is invalid');
     } else {
       this.resetValues();
@@ -113,5 +113,9 @@ export class ScanComponent implements OnInit {
   resetValues(): void {
     this.errorOccurred = false;
     this.progressMsg = '';
+  }
+
+  setCustomValidity(element, message): void {
+    element.target.setCustomValidity(message);
   }
 }
