@@ -20,6 +20,7 @@ export enum ConnectivityMessages {
 export class DiagnosticsComponent implements OnInit {
   public readonly protocolTypes = Object.values(Protocol);
   public readonly connectivityMessages = Object.values(ConnectivityMessages);
+  public readonly Protocol = Protocol;
 
   errorOccurred = false;
   scanFinished = false;
