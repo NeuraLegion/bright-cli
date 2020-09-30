@@ -8,6 +8,7 @@ import {
 } from '@angular/forms';
 import { Router } from '@angular/router';
 import { AppService } from 'src/app/app.service';
+import { ProtocolMessage } from 'src/app/shared/ProtocolMessage';
 
 export interface ScanInfo {
   url: string;
@@ -27,6 +28,7 @@ export enum Status {
   styleUrls: ['./scan.component.scss']
 })
 export class ScanComponent implements OnInit {
+  private readonly protocolMessage = new ProtocolMessage();
   public targetForm: FormGroup;
   progressMsg: string;
   url: string;
@@ -82,7 +84,7 @@ export class ScanComponent implements OnInit {
       this.service.startScan({ url: this.url }).subscribe(
         (response: ScanId) => {
           this.scanFinished = true;
-          this.progressMsg = this.transform(200);
+          this.progressMsg = this.protocolMessage.set(200, this.url);
           this.currentColor = Status.SUCCESS;
           this.subscribeInfo(
             this.progressMsg,
@@ -92,7 +94,7 @@ export class ScanComponent implements OnInit {
         },
         (error) => {
           this.errorOccurred = true;
-          this.progressMsg = this.transform(error.status);
+          this.progressMsg = this.protocolMessage.set(error.status, this.url);
           this.currentColor = Status.FAIL;
           this.subscribeInfo(this.progressMsg, this.currentColor);
         }
@@ -125,22 +127,5 @@ export class ScanComponent implements OnInit {
 
   setCustomValidity(element: any, message: string): void {
     element.target.setCustomValidity(message);
-  }
-
-  transform(status: number): string | null {
-    switch (status) {
-      case 200:
-        return `Communication test to ${this.url} completed successfully, and a demo scan has started, click on Next to continue.`;
-      case 400:
-        return `Please check that the target URL is valid. Connection to ${this.url} is blocked, please verify that the
-        machine on which the Repeater is installed can reach the target server.
-        Possible reasons for communication failure:
-        ● Outbound communication to the host is blocked by a Firewall or network settings`;
-      case 500:
-        return `Connection to ${this.url} is blocked, please verify that the
-        machine on which the Repeater is installed can reach the target server.
-        Possible reasons for communication failure:
-        ● Outbound communication to the host is blocked by a Firewall or network settings`;
-    }
   }
 }
