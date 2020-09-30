@@ -6,6 +6,8 @@ import { Router } from '@angular/router';
 import { ConnectivityResponse, ItemStatus } from 'src/app/app.model';
 import { AppService } from 'src/app/app.service';
 import { forkJoin } from 'rxjs';
+import { Subject } from 'rxjs/internal/Subject';
+import { takeUntil } from 'rxjs/operators';
 
 @Component({
   selector: 'app-diagnostics',
@@ -15,6 +17,7 @@ import { forkJoin } from 'rxjs';
 export class DiagnosticsComponent implements OnInit {
   public readonly protocolTypes = Object.values(Protocol);
   public readonly Protocol = Protocol;
+  private readonly gc = new Subject<void>();
 
   errorOccurred = false;
   scanFinished = false;
@@ -40,6 +43,11 @@ export class DiagnosticsComponent implements OnInit {
     this.restartTest();
   }
 
+  ngOnDestroy(): void {
+    this.gc.next();
+    this.gc.unsubscribe();
+  }
+
   initForm(): void {
     this.testsForm = this.formBuilder.group({
       [Protocol.TCP]: [false, { disabled: true }],
@@ -54,7 +62,7 @@ export class DiagnosticsComponent implements OnInit {
       this.service.getConnectivityStatus({ type: Protocol.TCP }),
       this.service.getConnectivityStatus({ type: Protocol.HTTP }),
       this.service.getConnectivityStatus({ type: Protocol.AUTH })
-    ]).subscribe(([tcpRes, httpRes, authRes]: ItemStatus[]): void => {
+    ]).pipe(takeUntil(this.gc)).subscribe(([tcpRes, httpRes, authRes]: ItemStatus[]): void => {
       this.scanFinished = true;
       this.updateResponse(tcpRes, Protocol.TCP);
       this.updateResponse(httpRes, Protocol.HTTP);

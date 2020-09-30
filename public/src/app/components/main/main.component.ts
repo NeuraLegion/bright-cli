@@ -9,6 +9,8 @@ import {
 import { Router } from '@angular/router';
 import { Tokens } from 'src/app/app.model';
 import { AppService } from 'src/app/app.service';
+import { Subject } from 'rxjs/internal/Subject';
+import { takeUntil } from 'rxjs/operators';
 
 @Component({
   selector: 'app-main',
@@ -19,6 +21,7 @@ export class MainComponent implements OnInit {
   public visibilityToggle = new VisibilityToggle();
   public mainForm: FormGroup;
   private UUID_V4 = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/;
+  private readonly gc = new Subject<void>();
 
   constructor(
     private readonly router: Router,
@@ -37,7 +40,7 @@ export class MainComponent implements OnInit {
   ngOnInit(): void {
     console.log('Welcome to the Connectivity Wizard');
     this.initForm();
-    this.service.getTokens().subscribe(
+    this.service.getTokens().pipe(takeUntil(this.gc)).subscribe(
       (response: Tokens) => {
         this.visibilityToggle.initialState(response);
         this.authToken.setValue(response.authToken);
@@ -47,6 +50,11 @@ export class MainComponent implements OnInit {
         console.log(error);
       }
     );
+  }
+
+  ngOnDestroy(): void {
+    this.gc.next();
+    this.gc.unsubscribe();
   }
 
   initForm(): void {
@@ -60,11 +68,7 @@ export class MainComponent implements OnInit {
     if (!this.mainForm.valid) {
       console.log('Error, tokens are invalid');
     } else {
-      const actionPayload: Tokens = {
-        authToken: this.authToken.value,
-        repeaterId: this.repeaterId.value
-      };
-      this.service.saveTokens(actionPayload).subscribe(
+      this.service.saveTokens(this.mainForm.value).pipe(takeUntil(this.gc)).subscribe(
         () => {
           this.router.navigateByUrl('diagnostics');
         },

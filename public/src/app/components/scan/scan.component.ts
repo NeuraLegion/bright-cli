@@ -9,6 +9,8 @@ import {
 import { Router } from '@angular/router';
 import { AppService } from 'src/app/app.service';
 import { StatusMessage } from 'src/app/shared/StatusMessage';
+import { Subject } from 'rxjs/internal/Subject';
+import { takeUntil } from 'rxjs/operators';
 
 export interface ScanInfo {
   url: string;
@@ -29,6 +31,7 @@ export enum Status {
 })
 export class ScanComponent implements OnInit {
   private readonly statusMessage = new StatusMessage();
+  private readonly gc = new Subject<void>();
   public targetForm: FormGroup;
   progressMsg: string;
   url: string;
@@ -67,6 +70,11 @@ export class ScanComponent implements OnInit {
     });
   }
 
+  ngOnDestroy(): void {
+    this.gc.next();
+    this.gc.unsubscribe();
+  }
+
   initForm(): void {
     this.targetForm = this.formBuilder.group({
       targetUrl: ['', [Validators.required]]
@@ -81,7 +89,7 @@ export class ScanComponent implements OnInit {
       console.log('Error, target URL is invalid');
     } else {
       this.resetValues();
-      this.service.startScan({ url: this.url }).subscribe(
+      this.service.startScan({ url: this.url }).pipe(takeUntil(this.gc)).subscribe(
         (response: ScanId) => {
           this.scanFinished = true;
           this.progressMsg = this.statusMessage.transform(200, this.url);

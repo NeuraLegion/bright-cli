@@ -1,6 +1,8 @@
 import { Component, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 import { AppService } from 'src/app/app.service';
+import { Subject } from 'rxjs/internal/Subject';
+import { takeUntil } from 'rxjs/operators';
 
 @Component({
   selector: 'app-success',
@@ -8,6 +10,7 @@ import { AppService } from 'src/app/app.service';
   styleUrls: ['./success.component.scss']
 })
 export class SuccessComponent implements OnInit {
+  private readonly gc = new Subject<void>();
   public scanId: string;
   public processFinished: boolean;
 
@@ -23,8 +26,13 @@ export class SuccessComponent implements OnInit {
     });
   }
 
+  ngOnDestroy(): void {
+    this.gc.next();
+    this.gc.unsubscribe();
+  }
+
   finish(): void {
-    this.service.finishProcess().subscribe(
+    this.service.finishProcess().pipe(takeUntil(this.gc)).subscribe(
       () => {
         console.log('/finish call completed');
       },
