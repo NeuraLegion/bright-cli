@@ -8,7 +8,7 @@ import {
 } from '@angular/forms';
 import { Router } from '@angular/router';
 import { AppService } from 'src/app/app.service';
-import { ProtocolMessage } from 'src/app/shared/ProtocolMessage';
+import { StatusMessage } from 'src/app/shared/StatusMessage';
 
 export interface ScanInfo {
   url: string;
@@ -28,7 +28,7 @@ export enum Status {
   styleUrls: ['./scan.component.scss']
 })
 export class ScanComponent implements OnInit {
-  private readonly protocolMessage = new ProtocolMessage();
+  private readonly statusMessage = new StatusMessage();
   public targetForm: FormGroup;
   progressMsg: string;
   url: string;
@@ -84,7 +84,7 @@ export class ScanComponent implements OnInit {
       this.service.startScan({ url: this.url }).subscribe(
         (response: ScanId) => {
           this.scanFinished = true;
-          this.progressMsg = this.protocolMessage.set(200, this.url);
+          this.progressMsg = this.statusMessage.transform(200, this.url);
           this.currentColor = Status.SUCCESS;
           this.subscribeInfo(
             this.progressMsg,
@@ -94,7 +94,7 @@ export class ScanComponent implements OnInit {
         },
         (error) => {
           this.errorOccurred = true;
-          this.progressMsg = this.protocolMessage.set(error.status, this.url);
+          this.progressMsg = this.statusMessage.transform(error.status, this.url);
           this.currentColor = Status.FAIL;
           this.subscribeInfo(this.progressMsg, this.currentColor);
         }

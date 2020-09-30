@@ -1,16 +1,11 @@
 import { ProtocolMessage, Protocol } from '../../shared/ProtocolMessage';
+import { ConnectivityMessage } from '../../shared/ConnectivityMessage';
 import { Component, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup } from '@angular/forms';
 import { Router } from '@angular/router';
 import { ConnectivityResponse, ItemStatus } from 'src/app/app.model';
 import { AppService } from 'src/app/app.service';
 import { forkJoin } from 'rxjs';
-
-export enum ConnectivityMessages {
-  TCP = 'Validating that the connection to amq.nexploit.app at port 5672 is open',
-  HTTP = 'Validating that the connection to nexploit.app at port 443 is open',
-  AUTH = 'Verifying provided Token and Repeater ID'
-}
 
 @Component({
   selector: 'app-diagnostics',
@@ -19,7 +14,6 @@ export enum ConnectivityMessages {
 })
 export class DiagnosticsComponent implements OnInit {
   public readonly protocolTypes = Object.values(Protocol);
-  public readonly connectivityMessages = Object.values(ConnectivityMessages);
   public readonly Protocol = Protocol;
 
   errorOccurred = false;
@@ -33,6 +27,7 @@ export class DiagnosticsComponent implements OnInit {
 
   public testsForm: FormGroup;
   private readonly protocolMessage = new ProtocolMessage();
+  private readonly connectivityMessage = new ConnectivityMessage();
 
   constructor(
     private readonly router: Router,
@@ -69,6 +64,7 @@ export class DiagnosticsComponent implements OnInit {
 
   updateResponse(response: ItemStatus, id: string): void {
     this.protocolTypes.forEach((type) => {
+      this.connectivityMessage[type] = this.connectivityMessage.transform(type);
       if (type === id) {
         this.testsForm.get([type]).setValue(response.ok);
         if (response.ok) {

@@ -23,7 +23,7 @@
     <div class="form-control">
       <div>
         <ng-template ngFor let-type [ngForOf]="protocolTypes" let-i="index">
-          <span class="span-msg">{{ connectivityMessages[i] }}</span
+          <span class="span-msg">{{ connectivityMessage[type] }}</span
           ><br />
           <ng-template [ngIf]="responseMessage">
             <span
