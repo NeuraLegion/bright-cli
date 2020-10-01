@@ -48,7 +48,7 @@ export class ScanComponent implements OnInit {
     this.scanFinished = false;
     this.errorOccurred = false;
     this.initForm();
-    this.service.dataString$.subscribe((data) => {
+    this.service.dataString$.pipe(takeUntil(this.gc)).subscribe((data) => {
       if (data) {
         this.url = data.url;
         this.targetUrl.setValue(data.url);

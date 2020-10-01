@@ -21,7 +21,7 @@ export class SuccessComponent implements OnInit {
 
   ngOnInit(): void {
     this.processFinished = false;
-    this.service.dataString$.subscribe((data) => {
+    this.service.dataString$.pipe(takeUntil(this.gc)).subscribe((data) => {
       this.scanId = data.scanId;
     });
   }
