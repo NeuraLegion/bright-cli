@@ -1,4 +1,6 @@
 import { Injectable } from '@angular/core';
+import { BehaviorSubject } from 'rxjs/internal/BehaviorSubject';
+import { Observable } from 'rxjs/internal/Observable';
 
 @Injectable({
   providedIn: 'root'
@@ -7,13 +9,13 @@ export class HomeService {
 
   constructor() { }
 
-  private static homeVisited = false;
+  private static homeVisited = new BehaviorSubject(false);
 
-  public getHomeVisited(): boolean {
-    return HomeService.homeVisited;
+  public getHomeVisited(): Observable<boolean>  {
+    return HomeService.homeVisited.asObservable();
   }
 
   public setHomeVisited(): void {
-    HomeService.homeVisited = true;
+    HomeService.homeVisited.next(true);
   }
 }

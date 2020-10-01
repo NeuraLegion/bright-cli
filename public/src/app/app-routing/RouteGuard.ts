@@ -8,11 +8,15 @@ export class RouteGuard implements CanActivate {
   private static readonly DIAGNOSTICS_PATH = '/diagnostics';
   private static readonly SCAN_PATH = '/scan';
   private static readonly SUCCESS_PATH = '/success';
+  private static homeVisited: boolean;
 
   constructor(private readonly router: Router,
               private readonly service: HomeService) {}
 
   canActivate(next: ActivatedRouteSnapshot): boolean {
+    this.service.getHomeVisited().subscribe(homeVisited =>
+      RouteGuard.homeVisited = homeVisited);
+
     const currentRoute: string = this.router.url;
     const nextRoute = next.url[0]
       ? '/' + next.url[0].path
@@ -36,7 +40,7 @@ export class RouteGuard implements CanActivate {
     if (nextRoute === RouteGuard.HOME_PATH) {
       this.service.setHomeVisited();
       return true;
-    } else if (nextRoute === RouteGuard.DIAGNOSTICS_PATH && this.service.getHomeVisited()) {
+    } else if (nextRoute === RouteGuard.DIAGNOSTICS_PATH && RouteGuard.homeVisited) {
       return true;
     } else {
       this.router.navigateByUrl(RouteGuard.HOME_PATH);
