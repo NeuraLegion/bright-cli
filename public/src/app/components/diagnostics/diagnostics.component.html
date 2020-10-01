@@ -23,16 +23,22 @@
     <div class="form-control">
       <div>
         <ng-template ngFor let-type [ngForOf]="protocolTypes" let-i="index">
-          <span class="span-msg">{{ connectivityMessage[type] }}</span
+          <span class="span-msg">{{ type | connectivity }}</span
           ><br />
-          <ng-template [ngIf]="responseMessage">
+          <ng-template [ngIf]="testsForm.get(type).value === true">
             <span
               id="type"
               class="span-msg"
-              [ngClass]="
-                responseMessage[type] === 'Success' ? 'success' : 'fail'
-              "
-              >{{ responseMessage[type] }}</span
+              [ngClass]="'success'"
+              >Success</span
+            ><br />
+          </ng-template>
+          <ng-template [ngIf]="testsForm.get(type).value === false">
+            <span
+              id="type"
+              class="span-msg"
+              [ngClass]="'fail'"
+              >{{ type | protocol }}</span
             ><br />
           </ng-template>
         </ng-template>

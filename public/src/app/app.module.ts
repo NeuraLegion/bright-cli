@@ -8,13 +8,19 @@ import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { NgModule } from '@angular/core';
 import { BrowserModule } from '@angular/platform-browser';
 import { HttpClientModule } from '@angular/common/http';
+import { ProtocolMessage } from './shared/ProtocolMessage';
+import { StatusMessage } from './shared/StatusMessage';
+import { ConnectivityMessage } from './shared/ConnectivityMessage';
 
 @NgModule({
   declarations: [
     AppComponent,
     MainComponent,
     ScanComponent,
-    DiagnosticsComponent
+    DiagnosticsComponent,
+    ProtocolMessage,
+    StatusMessage,
+    ConnectivityMessage
   ],
   imports: [
     BrowserModule,

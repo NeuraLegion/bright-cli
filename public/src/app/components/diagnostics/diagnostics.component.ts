@@ -1,9 +1,8 @@
-import { ProtocolMessage, Protocol } from '../../shared/ProtocolMessage';
-import { ConnectivityMessage } from '../../shared/ConnectivityMessage';
+import { Protocol } from '../../shared/ProtocolMessage';
 import { Component, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup } from '@angular/forms';
 import { Router } from '@angular/router';
-import { ConnectivityResponse, ItemStatus } from 'src/app/app.model';
+import { ItemStatus } from 'src/app/app.model';
 import { AppService } from 'src/app/app.service';
 import { forkJoin } from 'rxjs';
 import { Subject } from 'rxjs/internal/Subject';
@@ -22,15 +21,7 @@ export class DiagnosticsComponent implements OnInit {
   errorOccurred = false;
   scanFinished = false;
 
-  responseMessage: ConnectivityResponse = {
-    tcp: null,
-    http: null,
-    auth: null
-  };
-
   public testsForm: FormGroup;
-  private readonly protocolMessage = new ProtocolMessage();
-  private readonly connectivityMessage = new ConnectivityMessage();
 
   constructor(
     private readonly router: Router,
@@ -50,9 +41,9 @@ export class DiagnosticsComponent implements OnInit {
 
   initForm(): void {
     this.testsForm = this.formBuilder.group({
-      [Protocol.TCP]: [false, { disabled: true }],
-      [Protocol.HTTP]: [false, { disabled: true }],
-      [Protocol.AUTH]: [false, { disabled: true }]
+      [Protocol.TCP]: [null, { disabled: true }],
+      [Protocol.HTTP]: [null, { disabled: true }],
+      [Protocol.AUTH]: [null, { disabled: true }]
     });
   }
 
@@ -72,14 +63,10 @@ export class DiagnosticsComponent implements OnInit {
 
   updateResponse(response: ItemStatus, id: string): void {
     this.protocolTypes.forEach((type) => {
-      this.connectivityMessage[type] = this.connectivityMessage.transform(type);
       if (type === id) {
         this.testsForm.get([type]).setValue(response.ok);
-        if (response.ok) {
-          this.responseMessage[type] = 'Success';
-        } else {
+        if (!response.ok) {
           this.errorOccurred = true;
-          this.responseMessage[type] = this.protocolMessage.transform(type);
         }
       }
     });
@@ -89,13 +76,8 @@ export class DiagnosticsComponent implements OnInit {
     this.scanFinished = false;
     this.errorOccurred = false;
     this.protocolTypes.forEach((type) => {
-      this.testsForm.get([type]).setValue(false);
+      this.testsForm.get([type]).setValue(null);
     });
-    this.responseMessage = {
-      auth: null,
-      http: null,
-      tcp: null
-    };
   }
 
   next(): void {
