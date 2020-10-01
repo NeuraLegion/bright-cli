@@ -45,32 +45,16 @@ export class RouteGuard implements CanActivate {
   }
 
   private validateDiagnosticPath(nextRoute: string): boolean {
-    if (
-      nextRoute === RouteGuard.SCAN_PATH ||
-      nextRoute === RouteGuard.HOME_PATH
-    ) {
-      return true;
-    } else {
-      return false;
-    }
+    return nextRoute === RouteGuard.SCAN_PATH ||
+      nextRoute === RouteGuard.HOME_PATH;
   }
 
   private validateScanPath(nextRoute: string): boolean {
-    if (
-      nextRoute === RouteGuard.SUCCESS_PATH ||
-      nextRoute === RouteGuard.DIAGNOSTICS_PATH
-    ) {
-      return true;
-    } else {
-      return false;
-    }
+    return nextRoute === RouteGuard.SUCCESS_PATH ||
+      nextRoute === RouteGuard.DIAGNOSTICS_PATH;
   }
 
   private validateSuccessPath(nextRoute: string): boolean {
-    if (nextRoute === RouteGuard.SCAN_PATH) {
-      return true;
-    } else {
-      return false;
-    }
+    return nextRoute === RouteGuard.SCAN_PATH;
   }
 }
