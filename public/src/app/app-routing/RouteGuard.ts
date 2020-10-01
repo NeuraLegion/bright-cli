@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { ActivatedRouteSnapshot, CanActivate, Router } from '@angular/router';
-import { HomeGuard } from './HomeGuard';
+import { HomeService } from './home.service';
 
 @Injectable()
 export class RouteGuard implements CanActivate {
@@ -8,9 +8,9 @@ export class RouteGuard implements CanActivate {
   private static readonly DIAGNOSTICS_PATH = '/diagnostics';
   private static readonly SCAN_PATH = '/scan';
   private static readonly SUCCESS_PATH = '/success';
-  private static readonly homeGuard = new HomeGuard();
 
-  constructor(private readonly router: Router) {}
+  constructor(private readonly router: Router,
+              private readonly service: HomeService) {}
 
   canActivate(next: ActivatedRouteSnapshot): boolean {
     const currentRoute: string = this.router.url;
@@ -34,9 +34,9 @@ export class RouteGuard implements CanActivate {
 
   private validateHomePath(nextRoute: string): boolean {
     if (nextRoute === RouteGuard.HOME_PATH) {
-      RouteGuard.homeGuard.homeVisited = true;
+      this.service.setHomeVisited();
       return true;
-    } else if (nextRoute === RouteGuard.DIAGNOSTICS_PATH && RouteGuard.homeGuard.homeVisited) {
+    } else if (nextRoute === RouteGuard.DIAGNOSTICS_PATH && this.service.getHomeVisited()) {
       return true;
     } else {
       this.router.navigateByUrl(RouteGuard.HOME_PATH);
