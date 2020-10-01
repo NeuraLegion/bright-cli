@@ -33,15 +33,15 @@
   <h4 class="upper">Progress</h4>
   <div class="form-control progress">
     <div>
-      <ng-template [ngIf]="scanStarted || currentColor">
+      <ng-template [ngIf]="scanStarted || code">
         Trying to reach {{ url }}...<br />
       </ng-template>
       <p
         id="response-communication"
         class="response"
-        [ngClass]="currentColor == 'success' ? 'success' : 'fail'"
+        [ngClass]="code === 200 ? 'success' : 'fail'"
       >
-        {{ progressMsg }}
+        {{ code |  status: url }}
       </p>
     </div>
   </div>

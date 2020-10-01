@@ -8,20 +8,13 @@ import {
 } from '@angular/forms';
 import { Router } from '@angular/router';
 import { AppService } from 'src/app/app.service';
-import { StatusMessage } from 'src/app/shared/StatusMessage';
 import { Subject } from 'rxjs/internal/Subject';
 import { takeUntil } from 'rxjs/operators';
 
 export interface ScanInfo {
   url: string;
   scanId: string;
-  progressMsg: string;
-  status: Status;
-}
-
-export enum Status {
-  SUCCESS = 'success',
-  FAIL = 'fail'
+  code: number;
 }
 
 @Component({
@@ -30,15 +23,13 @@ export enum Status {
   styleUrls: ['./scan.component.scss']
 })
 export class ScanComponent implements OnInit {
-  private readonly statusMessage = new StatusMessage();
   private readonly gc = new Subject<void>();
   public targetForm: FormGroup;
-  progressMsg: string;
+  code: number;
   url: string;
   scanStarted: boolean;
   scanFinished: boolean;
   errorOccurred: boolean;
-  currentColor: Status;
 
   constructor(
     private readonly router: Router,
@@ -58,11 +49,10 @@ export class ScanComponent implements OnInit {
     this.service.dataString$.subscribe((data) => {
       if (data) {
         this.url = data.url;
-        this.progressMsg = data.progressMsg;
-        this.currentColor = data.status;
         this.targetUrl.setValue(data.url);
+        this.code = data.code;
       }
-      if (this.currentColor === Status.SUCCESS) {
+      if (this.code === 200) {
         this.scanFinished = true;
       } else {
         this.scanFinished = false;
@@ -92,30 +82,26 @@ export class ScanComponent implements OnInit {
       this.service.startScan({ url: this.url }).pipe(takeUntil(this.gc)).subscribe(
         (response: ScanId) => {
           this.scanFinished = true;
-          this.progressMsg = this.statusMessage.transform(200, this.url);
-          this.currentColor = Status.SUCCESS;
+          this.code = 200;
           this.subscribeInfo(
-            this.progressMsg,
-            this.currentColor,
+            this.code,
             response.scanId
           );
         },
         (error) => {
           this.errorOccurred = true;
-          this.progressMsg = this.statusMessage.transform(error.status, this.url);
-          this.currentColor = Status.FAIL;
-          this.subscribeInfo(this.progressMsg, this.currentColor);
+          this.code = error.status;
+          this.subscribeInfo(this.code);
         }
       );
     }
   }
 
-  subscribeInfo(message: string, status: Status, scanId?: string): void {
+  subscribeInfo(code: number, scanId?: string): void {
     const scanInfo: ScanInfo = {
       url: this.url,
       scanId,
-      progressMsg: message,
-      status
+      code
     };
     this.service.saveScanInfo(scanInfo);
   }
@@ -129,8 +115,8 @@ export class ScanComponent implements OnInit {
   }
 
   resetValues(): void {
+    this.code = null;
     this.errorOccurred = false;
-    this.progressMsg = '';
   }
 
   setCustomValidity(element: any, message: string): void {
