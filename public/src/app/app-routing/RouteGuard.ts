@@ -1,5 +1,6 @@
 import { Injectable } from '@angular/core';
 import { ActivatedRouteSnapshot, CanActivate, Router } from '@angular/router';
+import { Observable, of } from 'rxjs';
 import { HomeService } from './home.service';
 
 @Injectable()
@@ -13,7 +14,7 @@ export class RouteGuard implements CanActivate {
   constructor(private readonly router: Router,
               private readonly service: HomeService) {}
 
-  canActivate(next: ActivatedRouteSnapshot): boolean {
+  canActivate(next: ActivatedRouteSnapshot): Observable<boolean> {
     this.service.getHomeVisited().subscribe(homeVisited =>
       RouteGuard.homeVisited = homeVisited);
 
@@ -24,15 +25,15 @@ export class RouteGuard implements CanActivate {
 
     switch (currentRoute) {
       case RouteGuard.HOME_PATH:
-        return this.validateHomePath(nextRoute);
+        return of(this.validateHomePath(nextRoute));
       case RouteGuard.DIAGNOSTICS_PATH:
-        return this.validateDiagnosticPath(nextRoute);
+        return of(this.validateDiagnosticPath(nextRoute));
       case RouteGuard.SCAN_PATH:
-        return this.validateScanPath(nextRoute);
+        return of(this.validateScanPath(nextRoute));
       case RouteGuard.SUCCESS_PATH:
-        return this.validateSuccessPath(nextRoute);
+        return of(this.validateSuccessPath(nextRoute));
       default:
-        return true;
+        return of(true);
     }
   }
 
