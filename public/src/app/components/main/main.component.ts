@@ -1,5 +1,5 @@
 import { VisibilityToggle } from '../../shared/VisibilityToggle';
-import { Component, OnInit } from '@angular/core';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import {
   AbstractControl,
   FormBuilder,
@@ -15,7 +15,8 @@ import { takeUntil } from 'rxjs/operators';
 @Component({
   selector: 'app-main',
   templateUrl: './main.component.html',
-  styleUrls: ['./main.component.scss']
+  styleUrls: ['./main.component.scss'],
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class MainComponent implements OnInit {
   public visibilityToggle = new VisibilityToggle();
@@ -26,7 +27,8 @@ export class MainComponent implements OnInit {
   constructor(
     private readonly router: Router,
     private formBuilder: FormBuilder,
-    private readonly service: AppService
+    private readonly service: AppService,
+    private cdr: ChangeDetectorRef
   ) {}
 
   get repeaterId(): AbstractControl {
@@ -45,6 +47,7 @@ export class MainComponent implements OnInit {
         this.visibilityToggle.initialState(response);
         this.authToken.setValue(response.authToken);
         this.repeaterId.setValue(response.repeaterId);
+        this.cdr.detectChanges();
       },
       (error) => {
         console.log(error);

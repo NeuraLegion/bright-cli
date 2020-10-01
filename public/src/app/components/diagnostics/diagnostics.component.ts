@@ -1,5 +1,5 @@
 import { Protocol } from '../../shared/ProtocolMessage';
-import { Component, OnInit } from '@angular/core';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup } from '@angular/forms';
 import { Router } from '@angular/router';
 import { ItemStatus } from 'src/app/app.model';
@@ -11,7 +11,8 @@ import { takeUntil } from 'rxjs/operators';
 @Component({
   selector: 'app-diagnostics',
   templateUrl: './diagnostics.component.html',
-  styleUrls: ['./diagnostics.component.scss']
+  styleUrls: ['./diagnostics.component.scss'],
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DiagnosticsComponent implements OnInit {
   public readonly protocolTypes = Object.values(Protocol);
@@ -26,7 +27,8 @@ export class DiagnosticsComponent implements OnInit {
   constructor(
     private readonly router: Router,
     private formBuilder: FormBuilder,
-    private readonly service: AppService
+    private readonly service: AppService,
+    private cdr: ChangeDetectorRef
   ) {}
 
   ngOnInit(): void {
@@ -53,10 +55,11 @@ export class DiagnosticsComponent implements OnInit {
       [Protocol.TCP, Protocol.HTTP, Protocol.AUTH]
         .map((type: Protocol) => this.service.getConnectivityStatus({ type }))
       ).pipe(takeUntil(this.gc)).subscribe(([tcpRes, httpRes, authRes]: ItemStatus[]): void => {
-      this.scanFinished = true;
-      this.updateResponse(tcpRes, Protocol.TCP);
-      this.updateResponse(httpRes, Protocol.HTTP);
-      this.updateResponse(authRes, Protocol.AUTH);
+        this.scanFinished = true;
+        this.updateResponse(tcpRes, Protocol.TCP);
+        this.updateResponse(httpRes, Protocol.HTTP);
+        this.updateResponse(authRes, Protocol.AUTH);
+        this.cdr.detectChanges();
     });
   }
 

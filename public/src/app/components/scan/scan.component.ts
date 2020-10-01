@@ -1,5 +1,5 @@
 import { ScanId } from '../../../../../src/ConnectivityWizard/Entities/ScanId';
-import { Component, OnInit } from '@angular/core';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import {
   AbstractControl,
   FormBuilder,
@@ -20,7 +20,8 @@ export interface ScanInfo {
 @Component({
   selector: 'app-scan',
   templateUrl: './scan.component.html',
-  styleUrls: ['./scan.component.scss']
+  styleUrls: ['./scan.component.scss'],
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class ScanComponent implements OnInit {
   private readonly gc = new Subject<void>();
@@ -34,7 +35,8 @@ export class ScanComponent implements OnInit {
   constructor(
     private readonly router: Router,
     private formBuilder: FormBuilder,
-    private readonly service: AppService
+    private readonly service: AppService,
+    private cdr: ChangeDetectorRef
   ) {}
 
   get targetUrl(): AbstractControl {
@@ -87,11 +89,13 @@ export class ScanComponent implements OnInit {
             this.code,
             response.scanId
           );
+          this.cdr.detectChanges();
         },
         (error) => {
           this.errorOccurred = true;
           this.code = error.status;
           this.subscribeInfo(this.code);
+          this.cdr.detectChanges();
         }
       );
     }
