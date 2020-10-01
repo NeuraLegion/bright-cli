@@ -49,11 +49,10 @@ export class DiagnosticsComponent implements OnInit {
 
   restartTest(): void {
     this.resetValues();
-    forkJoin([
-      this.service.getConnectivityStatus({ type: Protocol.TCP }),
-      this.service.getConnectivityStatus({ type: Protocol.HTTP }),
-      this.service.getConnectivityStatus({ type: Protocol.AUTH })
-    ]).pipe(takeUntil(this.gc)).subscribe(([tcpRes, httpRes, authRes]: ItemStatus[]): void => {
+    forkJoin(
+      [Protocol.TCP, Protocol.HTTP, Protocol.AUTH]
+        .map((type: Protocol) => this.service.getConnectivityStatus({ type }))
+      ).pipe(takeUntil(this.gc)).subscribe(([tcpRes, httpRes, authRes]: ItemStatus[]): void => {
       this.scanFinished = true;
       this.updateResponse(tcpRes, Protocol.TCP);
       this.updateResponse(httpRes, Protocol.HTTP);
