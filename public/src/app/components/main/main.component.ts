@@ -1,5 +1,10 @@
 import { VisibilityToggle } from '../../shared/VisibilityToggle';
-import { ChangeDetectionStrategy, ChangeDetectorRef, Component, OnInit } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  ChangeDetectorRef,
+  Component,
+  OnInit
+} from '@angular/core';
 import {
   AbstractControl,
   FormBuilder,
@@ -42,17 +47,20 @@ export class MainComponent implements OnInit {
   ngOnInit(): void {
     console.log('Welcome to the Connectivity Wizard');
     this.initForm();
-    this.service.getTokens().pipe(takeUntil(this.gc)).subscribe(
-      (response: Tokens) => {
-        this.visibilityToggle.initialState(response);
-        this.authToken.setValue(response.authToken);
-        this.repeaterId.setValue(response.repeaterId);
-        this.cdr.detectChanges();
-      },
-      (error) => {
-        console.log(error);
-      }
-    );
+    this.service
+      .getTokens()
+      .pipe(takeUntil(this.gc))
+      .subscribe(
+        (response: Tokens) => {
+          this.visibilityToggle.initialState(response);
+          this.authToken.setValue(response.authToken);
+          this.repeaterId.setValue(response.repeaterId);
+          this.cdr.detectChanges();
+        },
+        (error) => {
+          console.log(error);
+        }
+      );
   }
 
   ngOnDestroy(): void {
@@ -71,14 +79,17 @@ export class MainComponent implements OnInit {
     if (!this.mainForm.valid) {
       console.log('Error, tokens are invalid');
     } else {
-      this.service.saveTokens(this.mainForm.value).pipe(takeUntil(this.gc)).subscribe(
-        () => {
-          this.router.navigateByUrl('diagnostics');
-        },
-        (error) => {
-          console.log(error);
-        }
-      );
+      this.service
+        .saveTokens(this.mainForm.value)
+        .pipe(takeUntil(this.gc))
+        .subscribe(
+          () => {
+            this.router.navigateByUrl('diagnostics');
+          },
+          (error) => {
+            console.log(error);
+          }
+        );
     }
   }
 }

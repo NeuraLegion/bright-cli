@@ -1,5 +1,10 @@
 import { Protocol } from '../../shared/ProtocolMessage';
-import { ChangeDetectionStrategy, ChangeDetectorRef, Component, OnInit } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  ChangeDetectorRef,
+  Component,
+  OnInit
+} from '@angular/core';
 import { FormBuilder, FormGroup } from '@angular/forms';
 import { Router } from '@angular/router';
 import { ItemStatus } from 'src/app/app.model';
@@ -17,12 +22,12 @@ import { takeUntil } from 'rxjs/operators';
 export class DiagnosticsComponent implements OnInit {
   public readonly protocolTypes = Object.values(Protocol);
   public readonly Protocol = Protocol;
-  private readonly gc = new Subject<void>();
+  public testsForm: FormGroup;
 
   errorOccurred = false;
   scanFinished = false;
 
-  public testsForm: FormGroup;
+  private readonly gc = new Subject<void>();
 
   constructor(
     private readonly router: Router,
@@ -52,15 +57,18 @@ export class DiagnosticsComponent implements OnInit {
   restartTest(): void {
     this.resetValues();
     forkJoin(
-      [Protocol.TCP, Protocol.HTTP, Protocol.AUTH]
-        .map((type: Protocol) => this.service.getConnectivityStatus({ type }))
-      ).pipe(takeUntil(this.gc)).subscribe(([tcpRes, httpRes, authRes]: ItemStatus[]): void => {
+      [Protocol.TCP, Protocol.HTTP, Protocol.AUTH].map((type: Protocol) =>
+        this.service.getConnectivityStatus({ type })
+      )
+    )
+      .pipe(takeUntil(this.gc))
+      .subscribe(([tcpRes, httpRes, authRes]: ItemStatus[]): void => {
         this.scanFinished = true;
         this.updateResponse(tcpRes, Protocol.TCP);
         this.updateResponse(httpRes, Protocol.HTTP);
         this.updateResponse(authRes, Protocol.AUTH);
         this.cdr.detectChanges();
-    });
+      });
   }
 
   updateResponse(response: ItemStatus, id: string): void {

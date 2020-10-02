@@ -6,12 +6,9 @@ import { Observable } from 'rxjs/internal/Observable';
   providedIn: 'root'
 })
 export class HomeService {
-
-  constructor() { }
-
   private static homeVisited = new BehaviorSubject(false);
 
-  public getHomeVisited(): Observable<boolean>  {
+  public getHomeVisited(): Observable<boolean> {
     return HomeService.homeVisited.asObservable();
   }
 

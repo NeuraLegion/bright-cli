@@ -1,5 +1,10 @@
 import { ScanId } from '../../../../../src/ConnectivityWizard/Entities/ScanId';
-import { ChangeDetectionStrategy, ChangeDetectorRef, Component, OnInit } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  ChangeDetectorRef,
+  Component,
+  OnInit
+} from '@angular/core';
 import {
   AbstractControl,
   FormBuilder,
@@ -24,13 +29,14 @@ export interface ScanInfo {
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class ScanComponent implements OnInit {
-  private readonly gc = new Subject<void>();
   public targetForm: FormGroup;
   code: number;
   url: string;
   scanStarted: boolean;
   scanFinished: boolean;
   errorOccurred: boolean;
+
+  private readonly gc = new Subject<void>();
 
   constructor(
     private readonly router: Router,
@@ -81,23 +87,23 @@ export class ScanComponent implements OnInit {
       console.log('Error, target URL is invalid');
     } else {
       this.resetValues();
-      this.service.startScan({ url: this.url }).pipe(takeUntil(this.gc)).subscribe(
-        (response: ScanId) => {
-          this.scanFinished = true;
-          this.code = 200;
-          this.subscribeInfo(
-            this.code,
-            response.scanId
-          );
-          this.cdr.detectChanges();
-        },
-        (error) => {
-          this.errorOccurred = true;
-          this.code = error.status;
-          this.subscribeInfo(this.code);
-          this.cdr.detectChanges();
-        }
-      );
+      this.service
+        .startScan({ url: this.url })
+        .pipe(takeUntil(this.gc))
+        .subscribe(
+          (response: ScanId) => {
+            this.scanFinished = true;
+            this.code = 200;
+            this.subscribeInfo(this.code, response.scanId);
+            this.cdr.detectChanges();
+          },
+          (error) => {
+            this.errorOccurred = true;
+            this.code = error.status;
+            this.subscribeInfo(this.code);
+            this.cdr.detectChanges();
+          }
+        );
     }
   }
 

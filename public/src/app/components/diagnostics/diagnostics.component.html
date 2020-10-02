@@ -2,12 +2,16 @@
   <h3 class="upper">Running connectivity diagnostics</h3>
   <h4>Please wait as we perform some tests</h4>
   <form [formGroup]="testsForm">
-    <input type="checkbox" formControlName="{{Protocol.TCP}}" /><label for="cb"></label>
+    <input type="checkbox" formControlName="{{ Protocol.TCP }}" /><label
+      for="cb"
+    ></label>
     <span
       >Connection to <strong>amq.nexploit.app</strong> at
       <strong>port 5672</strong></span
     ><br />
-    <input type="checkbox" formControlName="{{Protocol.HTTP}}" /><label for="cb"></label>
+    <input type="checkbox" formControlName="{{ Protocol.HTTP }}" /><label
+      for="cb"
+    ></label>
     <span
       >Connection to <strong>nexploit.app</strong> at
       <strong>port 443</strong></span
@@ -15,7 +19,9 @@
     <button class="button-scan button-move" (click)="restartTest()">
       Restart Test</button
     ><br />
-    <input type="checkbox" formControlName="{{Protocol.AUTH}}" /><label for="cb"></label>
+    <input type="checkbox" formControlName="{{ Protocol.AUTH }}" /><label
+      for="cb"
+    ></label>
     <span>Valid authentication credentials</span>
   </form>
   <h4 class="upper">Progress</h4>
@@ -26,19 +32,13 @@
           <span class="span-msg">{{ type | connectivity }}</span
           ><br />
           <ng-template [ngIf]="testsForm.get(type).value === true">
-            <span
-              id="type"
-              class="span-msg"
-              [ngClass]="'success'"
-              >Success</span
+            <span id="type" class="span-msg" [ngClass]="'success'">Success</span
             ><br />
           </ng-template>
           <ng-template [ngIf]="testsForm.get(type).value === false">
-            <span
-              id="type"
-              class="span-msg"
-              [ngClass]="'fail'"
-              >{{ type | protocol }}</span
+            <span id="type" class="span-msg" [ngClass]="'fail'">{{
+              type | protocol
+            }}</span
             ><br />
           </ng-template>
         </ng-template>

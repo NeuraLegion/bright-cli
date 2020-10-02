@@ -10,9 +10,10 @@ import { takeUntil } from 'rxjs/operators';
   styleUrls: ['./success.component.scss']
 })
 export class SuccessComponent implements OnInit {
-  private readonly gc = new Subject<void>();
   public scanId: string;
   public processFinished: boolean;
+
+  private readonly gc = new Subject<void>();
 
   constructor(
     private readonly router: Router,
@@ -32,16 +33,19 @@ export class SuccessComponent implements OnInit {
   }
 
   finish(): void {
-    this.service.finishProcess().pipe(takeUntil(this.gc)).subscribe(
-      () => {
-        console.log('/finish call completed');
-      },
-      (error) => {
-        console.log(error);
-        this.processFinished = true;
-        alert('Wizard Completed! Do not close console window.');
-      }
-    );
+    this.service
+      .finishProcess()
+      .pipe(takeUntil(this.gc))
+      .subscribe(
+        () => {
+          console.log('/finish call completed');
+        },
+        (error) => {
+          console.log(error);
+          this.processFinished = true;
+          alert('Wizard Completed! Do not close console window.');
+        }
+      );
   }
 
   prev(): void {
