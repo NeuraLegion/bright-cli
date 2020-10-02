@@ -1,5 +1,9 @@
 import { VisibilityToggle } from '../../shared/VisibilityToggle';
 import {
+  RepeaterIdValidationRegExp,
+  AuthTokenValidationRegExp
+} from '../../../../../src/ConnectivityWizard/Entities/Tokens';
+import {
   ChangeDetectionStrategy,
   ChangeDetectorRef,
   Component,
@@ -26,7 +30,7 @@ import { takeUntil } from 'rxjs/operators';
 export class MainComponent implements OnInit {
   public visibilityToggle = new VisibilityToggle();
   public mainForm: FormGroup;
-  private UUID_V4 = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/;
+  // private UUID_V4 = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/;
   private readonly gc = new Subject<void>();
 
   constructor(
@@ -70,8 +74,14 @@ export class MainComponent implements OnInit {
 
   initForm(): void {
     this.mainForm = this.formBuilder.group({
-      authToken: ['', [Validators.required]],
-      repeaterId: ['', [Validators.required, Validators.pattern(this.UUID_V4)]]
+      authToken: [
+        '',
+        [Validators.required, Validators.pattern(AuthTokenValidationRegExp)]
+      ],
+      repeaterId: [
+        '',
+        [Validators.required, Validators.pattern(RepeaterIdValidationRegExp)]
+      ]
     });
   }
 
