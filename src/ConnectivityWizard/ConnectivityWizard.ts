@@ -16,14 +16,14 @@ export class ConnectivityWizard {
     this.app = await new KoaAppFactory(routesFactory).createApp();
 
     //select available port and launch http listener
-    const selected_port: number = await getPort({
+    const selectedPort: number = await getPort({
       port: getPort.makeRange(this.BIND_PORT, this.BIND_PORT + this.RANGE_SIZE)
     });
 
-    this.app.listen(selected_port);
+    this.app.listen(selectedPort);
 
     logger.log(
-      `Please browse to http://localhost:${selected_port} to begin the configurations of the Repeater`
+      `Please browse to http://localhost:${selectedPort} to begin the configurations of the Repeater`
     );
   }
 }

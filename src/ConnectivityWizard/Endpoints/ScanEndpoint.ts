@@ -114,11 +114,11 @@ export class ScanEndpoint implements Endpoint {
       ...nodeExec.argv,
       'scan:run',
       '--token',
-      `"${tokens.authToken}"`,
+      tokens.authToken,
       '--name',
       '"My First Demo Scan"',
       '--agent',
-      `"${tokens.repeaterId}"`,
+      tokens.repeaterId,
       '--crawler',
       url,
       '--smart',
@@ -149,16 +149,17 @@ export class ScanEndpoint implements Endpoint {
 
         p.on('error', (err: Error) => {
           logger.warn(`Failed to start Scanner process due to ${err.message}`);
-          reject();
+          reject(err);
         });
         p.on('exit', (code: number) => {
           if (code !== 0 || output.length === 0) {
-            logger.warn(
-              `Scan did not start succesfully. Process exited with code ${code} and output ${JSON.stringify(
-                output
-              )}`
-            );
-            reject();
+            const msg = `Scan did not start succesfully. Process exited with code ${code} and output ${JSON.stringify(
+              output
+            )}`;
+
+            logger.warn(msg);
+
+            reject(new Error(msg));
           } else {
             resolve(output.pop());
           }
@@ -167,7 +168,11 @@ export class ScanEndpoint implements Endpoint {
         logger.error(
           `Failed to launch Scanner process. Error message ${err.message}`
         );
-        reject();
+        reject(
+          new Error(
+            `Failed to launch Scanner process. Error message ${err.message}`
+          )
+        );
       }
     });
   }

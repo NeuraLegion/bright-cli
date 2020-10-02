@@ -1,7 +1,7 @@
 import { Connectivity } from './Connectivity';
 import logger from '../../Utils/Logger';
 import https from 'https';
-import http from 'http';
+import http, { IncomingMessage } from 'http';
 import { ClientRequest } from 'http';
 import { URL } from 'url';
 
@@ -20,7 +20,8 @@ export class HTTPConnectivity implements Connectivity {
           ? https.get(this.url)
           : http.get(this.url);
 
-      req.once('response', () => {
+      req.once('response', (res: IncomingMessage) => {
+        res.read();
         logger.debug(
           'Http connectivity test - received data the connection.The connection is succesfull.'
         );

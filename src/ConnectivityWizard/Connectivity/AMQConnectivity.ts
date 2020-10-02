@@ -8,8 +8,8 @@ import { URL } from 'url';
 export class AMQConnectivity implements Connectivity {
   private readonly CONNECTION_TIMEOUT = 30 * 1000; // 30 seconds
 
-  private authEndpoint: URL;
-  private tokenOperations: TokensOperations;
+  private readonly authEndpoint: URL;
+  private readonly tokenOperations: TokensOperations;
 
   constructor(tokensOperations: TokensOperations, url: URL) {
     this.tokenOperations = tokensOperations;
@@ -20,7 +20,7 @@ export class AMQConnectivity implements Connectivity {
     const tokens: Tokens = this.tokenOperations.readTokens();
 
     return new Promise<boolean>((resolve) => {
-      const req: httpReq.Request = httpReq.post(
+      httpReq.post(
         {
           url: this.authEndpoint,
           timeout: this.CONNECTION_TIMEOUT,
@@ -29,19 +29,25 @@ export class AMQConnectivity implements Connectivity {
             password: tokens.authToken
           }
         },
-        (error: any, response: httpReq.Response, body: string) => {
+        (error: Error, response: httpReq.Response, body: string) => {
           if (error || response.statusCode !== 200) {
-            resolve(false);
+            if (error) {
+              logger.debug('AMQ connectivity failed: %s', error.message);
+            } else {
+              logger.debug(
+                'AMQ connectivity failed with status code %d',
+                response.statusCode
+              );
+            }
+
+            return resolve(false);
           }
-          resolve(body === 'allow');
+
+          logger.debug('AMQ connectivity test returned: %s', body);
+
+          return resolve(body === 'allow');
         }
       );
-      req.on('error', () => {
-        logger.error(
-          'Auth HTTP connection failed. Could not make HTTP call to auth endpoint.'
-        );
-        resolve(false);
-      });
     });
   }
 }

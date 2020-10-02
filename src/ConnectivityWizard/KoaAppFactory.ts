@@ -26,6 +26,7 @@ export class KoaAppFactory {
       await next();
     });
     app.use((await this.routerFactory.createRouter()).routes());
+
     return app;
   }
 }
