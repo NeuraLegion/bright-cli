@@ -11,7 +11,7 @@ export class GetTokensEndpoint implements Endpoint {
     this.tokensOperations = tokensOps;
   }
 
-  public handle(ctx: Koa.Context): Promise<void> {
+  public async handle(ctx: Koa.Context): Promise<void> {
     try {
       const resp: Tokens = this.tokensOperations.readTokens();
       ctx.body = resp;
@@ -19,7 +19,5 @@ export class GetTokensEndpoint implements Endpoint {
       logger.error(`Failed to read tokens from file. Error: ${err.message}`);
       ctx.throw('Failed to read tokens from file');
     }
-
-    return;
   }
 }

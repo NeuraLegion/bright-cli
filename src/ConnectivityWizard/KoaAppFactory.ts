@@ -8,25 +8,24 @@ import send from 'koa-send';
 
 export class KoaAppFactory {
   private routerFactory: RouterFactory;
-  private app: Koa;
 
   constructor(routerFactory: RouterFactory) {
     this.routerFactory = routerFactory;
   }
 
   public async createApp(): Promise<Koa> {
-    this.app = new Koa();
+    const app: Koa = new Koa();
 
     const static_path: string = process.cwd() + '/wizard-dist/Wizard';
     logger.debug('Using static path for client %s', static_path);
-    this.app.use(serve(static_path));
-    this.app.use(json());
-    this.app.use(bodyParser());
-    this.app.use(async (ctx: Koa.Context, next: Koa.Next) => {
+    app.use(serve(static_path));
+    app.use(json());
+    app.use(bodyParser());
+    app.use(async (ctx: Koa.Context, next: Koa.Next) => {
       await send(ctx, '/index.html', { root: static_path });
       await next();
     });
-    this.app.use((await this.routerFactory.createRouter()).routes());
-    return this.app;
+    app.use((await this.routerFactory.createRouter()).routes());
+    return app;
   }
 }

@@ -34,7 +34,5 @@ export class ConnectivityEndpoint implements Endpoint {
     ctx.body = <ItemStatus>{
       ok: await this.connectivityTests.get(req.type).test()
     };
-
-    return;
   }
 }

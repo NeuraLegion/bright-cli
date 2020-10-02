@@ -11,7 +11,7 @@ export class SetTokensEndpoint implements Endpoint {
     this.tokenOperations = tokenOps;
   }
 
-  public handle(ctx: Koa.Context): Promise<void> {
+  public async handle(ctx: Koa.Context): Promise<void> {
     try {
       const req = <Tokens>ctx.request.body;
       this.tokenOperations.writeTokens(req);
@@ -19,8 +19,6 @@ export class SetTokensEndpoint implements Endpoint {
     } catch (err) {
       logger.error(`Failed to store tokens in file. Error: ${err.message}`);
       ctx.throw('Failed to store tokens in file');
-
-      return;
     }
   }
 }
