@@ -19,14 +19,14 @@ export class SetTokensEndpoint implements Endpoint {
     try {
       const req = <Tokens>ctx.request.body;
 
-      if (!req.authToken || AuthTokenValidationRegExp.test(req.authToken)) {
+      if (!req.authToken || !AuthTokenValidationRegExp.test(req.authToken)) {
         logger.warn('Invalid value for authentication token');
         ctx.throw('Invalid value for authentication token');
 
         return;
       }
 
-      if (!req.repeaterId || RepeaterIdValidationRegExp.test(req.authToken)) {
+      if (!req.repeaterId || !RepeaterIdValidationRegExp.test(req.repeaterId)) {
         logger.warn('Invalid value for repeater id');
         ctx.throw('Invalid value for repeater id');
 
