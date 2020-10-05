@@ -20,6 +20,6 @@ export abstract class Breakpoint {
   }
 
   protected isExcepted(stats?: CountIssuesBySeverity): boolean {
-    return !!stats.number;
+    return !!stats?.number;
   }
 }
