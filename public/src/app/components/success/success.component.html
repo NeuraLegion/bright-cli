@@ -1,0 +1,32 @@
+<div class="content-container">
+  <h3>
+    Congratulations! You created your first scan! <br /><br />
+    To see the full scan details on our web platform, click here:
+    <a
+      [href]="'https://nexploit.app/scans/' + scanId"
+      target="_blank"
+      rel="noopener noreferrer"
+    >
+      https://nexploit.app/scans/{{ scanId }} </a
+    ><br /><br />
+    The demo scan only performs passive headers security validations, but now
+    that your Repeater is running, you can start full scans on the target
+    application.<br /><br />
+    For additional information about NexPloit scans, you can visit our
+    documentation website:<br />
+    <a
+      href="https://kb.neuralegion.com/#/user-guide/scans/overview"
+      target="_blank"
+      rel="noopener noreferrer"
+    >
+      https://kb.neuralegion.com/#/user-guide/scans/overview
+    </a>
+  </h3>
+</div>
+<div class="content-container gap"></div>
+<div class="buttons-container">
+  <button class="button-prev" (click)="prev()" [disabled]="processFinished">
+    Prev
+  </button>
+  <button (click)="finish()" [disabled]="processFinished">Finish</button>
+</div>
