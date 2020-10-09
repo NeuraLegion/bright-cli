@@ -1,0 +1,73 @@
+@import '../../app.component.scss';
+
+.buttons-container {
+  display: flex;
+  justify-content: space-between;
+  margin-left: 0rem;
+  width: 52rem;
+  margin-top: 0rem;
+}
+
+button {
+  color: White;
+  width: 8em;
+  height: 3em;
+  background-color: $primary-blue;
+  border-radius: 5px;
+}
+
+.button-prev {
+  background-color: $primary-grey;
+}
+
+.form-control {
+  width: 70%;
+  margin-top: 2rem;
+  border-color: black;
+  border-width: thin;
+  border-style: solid;
+  display: inline-block;
+  background-color: $neutral-grey;
+
+  .form-group {
+    padding: 20px;
+    margin: 0px;
+    display: inline-block;
+  }
+}
+
+input {
+  width: 24rem;
+  height: 1.5rem;
+  margin-left: 1rem;
+  margin-right: -1rem;
+  padding-right: 2.5rem;
+}
+
+.gap {
+  height: 19.5rem;
+}
+
+.button-scan {
+  width: 10em;
+  height: 4em;
+  background-color: $secondary-blue;
+}
+
+.field-icon {
+  float: right;
+  margin-left: -2rem;
+  margin-top: 0.4rem;
+  position: relative;
+  z-index: 2;
+}
+
+input {
+  &.error {
+    border: 2px solid $error-red;
+  }
+
+  &.clean {
+    border: 2px solid -internal-light-dark(rgb(118, 118, 118), rgb(195, 195, 195));
+  }
+}
