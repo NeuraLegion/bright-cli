@@ -3,7 +3,7 @@ import {
   AUTH_TOKEN_VALIDATION_REGEXP,
   Credentials,
   REPEATER_ID_VALIDATION_REGEXP
-} from '../Entities/Credentials';
+} from '../Models/Credentials';
 import logger from '../../Utils/Logger';
 import { Tokens } from '../Tokens';
 import Koa from 'koa';

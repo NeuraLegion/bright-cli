@@ -1,5 +1,5 @@
 import Router from 'koa-router';
 
-export interface RouterFactory {
+export interface KoaRouterFactory {
   createRouter(): Promise<Router>;
 }

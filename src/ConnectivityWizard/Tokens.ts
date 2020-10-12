@@ -1,4 +1,4 @@
-import { Credentials } from './Entities/Credentials';
+import { Credentials } from './Models/Credentials';
 
 export interface Tokens {
   writeTokens(credentials: Credentials): void;

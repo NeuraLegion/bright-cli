@@ -1,4 +1,4 @@
-import { Credentials } from '../Entities/Credentials';
+import { Credentials } from '../Models/Credentials';
 import { Connectivity } from './Connectivity';
 import logger from '../../Utils/Logger';
 import { Tokens } from '../Tokens';

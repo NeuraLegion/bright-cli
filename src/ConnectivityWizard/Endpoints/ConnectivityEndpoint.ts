@@ -1,6 +1,6 @@
 import { Endpoint } from './Endpoint';
-import { ConnectivityTest, TestType } from '../Entities/ConnectivityTest';
-import { ItemStatus } from '../Entities/ConnectivityStatus';
+import { ConnectivityTest, TestType } from '../Models/ConnectivityTest';
+import { ItemStatus } from '../Models/ConnectivityStatus';
 import logger from '../../Utils/Logger';
 import { Connectivity } from '../Connectivity/Connectivity';
 import Koa from 'koa';
