@@ -1,44 +1,59 @@
 import { Connectivity } from './Connectivity';
 import logger from '../../Utils/Logger';
 import https from 'https';
-import http, { IncomingMessage } from 'http';
-import { ClientRequest } from 'http';
+import http, { ClientRequest, RequestOptions } from 'http';
 import { URL } from 'url';
+import { once } from 'events';
+
+interface ReqFactory {
+  request(options: RequestOptions): ClientRequest;
+}
+
+const requestFactoryRegistry: ReadonlyMap<string, ReqFactory> = new Map<
+  string,
+  ReqFactory
+>([
+  ['http:', http],
+  ['https:', https]
+]);
 
 export class HTTPConnectivity implements Connectivity {
   private readonly CONNECTION_TIMEOUT = 30 * 1000; // 30 seconds
-  private url: URL;
+  private readonly options: RequestOptions;
+  private readonly factory: ReqFactory;
 
-  constructor(url: URL) {
-    this.url = url;
+  constructor({ port, hostname, protocol }: URL) {
+    if (!hostname) {
+      throw new Error('Missing proper hostname for http connectivity test');
+    }
+    this.factory = requestFactoryRegistry.get(protocol);
+    this.options = {
+      port,
+      hostname,
+      method: 'GET',
+      timeout: this.CONNECTION_TIMEOUT
+    };
   }
 
   public async test(): Promise<boolean> {
-    return new Promise<boolean>((resolve) => {
-      const req: ClientRequest =
-        this.url.protocol === 'https:'
-          ? https.get(this.url)
-          : http.get(this.url);
+    try {
+      const req: ClientRequest = this.factory.request(this.options);
 
-      req.once('response', (res: IncomingMessage) => {
-        res.read();
-        logger.debug(
-          'Http connectivity test - received data the connection.The connection is succesfull.'
-        );
-        resolve(true);
-      });
-      req.once('error', () => {
-        logger.debug(
-          'Http connectivity test - received an error code on connection. The connection failed.'
-        );
-        resolve(false);
-      });
-      setTimeout(() => {
-        logger.debug(
-          'Http connectivity test - reached timeout. The connection failed.'
-        );
-        req.destroy();
-      }, this.CONNECTION_TIMEOUT);
-    });
+      req.once('timeout', () => req.destroy(new Error('Reached timeout.')));
+      req.end();
+
+      await once(req, 'response');
+
+      logger.debug('Http connectivity test. The connection is succesfull.');
+
+      return true;
+    } catch (err) {
+      logger.debug(
+        'Http connectivity test. The connection failed: %s',
+        err.message
+      );
+
+      return false;
+    }
   }
 }

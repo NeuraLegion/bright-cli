@@ -2,50 +2,49 @@ import { Connectivity } from './Connectivity';
 import logger from '../../Utils/Logger';
 import { Socket } from 'net';
 import { URL } from 'url';
+import { once } from 'events';
 
 export class TCPConnectivity implements Connectivity {
   private readonly CONNECTION_TIMEOUT = 30 * 1000; // 30 seconds
+  private readonly fqdn: string;
+  private readonly port: number;
 
-  private fqdn: string;
-  private port: number;
-
-  constructor(url: URL) {
-    if (!url || !url.hostname || !url.port) {
+  constructor({ hostname, port }: URL) {
+    if (!hostname || !port) {
       throw new Error(
         'Missing proper endpoint and port for tcp connectivity test'
       );
     }
-    this.fqdn = url.hostname;
-    this.port = +url.port;
+    this.fqdn = hostname;
+    this.port = +port;
   }
 
   public async test(): Promise<boolean> {
-    return new Promise<boolean>((resolve) => {
+    const socket: Socket = new Socket();
+
+    socket.setNoDelay(false);
+
+    try {
       logger.debug(
-        `TCP connectivity test - openning socket to ${this.fqdn}:${this.port}`
+        `TCP connectivity test. Opening socket to %s:%s`,
+        this.fqdn,
+        this.port
       );
-      const socket: Socket = new Socket();
-      socket.setNoDelay(false);
-      socket.setTimeout(this.CONNECTION_TIMEOUT, () => {
-        logger.debug(
-          `TCP connectivity test - reached socket timeout. Connection failed.`
-        );
-        socket.destroy();
-        resolve(false);
-      });
-      socket.connect(this.port, this.fqdn, () => {
-        logger.debug('TCP connectivity test - Connection succesfull.');
-        socket.destroy();
-        resolve(true);
-      });
-      socket.on('error', (err: Error) => {
-        logger.debug(
-          `TCP connectivity test - received socket error. Connection failed.`,
-          err
-        );
-        socket.destroy();
-        resolve(false);
-      });
-    });
+      socket.setTimeout(this.CONNECTION_TIMEOUT, () =>
+        socket.destroy(new Error(`Reached socket timeout.`))
+      );
+      socket.connect(this.port, this.fqdn);
+      await once(socket, 'connect');
+
+      logger.debug('TCP connectivity test. Connection succesfull.');
+
+      return true;
+    } catch (err) {
+      logger.debug(`TCP connectivity test. Connection failed: %s`, err.message);
+
+      return false;
+    } finally {
+      socket.destroy();
+    }
   }
 }
