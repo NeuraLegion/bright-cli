@@ -41,21 +41,21 @@ export class Configure implements CommandModule {
     try {
       const options: Map<TestType, URL> = new Map();
       try {
-        options.set('tcp', new URL(args['tcp-test'] as string));
+        options.set(TestType.tcp, new URL(args['tcp-test'] as string));
       } catch (err) {
         logger.log('Invalid value for TCP testing endpoint');
         process.exit(1);
       }
 
       try {
-        options.set('http', new URL(args['http-test'] as string));
+        options.set(TestType.http, new URL(args['http-test'] as string));
       } catch (err) {
         logger.log('Invalid value for HTTP testing endpoint');
         process.exit(1);
       }
 
       try {
-        options.set('auth', new URL(args['auth-test'] as string));
+        options.set(TestType.auth, new URL(args['auth-test'] as string));
       } catch (err) {
         logger.log('Invalid value for authentication testing endpoint');
         process.exit(1);

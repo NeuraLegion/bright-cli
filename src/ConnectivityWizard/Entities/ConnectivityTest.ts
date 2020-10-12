@@ -1,5 +1,9 @@
-export type TestType = 'http' | 'tcp' | 'auth';
+export enum TestType {
+  HTTP = 'http',
+  TCP = 'tcp',
+  AUTH = 'auth'
+}
 
 export interface ConnectivityTest {
-  type: TestType;
+  readonly type: TestType;
 }

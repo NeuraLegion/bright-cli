@@ -1,53 +1,45 @@
-import { Tokens } from '../Entities/Tokens';
+import { Credentials } from '../Entities/Credentials';
 import { Connectivity } from './Connectivity';
 import logger from '../../Utils/Logger';
-import { TokensOperations } from '../TokensOperations';
-import httpReq from 'request';
+import { Tokens } from '../Tokens';
+import { post } from 'request-promise';
 import { URL } from 'url';
 
 export class AMQConnectivity implements Connectivity {
   private readonly CONNECTION_TIMEOUT = 30 * 1000; // 30 seconds
 
-  private readonly authEndpoint: URL;
-  private readonly tokenOperations: TokensOperations;
-
-  constructor(tokensOperations: TokensOperations, url: URL) {
-    this.tokenOperations = tokensOperations;
-    this.authEndpoint = url;
-  }
+  constructor(private readonly tokens: Tokens, private readonly url: URL) {}
 
   public async test(): Promise<boolean> {
-    const tokens: Tokens = this.tokenOperations.readTokens();
+    const {
+      repeaterId: username,
+      authToken: password
+    }: Credentials | undefined = this.tokens.readTokens();
 
-    return new Promise<boolean>((resolve) => {
-      httpReq.post(
-        {
-          url: this.authEndpoint,
-          timeout: this.CONNECTION_TIMEOUT,
-          form: {
-            username: tokens.repeaterId,
-            password: tokens.authToken
-          }
-        },
-        (error: Error, response: httpReq.Response, body: string) => {
-          if (error || response.statusCode !== 200) {
-            if (error) {
-              logger.debug('AMQ connectivity failed: %s', error.message);
-            } else {
-              logger.debug(
-                'AMQ connectivity failed with status code %d',
-                response.statusCode
-              );
-            }
-
-            return resolve(false);
-          }
-
-          logger.debug('AMQ connectivity test returned: %s', body);
-
-          return resolve(body === 'allow');
+    try {
+      const body = await post({
+        url: this.url,
+        timeout: this.CONNECTION_TIMEOUT,
+        form: {
+          username,
+          password
         }
-      );
-    });
+      });
+
+      logger.debug('AMQ connectivity test returned: %s', body);
+
+      return body === 'allow';
+    } catch (res) {
+      if (res.error) {
+        logger.debug('AMQ connectivity failed: %s', res.error.message);
+      } else {
+        logger.debug(
+          'AMQ connectivity failed with status code %d',
+          res.response.statusCode
+        );
+      }
+
+      return false;
+    }
   }
 }

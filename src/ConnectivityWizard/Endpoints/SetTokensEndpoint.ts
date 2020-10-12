@@ -1,23 +1,19 @@
 import { Endpoint } from './Endpoint';
 import {
-  Tokens,
   AuthTokenValidationRegExp,
+  Credentials,
   RepeaterIdValidationRegExp
-} from '../Entities/Tokens';
-import { TokensOperations } from '../TokensOperations';
+} from '../Entities/Credentials';
 import logger from '../../Utils/Logger';
+import { Tokens } from '../Tokens';
 import Koa from 'koa';
 
 export class SetTokensEndpoint implements Endpoint {
-  private tokenOperations: TokensOperations;
-
-  constructor(tokenOps: TokensOperations) {
-    this.tokenOperations = tokenOps;
-  }
+  constructor(private readonly tokens: Tokens) {}
 
   public async handle(ctx: Koa.Context): Promise<void> {
     try {
-      const req = <Tokens>ctx.request.body;
+      const req = <Credentials>ctx.request.body;
 
       if (!req.authToken || !AuthTokenValidationRegExp.test(req.authToken)) {
         logger.warn('Invalid value for authentication token');
@@ -33,11 +29,11 @@ export class SetTokensEndpoint implements Endpoint {
         return;
       }
 
-      this.tokenOperations.writeTokens(req);
+      this.tokens.writeTokens(req);
       ctx.body = req;
     } catch (err) {
       logger.error(`Failed to store tokens in file. Error: ${err.message}`);
-      ctx.throw('Failed to store tokens in file');
+      ctx.throw(400, 'Failed to store tokens in file');
     }
   }
 }

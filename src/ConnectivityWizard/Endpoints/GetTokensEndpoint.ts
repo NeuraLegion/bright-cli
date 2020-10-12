@@ -1,23 +1,17 @@
 import { Endpoint } from './Endpoint';
-import { Tokens } from '../Entities/Tokens';
-import { TokensOperations } from '../TokensOperations';
 import logger from '../../Utils/Logger';
+import { Tokens } from '../Tokens';
 import Koa from 'koa';
 
 export class GetTokensEndpoint implements Endpoint {
-  private tokensOperations: TokensOperations;
-
-  constructor(tokensOps: TokensOperations) {
-    this.tokensOperations = tokensOps;
-  }
+  constructor(private readonly tokens: Tokens) {}
 
   public async handle(ctx: Koa.Context): Promise<void> {
     try {
-      const resp: Tokens = this.tokensOperations.readTokens();
-      ctx.body = resp;
+      ctx.body = this.tokens.readTokens();
     } catch (err) {
-      logger.error(`Failed to read tokens from file. Error: ${err.message}`);
-      ctx.throw('Failed to read tokens from file');
+      logger.error(`Failed to read tokens from file. Error: %s`, err.message);
+      ctx.throw(404, 'Failed to read tokens from file.');
     }
   }
 }

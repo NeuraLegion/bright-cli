@@ -1,24 +1,29 @@
 import { Endpoint } from './Endpoint';
 import { ScannedUrl } from '../Entities/ScannedUrl';
-import { Tokens } from '../Entities/Tokens';
+import { Credentials } from '../Entities/Credentials';
 import { ScanId } from '../Entities/ScanId';
-import { TokensOperations } from '../TokensOperations';
 import logger from '../../Utils/Logger';
+import { Tokens } from '../Tokens';
 import Koa from 'koa';
-import { spawn, ChildProcess } from 'child_process';
+import { ChildProcess, spawn } from 'child_process';
 
 export class ScanEndpoint implements Endpoint {
-  private tokenOperations: TokensOperations;
   private repeaterProcess: ChildProcess;
 
-  constructor(tokenOps: TokensOperations) {
-    this.tokenOperations = tokenOps;
-  }
+  constructor(private readonly tokens: Tokens) {}
 
   public async handle(ctx: Koa.Context): Promise<void> {
+    const tokens: Credentials | undefined = this.tokens.readTokens();
+
+    if (!tokens) {
+      ctx.throw(403, 'Authentication is required.');
+
+      return;
+    }
+
     const req = <ScannedUrl>ctx.request.body;
-    const tokens: Tokens = this.tokenOperations.readTokens();
-    let scan_id: string = null;
+
+    let scanId: string | undefined;
 
     if (!this.executeRepeater(tokens)) {
       ctx.throw('Could not execute Repeater');
@@ -27,19 +32,19 @@ export class ScanEndpoint implements Endpoint {
     }
 
     try {
-      scan_id = await this.launchScan(req.url, tokens);
+      scanId = await this.launchScan(req.url, tokens);
     } catch (err) {
       ctx.status = 400;
 
       return;
     }
 
-    ctx.body = <ScanId>{
-      scanId: scan_id
-    };
+    ctx.body = {
+      scanId
+    } as ScanId;
   }
 
-  private executeRepeater(tokens: Tokens): boolean {
+  private executeRepeater(tokens: Credentials): boolean {
     if (this.repeaterProcess != null && this.repeaterProcess.exitCode == null) {
       logger.debug(
         `Repeater process is still runnning (PID ${this.repeaterProcess.pid}). Skippiing spawning another one`
@@ -108,7 +113,7 @@ export class ScanEndpoint implements Endpoint {
     }
   }
 
-  private async launchScan(url: string, tokens: Tokens): Promise<string> {
+  private async launchScan(url: string, tokens: Credentials): Promise<string> {
     const nodeExec = this.getNodeExec();
     const args: string[] = [
       ...nodeExec.argv,
