@@ -1,10 +1,10 @@
+import { TestType } from './ConnectivityTest';
+
 export interface ItemStatus {
-  ok: boolean;
-  msg?: string;
+  readonly ok: boolean;
+  readonly msg?: string;
 }
 
-export interface ConnectivityStatus {
-  tcp: ItemStatus;
-  https: ItemStatus;
-  auth: ItemStatus;
-}
+export type ConnectivityStatus = {
+  readonly [key in TestType]?: ItemStatus;
+};

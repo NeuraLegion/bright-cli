@@ -1,3 +1,3 @@
 export interface ScanId {
-  scanId: string;
+  readonly scanId: string;
 }

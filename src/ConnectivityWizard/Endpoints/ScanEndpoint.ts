@@ -6,6 +6,7 @@ import logger from '../../Utils/Logger';
 import { Tokens } from '../Tokens';
 import Koa from 'koa';
 import { ChildProcess, spawn } from 'child_process';
+import { URL } from 'url';
 
 export class ScanEndpoint implements Endpoint {
   private repeaterProcess: ChildProcess;
@@ -21,20 +22,30 @@ export class ScanEndpoint implements Endpoint {
       return;
     }
 
-    const req = <ScannedUrl>ctx.request.body;
-
-    let scanId: string | undefined;
-
     if (!this.executeRepeater(tokens)) {
-      ctx.throw('Could not execute Repeater');
+      ctx.throw(500, 'Could not start Repeater');
 
       return;
     }
 
+    const { url }: ScannedUrl = ctx.request.body;
+
     try {
-      scanId = await this.launchScan(req.url, tokens);
+      new URL(url);
+    } catch {
+      ctx.throw(400, 'Invalid URL.');
+
+      return;
+    }
+
+    let scanId: string | undefined;
+
+    try {
+      scanId = await this.launchScan(url, tokens);
     } catch (err) {
-      ctx.status = 400;
+      logger.debug(`Cannot start a scan on %s. Error: %s`, url, err.message);
+
+      ctx.throw(400, 'Cannot start a scan.');
 
       return;
     }
@@ -44,86 +55,83 @@ export class ScanEndpoint implements Endpoint {
     } as ScanId;
   }
 
-  private executeRepeater(tokens: Credentials): boolean {
-    if (this.repeaterProcess != null && this.repeaterProcess.exitCode == null) {
+  private executeRepeater({ authToken, repeaterId }: Credentials): boolean {
+    if (this.repeaterProcess && this.repeaterProcess.exitCode == null) {
       logger.debug(
-        `Repeater process is still runnning (PID ${this.repeaterProcess.pid}). Skippiing spawning another one`
+        `Repeater process is still running (PID ${this.repeaterProcess.pid}). Skipping spawning another one`
       );
 
       return true;
     }
 
-    const node_exec = this.getNodeExec();
+    const {
+      cmd,
+      argv: nodeArgv
+    }: { cmd: string; argv: string[] } = this.getNodeExec();
+    const args: string[] = [
+      ...nodeArgv,
+      'repeater',
+      '--token',
+      authToken,
+      '--agent',
+      repeaterId
+    ];
+
+    logger.debug(
+      'Launching Repeater process with cmd: %s and arguments: %j',
+      cmd,
+      args
+    );
 
     try {
-      const startArgs: string[] = [
-        ...node_exec.argv,
-        'repeater',
-        '--token',
-        tokens.authToken,
-        '--agent',
-        tokens.repeaterId
-      ];
-      logger.debug(
-        'Launching Repeater process with cmd: %s and arguments: %j',
-        node_exec.cmd,
-        startArgs
-      );
-
-      this.repeaterProcess = spawn(node_exec.cmd, startArgs, {
-        detached: true
-      });
-
-      this.repeaterProcess.stdout.on('data', (data) => {
-        const line = data.toString();
-        logger.debug('Repeater (stdout): %s', line);
-      });
-      this.repeaterProcess.stderr.on('data', (data) => {
-        const line = data.toString();
-        logger.error(`Repeater (stderr): ${line}`);
+      this.repeaterProcess = spawn(cmd, args, {
+        detached: true,
+        stdio: 'ignore'
       });
 
       this.repeaterProcess.unref();
 
-      let fired = false;
+      this.repeaterProcess.once('close', (code: number, signal: string) =>
+        logger.log(
+          `Repeater process closed with exit code %s due to %s signal`,
+          code,
+          signal
+        )
+      );
+      this.repeaterProcess.once('error', (err: Error) =>
+        logger.log(`Failed to start Repeater process due to %s`, err.message)
+      );
+      this.repeaterProcess.on('exit', (code: number) =>
+        logger.log(`Repeater process exited with exit code %s`, code)
+      );
 
-      this.repeaterProcess.on('close', (code, signal) => {
-        !fired &&
-          logger.log(
-            `Repeater process closed with exit code ${code} due to ${signal} signal`
-          );
-        fired = true;
-      });
-      this.repeaterProcess.on('error', (err: Error) => {
-        !fired &&
-          logger.log(`Failed to start repeater process due to ${err.message}`);
-        fired = true;
-      });
-      this.repeaterProcess.on('exit', (code) => {
-        !fired && logger.log(`Repeater process exited with exit code ${code}`);
-        fired = true;
-      });
-      logger.log(`Launched Repeater process (PID ${this.repeaterProcess.pid})`);
+      logger.log(
+        `Launched Repeater process (PID %s)`,
+        this.repeaterProcess.pid
+      );
 
       return true;
     } catch (err) {
-      logger.error(`Failed to launch Repeater process. Error: ${err.message}`);
+      logger.error(`Failed to launch Repeater process. Error: %s`, err.message);
 
       return false;
     }
   }
 
-  private async launchScan(url: string, tokens: Credentials): Promise<string> {
-    const nodeExec = this.getNodeExec();
+  private async launchScan(
+    url: string,
+    { authToken, repeaterId }: Credentials
+  ): Promise<string> {
+    const { cmd, argv: nodeArgv } = this.getNodeExec();
     const args: string[] = [
-      ...nodeExec.argv,
+      ...nodeArgv,
       'scan:run',
       '--token',
-      tokens.authToken,
+      authToken,
       '--name',
       '"My First Demo Scan"',
-      '--agent',
-      tokens.repeaterId,
+      '--repeater',
+      repeaterId,
       '--crawler',
       url,
       '--smart',
@@ -132,42 +140,44 @@ export class ScanEndpoint implements Endpoint {
     ];
 
     logger.debug(
-      `Launching scanner process with cmd: ${
-        nodeExec.cmd
-      } and arguments: ${JSON.stringify(args)}`
+      `Launching scanner process with cmd: %s and arguments: %j`,
+      cmd,
+      args
     );
 
-    return new Promise((resolve, reject) => {
+    return new Promise<string>((resolve, reject) => {
       try {
-        const p: ChildProcess = spawn(nodeExec.cmd, args);
-        const output: string[] = [];
+        const scanProcess: ChildProcess = spawn(cmd, args);
 
-        p.stdout.on('data', (data: any) => {
-          const line = data.toString();
-          logger.debug('Scanner (stdout): %s', line);
-          output.push(line);
-        });
-        p.stderr.on('data', (data: any) => {
-          const line = data.toString();
-          logger.debug('Scanner (stderr): %s', line);
+        const output: Buffer[] = [];
+
+        scanProcess.stdout.on('data', (data: Buffer) => {
+          logger.debug('Scanner (stdout): %s', data);
+          output.push(data);
         });
 
-        p.on('error', (err: Error) => {
-          logger.warn(`Failed to start Scanner process due to ${err.message}`);
+        scanProcess.on('error', (err: Error) => {
+          logger.warn(`Failed to start Scanner process due to %s`, err.message);
           reject(err);
         });
-        p.on('exit', (code: number) => {
+
+        scanProcess.on('exit', (code: number) => {
           if (code !== 0 || output.length === 0) {
-            const msg = `Scan did not start succesfully. Process exited with code ${code} and output ${JSON.stringify(
+            const msg = `Scan did not start successfully. Process exited with code ${code} and output ${JSON.stringify(
               output
             )}`;
 
             logger.warn(msg);
 
-            reject(new Error(msg));
-          } else {
-            resolve(output.pop());
+            return reject(new Error(msg));
           }
+
+          const scanId: string = Buffer.concat(output)
+            .toString('utf8')
+            .split('\n')
+            .pop();
+
+          resolve(scanId);
         });
       } catch (err) {
         logger.error(
@@ -183,19 +193,22 @@ export class ScanEndpoint implements Endpoint {
   }
 
   private getNodeExec(): { cmd: string; argv: string[] } {
-    const startArgs: string[] = [];
-    //to support standalone 'node ./dist/index.js configure' execution
+    const args: string[] = [];
+
+    // to support standalone 'node ./dist/index.js configure' execution
     for (let i = 0; i < process.argv.length; i++) {
       if (process.argv[i] === 'configure') {
         break;
       }
-      startArgs.push(process.argv[i]);
+
+      args.push(process.argv[i]);
     }
-    const cmd: string = startArgs.shift();
+
+    const cmd: string = args.shift();
 
     return {
       cmd,
-      argv: startArgs
+      argv: [...process.execArgv, ...args]
     };
   }
 }

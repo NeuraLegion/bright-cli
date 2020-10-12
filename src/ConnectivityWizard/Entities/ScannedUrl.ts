@@ -1,3 +1,3 @@
 export interface ScannedUrl {
-  url: string;
+  readonly url: string;
 }

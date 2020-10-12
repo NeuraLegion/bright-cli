@@ -1,7 +1,7 @@
 import logger from '../Utils/Logger';
 import { ConnectivityWizard } from '../ConnectivityWizard/ConnectivityWizard';
+import { TestType } from '../ConnectivityWizard/Entities/ConnectivityTest';
 import { Arguments, Argv, CommandModule } from 'yargs';
-import { TestType } from 'src/ConnectivityWizard/Entities/ConnectivityTest';
 import { URL } from 'url';
 
 export class Configure implements CommandModule {
@@ -41,21 +41,21 @@ export class Configure implements CommandModule {
     try {
       const options: Map<TestType, URL> = new Map();
       try {
-        options.set(TestType.tcp, new URL(args['tcp-test'] as string));
+        options.set(TestType.TCP, new URL(args['tcp-test'] as string));
       } catch (err) {
         logger.log('Invalid value for TCP testing endpoint');
         process.exit(1);
       }
 
       try {
-        options.set(TestType.http, new URL(args['http-test'] as string));
+        options.set(TestType.HTTP, new URL(args['http-test'] as string));
       } catch (err) {
         logger.log('Invalid value for HTTP testing endpoint');
         process.exit(1);
       }
 
       try {
-        options.set(TestType.auth, new URL(args['auth-test'] as string));
+        options.set(TestType.AUTH, new URL(args['auth-test'] as string));
       } catch (err) {
         logger.log('Invalid value for authentication testing endpoint');
         process.exit(1);
