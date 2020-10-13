@@ -3,27 +3,35 @@
   <h4>Please wait as we perform some tests</h4>
   <form [formGroup]="form">
     <input
-      type="checkbox"
+      readonly
       formControlName="{{ ConnectivityTest.TCP }}"
+      type="checkbox"
     /><label></label>
     <span
       >Connection to <strong>amq.nexploit.app</strong> at
       <strong>port 5672</strong></span
     ><br />
     <input
-      type="checkbox"
+      readonly
       formControlName="{{ ConnectivityTest.HTTP }}"
+      type="checkbox"
     /><label></label>
     <span
       >Connection to <strong>nexploit.app</strong> at
       <strong>port 443</strong></span
     >
-    <button class="button-scan button-move" (click)="restartTest()">
-      Restart Test</button
-    ><br />
+    <button
+      (click)="restartTest()"
+      [disabled]="processing"
+      class="button-scan button-move"
+    >
+      Restart Test
+    </button>
+    <br />
     <input
-      type="checkbox"
+      readonly
       formControlName="{{ ConnectivityTest.AUTH }}"
+      type="checkbox"
     /><label></label>
     <span>Valid authentication credentials</span>
   </form>
@@ -31,16 +39,21 @@
   <ng-container>
     <div class="form-control">
       <div>
-        <ng-template ngFor let-type [ngForOf]="connectivityTests">
+        <ng-template
+          [ngForOf]="connectivityTests"
+          [ngForTrackBy]="trackBy"
+          let-type
+          ngFor
+        >
           <span class="span-msg">{{ type | connectivity }}</span
           ><br />
           <span
+            *ngIf="form.get(type)?.value != null"
+            [ngClass]="!!form.get(type)?.value ? 'success' : 'fail'"
             class="span-msg"
-            [ngClass]="form.get(type)?.value === true ? 'success' : 'fail'"
             >{{
               type
-                | connectivity
-                  : (form.get(type)?.value === true ? 'success' : 'error')
+                | connectivity: (!!form.get(type)?.value ? 'success' : 'error')
             }}</span
           ><br />
         </ng-template>
@@ -48,12 +61,12 @@
     </div>
   </ng-container>
   <div class="buttons-container">
-    <button class="button-prev" (click)="prev()">Prev</button>
+    <button (click)="prev()" class="button-prev">Prev</button>
     <button
-      type="submit"
-      class="button"
-      [disabled]="!scanFinished || errorOccurred"
       (click)="next()"
+      [disabled]="!form.valid"
+      class="button"
+      type="submit"
     >
       Next
     </button>

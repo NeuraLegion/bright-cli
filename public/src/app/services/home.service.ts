@@ -5,13 +5,13 @@ import { BehaviorSubject, Observable } from 'rxjs';
   providedIn: 'root'
 })
 export class HomeService {
-  private static homeVisited = new BehaviorSubject(false);
+  private homeVisited = new BehaviorSubject(false);
 
   public getHomeVisited(): Observable<boolean> {
-    return HomeService.homeVisited.asObservable();
+    return this.homeVisited.asObservable();
   }
 
   public setHomeVisited(): void {
-    HomeService.homeVisited.next(true);
+    this.homeVisited.next(true);
   }
 }

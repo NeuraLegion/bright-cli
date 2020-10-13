@@ -29,3 +29,9 @@
 p {
   white-space: pre-line;
 }
+
+input {
+  &.ng-invalid {
+    border: 2px solid $error-red;
+  }
+}

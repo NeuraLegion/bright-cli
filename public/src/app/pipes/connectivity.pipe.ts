@@ -25,11 +25,11 @@ export class ConnectivityPipe implements PipeTransform {
   private formatInitStage(test: ConnectivityTest): string | null {
     switch (test) {
       case ConnectivityTest.TCP:
-        return `Validating that the connection to amq.nexploit.app at port 5672 is open`;
+        return 'Validating that the connection to amq.nexploit.app at port 5672 is open';
       case ConnectivityTest.HTTP:
-        return `Validating that the connection to nexploit.app at port 443 is open`;
+        return 'Validating that the connection to nexploit.app at port 443 is open';
       case ConnectivityTest.AUTH:
-        return `Verifying provided Token and Repeater ID`;
+        return 'Verifying provided Token and Repeater ID';
     }
   }
 

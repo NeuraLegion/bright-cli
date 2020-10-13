@@ -6,7 +6,7 @@
     "wizard": {
       "projectType": "application",
       "schematics": {},
-      "root": "",
+      "root": ".",
       "sourceRoot": "src",
       "prefix": "app",
       "architect": {
@@ -21,7 +21,11 @@
             "aot": true,
             "assets": ["src/favicon.ico", "src/assets"],
             "styles": ["src/styles.css"],
-            "scripts": []
+            "scripts": [],
+            "extractCss": true,
+            "baseHref": "/",
+            "buildOptimizer": true,
+            "sourceMap": true
           },
           "configurations": {
             "production": {
@@ -33,12 +37,11 @@
               ],
               "optimization": true,
               "outputHashing": "all",
-              "sourceMap": false,
-              "extractCss": true,
-              "namedChunks": false,
-              "extractLicenses": true,
-              "vendorChunk": false,
-              "buildOptimizer": true,
+              "sourceMap": {
+                "hidden": true,
+                "scripts": true,
+                "styles": false
+              },
               "budgets": [
                 {
                   "type": "initial",
@@ -84,14 +87,9 @@
           }
         },
         "lint": {
-          "builder": "@angular-devkit/build-angular:tslint",
+          "builder": "@angular-eslint/builder:lint",
           "options": {
-            "tsConfig": [
-              "tsconfig.app.json",
-              "tsconfig.spec.json",
-              "e2e/tsconfig.json"
-            ],
-            "exclude": ["**/node_modules/**"]
+            "lintFilePatterns": ["src/**/*.ts", "src/**/*.component.html"]
           }
         },
         "e2e": {

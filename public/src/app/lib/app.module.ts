@@ -4,6 +4,7 @@ import {
   DiagnosticsComponent,
   MainComponent,
   ScanComponent,
+  SecretFieldComponent,
   SuccessComponent
 } from '../components';
 import { WizardGuard } from '../guards';
@@ -20,6 +21,7 @@ import { HttpClientModule } from '@angular/common/http';
     ScanComponent,
     SuccessComponent,
     DiagnosticsComponent,
+    SecretFieldComponent,
     ConnectivityPipe,
     StatusPipe
   ],

@@ -2,6 +2,7 @@ import { ConnectivityTest } from './ConnectivityTest';
 
 export interface ItemStatus {
   readonly ok: boolean;
+  readonly type: ConnectivityTest;
   readonly msg?: string;
 }
 

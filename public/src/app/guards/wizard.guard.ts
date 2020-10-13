@@ -16,7 +16,7 @@ export class WizardGuard implements CanActivate {
     private readonly service: HomeService
   ) {}
 
-  canActivate(next: ActivatedRouteSnapshot): Observable<boolean> {
+  public canActivate(next: ActivatedRouteSnapshot): Observable<boolean> {
     return this.service.getHomeVisited().pipe(
       take(1),
       map((homeVisited: boolean) => {
@@ -48,11 +48,10 @@ export class WizardGuard implements CanActivate {
       return true;
     } else if (nextRoute === WizardGuard.DIAGNOSTICS_PATH && homeVisited) {
       return true;
-    } else {
-      this.router.navigateByUrl(WizardGuard.HOME_PATH);
-
-      return false;
     }
+    this.router.navigateByUrl(WizardGuard.HOME_PATH);
+
+    return false;
   }
 
   private validateDiagnosticPath(nextRoute: string): boolean {
