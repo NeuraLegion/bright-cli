@@ -1,10 +1,11 @@
-import { ItemStatus, ScanId, Tokens } from './app.model';
-import { ScannedUrl } from '../../../src/ConnectivityWizard/Entities/ScannedUrl';
-import { ConnectivityTest } from '../../../src/ConnectivityWizard/Entities/ConnectivityTest';
-import { ScanInfo } from './components/scan/scan.component';
+import { ConnectivityTest } from '../models';
+import { ScanInfo } from '../models';
+import { Credentials } from '../models';
+import { ItemStatus } from '../models';
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { BehaviorSubject, Observable } from 'rxjs';
+import { map } from 'rxjs/operators';
 
 @Injectable({
   providedIn: 'root'
@@ -21,20 +22,22 @@ export class AppService {
     this.dataString$ = this.dataStringSource.asObservable();
   }
 
-  getTokens(): Observable<Tokens> {
-    return this.http.get<Tokens>(`/api/tokens`);
+  getTokens(): Observable<Credentials> {
+    return this.http.get<Credentials>(`/api/tokens`);
   }
 
-  saveTokens(payload: Tokens): Observable<Tokens> {
-    return this.http.post<Tokens>(`api/tokens`, payload);
+  saveTokens(payload: Credentials): Observable<Credentials> {
+    return this.http.post<Credentials>(`api/tokens`, payload);
   }
 
   getConnectivityStatus(type: ConnectivityTest): Observable<ItemStatus> {
-    return this.http.post<ItemStatus>(`/api/connectivity-status`, type);
+    return this.http.post<ItemStatus>(`/api/connectivity-status`, { type });
   }
 
-  startScan(payload: ScannedUrl): Observable<ScanId> {
-    return this.http.post<ScanId>(`/api/scan`, payload);
+  startScan(settings: { url: string }): Observable<string> {
+    return this.http
+      .post<{ scanId: string }>(`/api/scan`, settings)
+      .pipe(map(({ scanId }: { scanId: string }) => scanId));
   }
 
   finishProcess(): Observable<void> {

@@ -1,8 +1,10 @@
-import { VisibilityToggle } from '../../shared/VisibilityToggle';
+import { VisibilityToggle } from './VisibilityToggle';
+import { AppService } from '../../services';
 import {
-  RepeaterIdValidationRegExp,
-  AuthTokenValidationRegExp
-} from '../../../../../src/ConnectivityWizard/Entities/Tokens';
+  AUTH_TOKEN_VALIDATION_REGEXP,
+  Credentials,
+  REPEATER_ID_VALIDATION_REGEXP
+} from '../../models';
 import {
   ChangeDetectionStrategy,
   ChangeDetectorRef,
@@ -16,9 +18,7 @@ import {
   Validators
 } from '@angular/forms';
 import { Router } from '@angular/router';
-import { Tokens } from 'src/app/app.model';
-import { AppService } from 'src/app/app.service';
-import { Subject } from 'rxjs/internal/Subject';
+import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 
 @Component({
@@ -30,7 +30,6 @@ import { takeUntil } from 'rxjs/operators';
 export class MainComponent implements OnInit {
   public visibilityToggle = new VisibilityToggle();
   public mainForm: FormGroup;
-  // private UUID_V4 = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/;
   private readonly gc = new Subject<void>();
 
   constructor(
@@ -55,7 +54,7 @@ export class MainComponent implements OnInit {
       .getTokens()
       .pipe(takeUntil(this.gc))
       .subscribe(
-        (response: Tokens) => {
+        (response: Credentials) => {
           this.visibilityToggle.initialState(response);
           this.authToken.setValue(response.authToken);
           this.repeaterId.setValue(response.repeaterId);
@@ -76,11 +75,11 @@ export class MainComponent implements OnInit {
     this.mainForm = this.formBuilder.group({
       authToken: [
         '',
-        [Validators.required, Validators.pattern(AuthTokenValidationRegExp)]
+        [Validators.required, Validators.pattern(AUTH_TOKEN_VALIDATION_REGEXP)]
       ],
       repeaterId: [
         '',
-        [Validators.required, Validators.pattern(RepeaterIdValidationRegExp)]
+        [Validators.required, Validators.pattern(REPEATER_ID_VALIDATION_REGEXP)]
       ]
     });
   }

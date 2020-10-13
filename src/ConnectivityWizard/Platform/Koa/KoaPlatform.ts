@@ -1,8 +1,8 @@
 import { KoaRouterFactory } from './KoaRouterFactory';
-import logger from '../../Utils/Logger';
+import logger from '../../../Utils/Logger';
 import { DefaultKoaRouterFactory } from './DefaultKoaRouterFactory';
-import { TestType } from '../Models/ConnectivityTest';
-import { Platform } from './Platform';
+import { TestType } from '../../Models';
+import { Platform } from '../Platform';
 import Koa from 'koa';
 import json from 'koa-json';
 import bodyParser from 'koa-bodyparser';
@@ -16,6 +16,7 @@ import { Server } from 'net';
 
 export class KoaPlatform implements Platform {
   private readonly routerFactory: KoaRouterFactory;
+  private readonly root = join(process.cwd(), '/dist/public');
   private readonly BIND_PORT: number = 3000;
   private readonly RANGE_SIZE: number = 500;
 
@@ -24,18 +25,17 @@ export class KoaPlatform implements Platform {
   }
 
   public async start(): Promise<Server> {
-    const root: string = join(process.cwd(), '/wizard-dist/Wizard');
-    logger.debug('Using static path for client %s', root);
+    logger.debug('Using static path for client %s', this.root);
 
     const router: Router = await this.routerFactory.createRouter();
     const app: Koa = new Koa();
 
     app
-      .use(serve(root))
+      .use(serve(this.root))
       .use(json())
       .use(bodyParser())
       .use(async (ctx: Koa.Context, next: Koa.Next) => {
-        await send(ctx, '/index.html', { root });
+        await send(ctx, '/index.html', { root: this.root });
         await next();
       })
       .use(router.routes());

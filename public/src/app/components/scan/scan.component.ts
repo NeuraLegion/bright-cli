@@ -1,4 +1,4 @@
-import { ScanId } from '../../../../../src/ConnectivityWizard/Entities/ScanId';
+import { AppService } from '../../services';
 import {
   ChangeDetectionStrategy,
   ChangeDetectorRef,
@@ -12,15 +12,9 @@ import {
   Validators
 } from '@angular/forms';
 import { Router } from '@angular/router';
-import { AppService } from 'src/app/app.service';
-import { Subject } from 'rxjs/internal/Subject';
+import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
-
-export interface ScanInfo {
-  url: string;
-  scanId: string;
-  code: number;
-}
+import { ScanInfo } from '../../models';
 
 @Component({
   selector: 'app-scan',
@@ -91,10 +85,10 @@ export class ScanComponent implements OnInit {
         .startScan({ url: this.url })
         .pipe(takeUntil(this.gc))
         .subscribe(
-          (response: ScanId) => {
+          (scanId: string) => {
             this.scanFinished = true;
             this.code = 200;
-            this.subscribeInfo(this.code, response.scanId);
+            this.subscribeInfo(this.code, scanId);
             this.cdr.detectChanges();
           },
           (error) => {

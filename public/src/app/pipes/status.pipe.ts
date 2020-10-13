@@ -4,7 +4,7 @@ import { PipeTransform, Pipe } from '@angular/core';
   name: 'status',
   pure: true
 })
-export class StatusMessage implements PipeTransform {
+export class StatusPipe implements PipeTransform {
   public transform(status: number, url: string): string | null {
     switch (status) {
       case 200:

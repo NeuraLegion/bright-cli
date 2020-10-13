@@ -1,2 +1,2 @@
-export { KoaPlatform } from './KoaPlatform';
+export { KoaPlatform } from './Koa';
 export { Platform } from './Platform';

@@ -1,4 +1,4 @@
-import { Tokens } from '../app.model';
+import { Credentials } from '../../models';
 
 export enum Type {
   PWD = 'password',
@@ -6,7 +6,7 @@ export enum Type {
 }
 
 export class VisibilityToggle {
-  public initialState(response: Tokens): void {
+  public initialState(response: Credentials): void {
     if (response.authToken !== '' && response.repeaterId !== '') {
       this.toggleEye('token', 'toggleEye-1');
       this.toggleEye('repeater', 'toggleEye-2');

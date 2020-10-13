@@ -1,4 +1,5 @@
-import { Protocol } from '../../shared/ProtocolMessage';
+import { AppService } from '../../services';
+import { ConnectivityTest, ItemStatus } from '../../models';
 import {
   ChangeDetectionStrategy,
   ChangeDetectorRef,
@@ -7,10 +8,7 @@ import {
 } from '@angular/core';
 import { FormBuilder, FormGroup } from '@angular/forms';
 import { Router } from '@angular/router';
-import { ItemStatus } from 'src/app/app.model';
-import { AppService } from 'src/app/app.service';
-import { forkJoin } from 'rxjs';
-import { Subject } from 'rxjs/internal/Subject';
+import { forkJoin, Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 
 @Component({
@@ -20,9 +18,9 @@ import { takeUntil } from 'rxjs/operators';
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DiagnosticsComponent implements OnInit {
-  public readonly protocolTypes = Object.values(Protocol);
-  public readonly Protocol = Protocol;
-  public testsForm: FormGroup;
+  public readonly connectivityTests = Object.values(ConnectivityTest);
+  public readonly ConnectivityTest = ConnectivityTest;
+  public form: FormGroup;
 
   errorOccurred = false;
   scanFinished = false;
@@ -47,34 +45,38 @@ export class DiagnosticsComponent implements OnInit {
   }
 
   initForm(): void {
-    this.testsForm = this.formBuilder.group({
-      [Protocol.TCP]: [null, { disabled: true }],
-      [Protocol.HTTP]: [null, { disabled: true }],
-      [Protocol.AUTH]: [null, { disabled: true }]
+    this.form = this.formBuilder.group({
+      [ConnectivityTest.TCP]: [null, { disabled: true }],
+      [ConnectivityTest.HTTP]: [null, { disabled: true }],
+      [ConnectivityTest.AUTH]: [null, { disabled: true }]
     });
   }
 
   restartTest(): void {
     this.resetValues();
     forkJoin(
-      [Protocol.TCP, Protocol.HTTP, Protocol.AUTH].map((type: Protocol) =>
-        this.service.getConnectivityStatus({ type })
+      [
+        ConnectivityTest.TCP,
+        ConnectivityTest.HTTP,
+        ConnectivityTest.AUTH
+      ].map((type: ConnectivityTest) =>
+        this.service.getConnectivityStatus(type)
       )
     )
       .pipe(takeUntil(this.gc))
       .subscribe(([tcpRes, httpRes, authRes]: ItemStatus[]): void => {
         this.scanFinished = true;
-        this.updateResponse(tcpRes, Protocol.TCP);
-        this.updateResponse(httpRes, Protocol.HTTP);
-        this.updateResponse(authRes, Protocol.AUTH);
+        this.updateResponse(tcpRes, ConnectivityTest.TCP);
+        this.updateResponse(httpRes, ConnectivityTest.HTTP);
+        this.updateResponse(authRes, ConnectivityTest.AUTH);
         this.cdr.detectChanges();
       });
   }
 
   updateResponse(response: ItemStatus, id: string): void {
-    this.protocolTypes.forEach((type) => {
+    this.connectivityTests.forEach((type) => {
       if (type === id) {
-        this.testsForm.get([type]).setValue(response.ok);
+        this.form.get([type]).setValue(response.ok);
         if (!response.ok) {
           this.errorOccurred = true;
         }
@@ -85,8 +87,8 @@ export class DiagnosticsComponent implements OnInit {
   resetValues(): void {
     this.scanFinished = false;
     this.errorOccurred = false;
-    this.protocolTypes.forEach((type) => {
-      this.testsForm.get([type]).setValue(null);
+    this.connectivityTests.forEach((type) => {
+      this.form.get([type]).setValue(null);
     });
   }
 
