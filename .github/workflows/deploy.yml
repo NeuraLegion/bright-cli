@@ -35,6 +35,8 @@ jobs:
 
       - run: npm ci -q
       - run: npm run build
+      - run: npm --prefix public ci -q
+      - run: npm --prefix public run build -- --configuration production
       - run: npm version --no-git-tag-version "$PROJECT_VERSION"
       - run: npm run pack:win
 

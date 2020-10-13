@@ -50,6 +50,10 @@ module.exports = (env, argv) => ({
     path: join(process.cwd(), 'dist'),
     filename: 'index.js'
   },
+  node: {
+    __filename: false,
+    __dirname: false
+  },
   externals: [nodeExternals()],
   target: 'node'
 });
