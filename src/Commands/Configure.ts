@@ -48,7 +48,14 @@ export class Configure implements CommandModule {
         })
       );
 
-      await new KoaPlatform(options).start();
+      const app = await new KoaPlatform(options).start();
+
+      const stop: () => void = () => {
+        app.close();
+        process.exit(0);
+      };
+
+      process.on('SIGTERM', stop).on('SIGINT', stop).on('SIGHUP', stop);
     } catch (e) {
       logger.error(`Error during "configure": ${e.error || e.message}`);
       process.exit(1);

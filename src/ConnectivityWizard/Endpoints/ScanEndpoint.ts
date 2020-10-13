@@ -162,20 +162,17 @@ export class ScanEndpoint implements Endpoint {
         });
 
         scanProcess.on('exit', (code: number) => {
-          if (code !== 0 || output.length === 0) {
-            const msg = `Scan did not start successfully. Process exited with code ${code} and output ${JSON.stringify(
-              output
-            )}`;
+          const response: string = Buffer.concat(output).toString('utf8');
+
+          if (code !== 0 || response.length === 0) {
+            const msg = `Scan did not start successfully. Process exited with code ${code} and output ${response}`;
 
             logger.warn(msg);
 
             return reject(new Error(msg));
           }
 
-          const scanId: string = Buffer.concat(output)
-            .toString('utf8')
-            .split('\n')
-            .pop();
+          const scanId: string = response.split('\n').pop();
 
           resolve(scanId);
         });
