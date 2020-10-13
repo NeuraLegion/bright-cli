@@ -16,7 +16,7 @@ import { Server } from 'net';
 
 export class KoaPlatform implements Platform {
   private readonly routerFactory: KoaRouterFactory;
-  private readonly root = join(process.cwd(), '/dist/public');
+  private readonly root = join(__dirname, 'public');
   private readonly BIND_PORT: number = 3000;
   private readonly RANGE_SIZE: number = 500;
 
