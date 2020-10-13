@@ -96,8 +96,7 @@
   },
   "files": [
     "dist",
-    "schemas",
-    "wizard-dist"
+    "schemas"
   ],
   "homepage": "https://github.com/NeuraLegion/nexploit-cli#readme",
   "husky": {
