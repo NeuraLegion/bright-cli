@@ -1,4 +1,4 @@
-import { Credentials } from './Models/Credentials';
+import { Credentials } from './Models';
 
 export interface Tokens {
   writeTokens(credentials: Credentials): void;

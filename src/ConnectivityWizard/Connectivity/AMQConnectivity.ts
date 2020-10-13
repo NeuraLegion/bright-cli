@@ -1,4 +1,4 @@
-import { Credentials } from '../Models/Credentials';
+import { Credentials } from '../Models';
 import { Connectivity } from './Connectivity';
 import logger from '../../Utils/Logger';
 import { Tokens } from '../Tokens';

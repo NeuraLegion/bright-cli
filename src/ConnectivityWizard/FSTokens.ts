@@ -1,4 +1,4 @@
-import { Credentials } from './Models/Credentials';
+import { Credentials } from './Models';
 import logger from '../Utils/Logger';
 import { Tokens } from './Tokens';
 import { homedir } from 'os';

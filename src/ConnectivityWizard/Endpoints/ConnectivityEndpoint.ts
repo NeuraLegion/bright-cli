@@ -1,8 +1,7 @@
 import { Endpoint } from './Endpoint';
-import { ConnectivityTest, TestType } from '../Models/ConnectivityTest';
-import { ItemStatus } from '../Models/ConnectivityStatus';
+import { ConnectivityTest, ItemStatus, TestType } from '../Models';
 import logger from '../../Utils/Logger';
-import { Connectivity } from '../Connectivity/Connectivity';
+import { Connectivity } from '../Connectivity';
 import Koa from 'koa';
 
 export class ConnectivityEndpoint implements Endpoint {

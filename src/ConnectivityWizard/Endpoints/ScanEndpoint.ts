@@ -1,7 +1,5 @@
 import { Endpoint } from './Endpoint';
-import { ScannedUrl } from '../Models/ScannedUrl';
-import { Credentials } from '../Models/Credentials';
-import { ScanId } from '../Models/ScanId';
+import { Credentials, ScanId, ScannedUrl } from '../Models';
 import logger from '../../Utils/Logger';
 import { Tokens } from '../Tokens';
 import Koa from 'koa';

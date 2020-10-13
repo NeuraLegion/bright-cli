@@ -1,15 +1,19 @@
 import { KoaRouterFactory } from './KoaRouterFactory';
-import { GetTokensEndpoint } from '../../Endpoints/GetTokensEndpoint';
-import { SetTokensEndpoint } from '../../Endpoints/SetTokensEndpoint';
-import { ConnectivityEndpoint } from '../../Endpoints/ConnectivityEndpoint';
-import { ScanEndpoint } from '../../Endpoints/ScanEndpoint';
-import { FinishEndpoint } from '../../Endpoints/FinishEndpoint';
+import {
+  ConnectivityEndpoint,
+  FinishEndpoint,
+  GetTokensEndpoint,
+  ScanEndpoint,
+  SetTokensEndpoint
+} from '../../Endpoints';
 import { FSTokens } from '../../FSTokens';
-import { TestType } from '../../Models/ConnectivityTest';
-import { HTTPConnectivity } from '../../Connectivity/HTTPConnectivity';
-import { TCPConnectivity } from '../../Connectivity/TCPConnectivity';
-import { AMQConnectivity } from '../../Connectivity/AMQConnectivity';
-import { Connectivity } from '../../Connectivity/Connectivity';
+import { TestType } from '../../Models';
+import {
+  AMQConnectivity,
+  Connectivity,
+  HTTPConnectivity,
+  TCPConnectivity
+} from '../../Connectivity';
 import Router from 'koa-router';
 import Koa from 'koa';
 import { URL } from 'url';
