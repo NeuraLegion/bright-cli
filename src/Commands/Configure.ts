@@ -1,5 +1,5 @@
 import logger from '../Utils/Logger';
-import { KoaPlatform, TestType } from '../ConnectivityWizard';
+import { KoaPlatform, TestType } from '../Wizard';
 import { Arguments, Argv, CommandModule } from 'yargs';
 import { URL } from 'url';
 
@@ -18,19 +18,16 @@ export class Configure implements CommandModule {
     return args
       .option(TestType.TCP, {
         default: Configure.DEFAULT_TCP_TEST_ENDPOINT,
-        demandOption: false,
         hidden: true,
         describe: `NexPloit Event Bus for connectivity test`
       })
       .option(TestType.HTTP, {
         default: Configure.DEFAULT_HTTP_TEST_ENDPOINT,
-        demandOption: false,
         hidden: true,
         describe: `NexPloit application for connectivity test`
       })
       .option(TestType.AUTH, {
         default: Configure.DEFAULT_AUTH_TEST_ENDPOINT,
-        demandOption: false,
         hidden: true,
         describe: `NexPloit event message authentication endpoint`
       });
