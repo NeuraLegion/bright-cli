@@ -3,7 +3,7 @@
   "compileOnSave": false,
   "compilerOptions": {
     "baseUrl": "./",
-    "outDir": "../wizard-dist/out-tsc",
+    "outDir": "../dist/public",
     "sourceMap": true,
     "declaration": false,
     "downlevelIteration": true,
@@ -16,5 +16,14 @@
       "es2018",
       "dom"
     ]
+  },
+  "exclude": [
+    "node_modules",
+    "tmp"
+  ],
+  "angularCompilerOptions": {
+    "fullTemplateTypeCheck": true,
+    "strictInjectionParameters": true,
+    "enableIvy": true
   }
 }

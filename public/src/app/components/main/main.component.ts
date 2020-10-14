@@ -1,24 +1,15 @@
-import { VisibilityToggle } from '../../shared/VisibilityToggle';
-import {
-  RepeaterIdValidationRegExp,
-  AuthTokenValidationRegExp
-} from '../../../../../src/ConnectivityWizard/Entities/Tokens';
+import { AppService } from '../../services';
+import { Credentials, CustomValidators } from '../../models';
 import {
   ChangeDetectionStrategy,
   ChangeDetectorRef,
   Component,
+  OnDestroy,
   OnInit
 } from '@angular/core';
-import {
-  AbstractControl,
-  FormBuilder,
-  FormGroup,
-  Validators
-} from '@angular/forms';
+import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
-import { Tokens } from 'src/app/app.model';
-import { AppService } from 'src/app/app.service';
-import { Subject } from 'rxjs/internal/Subject';
+import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 
 @Component({
@@ -27,79 +18,43 @@ import { takeUntil } from 'rxjs/operators';
   styleUrls: ['./main.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class MainComponent implements OnInit {
-  public visibilityToggle = new VisibilityToggle();
-  public mainForm: FormGroup;
-  // private UUID_V4 = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/;
+export class MainComponent implements OnInit, OnDestroy {
+  public readonly form: FormGroup;
   private readonly gc = new Subject<void>();
 
   constructor(
     private readonly router: Router,
-    private formBuilder: FormBuilder,
     private readonly service: AppService,
-    private cdr: ChangeDetectorRef
-  ) {}
-
-  get repeaterId(): AbstractControl {
-    return this.mainForm.get('repeaterId');
+    private readonly cdr: ChangeDetectorRef,
+    fb: FormBuilder
+  ) {
+    this.form = fb.group({
+      authToken: ['', [Validators.required, CustomValidators.authToken]],
+      repeaterId: ['', [Validators.required, CustomValidators.uuid]]
+    });
   }
 
-  get authToken(): AbstractControl {
-    return this.mainForm.get('authToken');
-  }
-
-  ngOnInit(): void {
-    console.log('Welcome to the Connectivity Wizard');
-    this.initForm();
+  public ngOnInit(): void {
     this.service
       .getTokens()
       .pipe(takeUntil(this.gc))
-      .subscribe(
-        (response: Tokens) => {
-          this.visibilityToggle.initialState(response);
-          this.authToken.setValue(response.authToken);
-          this.repeaterId.setValue(response.repeaterId);
-          this.cdr.detectChanges();
-        },
-        (error) => {
-          console.log(error);
-        }
-      );
+      .subscribe((response: Credentials) => {
+        this.form.patchValue(response);
+        this.cdr.markForCheck();
+      });
   }
 
-  ngOnDestroy(): void {
+  public ngOnDestroy(): void {
     this.gc.next();
     this.gc.unsubscribe();
   }
 
-  initForm(): void {
-    this.mainForm = this.formBuilder.group({
-      authToken: [
-        '',
-        [Validators.required, Validators.pattern(AuthTokenValidationRegExp)]
-      ],
-      repeaterId: [
-        '',
-        [Validators.required, Validators.pattern(RepeaterIdValidationRegExp)]
-      ]
-    });
-  }
-
-  onSubmit(): void {
-    if (!this.mainForm.valid) {
-      console.log('Error, tokens are invalid');
-    } else {
+  public onSubmit(): void {
+    if (this.form.valid) {
       this.service
-        .saveTokens(this.mainForm.value)
+        .saveTokens(this.form.value)
         .pipe(takeUntil(this.gc))
-        .subscribe(
-          () => {
-            this.router.navigateByUrl('diagnostics');
-          },
-          (error) => {
-            console.log(error);
-          }
-        );
+        .subscribe(() => this.router.navigateByUrl('diagnostics'));
     }
   }
 }

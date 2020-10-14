@@ -1,11 +1,11 @@
-@import '../../app.component.scss';
+@import '../../containers/app.component';
 
 .buttons-container {
   display: flex;
   justify-content: space-between;
-  margin-left: 0rem;
+  margin-left: 0;
   width: 52rem;
-  margin-top: 0rem;
+  margin-top: 0;
 }
 
 button {
@@ -20,6 +20,10 @@ button {
   background-color: $primary-grey;
 }
 
+label {
+  margin-right: 1rem;
+}
+
 .form-control {
   width: 70%;
   margin-top: 2rem;
@@ -31,7 +35,7 @@ button {
 
   .form-group {
     padding: 20px;
-    margin: 0px;
+    margin: 0;
     display: inline-block;
   }
 }
@@ -52,22 +56,4 @@ input {
   width: 10em;
   height: 4em;
   background-color: $secondary-blue;
-}
-
-.field-icon {
-  float: right;
-  margin-left: -2rem;
-  margin-top: 0.4rem;
-  position: relative;
-  z-index: 2;
-}
-
-input {
-  &.error {
-    border: 2px solid $error-red;
-  }
-
-  &.clean {
-    border: 2px solid -internal-light-dark(rgb(118, 118, 118), rgb(195, 195, 195));
-  }
 }
