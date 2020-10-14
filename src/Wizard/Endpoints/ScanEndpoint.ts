@@ -83,8 +83,7 @@ export class ScanEndpoint implements Endpoint {
 
     try {
       this.repeaterProcess = spawn(cmd, args, {
-        detached: true,
-        stdio: 'ignore'
+        detached: true
       });
 
       this.repeaterProcess.unref();
