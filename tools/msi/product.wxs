@@ -18,8 +18,8 @@
     </Property>
     <Media Id="1" Cabinet="nexploitcli.cab" EmbedCab="yes" />
     <CustomAction Id="NewVersionError" Error="A later version of $(var.ProductName) is already installed. Setup will now exit." />
-    <Upgrade Id="47c07a3a-42ef-4213-a85d-8f5a59077c28">
-      <UpgradeVersion Property="PREVIOUSVERSIONSINSTALLED" IncludeMinimum="yes" IncludeMaximum="yes" Minimum="0.0.0" Maximum="$(var.ProductVersion)" />
+    <Upgrade Id="74b15b74-a063-4524-ae83-69ad421be456">
+      <UpgradeVersion Property="PREVIOUSVERSIONSINSTALLED" IncludeMinimum="no" IncludeMaximum="yes" Minimum="0.0.0" Maximum="$(var.ProductVersion)" />
     </Upgrade>
     <InstallExecuteSequence>
       <RemoveExistingProducts After="InstallValidate" />

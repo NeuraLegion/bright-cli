@@ -1,7 +1,6 @@
 import logger from '../Utils/Logger';
-import { ConnectivityWizard } from '../ConnectivityWizard/ConnectivityWizard';
+import { KoaPlatform, TestType } from '../Wizard';
 import { Arguments, Argv, CommandModule } from 'yargs';
-import { TestType } from 'src/ConnectivityWizard/Entities/ConnectivityTest';
 import { URL } from 'url';
 
 export class Configure implements CommandModule {
@@ -17,21 +16,18 @@ export class Configure implements CommandModule {
 
   public builder(args: Argv): Argv {
     return args
-      .option('tcp-test', {
+      .option(TestType.TCP, {
         default: Configure.DEFAULT_TCP_TEST_ENDPOINT,
-        demandOption: false,
         hidden: true,
         describe: `NexPloit Event Bus for connectivity test`
       })
-      .option('http-test', {
+      .option(TestType.HTTP, {
         default: Configure.DEFAULT_HTTP_TEST_ENDPOINT,
-        demandOption: false,
         hidden: true,
         describe: `NexPloit application for connectivity test`
       })
-      .option('auth-test', {
+      .option(TestType.AUTH, {
         default: Configure.DEFAULT_AUTH_TEST_ENDPOINT,
-        demandOption: false,
         hidden: true,
         describe: `NexPloit event message authentication endpoint`
       });
@@ -39,29 +35,24 @@ export class Configure implements CommandModule {
 
   public async handler(args: Arguments): Promise<void> {
     try {
-      const options: Map<TestType, URL> = new Map();
-      try {
-        options.set('tcp', new URL(args['tcp-test'] as string));
-      } catch (err) {
-        logger.log('Invalid value for TCP testing endpoint');
-        process.exit(1);
-      }
+      const options: Map<TestType, URL> = new Map(
+        Object.values(TestType).map((type: TestType) => {
+          try {
+            return [type, new URL(args[type] as string)];
+          } catch (err) {
+            throw new Error(`Invalid value for ${type} testing endpoint`);
+          }
+        })
+      );
 
-      try {
-        options.set('http', new URL(args['http-test'] as string));
-      } catch (err) {
-        logger.log('Invalid value for HTTP testing endpoint');
-        process.exit(1);
-      }
+      const app = await new KoaPlatform(options).start();
 
-      try {
-        options.set('auth', new URL(args['auth-test'] as string));
-      } catch (err) {
-        logger.log('Invalid value for authentication testing endpoint');
-        process.exit(1);
-      }
+      const stop: () => void = () => {
+        app.close();
+        process.exit(0);
+      };
 
-      await new ConnectivityWizard().init(options);
+      process.on('SIGTERM', stop).on('SIGINT', stop).on('SIGHUP', stop);
     } catch (e) {
       logger.error(`Error during "configure": ${e.error || e.message}`);
       process.exit(1);

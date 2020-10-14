@@ -1,16 +1,15 @@
-import { Protocol } from '../../shared/ProtocolMessage';
+import { AppService } from '../../services';
+import { ConnectivityTest, ItemStatus } from '../../models';
 import {
   ChangeDetectionStrategy,
   ChangeDetectorRef,
   Component,
+  OnDestroy,
   OnInit
 } from '@angular/core';
-import { FormBuilder, FormGroup } from '@angular/forms';
+import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
-import { ItemStatus } from 'src/app/app.model';
-import { AppService } from 'src/app/app.service';
-import { forkJoin } from 'rxjs';
-import { Subject } from 'rxjs/internal/Subject';
+import { concat, Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 
 @Component({
@@ -19,82 +18,77 @@ import { takeUntil } from 'rxjs/operators';
   styleUrls: ['./diagnostics.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class DiagnosticsComponent implements OnInit {
-  public readonly protocolTypes = Object.values(Protocol);
-  public readonly Protocol = Protocol;
-  public testsForm: FormGroup;
+export class DiagnosticsComponent implements OnInit, OnDestroy {
+  public readonly connectivityTests = Object.values(ConnectivityTest);
+  public readonly ConnectivityTest = ConnectivityTest;
+  public readonly form: FormGroup;
 
-  errorOccurred = false;
-  scanFinished = false;
+  public processing = false;
 
   private readonly gc = new Subject<void>();
 
   constructor(
     private readonly router: Router,
-    private formBuilder: FormBuilder,
     private readonly service: AppService,
-    private cdr: ChangeDetectorRef
-  ) {}
+    private readonly cdr: ChangeDetectorRef,
+    fb: FormBuilder
+  ) {
+    this.form = fb.group({
+      [ConnectivityTest.TCP]: [null, [Validators.requiredTrue]],
+      [ConnectivityTest.HTTP]: [null, [Validators.requiredTrue]],
+      [ConnectivityTest.AUTH]: [null, [Validators.requiredTrue]]
+    });
+  }
 
-  ngOnInit(): void {
-    this.initForm();
+  public ngOnInit(): void {
     this.restartTest();
   }
 
-  ngOnDestroy(): void {
+  public ngOnDestroy(): void {
     this.gc.next();
     this.gc.unsubscribe();
   }
 
-  initForm(): void {
-    this.testsForm = this.formBuilder.group({
-      [Protocol.TCP]: [null, { disabled: true }],
-      [Protocol.HTTP]: [null, { disabled: true }],
-      [Protocol.AUTH]: [null, { disabled: true }]
-    });
-  }
-
-  restartTest(): void {
+  public restartTest(): void {
     this.resetValues();
-    forkJoin(
-      [Protocol.TCP, Protocol.HTTP, Protocol.AUTH].map((type: Protocol) =>
-        this.service.getConnectivityStatus({ type })
+    this.processing = true;
+    concat(
+      ...Object.values(ConnectivityTest).map((type: ConnectivityTest) =>
+        this.service.getConnectivityStatus(type)
       )
     )
       .pipe(takeUntil(this.gc))
-      .subscribe(([tcpRes, httpRes, authRes]: ItemStatus[]): void => {
-        this.scanFinished = true;
-        this.updateResponse(tcpRes, Protocol.TCP);
-        this.updateResponse(httpRes, Protocol.HTTP);
-        this.updateResponse(authRes, Protocol.AUTH);
-        this.cdr.detectChanges();
-      });
-  }
-
-  updateResponse(response: ItemStatus, id: string): void {
-    this.protocolTypes.forEach((type) => {
-      if (type === id) {
-        this.testsForm.get([type]).setValue(response.ok);
-        if (!response.ok) {
-          this.errorOccurred = true;
+      .subscribe(
+        (status: ItemStatus): void => {
+          this.form.get(status.type).setValue(status.ok);
+          this.cdr.markForCheck();
+        },
+        () => {
+          // noop
+        },
+        () => {
+          this.processing = false;
+          this.cdr.markForCheck();
         }
-      }
-    });
+      );
   }
 
-  resetValues(): void {
-    this.scanFinished = false;
-    this.errorOccurred = false;
-    this.protocolTypes.forEach((type) => {
-      this.testsForm.get([type]).setValue(null);
-    });
+  public resetValues(): void {
+    this.processing = false;
+    this.connectivityTests.forEach((type: ConnectivityTest) =>
+      this.form.get([type]).setValue(null)
+    );
   }
 
-  next(): void {
+  public next(): void {
     this.router.navigateByUrl('scan');
   }
 
-  prev(): void {
+  public prev(): void {
     this.router.navigateByUrl('');
+  }
+
+  public trackBy(_i: number, item: ConnectivityTest): ConnectivityTest {
+    return item;
   }
 }

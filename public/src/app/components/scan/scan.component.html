@@ -5,22 +5,16 @@
     application.<br />
     Please provide the target URL:
   </h4>
-  <form (ngSubmit)="onSubmit()" [formGroup]="targetForm" ngNativeValidate>
+  <form (ngSubmit)="onSubmit()" [formGroup]="form">
     <div class="form-control">
       <div class="form-group">
         <label for="url">Target URL:</label>
         <input
-          formControlName="targetUrl"
+          formControlName="url"
           name="url"
           type="url"
+          placeholder="http://my.server.com:8080"
           required
-          (invalid)="
-            setCustomValidity(
-              $event,
-              'Type target URL. Example - http://my.server.com:8080'
-            )
-          "
-          (input)="setCustomValidity($event, '')"
         />
       </div>
     </div>
@@ -36,11 +30,7 @@
       <ng-template [ngIf]="scanStarted || code">
         Trying to reach {{ url }}...<br />
       </ng-template>
-      <p
-        id="response-communication"
-        class="response"
-        [ngClass]="code === 200 ? 'success' : 'fail'"
-      >
+      <p class="response" [ngClass]="code === 200 ? 'success' : 'fail'">
         {{ code | status: url }}
       </p>
     </div>
