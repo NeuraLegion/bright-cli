@@ -95,8 +95,7 @@
     "webpack-node-externals": "2.5.2"
   },
   "files": [
-    "dist",
-    "schemas"
+    "dist"
   ],
   "homepage": "https://github.com/NeuraLegion/nexploit-cli#readme",
   "husky": {
@@ -132,14 +131,13 @@
     "test": "mocha -r ts-node/register -r tsconfig-paths/register src/**/*.spec.ts",
     "build": "webpack --config webpack.config.js --mode=production",
     "semantic-release": "semantic-release",
-    "pack:win": "pkg -o bin/win/nexploit-cli.exe -t node14-windows-x64 -c {CompanyName: 'NeuraLegion', ProductName: 'NexPloit CLI', OriginalFilename: 'nexploit-cli.exe'} dist/index.js",
+    "pack:win": "pkg -o bin/win/nexploit-cli.exe -t node14-windows-x64 .",
     "pack:mac": "pkg -o bin/mac/nexploit-cli -t node14-mac-x64 .",
     "pack:linux": "pkg -o bin/linux/nexploit-cli -t node14-linux-x64 ."
   },
   "pkg": {
     "assets": [
-      "dist/public/**/*",
-      "schemas/**/*"
+      "dist/public/**/*"
     ]
   }
 }
