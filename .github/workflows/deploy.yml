@@ -51,7 +51,7 @@ jobs:
         with:
           name: build
 
-      - run: echo "VERSION=$(git describe --abbrev=0 --tags)" >> $GITHUB_ENV
+      - run: echo "VERSION=$(node -pe "require('./package.json').version")" >> $GITHUB_ENV
 
       - uses: actions/setup-node@v1
         with:
