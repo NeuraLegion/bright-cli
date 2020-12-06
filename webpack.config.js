@@ -3,21 +3,22 @@ const { BannerPlugin } = require('webpack');
 const nodeExternals = require('webpack-node-externals');
 const TsConfigPathsPlugin = require('tsconfig-paths-webpack-plugin');
 const { CleanWebpackPlugin } = require('clean-webpack-plugin');
-const TerserPlugin = require('terser-webpack-plugin');
+const Terser = require('terser-webpack-plugin');
 
 module.exports = (env, argv) => ({
   entry: './src/index.ts',
-  devtool: argv.mode === 'development' ? 'eval-cheap-source-map' : 'source-map',
+  devtool: argv.mode === 'development' ? 'eval-cheap-module-source-map' : 'source-map',
   context: process.cwd(),
   optimization: {
-    noEmitOnErrors: true,
+    emitOnErrors: true,
     usedExports: true,
     splitChunks: false,
+    nodeEnv: false,
     minimizer: [
-      new TerserPlugin({
-        sourceMap: true,
+      new Terser({
         parallel: true,
         terserOptions: {
+          sourceMap: true,
           keep_classnames: true,
           keep_fnames: true
         }

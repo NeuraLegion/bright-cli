@@ -1,6 +1,7 @@
 import { Event } from '../Event';
 
 export class ForwardResponse implements Event {
+  // eslint-disable-next-line @typescript-eslint/naming-convention
   public readonly status_code?: number;
   public readonly headers?: Record<string, string | string[]>;
   public readonly body?: string;
