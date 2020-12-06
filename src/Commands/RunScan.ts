@@ -1,7 +1,7 @@
 import { RestScans, Module, ScanConfig, TestType } from '../Scan';
 import { Helpers } from '../Utils/Helpers';
 import logger from '../Utils/Logger';
-import { AttackParamLocation } from '../Scan/Scans';
+import { AttackParamLocation, COMPREHENSIVE_SCAN_TESTS } from '../Scan/Scans';
 import { Arguments, Argv, CommandModule } from 'yargs';
 
 export class RunScan implements CommandModule {
@@ -45,7 +45,7 @@ export class RunScan implements CommandModule {
       })
       .option('test', {
         choices: Helpers.toArray(TestType),
-        default: Helpers.toArray(TestType),
+        default: COMPREHENSIVE_SCAN_TESTS,
         array: true,
         describe: 'A list of tests which you want to run during a scan.'
       })

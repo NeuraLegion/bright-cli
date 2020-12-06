@@ -37,8 +37,25 @@ export enum TestType {
   HRS = 'hrs',
   HTML_INJECTION = 'html_injection',
   OPEN_DATABASE = 'open_database',
-  OPEN_BUCKETS = 'open_buckets'
+  OPEN_BUCKETS = 'open_buckets',
+  BUSINESS_CONSTRAINT_BYPASS = 'business_constraint_bypass',
+  ID_ENUMERATION = 'id_enumeration',
+  NOSQL = 'nosql',
+  BROKEN_SAML_AUTH = 'broken_saml_auth',
+  PROTO_POLLUTION = 'proto_pollution'
 }
+
+export const COMPREHENSIVE_SCAN_TESTS: ReadonlyArray<TestType> = Object.values(
+  TestType
+).filter(
+  (x: TestType) =>
+    ![
+      TestType.BUSINESS_CONSTRAINT_BYPASS,
+      TestType.DATE_MANIPULATION,
+      TestType.RETIRE_JS,
+      TestType.ID_ENUMERATION
+    ].includes(x)
+);
 
 export enum Module {
   DAST = 'dast',
@@ -46,11 +63,13 @@ export enum Module {
 }
 
 export enum AttackParamLocation {
-  PATH = 'path',
-  QUERY = 'query',
+  ARTIFICAL_FRAGMENT = 'artifical-fragment',
+  ARTIFICAL_QUERY = 'artifical-query',
+  BODY = 'body',
   FRAGMENT = 'fragment',
   HEADER = 'header',
-  BODY = 'body'
+  PATH = 'path',
+  QUERY = 'query'
 }
 
 export interface ScanConfig {
