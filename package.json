@@ -18,6 +18,9 @@
       "@commitlint/config-conventional"
     ]
   },
+  "engines": {
+    "node": ">=10 <15"
+  },
   "dependencies": {
     "@neuralegion/capture-har": "^0.3.2",
     "ajv": "^6.12.6",
