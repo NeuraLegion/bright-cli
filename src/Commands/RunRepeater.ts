@@ -3,8 +3,11 @@ import { DefaultHandlerRegistry, SendRequestHandler } from '../Handlers';
 import { DefaultRequestExecutor } from '../RequestExecutor';
 import { Helpers } from '../Utils/Helpers';
 import logger from '../Utils/Logger';
+import { StartupManagerFactory } from '../Utils/Startup/StartupManagerFactory';
 import { Arguments, Argv, CommandModule } from 'yargs';
 import Timer = NodeJS.Timer;
+
+const serviceName = 'nexploit-daemon';
 
 export class RunRepeater implements CommandModule {
   public readonly command = 'repeater [options]';
@@ -45,6 +48,11 @@ export class RunRepeater implements CommandModule {
         describe:
           'JSON string which contains header list, which is initially empty and consists of zero or more name and value pairs.'
       })
+      .option('daemon', {
+        requiresArg: false,
+        alias: 'd',
+        describe: 'Run as a demon or service'
+      })
       .env('REPEATER')
       .exitProcess(false);
   }
@@ -60,6 +68,21 @@ export class RunRepeater implements CommandModule {
         : JSON.parse(args.headers as string);
     } catch {
       // noop
+    }
+
+    if (args.daemon) {
+      const scriptManager = StartupManagerFactory.create();
+      const runArgs = process.argv
+        .slice(2)
+        .filter((x) => x !== '--daemon' && x !== '--d');
+      const runOptions = {
+        name: serviceName,
+        exePath: process.argv0,
+        args: runArgs
+      };
+      await scriptManager.install(runOptions);
+      await scriptManager.run(runOptions);
+      process.exit(0);
     }
 
     const onError = (e: Error) => {

@@ -20,6 +20,7 @@
   },
   "dependencies": {
     "@neuralegion/capture-har": "^0.3.2",
+    "@types/winreg": "^1.2.30",
     "ajv": "^6.12.6",
     "amqplib": "^0.6.0",
     "better-ajv-errors": "^0.6.7",
@@ -42,6 +43,7 @@
     "socks": "^2.5.1",
     "socks-proxy-agent": "^5.0.0",
     "tslib": "^2.0.3",
+    "winreg": "^1.2.4",
     "yargonaut": "^1.1.4",
     "yargs": "^16.2.0"
   },
