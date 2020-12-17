@@ -22,7 +22,7 @@ jobs:
 
       - run: echo "VERSION=$(git describe --abbrev=0 --tags)" >> $GITHUB_ENV
 
-      - run: npm ci -q --ignore-scripts
+      - run: npm ci -q
       - run: npm run build
       - run: npm --prefix public ci -q
       - run: npm --prefix public run build -- --configuration production
