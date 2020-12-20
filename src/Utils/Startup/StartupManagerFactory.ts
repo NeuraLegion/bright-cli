@@ -5,7 +5,7 @@ import { RegistryPidStore } from './windows/RegistryPidStore';
 import { platform } from 'os';
 
 export class StartupManagerFactory {
-  public static create(): ScriptManager {
+  public create(): ScriptManager {
     const os = platform();
     switch (os) {
       case 'win32': {

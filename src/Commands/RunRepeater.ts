@@ -7,9 +7,8 @@ import { StartupManagerFactory } from '../Utils/Startup/StartupManagerFactory';
 import { Arguments, Argv, CommandModule } from 'yargs';
 import Timer = NodeJS.Timer;
 
-const serviceName = 'nexploit-daemon';
-
 export class RunRepeater implements CommandModule {
+  private static serviceName = 'nexploit-daemon';
   public readonly command = 'repeater [options]';
   public readonly describe = 'Starts an on-prem agent.';
 
@@ -71,16 +70,17 @@ export class RunRepeater implements CommandModule {
     }
 
     if (args.daemon) {
-      const scriptManager = StartupManagerFactory.create();
-      const runArgs = process.argv
-        .slice(2)
-        .filter((x) => x !== '--daemon' && x !== '--d');
+      const scriptManager = new StartupManagerFactory().create();
+      const runArgs = process.argv.slice(2);
       const runOptions = {
-        name: serviceName,
+        name: RunRepeater.serviceName,
         exePath: process.argv0,
         args: runArgs
       };
       await scriptManager.install(runOptions);
+      runOptions.args = runOptions.args.filter(
+        (x: string) => x !== '--daemon' && x !== '--d'
+      );
       await scriptManager.run(runOptions);
       process.exit(0);
     }
