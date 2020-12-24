@@ -67,6 +67,7 @@
     "@types/mocha": "^8.0.4",
     "@types/ms": "^0.7.31",
     "@types/node": "^10.17.35",
+    "@types/os-service": "^2.2.0",
     "@types/request": "^2.48.5",
     "@types/request-promise": "^4.1.46",
     "@types/semver": "^7.3.4",
@@ -133,9 +134,9 @@
     "test": "mocha -r ts-node/register -r tsconfig-paths/register src/**/*.spec.ts",
     "build": "webpack --config webpack.config.js --mode=production",
     "semantic-release": "semantic-release",
-    "pack:win": "copy /y node_modules\\os-service\\build\\Release\\service.node bin\\win\\service.node && pkg -o bin/win/nexploit-cli.exe -t node14-windows-x64 .",
+    "pack:win": "pkg -o bin/win/nexploit-cli.exe -t node14-windows-x64 .",
     "pack:mac": "pkg -o bin/mac/nexploit-cli -t node14-mac-x64 .",
-    "pack:linux": "copy /y node_modules\\os-service\\build\\Release\\service.node bin\\linux\\service.node && pkg -o bin/linux/nexploit-cli -t node14-linux-x64 ."
+    "pack:linux": "pkg -o bin/linux/nexploit-cli -t node14-linux-x64 ."
   },
   "pkg": {
     "assets": [

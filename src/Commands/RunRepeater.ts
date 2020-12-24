@@ -3,9 +3,8 @@ import { DefaultHandlerRegistry, SendRequestHandler } from '../Handlers';
 import { DefaultRequestExecutor } from '../RequestExecutor';
 import { Helpers } from '../Utils/Helpers';
 import logger from '../Utils/Logger';
+import { StartupManagerFactory } from '../StartupScripts/StartupManagerFactory';
 import { Arguments, Argv, CommandModule } from 'yargs';
-import service from 'os-service';
-import { promisify } from 'util';
 import Timer = NodeJS.Timer;
 
 export class RunRepeater implements CommandModule {
@@ -79,41 +78,35 @@ export class RunRepeater implements CommandModule {
       // noop
     }
 
-    const remove = async () => {
-      try {
-        await promisify(service.remove).call(this, RunRepeater.serviceName);
-      } catch (e) {
-        // noop if service does not exist
-      }
+    const removeAction = async () => {
+      const startupManager = new StartupManagerFactory().create();
+      await startupManager.stop(0);
+      await startupManager.uninstall(RunRepeater.serviceName);
     };
 
     if (args.remove) {
-      await remove();
+      await removeAction();
       process.exit(0);
     }
 
     if (args.daemon) {
-      await remove();
       let runArgs = process.argv.slice(2);
-      runArgs = runArgs.filter((x) => x !== '--daemon' && x !== '--d');
-      service.add(
-        RunRepeater.serviceName,
-        {
-          programArgs: runArgs.concat(['--run'])
-        },
-        (error: Error) => {
-          if (error) {
-            console.log(error);
-          }
-        }
-      );
+      runArgs = runArgs
+        .filter((x) => x !== '--daemon' && x !== '--d')
+        .concat(['--run']);
+
+      const startupManager = new StartupManagerFactory().create();
+      await startupManager.install({
+        serviceName: RunRepeater.serviceName,
+        exePath: process.argv0,
+        exeArgs: runArgs
+      });
       process.exit(0);
     }
 
     if (args.run) {
-      service.run(() => {
-        service.stop(0);
-      });
+      const startupManager = new StartupManagerFactory().create();
+      await startupManager.run();
     }
 
     const onError = (e: Error) => {
