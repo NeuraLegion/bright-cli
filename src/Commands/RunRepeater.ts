@@ -90,8 +90,8 @@ export class RunRepeater implements CommandModule {
     }
 
     if (args.daemon) {
-      let runArgs = process.argv.slice(2);
-      runArgs = runArgs
+      const runArgs = process.argv
+        .slice(2)
         .filter((x) => x !== '--daemon' && x !== '--d')
         .concat(['--run']);
 
