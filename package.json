@@ -37,6 +37,7 @@
     "koa-send": "^5.0.1",
     "koa-static": "^5.0.0",
     "ms": "^2.1.2",
+    "os-service": "^2.2.0",
     "reflect-metadata": "^0.1.13",
     "request": "^2.88.2",
     "request-capture-har": "^1.2.2",
