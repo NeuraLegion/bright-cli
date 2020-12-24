@@ -8,7 +8,7 @@ import { Arguments, Argv, CommandModule } from 'yargs';
 import Timer = NodeJS.Timer;
 
 export class RunRepeater implements CommandModule {
-  private static serviceName = 'nexploit-daemon';
+  private static SERVICE_NAME = 'nexploit-repeater';
   public readonly command = 'repeater [options]';
   public readonly describe = 'Starts an on-prem agent.';
 
