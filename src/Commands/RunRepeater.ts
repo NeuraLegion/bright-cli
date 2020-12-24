@@ -3,10 +3,12 @@ import { DefaultHandlerRegistry, SendRequestHandler } from '../Handlers';
 import { DefaultRequestExecutor } from '../RequestExecutor';
 import { Helpers } from '../Utils/Helpers';
 import logger from '../Utils/Logger';
+import { StartupManagerFactory } from '../StartupScripts/StartupManagerFactory';
 import { Arguments, Argv, CommandModule } from 'yargs';
 import Timer = NodeJS.Timer;
 
 export class RunRepeater implements CommandModule {
+  private static SERVICE_NAME = 'nexploit-repeater';
   public readonly command = 'repeater [options]';
   public readonly describe = 'Starts an on-prem agent.';
 
@@ -45,6 +47,21 @@ export class RunRepeater implements CommandModule {
         describe:
           'JSON string which contains header list, which is initially empty and consists of zero or more name and value pairs.'
       })
+      .option('daemon', {
+        requiresArg: false,
+        alias: 'd',
+        describe: 'Run as repeater in daemon mode'
+      })
+      .option('run', {
+        requiresArg: false,
+        hidden: true
+      })
+      .option('remove', {
+        requiresArg: false,
+        alias: 'rm',
+        describe: 'Stop and remove repeater daemon'
+      })
+      .conflicts('remove', 'daemon')
       .env('REPEATER')
       .exitProcess(false);
   }
@@ -62,6 +79,49 @@ export class RunRepeater implements CommandModule {
       // noop
     }
 
+    const startupManagerFactory = new StartupManagerFactory();
+
+    const dispose: () => Promise<void> = async (): Promise<void> => {
+      clearInterval(timer);
+      await notify('disconnected');
+      await bus.destroy();
+    };
+
+    const removeAction = async () => {
+      const startupManager = startupManagerFactory.create({ dispose });
+      await startupManager.stop(0);
+      await startupManager.uninstall(RunRepeater.SERVICE_NAME);
+    };
+
+    if (args.remove) {
+      await removeAction();
+      process.exit(0);
+
+      return;
+    }
+
+    if (args.daemon) {
+      const runArgs = process.argv
+        .slice(2)
+        .filter((x) => x !== '--daemon' && x !== '--d')
+        .concat(['--run']);
+
+      const startupManager = startupManagerFactory.create({ dispose });
+      await startupManager.install({
+        serviceName: RunRepeater.SERVICE_NAME,
+        exePath: process.argv0,
+        exeArgs: runArgs
+      });
+      process.exit(0);
+
+      return;
+    }
+
+    if (args.run) {
+      const startupManager = startupManagerFactory.create({ dispose });
+      await startupManager.run();
+    }
+
     const onError = (e: Error) => {
       clearInterval(timer);
       logger.error(`Error during "repeater": ${e.message}`);
@@ -69,9 +129,7 @@ export class RunRepeater implements CommandModule {
     };
 
     const stop: () => Promise<void> = async (): Promise<void> => {
-      clearInterval(timer);
-      await notify('disconnected');
-      await bus.destroy();
+      await dispose();
       process.exit(0);
     };
 
