@@ -81,12 +81,14 @@ export class RunRepeater implements CommandModule {
     const removeAction = async () => {
       const startupManager = new StartupManagerFactory().create();
       await startupManager.stop(0);
-      await startupManager.uninstall(RunRepeater.serviceName);
+      await startupManager.uninstall(RunRepeater.SERVICE_NAME);
     };
 
     if (args.remove) {
       await removeAction();
       process.exit(0);
+
+      return;
     }
 
     if (args.daemon) {
@@ -97,11 +99,12 @@ export class RunRepeater implements CommandModule {
 
       const startupManager = new StartupManagerFactory().create();
       await startupManager.install({
-        serviceName: RunRepeater.serviceName,
+        serviceName: RunRepeater.SERVICE_NAME,
         exePath: process.argv0,
         exeArgs: runArgs
       });
       process.exit(0);
+
       return;
     }
 

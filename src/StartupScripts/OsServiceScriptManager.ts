@@ -4,7 +4,7 @@ import service from 'os-service';
 import { promisify } from 'util';
 
 export class OsServiceScriptManager implements StartupManager {
-  install(opts: StartupOptions): Promise<void> {
+  public install(opts: StartupOptions): Promise<void> {
     return new Promise<void>((resolve, reject) => {
       service.add(
         opts.serviceName,
@@ -22,11 +22,11 @@ export class OsServiceScriptManager implements StartupManager {
     });
   }
 
-  run(): Promise<void> {
+  public run(): Promise<void> {
     return Promise.resolve(service.run(() => this.stop(0)));
   }
 
-  async stop(code: number): Promise<void> {
+  public async stop(code: number): Promise<void> {
     try {
       return service.stop(code);
     } catch {
@@ -34,7 +34,7 @@ export class OsServiceScriptManager implements StartupManager {
     }
   }
 
-  async uninstall(name: string): Promise<void> {
+  public async uninstall(name: string): Promise<void> {
     try {
       await promisify(service.remove).call(this, name);
     } catch {
