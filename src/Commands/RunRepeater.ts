@@ -4,9 +4,12 @@ import { DefaultRequestExecutor } from '../RequestExecutor';
 import { Helpers } from '../Utils/Helpers';
 import logger from '../Utils/Logger';
 import { Arguments, Argv, CommandModule } from 'yargs';
+import service from 'os-service';
+import { promisify } from 'util';
 import Timer = NodeJS.Timer;
 
 export class RunRepeater implements CommandModule {
+  private static serviceName = 'nexploit-daemon';
   public readonly command = 'repeater [options]';
   public readonly describe = 'Starts an on-prem agent.';
 
@@ -45,6 +48,20 @@ export class RunRepeater implements CommandModule {
         describe:
           'JSON string which contains header list, which is initially empty and consists of zero or more name and value pairs.'
       })
+      .option('daemon', {
+        requiresArg: false,
+        alias: 'd',
+        describe: 'Run as repeater in daemon mode'
+      })
+      .option('run', {
+        requiresArg: false,
+        hidden: true
+      })
+      .option('remove', {
+        requiresArg: false,
+        alias: 'rm',
+        describe: 'Stop and remove repeater daemon'
+      })
       .env('REPEATER')
       .exitProcess(false);
   }
@@ -62,6 +79,42 @@ export class RunRepeater implements CommandModule {
       // noop
     }
 
+    const remove = async () => {
+      try {
+        await promisify(service.remove).call(this, RunRepeater.serviceName);
+      } catch (e) {
+        // noop if service does not exist
+      }
+    };
+
+    if (args.remove) {
+      await remove();
+      process.exit(0);
+    }
+
+    if (args.daemon) {
+      await remove();
+      let runArgs = process.argv.slice(2);
+      runArgs = runArgs.filter((x) => x !== '--daemon' && x !== '--d');
+      service.add(
+        RunRepeater.serviceName,
+        {
+          programArgs: runArgs.concat(['--run'])
+        },
+        (error: Error) => {
+          if (error) {
+            console.trace(error);
+          }
+        }
+      );
+      process.exit(0);
+    }
+
+    if (args.run) {
+      service.run(() => {
+        service.stop(0);
+      });
+    }
     const onError = (e: Error) => {
       clearInterval(timer);
       logger.error(`Error during "repeater": ${e.message}`);
