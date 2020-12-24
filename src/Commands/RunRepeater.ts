@@ -102,6 +102,7 @@ export class RunRepeater implements CommandModule {
         exeArgs: runArgs
       });
       process.exit(0);
+      return;
     }
 
     if (args.run) {
