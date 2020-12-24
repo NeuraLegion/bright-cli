@@ -103,7 +103,7 @@ export class RunRepeater implements CommandModule {
         },
         (error: Error) => {
           if (error) {
-            console.trace(error);
+            console.log(error);
           }
         }
       );
@@ -115,6 +115,7 @@ export class RunRepeater implements CommandModule {
         service.stop(0);
       });
     }
+
     const onError = (e: Error) => {
       clearInterval(timer);
       logger.error(`Error during "repeater": ${e.message}`);
