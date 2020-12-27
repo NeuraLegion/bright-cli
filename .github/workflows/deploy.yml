@@ -87,7 +87,7 @@ jobs:
         with:
           name: build
 
-      - run: npm ci -q
+      - run: npm i pkg
       - run: npm run pack:win
       - run: npm rebuild os-service --target=v14.7.0 --arch=x64 --verbose
       - run: copy /y node_modules\os-service\build\Release\service.node bin\win\service.node
