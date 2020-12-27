@@ -41,7 +41,6 @@ jobs:
             tools
             schemas
             bin
-            node_modules\os-service\build\Release
 
   deploy:
     runs-on: ubuntu-latest
