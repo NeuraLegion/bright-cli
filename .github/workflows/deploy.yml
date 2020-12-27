@@ -27,7 +27,6 @@ jobs:
       - run: npm --prefix public ci -q
       - run: npm --prefix public run build -- --configuration production
       - run: npm version --no-git-tag-version "$VERSION"
-      - run: npm run pack:win
 
       - uses: actions/upload-artifact@v2
         with:
@@ -42,6 +41,7 @@ jobs:
             tools
             schemas
             bin
+            node_modules\os-service\build\Release
 
   deploy:
     runs-on: ubuntu-latest
@@ -83,6 +83,10 @@ jobs:
       - uses: actions/download-artifact@v2
         with:
           name: build
+
+      - run: npm run pack:win
+
+      - run: copy /y node_modules\os-service\build\Release\service.node bin\win\service.node
 
       - run: |
           curl -OLS https://github.com/wixtoolset/wix3/releases/download/wix3111rtm/wix311.exe

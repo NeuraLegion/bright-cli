@@ -78,8 +78,14 @@ export class RunRepeater implements CommandModule {
       // noop
     }
 
+    const dispose: () => Promise<void> = async (): Promise<void> => {
+      clearInterval(timer);
+      await notify('disconnected');
+      await bus.destroy();
+    };
+
     const removeAction = async () => {
-      const startupManager = new StartupManagerFactory().create();
+      const startupManager = new StartupManagerFactory().create(dispose);
       await startupManager.stop(0);
       await startupManager.uninstall(RunRepeater.SERVICE_NAME);
     };
@@ -97,7 +103,7 @@ export class RunRepeater implements CommandModule {
         .filter((x) => x !== '--daemon' && x !== '--d')
         .concat(['--run']);
 
-      const startupManager = new StartupManagerFactory().create();
+      const startupManager = new StartupManagerFactory().create(dispose);
       await startupManager.install({
         serviceName: RunRepeater.SERVICE_NAME,
         exePath: process.argv0,
@@ -109,7 +115,7 @@ export class RunRepeater implements CommandModule {
     }
 
     if (args.run) {
-      const startupManager = new StartupManagerFactory().create();
+      const startupManager = new StartupManagerFactory().create(dispose);
       await startupManager.run();
     }
 
@@ -120,9 +126,7 @@ export class RunRepeater implements CommandModule {
     };
 
     const stop: () => Promise<void> = async (): Promise<void> => {
-      clearInterval(timer);
-      await notify('disconnected');
-      await bus.destroy();
+      await dispose();
       process.exit(0);
     };
 

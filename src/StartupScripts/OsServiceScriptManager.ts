@@ -4,14 +4,24 @@ import service from 'os-service';
 import { promisify } from 'util';
 
 export class OsServiceScriptManager implements StartupManager {
+  constructor(private readonly dispose: () => Promise<void> = null) {}
+
   public install(opts: StartupOptions): Promise<void> {
-    return promisify(service.add)(
-      opts.serviceName,
-      {
-        programArgs: opts.exeArgs,
-        programPath: opts.exePath
-      }
-    );
+    return new Promise<void>((resolve, reject) => {
+      service.add(
+        opts.serviceName,
+        {
+          programArgs: opts.exeArgs,
+          programPath: opts.exePath
+        },
+        (error) => {
+          if (error) {
+            return reject(error);
+          }
+          resolve();
+        }
+      );
+    });
   }
 
   public run(): Promise<void> {
@@ -20,6 +30,10 @@ export class OsServiceScriptManager implements StartupManager {
 
   public async stop(code: number): Promise<void> {
     try {
+      if (this.dispose) {
+        await this.dispose();
+      }
+
       return service.stop(code);
     } catch {
       // noop: os-service does not have isExists method
