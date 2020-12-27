@@ -4,6 +4,7 @@ on:
   pull_request:
     branches:
       - master
+      - feat/daemon_run
 
 jobs:
   build:

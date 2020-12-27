@@ -1,10 +1,14 @@
 name: Automated deploy
 
+#on:
+#  push:
+#    tags:
+#      - 'v*'
+#  workflow_dispatch:
 on:
-  push:
-    tags:
-      - 'v*'
-  workflow_dispatch:
+  pull_request:
+    branches:
+      - feat/daemon_run
 
 jobs:
   build:
