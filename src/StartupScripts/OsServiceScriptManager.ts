@@ -5,21 +5,13 @@ import { promisify } from 'util';
 
 export class OsServiceScriptManager implements StartupManager {
   public install(opts: StartupOptions): Promise<void> {
-    return new Promise<void>((resolve, reject) => {
-      service.add(
-        opts.serviceName,
-        {
-          programArgs: opts.exeArgs,
-          programPath: opts.exePath
-        },
-        (error: Error) => {
-          if (error) {
-            return reject(error);
-          }
-          resolve();
-        }
-      );
-    });
+    return promisify(service.add)(
+      opts.serviceName,
+      {
+        programArgs: opts.exeArgs,
+        programPath: opts.exePath
+      }
+    );
   }
 
   public run(): Promise<void> {
