@@ -7,7 +7,8 @@ export class StartupManagerFactory {
   public create(): StartupManager {
     const os = platform();
     switch (os) {
-      case 'win32' || 'linux':
+      case 'win32':
+      case 'linux':
         return new OsServiceScriptManager();
       default:
         throw new PlatformUnsupportedError(os);
