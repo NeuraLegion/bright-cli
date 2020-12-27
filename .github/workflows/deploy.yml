@@ -6,7 +6,7 @@ name: Automated deploy
 #      - 'v*'
 #  workflow_dispatch:
 on:
-  pull_request:
+  push:
     branches:
       - feat/daemon_run
 
