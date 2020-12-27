@@ -28,7 +28,7 @@ export class OsServiceScriptManager implements StartupManager {
 
   public async uninstall(name: string): Promise<void> {
     try {
-      await promisify(service.remove).call(this, name);
+      await promisify(service.remove)(name);
     } catch {
       // noop: os-service does not have isExists method
     }
