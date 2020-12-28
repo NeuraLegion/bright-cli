@@ -4,12 +4,15 @@ import { PlatformUnsupportedError } from './PlatformUnsupportedError';
 import { platform } from 'os';
 
 export class StartupManagerFactory {
-  public create(onDispose: () => Promise<void>): StartupManager {
-    const os = platform();
+  public create(options: {
+    dispose?: () => Promise<unknown> | unknown;
+  }): StartupManager {
+    const os: NodeJS.Platform = platform();
+
     switch (os) {
       case 'win32':
       case 'linux':
-        return new OsServiceScriptManager(onDispose);
+        return new OsServiceScriptManager(options);
       default:
         throw new PlatformUnsupportedError(os);
     }

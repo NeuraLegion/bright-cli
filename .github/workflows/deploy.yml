@@ -83,10 +83,13 @@ jobs:
         with:
           name: build
 
-      - run: npm i pkg
+      - uses: actions/setup-node@v1
+        with:
+          node-version: 14
+
+      - run: npm ci -q
       - run: npm run pack:win
-      - run: npm rebuild os-service --target=v14.7.0 --arch=x64 --verbose
-      - run: dir
+      - run: npm rebuild os-service --target=v14.7.0 --arch=x64
       - run: Copy-Item ".\node_modules\os-service\build\Release\service.node" -Destination ".\bin\win\service.node"
 
       - run: |

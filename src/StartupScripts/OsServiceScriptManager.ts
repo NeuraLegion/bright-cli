@@ -1,40 +1,33 @@
 import { StartupManager } from './StartupManager';
 import { StartupOptions } from './StartupOptions';
-import service from 'os-service';
+import { run, add, remove, stop, AddOptions } from 'os-service';
 import { promisify } from 'util';
 
 export class OsServiceScriptManager implements StartupManager {
-  constructor(private readonly dispose: () => Promise<void> = null) {}
+  constructor(
+    private readonly options?: {
+      dispose?: () => Promise<unknown> | unknown;
+    }
+  ) {}
 
   public install(opts: StartupOptions): Promise<void> {
-    return new Promise<void>((resolve, reject) => {
-      service.add(
-        opts.serviceName,
-        {
-          programArgs: opts.exeArgs,
-          programPath: opts.exePath
-        },
-        (error) => {
-          if (error) {
-            return reject(error);
-          }
-          resolve();
-        }
-      );
+    return promisify<string, AddOptions>(add)(opts.serviceName, {
+      programArgs: opts.exeArgs,
+      programPath: opts.exePath
     });
   }
 
-  public run(): Promise<void> {
-    return Promise.resolve(service.run(() => this.stop(0)));
+  public async run(): Promise<void> {
+    run(() => this.stop(0));
   }
 
   public async stop(code: number): Promise<void> {
     try {
-      if (this.dispose) {
-        await this.dispose();
+      if (this.options?.dispose) {
+        await this.options.dispose();
       }
 
-      return service.stop(code);
+      return stop(code);
     } catch {
       // noop: os-service does not have isExists method
     }
@@ -42,7 +35,7 @@ export class OsServiceScriptManager implements StartupManager {
 
   public async uninstall(name: string): Promise<void> {
     try {
-      await promisify(service.remove)(name);
+      await promisify(remove)(name);
     } catch {
       // noop: os-service does not have isExists method
     }
