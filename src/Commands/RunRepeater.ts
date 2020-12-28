@@ -61,6 +61,7 @@ export class RunRepeater implements CommandModule {
         alias: 'rm',
         describe: 'Stop and remove repeater daemon'
       })
+      .conflicts('remove', 'daemon')
       .env('REPEATER')
       .exitProcess(false);
   }
