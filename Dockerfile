@@ -21,7 +21,10 @@ ENV npm_config_unsafe_perm true
 RUN echo "whoami: $(whoami)"
 RUN npm config -g set user $(whoami)
 
-RUN npm i -g -q @neuralegion/nexploit-cli@${VERSION}
+#  add libraries needed to build os-service
+RUN apk add --no-cache --virtual .build-deps make gcc g++ python \
+    && npm i -g -q @neuralegion/nexploit-cli@${VERSION} \
+    && apk del .build-deps
 
 ENTRYPOINT [ "nexploit-cli" ]
 CMD ["repeater"]
