@@ -40,7 +40,6 @@ jobs:
             LICENSE
             tools
             schemas
-            bin
 
   deploy:
     runs-on: ubuntu-latest
