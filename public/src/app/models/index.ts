@@ -5,6 +5,5 @@ export { ScanInfo } from './ScanInfo';
 export {
   CustomValidators,
   REGEX_AUTH_TOKEN,
-  REGEX_URL,
-  REGEX_UUID
+  REGEX_URL
 } from './CustomValidators';

@@ -1,9 +1,5 @@
 import { Endpoint } from './Endpoint';
-import {
-  AUTH_TOKEN_VALIDATION_REGEXP,
-  Credentials,
-  REPEATER_ID_VALIDATION_REGEXP
-} from '../Models';
+import { AUTH_TOKEN_VALIDATION_REGEXP, Credentials } from '../Models';
 import logger from '../../Utils/Logger';
 import { Tokens } from '../Tokens';
 import Koa from 'koa';
@@ -23,7 +19,7 @@ export class SetTokensEndpoint implements Endpoint {
       return;
     }
 
-    if (!repeaterId || !REPEATER_ID_VALIDATION_REGEXP.test(repeaterId)) {
+    if (!repeaterId) {
       logger.warn('Invalid value for repeater id');
       ctx.throw(400, 'Invalid value for repeater id');
 

@@ -30,7 +30,7 @@ export class MainComponent implements OnInit, OnDestroy {
   ) {
     this.form = fb.group({
       authToken: ['', [Validators.required, CustomValidators.authToken]],
-      repeaterId: ['', [Validators.required, CustomValidators.uuid]]
+      repeaterId: ['', [Validators.required]]
     });
   }
 
