@@ -56,12 +56,12 @@ export class RunRepeater implements CommandModule {
         requiresArg: false,
         hidden: true
       })
-      .option('remove', {
+      .option('remove-daemon', {
         requiresArg: false,
-        alias: 'rm',
+        alias: ['rm', 'remove'],
         describe: 'Stop and remove repeater daemon'
       })
-      .conflicts('remove', 'daemon')
+      .conflicts('remove-daemon', 'daemon')
       .env('REPEATER')
       .exitProcess(false);
   }
@@ -89,13 +89,16 @@ export class RunRepeater implements CommandModule {
 
     const removeAction = async () => {
       const startupManager = startupManagerFactory.create({ dispose });
-      await startupManager.stop(0);
       await startupManager.uninstall(RunRepeater.SERVICE_NAME);
+      logger.log(
+        'The Repeater daemon process (SERVICE: %s) was stopped and deleted successfully',
+        RunRepeater.SERVICE_NAME
+      );
+      await startupManager.stop(0);
     };
 
     if (args.remove) {
       await removeAction();
-      process.exit(0);
 
       return;
     }
@@ -112,6 +115,12 @@ export class RunRepeater implements CommandModule {
         exePath: process.argv0,
         exeArgs: runArgs
       });
+
+      logger.log(
+        'A Repeater daemon process was initiated successfully (SERVICE: %s)',
+        RunRepeater.SERVICE_NAME
+      );
+
       process.exit(0);
 
       return;
