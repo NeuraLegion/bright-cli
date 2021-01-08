@@ -1,6 +1,51 @@
 import { ok } from 'assert';
 
+declare global {
+  // eslint-disable-next-line @typescript-eslint/no-namespace
+  namespace NodeJS {
+    interface Process {
+      pkg?: {
+        entrypoint: string;
+      };
+    }
+  }
+}
+
+export interface CommandArgs {
+  command: string;
+  args: string[];
+}
+
 export class Helpers {
+  public static getExecArgs(options?: {
+    exclude?: string[];
+    include?: string[];
+    excludeAll?: boolean;
+  }): CommandArgs {
+    let args: string[] = process.argv.slice(2);
+
+    if (process.pkg?.entrypoint !== process.argv[1]) {
+      args = [process.argv[1], ...args];
+    }
+
+    if (options?.excludeAll) {
+      args.splice(1);
+    }
+
+    if (options?.include) {
+      args = [...args, ...options.include];
+    }
+
+    if (options?.exclude) {
+      args = args.filter((x: string) => !options.exclude.includes(x));
+    }
+
+    return {
+      command: process.execPath,
+      args: [...process.execArgv, ...args]
+    };
+  }
+
   public static selectEnumValue(
     enumType: Record<string, string>,
     caseAgnosticValue: string

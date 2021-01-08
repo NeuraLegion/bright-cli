@@ -1,5 +1,6 @@
 export interface StartupOptions {
-  readonly serviceName: string;
-  readonly exePath: string;
-  readonly exeArgs: string[];
+  readonly name: string;
+  readonly displayName?: string;
+  readonly command: string;
+  readonly args: string[];
 }
