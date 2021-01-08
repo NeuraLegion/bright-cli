@@ -94,7 +94,6 @@ export class RunRepeater implements CommandModule {
         'The Repeater daemon process (SERVICE: %s) was stopped and deleted successfully',
         RunRepeater.SERVICE_NAME
       );
-      await startupManager.stop(0);
     };
 
     if (args.remove) {

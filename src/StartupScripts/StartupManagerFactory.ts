@@ -1,6 +1,7 @@
 import { StartupManager } from './StartupManager';
-import { OsServiceScriptManager } from './OsServiceScriptManager';
 import { PlatformUnsupportedError } from './PlatformUnsupportedError';
+import { SCManager, SystemD, SystemV } from './Managers';
+import { statSync } from 'fs';
 import { platform } from 'os';
 
 export class StartupManagerFactory {
@@ -11,10 +12,21 @@ export class StartupManagerFactory {
 
     switch (os) {
       case 'win32':
+        return new SCManager(options);
       case 'linux':
-        return new OsServiceScriptManager(options);
+        return this.isSystemD() ? new SystemD(options) : new SystemV(options);
       default:
         throw new PlatformUnsupportedError(os);
+    }
+  }
+
+  private isSystemD(): boolean {
+    try {
+      statSync('/usr/lib/systemd/system');
+
+      return true;
+    } catch {
+      return false;
     }
   }
 }
