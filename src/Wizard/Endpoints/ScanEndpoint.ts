@@ -2,6 +2,7 @@ import { Endpoint } from './Endpoint';
 import { Credentials, ScanId, ScannedUrl } from '../Models';
 import logger from '../../Utils/Logger';
 import { Tokens } from '../Tokens';
+import { Helpers } from '../../Utils/Helpers';
 import Koa from 'koa';
 import { ChildProcess, spawn } from 'child_process';
 import { URL } from 'url';
@@ -62,12 +63,11 @@ export class ScanEndpoint implements Endpoint {
       return true;
     }
 
-    const {
-      cmd,
-      argv: nodeArgv
-    }: { cmd: string; argv: string[] } = this.getNodeExec();
+    const { command, args: execArgs } = Helpers.getExecArgs({
+      excludeAll: true
+    });
     const args: string[] = [
-      ...nodeArgv,
+      ...execArgs,
       'repeater',
       '--token',
       authToken,
@@ -77,12 +77,12 @@ export class ScanEndpoint implements Endpoint {
 
     logger.debug(
       'Launching Repeater process with cmd: %s and arguments: %j',
-      cmd,
+      command,
       args
     );
 
     try {
-      this.repeaterProcess = spawn(cmd, args, {
+      this.repeaterProcess = spawn(command, args, {
         detached: true
       });
 
@@ -119,9 +119,11 @@ export class ScanEndpoint implements Endpoint {
     url: string,
     { authToken, repeaterId }: Credentials
   ): Promise<string> {
-    const { cmd, argv: nodeArgv } = this.getNodeExec();
+    const { command, args: execArgs } = Helpers.getExecArgs({
+      excludeAll: true
+    });
     const args: string[] = [
-      ...nodeArgv,
+      ...execArgs,
       'scan:run',
       '--token',
       authToken,
@@ -138,13 +140,13 @@ export class ScanEndpoint implements Endpoint {
 
     logger.debug(
       `Launching scanner process with cmd: %s and arguments: %j`,
-      cmd,
+      command,
       args
     );
 
     return new Promise<string>((resolve, reject) => {
       try {
-        const scanProcess: ChildProcess = spawn(cmd, args);
+        const scanProcess: ChildProcess = spawn(command, args);
 
         const output: Buffer[] = [];
 
@@ -184,25 +186,5 @@ export class ScanEndpoint implements Endpoint {
         );
       }
     });
-  }
-
-  private getNodeExec(): { cmd: string; argv: string[] } {
-    const args: string[] = [];
-
-    // to support standalone 'node ./dist/index.js configure' execution
-    for (let i = 0; i < process.argv.length; i++) {
-      if (process.argv[i] === 'configure') {
-        break;
-      }
-
-      args.push(process.argv[i]);
-    }
-
-    const cmd: string = args.shift();
-
-    return {
-      cmd,
-      argv: [...process.execArgv, ...args]
-    };
   }
 }

@@ -104,16 +104,17 @@ export class RunRepeater implements CommandModule {
     }
 
     if (args.daemon) {
-      const runArgs = process.argv
-        .slice(2)
-        .filter((x) => x !== '--daemon' && x !== '--d')
-        .concat(['--run']);
+      const { command, args: execArgs } = Helpers.getExecArgs({
+        exclude: ['--daemon', '-d'],
+        include: ['--run']
+      });
 
       const startupManager = startupManagerFactory.create({ dispose });
       await startupManager.install({
-        serviceName: RunRepeater.SERVICE_NAME,
-        exePath: process.argv0,
-        exeArgs: runArgs
+        command,
+        args: execArgs,
+        name: RunRepeater.SERVICE_NAME,
+        displayName: 'NexPloit Repeater'
       });
 
       logger.log(

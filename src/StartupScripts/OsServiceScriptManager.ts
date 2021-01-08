@@ -1,6 +1,6 @@
 import { StartupManager } from './StartupManager';
 import { StartupOptions } from './StartupOptions';
-import { run, add, remove, stop, AddOptions } from 'os-service';
+import { run, add, remove, stop, AddOptions } from '@neuralegion/os-service';
 import { promisify } from 'util';
 
 export class OsServiceScriptManager implements StartupManager {
@@ -10,11 +10,8 @@ export class OsServiceScriptManager implements StartupManager {
     }
   ) {}
 
-  public install(opts: StartupOptions): Promise<void> {
-    return promisify<string, AddOptions>(add)(opts.serviceName, {
-      programArgs: opts.exeArgs,
-      programPath: opts.exePath
-    });
+  public install({ name, ...options }: StartupOptions): Promise<void> {
+    return promisify<string, AddOptions>(add)(name, options);
   }
 
   public async run(): Promise<void> {
@@ -27,7 +24,7 @@ export class OsServiceScriptManager implements StartupManager {
         await this.options.dispose();
       }
 
-      return stop(code);
+      stop(code);
     } catch {
       // noop: os-service does not have isExists method
     }
