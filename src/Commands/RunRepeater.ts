@@ -3,7 +3,8 @@ import { DefaultHandlerRegistry, SendRequestHandler } from '../Handlers';
 import { DefaultRequestExecutor } from '../RequestExecutor';
 import { Helpers } from '../Utils/Helpers';
 import logger from '../Utils/Logger';
-import { StartupManagerFactory } from '../StartupScripts/StartupManagerFactory';
+import { StartupManagerFactory } from '../StartupScripts';
+import { DefaultVirtualScripts } from '../Scripts';
 import { Arguments, Argv, CommandModule } from 'yargs';
 import Timer = NodeJS.Timer;
 
@@ -146,12 +147,16 @@ export class RunRepeater implements CommandModule {
       bus?.publish(new RepeaterStatusUpdated(args.id as string, status));
 
     try {
-      const requestExecutor = new DefaultRequestExecutor({
+      const scripts = new DefaultVirtualScripts();
+      const requestExecutor = new DefaultRequestExecutor(scripts, {
         headers,
         timeout: 10000,
         proxyUrl: args.proxy as string
       });
-      const handlerRegistry = new DefaultHandlerRegistry(requestExecutor);
+      const handlerRegistry = new DefaultHandlerRegistry(
+        requestExecutor,
+        scripts
+      );
 
       bus = new RabbitMQBus(
         {
