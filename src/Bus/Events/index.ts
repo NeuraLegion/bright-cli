@@ -1,3 +1,4 @@
-export { ExecuteScript } from './ExecuteScript';
-export { ForwardResponse } from './ForwardResponse';
-export { RepeaterStatusUpdated } from './RepeaterStatusUpdated';
+export * from './ExecuteScript';
+export * from './ForwardResponse';
+export * from './RepeaterStatusUpdated';
+export * from './RegisterScripts';

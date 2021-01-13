@@ -1,4 +1,9 @@
-import { Handler, HandlerRegistry, HandlerType } from '../Handler';
+import {
+  ExecutionResult,
+  Handler,
+  HandlerRegistry,
+  HandlerType
+} from '../Handler';
 import { Event, EventType } from '../Event';
 import { Bus } from '../Bus';
 import { Proxy } from '../Proxy';
@@ -30,7 +35,10 @@ export interface RabbitMQBusOptions {
 export class RabbitMQBus implements Bus {
   private client: Connection;
   private channel: ConfirmChannel;
-  private readonly handlers = new Map<string, Handler<Event>>();
+  private readonly handlers = new Map<
+    string,
+    Handler<Event, ExecutionResult>
+  >();
   private readonly DEFAULT_RECONNECT_TIMES = 20;
   private readonly DEFAULT_RECONNECT_TIMEOUT = 10;
   private readonly DEFAULT_HEARTBEAT_INTERVAL = 30;
@@ -79,9 +87,9 @@ export class RabbitMQBus implements Bus {
   public async subscribe(handler: HandlerType): Promise<void> {
     ok(handler, 'Event handler is not defined.');
 
-    const instance: Handler<Event> | undefined = await this.registry.get(
-      handler
-    );
+    const instance:
+      | Handler<Event, ExecutionResult>
+      | undefined = await this.registry.get(handler);
     ok(instance, `Cannot create instance of "${handler.name}" handler.`);
 
     const eventType: EventType | undefined = Reflect.getMetadata(
@@ -243,13 +251,13 @@ export class RabbitMQBus implements Bus {
           event
         );
 
-        const handler: Handler<Event> | undefined = this.handlers.get(
-          eventType
-        );
+        const handler:
+          | Handler<Event, ExecutionResult>
+          | undefined = this.handlers.get(eventType);
 
         ok(handler, `Cannot find a handler for ${eventType} event.`);
 
-        const response: Event | undefined = await handler.handle(event);
+        const response: ExecutionResult = await handler.handle(event);
 
         // eslint-disable-next-line max-depth
         if (response) {

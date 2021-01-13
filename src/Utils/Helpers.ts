@@ -46,6 +46,10 @@ export class Helpers {
     };
   }
 
+  public static wildcardToRegExp(s: string): RegExp {
+    return new RegExp(`^${s.split(/\*+/).map(this.regExpEscape).join('.*')}$`);
+  }
+
   public static selectEnumValue(
     enumType: Record<string, string>,
     caseAgnosticValue: string
@@ -116,5 +120,12 @@ export class Helpers {
         decodeURIComponent(item.trim())
       ) as [string, string];
     }
+  }
+
+  /**
+   * RegExp-escapes all characters in the given string.
+   */
+  private static regExpEscape(s: string): string {
+    return s.replace(/[|\\{}()[\]^$+*?.]/g, '\\$&');
   }
 }
