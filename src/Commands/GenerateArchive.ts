@@ -1,10 +1,14 @@
 import {
-  DefaultParserFactory,
+  HarRecorderOptions,
   HarSplitter,
+  NexMockConverterOptions,
   Parser,
+  ParserFactory,
+  RestArchivesOptions,
   SpecType
 } from '../Archive';
 import { Helpers, logger } from '../Utils';
+import { container } from '../Config';
 import { Arguments, Argv, CommandModule } from 'yargs';
 import { Har } from 'har-format';
 import { basename } from 'path';
@@ -13,8 +17,8 @@ export class GenerateArchive implements CommandModule {
   public readonly command = 'archive:generate [options] <mockfile>';
   public readonly describe = 'Generates a new archive on base unit-tests.';
 
-  public builder(args: Argv): Argv {
-    return args
+  public builder(argv: Argv): Argv {
+    return argv
       .option('pool', {
         alias: 'p',
         number: true,
@@ -62,18 +66,36 @@ export class GenerateArchive implements CommandModule {
         normalize: true,
         describe: 'Mock file.',
         demandOption: true
+      })
+      .middleware((args: Arguments) => {
+        container
+          .register(HarRecorderOptions, {
+            useValue: {
+              timeout: args.timeout as number,
+              maxRedirects: 20,
+              pool: args.pool as number,
+              proxyUrl: args.proxy as string
+            } as HarRecorderOptions
+          })
+          .register(NexMockConverterOptions, {
+            useValue: {
+              headers: Helpers.parseHeaders(args.header as string[]),
+              url: args.target as string
+            } as NexMockConverterOptions
+          })
+          .register(RestArchivesOptions, {
+            useValue: {
+              baseUrl: args.api as string,
+              apiKey: args.token as string,
+              proxyUrl: args.proxy as string
+            }
+          });
       });
   }
 
   public async handler(args: Arguments): Promise<void> {
     try {
-      const parserFactory = new DefaultParserFactory({
-        timeout: args.timeout as number,
-        pool: args.pool as number,
-        proxyUrl: args.proxy as string,
-        baseUrl: args.target as string,
-        headers: Helpers.parseHeaders(args.header as string[])
-      });
+      const parserFactory: ParserFactory = container.resolve(ParserFactory);
 
       const parser: Parser = parserFactory.create(SpecType.NEXMOCK);
       const { content } = await parser.parse(args.mockfile as string);
@@ -82,11 +104,14 @@ export class GenerateArchive implements CommandModule {
 
       logger.log(`${log.entries.length ?? 0} requests were prepared.`);
 
-      const harSplitter = new HarSplitter(args.output as string);
+      const harSplitter = container.resolve(HarSplitter);
 
       const fileNames: string[] = await harSplitter.split(
-        args.split as number,
-        { log }
+        { log },
+        {
+          count: args.split as number,
+          baseName: args.output as string
+        }
       );
 
       const plural: boolean = fileNames.length > 1;

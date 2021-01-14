@@ -1,24 +1,41 @@
-import { Bus, RabbitMQBus } from '../Bus';
+import { Bus, RabbitMQBusOptions } from '../Bus';
 import {
-  DefaultHandlerRegistry,
   RegisterScriptsHandler,
   RepeaterStatusUpdated,
   SendRequestHandler
 } from '../Handlers';
-import { DefaultRequestExecutor } from '../RequestExecutor';
-import { logger, Helpers } from '../Utils';
+import { RequestExecutorOptions } from '../RequestExecutor';
+import { Helpers, logger } from '../Utils';
 import { StartupManagerFactory } from '../StartupScripts';
-import { DefaultVirtualScripts } from '../Scripts';
+import { container } from '../Config';
 import { Arguments, Argv, CommandModule } from 'yargs';
 import Timer = NodeJS.Timer;
+
+const prepareHeaders = (
+  headersStr: string[] | string
+): Record<string, string> => {
+  let headers: Record<string, string> = {};
+
+  try {
+    headers = Array.isArray(headersStr)
+      ? Helpers.parseHeaders(headersStr)
+      : JSON.parse(headersStr);
+  } catch {
+    // noop
+  }
+
+  return headers;
+};
+
+let timer: Timer;
 
 export class RunRepeater implements CommandModule {
   private static SERVICE_NAME = 'nexploit-repeater';
   public readonly command = 'repeater [options]';
   public readonly describe = 'Starts an on-prem agent.';
 
-  public builder(args: Argv): Argv {
-    return args
+  public builder(argv: Argv): Argv {
+    return argv
       .option('bus', {
         default: 'amqps://amq.nexploit.app:5672',
         demandOption: true,
@@ -68,23 +85,44 @@ export class RunRepeater implements CommandModule {
       })
       .conflicts('remove-daemon', 'daemon')
       .env('REPEATER')
-      .exitProcess(false);
+      .exitProcess(false)
+      .middleware((args: Arguments) => {
+        container
+          .register(RequestExecutorOptions, {
+            useValue: {
+              headers: prepareHeaders(
+                (args.header ?? args.headers) as string | string[]
+              ),
+              timeout: 10000,
+              proxyUrl: args.proxy as string
+            }
+          })
+          .register(RabbitMQBusOptions, {
+            useValue: {
+              exchange: 'EventBus',
+              clientQueue: `agent:${args.id as string}`,
+              connectTimeout: 10000,
+              url: args.bus as string,
+              proxyUrl: args.proxy as string,
+              credentials: {
+                username: args.id && ('guest' as string),
+                password: args.token && ('guest' as string)
+              },
+              onError(e: Error) {
+                clearInterval(timer);
+                logger.error(`Error during "repeater": ${e.message}`);
+                process.exit(1);
+              }
+            }
+          });
+      });
   }
 
   public async handler(args: Arguments): Promise<void> {
-    let bus: Bus;
-    let timer: Timer;
-    let headers: Record<string, string> = {};
-
-    try {
-      headers = (args.header as string[])?.length
-        ? Helpers.parseHeaders(args.header as string[])
-        : JSON.parse(args.headers as string);
-    } catch {
-      // noop
-    }
-
-    const startupManagerFactory = new StartupManagerFactory();
+    const bus: Bus = container.resolve(Bus);
+    const startupManagerFactory: StartupManagerFactory = container.resolve(
+      StartupManagerFactory
+    );
 
     const dispose: () => Promise<void> = async (): Promise<void> => {
       clearInterval(timer);
@@ -147,39 +185,12 @@ export class RunRepeater implements CommandModule {
       process.exit(0);
     };
 
+    process.on('SIGTERM', stop).on('SIGINT', stop).on('SIGHUP', stop);
+
     const notify = (status: 'connected' | 'disconnected') =>
       bus?.publish(new RepeaterStatusUpdated(args.id as string, status));
 
     try {
-      const scripts = new DefaultVirtualScripts();
-      const requestExecutor = new DefaultRequestExecutor(scripts, {
-        headers,
-        timeout: 10000,
-        proxyUrl: args.proxy as string
-      });
-      const handlerRegistry = new DefaultHandlerRegistry(
-        requestExecutor,
-        scripts
-      );
-
-      bus = new RabbitMQBus(
-        {
-          onError,
-          exchange: 'EventBus',
-          clientQueue: `agent:${args.id as string}`,
-          connectTimeout: 10000,
-          url: args.bus as string,
-          proxyUrl: args.proxy as string,
-          credentials: {
-            username: args.id as string,
-            password: args.token as string
-          }
-        },
-        handlerRegistry
-      );
-
-      process.on('SIGTERM', stop).on('SIGINT', stop).on('SIGHUP', stop);
-
       await bus.init();
 
       await bus.subscribe(RegisterScriptsHandler);

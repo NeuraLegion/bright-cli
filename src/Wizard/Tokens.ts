@@ -5,3 +5,5 @@ export interface Tokens {
 
   readTokens(): Credentials | undefined;
 }
+
+export const Tokens: unique symbol = Symbol('Tokens');

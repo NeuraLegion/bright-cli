@@ -1,7 +1,5 @@
-import { Breakpoint } from './Breakpoint';
-
 export interface Polling {
-  start(breakpoint: Breakpoint): Promise<void>;
+  start(): Promise<void>;
 
   stop(): Promise<void>;
 }

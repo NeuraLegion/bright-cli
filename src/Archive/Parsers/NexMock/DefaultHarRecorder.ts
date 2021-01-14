@@ -1,25 +1,34 @@
 import { HarRecorder } from './HarRecorder';
-import { Helpers } from '../../../Utils/Helpers';
+import { Helpers } from '../../../Utils';
 import { CaptureHar } from '@neuralegion/capture-har';
 import request, { Options, OptionsWithUrl } from 'request';
 import { SocksProxyAgent } from 'socks-proxy-agent';
+import { inject, injectable } from 'tsyringe';
 import { Stream } from 'stream';
 
+export interface HarRecorderOptions {
+  timeout: number;
+  pool?: number;
+  proxyUrl?: string;
+  maxRedirects?: number;
+}
+
+export const HarRecorderOptions: unique symbol = Symbol('HarRecorderOptions');
+
+@injectable()
 export class DefaultHarRecorder implements HarRecorder {
   private readonly proxy: CaptureHar;
   private readonly pool: number;
 
-  constructor({
-    pool = 250,
-    timeout = 5000,
-    proxyUrl,
-    maxRedirects = 20
-  }: {
-    timeout: number;
-    pool?: number;
-    proxyUrl?: string;
-    maxRedirects?: number;
-  }) {
+  constructor(
+    @inject(HarRecorderOptions)
+    {
+      pool = 250,
+      timeout = 5000,
+      proxyUrl,
+      maxRedirects = 20
+    }: HarRecorderOptions
+  ) {
     this.pool = pool;
     this.proxy = new CaptureHar(
       request.defaults({

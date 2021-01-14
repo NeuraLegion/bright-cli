@@ -1,19 +1,19 @@
 import {
   BreakpointException,
   BreakpointType,
-  DefaultBreakpointFactory,
-  DefaultPolling,
-  RestScans
+  PollingFactory,
+  RestScansOptions
 } from '../Scan';
 import { Helpers, logger } from '../Utils';
 import { Arguments, Argv, CommandModule } from 'yargs';
+import { container } from 'tsyringe';
 
 export class PollingScanStatus implements CommandModule {
   public readonly command = 'scan:polling [options] <scan>';
   public readonly describe = 'Allows to configure a polling of scan status.';
 
-  public builder(args: Argv): Argv {
-    return args
+  public builder(argv: Argv): Argv {
+    return argv
       .option('token', {
         alias: 't',
         describe: 'NexPloit API-key',
@@ -46,27 +46,29 @@ export class PollingScanStatus implements CommandModule {
         describe: 'ID of an existing scan which you want to check.',
         type: 'string',
         demandOption: true
-      });
+      })
+      .middleware((args: Arguments) =>
+        container.register(RestScansOptions, {
+          useValue: {
+            baseUrl: args.api as string,
+            apiKey: args.token as string,
+            proxyUrl: args.proxy as string
+          }
+        })
+      );
   }
 
   public async handler(args: Arguments): Promise<void> {
     try {
-      const scanManager = new RestScans({
-        baseUrl: args.api as string,
-        apiKey: args.token as string,
-        proxyUrl: args.proxy as string
-      });
-      const polling = new DefaultPolling({
-        scanManager,
+      const pollingFactory = container.resolve<PollingFactory>(PollingFactory);
+      const polling = pollingFactory.create({
         scanId: args.scan as string,
         timeout: args.timeout as number,
-        interval: args.interval as number
+        interval: args.interval as number,
+        breakpoint: args.breakpoint as BreakpointType
       });
-      const breakpointFactory = new DefaultBreakpointFactory();
 
-      await polling.start(
-        breakpointFactory.create(args.breakpoint as BreakpointType)
-      );
+      await polling.start();
 
       process.exit(0);
     } catch (e) {

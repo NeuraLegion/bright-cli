@@ -5,8 +5,10 @@ import Ajv from 'ajv';
 import { ValidateFunction } from 'ajv';
 import betterAjvErrors from 'better-ajv-errors';
 import schema from 'schemas/har/schema.json';
+import { injectable } from 'tsyringe';
 import { parse, Url } from 'url';
 
+@injectable()
 export class HarValidator implements Validator<Har> {
   private readonly ajv: Ajv.Ajv;
 

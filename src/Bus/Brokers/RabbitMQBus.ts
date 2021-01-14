@@ -1,9 +1,4 @@
-import {
-  ExecutionResult,
-  Handler,
-  HandlerRegistry,
-  HandlerType
-} from '../Handler';
+import { ExecutionResult, Handler, HandlerType } from '../Handler';
 import { Event, EventType } from '../Event';
 import { Bus } from '../Bus';
 import { Proxy } from '../Proxy';
@@ -16,6 +11,7 @@ import {
   Connection,
   ConsumeMessage
 } from 'amqplib';
+import { DependencyContainer, inject, injectable } from 'tsyringe';
 import { ok } from 'assert';
 import { format, parse, UrlWithParsedQuery } from 'url';
 
@@ -32,6 +28,9 @@ export interface RabbitMQBusOptions {
   };
 }
 
+export const RabbitMQBusOptions: unique symbol = Symbol('RabbitMQBusOptions');
+
+@injectable()
 export class RabbitMQBus implements Bus {
   private client: Connection;
   private channel: ConfirmChannel;
@@ -45,8 +44,8 @@ export class RabbitMQBus implements Bus {
   private consumerTag?: string;
 
   constructor(
-    private readonly options: RabbitMQBusOptions,
-    private readonly registry: HandlerRegistry
+    @inject(RabbitMQBusOptions) private readonly options: RabbitMQBusOptions,
+    @inject('tsyringe') private readonly container: DependencyContainer
   ) {}
 
   public async destroy(): Promise<void> {
@@ -89,7 +88,7 @@ export class RabbitMQBus implements Bus {
 
     const instance:
       | Handler<Event, ExecutionResult>
-      | undefined = await this.registry.get(handler);
+      | undefined = await this.container.resolve(handler);
     ok(instance, `Cannot create instance of "${handler.name}" handler.`);
 
     const eventType: EventType | undefined = Reflect.getMetadata(

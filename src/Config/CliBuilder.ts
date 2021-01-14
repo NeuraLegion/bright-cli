@@ -52,10 +52,6 @@ export class CliBuilder {
         demandOption: true,
         describe: 'NexPloit base URL'
       })
-      .option('config', {
-        requiresArg: true,
-        describe: 'Path to the file with configuration'
-      })
       .option('proxy', {
         requiresArg: true,
         describe: 'SOCKS4 or SOCKS5 URL to proxy all traffic'

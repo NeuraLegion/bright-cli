@@ -23,6 +23,7 @@
   },
   "dependencies": {
     "@neuralegion/capture-har": "^0.3.2",
+    "@neuralegion/os-service": "^1.0.0",
     "ajv": "^6.12.6",
     "amqplib": "^0.6.0",
     "better-ajv-errors": "^0.6.7",
@@ -37,7 +38,6 @@
     "koa-send": "^5.0.1",
     "koa-static": "^5.0.0",
     "ms": "^2.1.2",
-    "@neuralegion/os-service": "^1.0.0",
     "reflect-metadata": "^0.1.13",
     "request": "^2.88.2",
     "request-capture-har": "^1.2.2",
@@ -46,6 +46,7 @@
     "socks": "^2.5.1",
     "socks-proxy-agent": "^5.0.0",
     "tslib": "^2.0.3",
+    "tsyringe": "^4.4.0",
     "yargonaut": "^1.1.4",
     "yargs": "^16.2.0"
   },

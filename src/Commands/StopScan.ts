@@ -1,13 +1,14 @@
-import { RestScans } from '../Scan';
+import { RestScansOptions, Scans } from '../Scan';
 import { logger } from '../Utils';
 import { Arguments, Argv, CommandModule } from 'yargs';
+import { container } from 'tsyringe';
 
 export class StopScan implements CommandModule {
   public readonly command = 'scan:stop [options] <scan>';
   public readonly describe = 'Stop scan by id.';
 
-  public builder(args: Argv): Argv {
-    return args
+  public builder(argv: Argv): Argv {
+    return argv
       .option('token', {
         alias: 't',
         describe: 'NexPloit API-key',
@@ -19,16 +20,21 @@ export class StopScan implements CommandModule {
         requiresArg: true,
         demandOption: true,
         type: 'string'
-      });
+      })
+      .middleware((args: Arguments) =>
+        container.register(RestScansOptions, {
+          useValue: {
+            baseUrl: args.api as string,
+            apiKey: args.token as string,
+            proxyUrl: args.proxy as string
+          }
+        })
+      );
   }
 
   public async handler(args: Arguments): Promise<void> {
     try {
-      const scanManager = new RestScans({
-        baseUrl: args.api as string,
-        apiKey: args.token as string,
-        proxyUrl: args.proxy as string
-      });
+      const scanManager: Scans = container.resolve(Scans);
 
       await scanManager.stop(args.scan as string);
 

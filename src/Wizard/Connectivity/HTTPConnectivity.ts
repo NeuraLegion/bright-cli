@@ -1,5 +1,7 @@
 import { Connectivity } from './Connectivity';
 import { logger } from '../../Utils';
+import { TestType } from '../Models';
+import { injectable } from 'tsyringe';
 import https from 'https';
 import http, { ClientRequest, RequestOptions } from 'http';
 import { URL } from 'url';
@@ -9,35 +11,29 @@ interface ReqFactory {
   request(options: RequestOptions): ClientRequest;
 }
 
-const requestFactoryRegistry: ReadonlyMap<string, ReqFactory> = new Map<
-  string,
-  ReqFactory
->([
-  ['http:', http],
-  ['https:', https]
-]);
-
+@injectable()
 export class HTTPConnectivity implements Connectivity {
+  public readonly type = TestType.HTTP;
+
   private readonly CONNECTION_TIMEOUT = 30 * 1000; // 30 seconds
-  private readonly options: RequestOptions;
-  private readonly factory: ReqFactory;
+  private readonly FACTORY_REGISTRY: ReadonlyMap<string, ReqFactory> = new Map<
+    string,
+    ReqFactory
+  >([
+    ['http:', http],
+    ['https:', https]
+  ]);
 
-  constructor({ port, hostname, protocol }: URL) {
-    if (!hostname) {
-      throw new Error('Missing proper hostname for http connectivity test');
-    }
-    this.factory = requestFactoryRegistry.get(protocol);
-    this.options = {
-      port,
-      hostname,
-      method: 'GET',
-      timeout: this.CONNECTION_TIMEOUT
-    };
-  }
+  public async test({ port, hostname, protocol }: URL): Promise<boolean> {
+    const factory = this.FACTORY_REGISTRY.get(protocol);
 
-  public async test(): Promise<boolean> {
     try {
-      const req: ClientRequest = this.factory.request(this.options);
+      const req: ClientRequest = factory.request({
+        port,
+        hostname,
+        method: 'GET',
+        timeout: this.CONNECTION_TIMEOUT
+      });
 
       req.once('timeout', () => req.destroy(new Error('Reached timeout.')));
       req.end();

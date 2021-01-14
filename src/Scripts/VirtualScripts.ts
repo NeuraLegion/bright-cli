@@ -17,3 +17,5 @@ export interface VirtualScripts {
 
   values(): IterableIterator<VirtualScript>;
 }
+
+export const VirtualScripts: unique symbol = Symbol('VirtualScripts');
