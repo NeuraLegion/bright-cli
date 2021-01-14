@@ -4,8 +4,7 @@ import {
   Parser,
   SpecType
 } from '../Archive';
-import { Helpers } from '../Utils/Helpers';
-import logger from '../Utils/Logger';
+import { Helpers, logger } from '../Utils';
 import { Arguments, Argv, CommandModule } from 'yargs';
 import { Har } from 'har-format';
 import { basename } from 'path';

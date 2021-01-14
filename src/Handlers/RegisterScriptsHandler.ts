@@ -1,5 +1,6 @@
-import { bind, Handler, RegisterScripts } from '../Bus';
+import { bind, Handler } from '../Bus';
 import { VirtualScripts } from '../Scripts';
+import { RegisterScripts } from './Events';
 
 @bind(RegisterScripts)
 export class RegisterScriptsHandler implements Handler<RegisterScripts> {

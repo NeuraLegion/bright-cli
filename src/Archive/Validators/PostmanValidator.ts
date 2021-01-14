@@ -1,5 +1,5 @@
 import { Validator } from './Validator';
-import logger from '../../Utils/Logger';
+import { logger } from '../../Utils';
 import collectionV2Draft7 from 'schemas/postman/draft-07/v2.0.0/collection.json';
 import collectionV2Draft4 from 'schemas/postman/draft-04/v2.0.0/collection.json';
 import collectionDraft7 from 'schemas/postman/draft-07/v2.1.0/collection.json';

@@ -1,4 +1,4 @@
-import logger from '../Utils/Logger';
+import { logger } from '../Utils';
 import { CommandModule } from 'yargs';
 import { exec, ExecException } from 'child_process';
 

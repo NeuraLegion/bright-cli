@@ -7,7 +7,7 @@ import {
 import { Event, EventType } from '../Event';
 import { Bus } from '../Bus';
 import { Proxy } from '../Proxy';
-import logger from '../../Utils/Logger';
+import { logger } from '../../Utils';
 import { RabbitBackoff } from './RabbitBackoff';
 import {
   Channel,

@@ -1,8 +1,12 @@
-import { Bus, RabbitMQBus, RepeaterStatusUpdated } from '../Bus';
-import { DefaultHandlerRegistry, SendRequestHandler } from '../Handlers';
+import { Bus, RabbitMQBus } from '../Bus';
+import {
+  DefaultHandlerRegistry,
+  RegisterScriptsHandler,
+  RepeaterStatusUpdated,
+  SendRequestHandler
+} from '../Handlers';
 import { DefaultRequestExecutor } from '../RequestExecutor';
-import { Helpers } from '../Utils/Helpers';
-import logger from '../Utils/Logger';
+import { logger, Helpers } from '../Utils';
 import { StartupManagerFactory } from '../StartupScripts';
 import { DefaultVirtualScripts } from '../Scripts';
 import { Arguments, Argv, CommandModule } from 'yargs';
@@ -178,6 +182,7 @@ export class RunRepeater implements CommandModule {
 
       await bus.init();
 
+      await bus.subscribe(RegisterScriptsHandler);
       await bus.subscribe(SendRequestHandler);
 
       timer = setInterval(() => notify('connected'), 10000);

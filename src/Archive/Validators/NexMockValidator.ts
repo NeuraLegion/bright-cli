@@ -1,6 +1,6 @@
 import { Validator } from './Validator';
 import { MockRequest } from '../Parsers';
-import logger from '../../Utils/Logger';
+import { logger } from '../../Utils';
 import Ajv from 'ajv';
 import { ValidateFunction } from 'ajv';
 import betterAjvErrors from 'better-ajv-errors';

@@ -1,5 +1,5 @@
 import { Connectivity } from './Connectivity';
-import logger from '../../Utils/Logger';
+import { logger } from '../../Utils';
 import https from 'https';
 import http, { ClientRequest, RequestOptions } from 'http';
 import { URL } from 'url';

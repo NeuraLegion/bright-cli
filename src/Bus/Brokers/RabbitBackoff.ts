@@ -1,4 +1,4 @@
-import logger from '../../Utils/Logger';
+import { logger } from '../../Utils';
 import Timeout = NodeJS.Timeout;
 import ErrnoException = NodeJS.ErrnoException;
 

@@ -1,8 +1,7 @@
 import { Endpoint } from './Endpoint';
 import { Credentials, ScanId, ScannedUrl } from '../Models';
-import logger from '../../Utils/Logger';
+import { Helpers, logger } from '../../Utils';
 import { Tokens } from '../Tokens';
-import { Helpers } from '../../Utils/Helpers';
 import Koa from 'koa';
 import { ChildProcess, spawn } from 'child_process';
 import { URL } from 'url';

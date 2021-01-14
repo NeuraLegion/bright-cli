@@ -1,7 +1,7 @@
 import { CountIssuesBySeverity, Scans, ScanState, ScanStatus } from './Scans';
 import { Polling } from './Polling';
 import { Breakpoint } from './Breakpoint';
-import logger from '../Utils/Logger';
+import { logger } from '../Utils';
 import ms from 'ms';
 import { ok } from 'assert';
 
