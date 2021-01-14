@@ -1,8 +1,6 @@
 import { BaseParser } from './BaseParser';
-import { MockRequest } from './NexMock/BaseNexMockConverter';
 import { Validator } from '../Validators';
-import { HarRecorder } from './NexMock/HarRecorder';
-import { NexMockConverter } from './NexMock/NexMockConverter';
+import { HarRecorder, MockRequest, NexMockConverter } from './NexMock';
 import { File } from './Parser';
 import { Options } from 'request-promise';
 

@@ -1,1 +1,1 @@
-export { RabbitMQBus } from './RabbitMQBus';
+export * from './RabbitMQBus';

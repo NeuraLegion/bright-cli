@@ -1,7 +1,9 @@
 import { VirtualScript } from './VirtualScript';
 import { Helpers } from '../Utils/Helpers';
 import { VirtualScripts } from './VirtualScripts';
+import { injectable } from 'tsyringe';
 
+@injectable()
 export class DefaultVirtualScripts implements VirtualScripts {
   private readonly store = new Map<string, VirtualScript>();
 

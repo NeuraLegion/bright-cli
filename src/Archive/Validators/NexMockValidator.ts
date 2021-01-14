@@ -5,7 +5,9 @@ import Ajv from 'ajv';
 import { ValidateFunction } from 'ajv';
 import betterAjvErrors from 'better-ajv-errors';
 import schema from 'schemas/nexmock/schema.json';
+import { injectable } from 'tsyringe';
 
+@injectable()
 export class NexMockValidator implements Validator<MockRequest[]> {
   private readonly ajv: Ajv.Ajv;
 

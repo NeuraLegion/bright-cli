@@ -1,7 +1,9 @@
 import { Endpoint } from './Endpoint';
 import { logger } from '../../Utils';
 import Koa from 'koa';
+import { injectable } from 'tsyringe';
 
+@injectable()
 export class FinishEndpoint implements Endpoint {
   public async handle(ctx: Koa.Context): Promise<void> {
     logger.debug('Finish wizard, terminating the process');

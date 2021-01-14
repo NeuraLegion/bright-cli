@@ -10,8 +10,10 @@ import schemaV3 from 'schemas/openapi/v3.0/schema.json';
 // @ts-ignore
 import ajvFormats from 'ajv/lib/compile/formats';
 import draft4 from 'ajv/lib/refs/json-schema-draft-04.json';
+import { injectable } from 'tsyringe';
 import { ok } from 'assert';
 
+@injectable()
 export class OasValidator implements Validator<any> {
   private readonly ajv: Ajv.Ajv;
   private readonly MIN_ALLOWED_VERSION = '2.0.0';

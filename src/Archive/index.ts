@@ -1,6 +1,15 @@
-export { Archives, Spec, SpecType } from './Archives';
-export { DefaultParserFactory } from './DefaultParserFactory';
-export { RestArchives } from './RestArchives';
-export { Parser } from './Parsers';
+export * from './Archives';
+export * from './RestArchives';
+export {
+  Parser,
+  ParserFactory,
+  DefaultParserFactory,
+  NexMockConverter,
+  DefaultHarRecorder,
+  HarRecorderOptions,
+  BaseNexMockConverter,
+  HarRecorder,
+  NexMockConverterOptions
+} from './Parsers';
 export { Validator } from './Validators';
-export { HarSplitter } from './HarSplitter';
+export * from './HarSplitter';

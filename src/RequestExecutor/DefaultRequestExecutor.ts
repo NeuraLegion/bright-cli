@@ -6,6 +6,7 @@ import { VirtualScripts } from '../Scripts';
 import request from 'request-promise';
 import { Response as IncomingResponse } from 'request';
 import { SocksProxyAgent } from 'socks-proxy-agent';
+import { inject, injectable } from 'tsyringe';
 import { parse, URL } from 'url';
 import { OutgoingMessage } from 'http';
 
@@ -13,17 +14,23 @@ type ScriptEntrypoint = (
   options: RequestOptions
 ) => Promise<RequestOptions> | RequestOptions;
 
+export interface RequestExecutorOptions {
+  timeout?: number;
+  proxyUrl?: string;
+  headers?: Record<string, string | string[]>;
+}
+
+export const RequestExecutorOptions = Symbol('RequestExecutorOptions');
+
+@injectable()
 export class DefaultRequestExecutor implements RequestExecutor {
   private readonly DEFAULT_SCRIPT_ENTRYPOINT = 'handle';
   private readonly agent?: SocksProxyAgent;
 
   constructor(
-    private readonly virtualScripts: VirtualScripts,
-    private readonly options: {
-      timeout?: number;
-      proxyUrl?: string;
-      headers?: Record<string, string | string[]>;
-    }
+    @inject(VirtualScripts) private readonly virtualScripts: VirtualScripts,
+    @inject(RequestExecutorOptions)
+    private readonly options: RequestExecutorOptions
   ) {
     this.agent = this.options.proxyUrl
       ? new SocksProxyAgent({

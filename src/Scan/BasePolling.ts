@@ -2,19 +2,11 @@ import { CountIssuesBySeverity, Scans, ScanState, ScanStatus } from './Scans';
 import { Polling } from './Polling';
 import { Breakpoint } from './Breakpoint';
 import { logger } from '../Utils';
+import { PollingConfig } from './PollingFactory';
 import ms from 'ms';
 import { ok } from 'assert';
 
-export interface PollingConfig {
-  timeout?: number | string;
-  interval?: number;
-  scanId: string;
-  scanManager: Scans;
-}
-
-export class DefaultPolling implements Polling {
-  private options: Omit<PollingConfig, 'scanManager'>;
-  private scanManager: Scans;
+export class BasePolling implements Polling {
   private timeoutDescriptor?: NodeJS.Timeout;
   private defaultInterval: number = 10000;
 
@@ -24,10 +16,11 @@ export class DefaultPolling implements Polling {
     return this._active;
   }
 
-  constructor({ scanManager, ...options }: PollingConfig) {
-    this.options = options;
-    this.scanManager = scanManager;
-
+  constructor(
+    private readonly options: Omit<PollingConfig, 'breakpoint'>,
+    private readonly scanManager: Scans,
+    private readonly breakpoint: Breakpoint
+  ) {
     if (!this.options.timeout) {
       logger.warn(
         `Warning: It looks like you've been running polling without "timeout" option.`
@@ -36,11 +29,11 @@ export class DefaultPolling implements Polling {
         `The recommended way to install polling with a minimal timeout: 10-20min.`
       );
     }
+
+    ok(breakpoint, 'You should choose a breakpoint for polling.');
   }
 
-  public async start(breakpoint: Breakpoint): Promise<void> {
-    ok(breakpoint, 'You should choose a breakpoint for polling.');
-
+  public async start(): Promise<void> {
     try {
       logger.log('Starting polling...');
 
@@ -49,7 +42,7 @@ export class DefaultPolling implements Polling {
       }
 
       for await (const x of this.poll()) {
-        await breakpoint.execute(x);
+        await this.breakpoint.execute(x);
       }
     } finally {
       await this.stop();

@@ -10,7 +10,3 @@ export type HandlerType = new (...args: any[]) => Handler<
   Event,
   ExecutionResult
 >;
-
-export interface HandlerRegistry {
-  get(ctor: HandlerType): Promise<Handler<Event, ExecutionResult> | undefined>;
-}

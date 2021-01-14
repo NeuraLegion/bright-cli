@@ -1,25 +1,17 @@
 import { Connectivity } from './Connectivity';
 import { logger } from '../../Utils';
+import { TestType } from '../Models';
+import { injectable } from 'tsyringe';
 import { Socket } from 'net';
 import { URL } from 'url';
 import { once } from 'events';
 
+@injectable()
 export class TCPConnectivity implements Connectivity {
+  public readonly type = TestType.TCP;
   private readonly CONNECTION_TIMEOUT = 30 * 1000; // 30 seconds
-  private readonly fqdn: string;
-  private readonly port: number;
 
-  constructor({ hostname, port }: URL) {
-    if (!hostname || !port) {
-      throw new Error(
-        'Missing proper endpoint and port for tcp connectivity test'
-      );
-    }
-    this.fqdn = hostname;
-    this.port = +port;
-  }
-
-  public async test(): Promise<boolean> {
+  public async test({ hostname, port }: URL): Promise<boolean> {
     const socket: Socket = new Socket();
 
     socket.setNoDelay(false);
@@ -27,13 +19,13 @@ export class TCPConnectivity implements Connectivity {
     try {
       logger.debug(
         `TCP connectivity test. Opening socket to %s:%s`,
-        this.fqdn,
-        this.port
+        hostname,
+        +port
       );
       socket.setTimeout(this.CONNECTION_TIMEOUT, () =>
         socket.destroy(new Error(`Reached socket timeout.`))
       );
-      socket.connect(this.port, this.fqdn);
+      socket.connect(+port, hostname);
       await once(socket, 'connect');
 
       logger.debug('TCP connectivity test. Connection succesfull.');

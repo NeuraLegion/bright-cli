@@ -1,3 +1,4 @@
-export { CliBuilder } from './CliBuilder';
-export { ConfigReader } from './ConfigReader';
-export { DefaultConfigReader } from './DefaultConfigReader';
+export { default as container } from './container';
+export * from './CliBuilder';
+export * from './ConfigReader';
+export * from './DefaultConfigReader';

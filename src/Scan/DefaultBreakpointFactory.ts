@@ -3,7 +3,9 @@ import { OnAny, OnSeverity } from './Breakpoints';
 import { BreakpointFactory } from './BreakpointFactory';
 import { BreakpointType } from './BreakpointType';
 import { IssueCategory } from './Scans';
+import { injectable } from 'tsyringe';
 
+@injectable()
 export class DefaultBreakpointFactory implements BreakpointFactory {
   public create(type: BreakpointType): Breakpoint {
     switch (type) {
