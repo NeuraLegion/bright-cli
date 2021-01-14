@@ -1,6 +1,5 @@
-import { RestScans, Module, ScanConfig, TestType } from '../Scan';
-import { Helpers } from '../Utils/Helpers';
-import logger from '../Utils/Logger';
+import { Module, RestScans, ScanConfig, TestType } from '../Scan';
+import { Helpers, logger } from '../Utils';
 import { AttackParamLocation, COMPREHENSIVE_SCAN_TESTS } from '../Scan/Scans';
 import { Arguments, Argv, CommandModule } from 'yargs';
 

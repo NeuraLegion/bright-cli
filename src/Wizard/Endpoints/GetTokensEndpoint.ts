@@ -1,5 +1,5 @@
 import { Endpoint } from './Endpoint';
-import logger from '../../Utils/Logger';
+import { logger } from '../../Utils';
 import { Tokens } from '../Tokens';
 import Koa from 'koa';
 

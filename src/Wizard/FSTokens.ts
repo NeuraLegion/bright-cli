@@ -1,5 +1,5 @@
 import { Credentials } from './Models';
-import logger from '../Utils/Logger';
+import { logger } from '../Utils';
 import { Tokens } from './Tokens';
 import { homedir } from 'os';
 import { existsSync, readFileSync, writeFileSync } from 'fs';

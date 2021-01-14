@@ -1,5 +1,5 @@
 import { Connectivity } from './Connectivity';
-import logger from '../../Utils/Logger';
+import { logger } from '../../Utils';
 import { Socket } from 'net';
 import { URL } from 'url';
 import { once } from 'events';

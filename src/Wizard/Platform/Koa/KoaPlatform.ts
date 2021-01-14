@@ -1,5 +1,5 @@
 import { KoaRouterFactory } from './KoaRouterFactory';
-import logger from '../../../Utils/Logger';
+import { logger } from '../../../Utils';
 import { DefaultKoaRouterFactory } from './DefaultKoaRouterFactory';
 import { TestType } from '../../Models';
 import { Platform } from '../Platform';

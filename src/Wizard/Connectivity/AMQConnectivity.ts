@@ -1,6 +1,6 @@
 import { Credentials } from '../Models';
 import { Connectivity } from './Connectivity';
-import logger from '../../Utils/Logger';
+import { logger } from '../../Utils';
 import { Tokens } from '../Tokens';
 import { post } from 'request-promise';
 import { URL } from 'url';

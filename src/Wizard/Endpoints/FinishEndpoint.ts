@@ -1,5 +1,5 @@
 import { Endpoint } from './Endpoint';
-import logger from '../../Utils/Logger';
+import { logger } from '../../Utils';
 import Koa from 'koa';
 
 export class FinishEndpoint implements Endpoint {

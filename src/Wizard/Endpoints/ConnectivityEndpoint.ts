@@ -1,6 +1,6 @@
 import { Endpoint } from './Endpoint';
 import { ConnectivityTest, ItemStatus, TestType } from '../Models';
-import logger from '../../Utils/Logger';
+import { logger } from '../../Utils';
 import { Connectivity } from '../Connectivity';
 import Koa from 'koa';
 

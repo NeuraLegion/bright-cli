@@ -1,4 +1,4 @@
-import logger from '../Utils/Logger';
+import { logger } from '../Utils';
 import { KoaPlatform, TestType } from '../Wizard';
 import { Arguments, Argv, CommandModule } from 'yargs';
 import { URL } from 'url';

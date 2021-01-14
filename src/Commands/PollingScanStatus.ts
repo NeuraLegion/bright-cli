@@ -5,8 +5,7 @@ import {
   DefaultPolling,
   RestScans
 } from '../Scan';
-import logger from '../Utils/Logger';
-import { Helpers } from '../Utils/Helpers';
+import { Helpers, logger } from '../Utils';
 import { Arguments, Argv, CommandModule } from 'yargs';
 
 export class PollingScanStatus implements CommandModule {

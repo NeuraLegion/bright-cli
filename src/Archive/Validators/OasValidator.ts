@@ -1,5 +1,5 @@
 import { Validator } from './Validator';
-import logger from '../../Utils/Logger';
+import { logger } from '../../Utils';
 import Ajv from 'ajv';
 import { ValidateFunction } from 'ajv';
 import semver from 'semver';

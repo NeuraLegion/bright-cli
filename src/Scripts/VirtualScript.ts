@@ -30,7 +30,7 @@ export class VirtualScript {
     if (!code) {
       throw new Error('Code must be declared explicitly.');
     }
-
+    console.log(this.wrapScriptCode(code));
     this.script = new Script(this.wrapScriptCode(code), {
       filename: id
     });
@@ -51,14 +51,11 @@ export class VirtualScript {
     functionName: string,
     ...functionArgs: Parameters<Fun>
   ): Promise<ReturnType<Fun>> {
-    const { module }: VirtualScriptContext = this.script.runInContext(
-      this.context,
-      {
-        timeout: 100
-      }
-    );
+    this.script.runInContext(this.context, {
+      timeout: 100
+    });
 
-    const { exports = {} } = module ?? {};
+    const { exports = {} } = this.context.module;
 
     const func: Fun = exports[functionName];
 

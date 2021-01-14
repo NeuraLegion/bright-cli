@@ -1,6 +1,4 @@
-import { Helpers } from '../Utils/Helpers';
-import { FilenameFactory } from '../Utils/FilenameFactory';
-import logger from '../Utils/Logger';
+import { FilenameFactory, Helpers, logger } from '../Utils';
 import { Entry, Har } from 'har-format';
 import { promisify } from 'util';
 import { writeFile as write } from 'fs';

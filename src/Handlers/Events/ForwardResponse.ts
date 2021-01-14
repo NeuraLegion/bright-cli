@@ -1,4 +1,4 @@
-import { Event } from '../Event';
+import { Event } from '../../Bus/Event';
 
 export class ForwardResponse implements Event {
   // eslint-disable-next-line @typescript-eslint/naming-convention

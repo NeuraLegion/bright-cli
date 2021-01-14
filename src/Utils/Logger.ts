@@ -31,7 +31,3 @@ export class Logger {
     log(message, ...args);
   }
 }
-
-const logger: Logger = new Logger();
-
-export default logger;

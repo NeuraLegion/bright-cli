@@ -1,5 +1,5 @@
 import { RestScans } from '../Scan';
-import logger from '../Utils/Logger';
+import { logger } from '../Utils';
 import { Arguments, Argv, CommandModule } from 'yargs';
 
 export class RetestScan implements CommandModule {
