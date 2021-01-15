@@ -1,7 +1,12 @@
 import 'reflect-metadata';
 import { Bus, RabbitMQBus } from '../Bus';
 import { DefaultRequestExecutor, RequestExecutor } from '../RequestExecutor';
-import { DefaultVirtualScripts, VirtualScripts } from '../Scripts';
+import {
+  DefaultVirtualScripts,
+  FSScriptLoader,
+  ScriptLoader,
+  VirtualScripts
+} from '../Scripts';
 import {
   DefaultStartupManagerFactory,
   StartupManagerFactory
@@ -34,49 +39,116 @@ import {
   ParserFactory,
   RestArchives
 } from '../Archive';
-import { container } from 'tsyringe';
+import { container, Lifecycle } from 'tsyringe';
 
 container
   .register('tsyringe', {
     useValue: container
   })
-  .register(RequestExecutor, {
-    useClass: DefaultRequestExecutor
-  })
-  .register(VirtualScripts, {
-    useClass: DefaultVirtualScripts
-  })
-  .register(StartupManagerFactory, {
-    useClass: DefaultStartupManagerFactory
-  })
-  .register(Bus, {
-    useClass: RabbitMQBus
-  })
-  .register(Tokens, {
-    useClass: FSTokens
-  })
-  .register(Connectivity, {
-    useClass: HTTPConnectivity
-  })
-  .register(Connectivity, {
-    useClass: TCPConnectivity
-  })
-  .register(Connectivity, {
-    useClass: AMQConnectivity
-  })
-  .register(Platform, {
-    useClass: KoaPlatform
-  })
-  .register(BreakpointFactory, {
-    useClass: DefaultBreakpointFactory
-  })
-  .register(PollingFactory, {
-    useClass: DefaultPollingFactory
-  })
-  .register(Scans, { useClass: RestScans })
-  .register(Archives, { useClass: RestArchives })
-  .register(ParserFactory, { useClass: DefaultParserFactory })
-  .register(NexMockConverter, { useClass: BaseNexMockConverter })
-  .register(HarRecorder, { useClass: DefaultHarRecorder });
+  .register(
+    RequestExecutor,
+    {
+      useClass: DefaultRequestExecutor
+    },
+    { lifecycle: Lifecycle.Singleton }
+  )
+  .register(
+    VirtualScripts,
+    {
+      useClass: DefaultVirtualScripts
+    },
+    { lifecycle: Lifecycle.Singleton }
+  )
+  .register(
+    StartupManagerFactory,
+    {
+      useClass: DefaultStartupManagerFactory
+    },
+    { lifecycle: Lifecycle.Singleton }
+  )
+  .register(
+    Bus,
+    {
+      useClass: RabbitMQBus
+    },
+    { lifecycle: Lifecycle.Singleton }
+  )
+  .register(
+    Tokens,
+    {
+      useClass: FSTokens
+    },
+    { lifecycle: Lifecycle.Singleton }
+  )
+  .register(
+    Connectivity,
+    {
+      useClass: HTTPConnectivity
+    },
+    { lifecycle: Lifecycle.Singleton }
+  )
+  .register(
+    Connectivity,
+    {
+      useClass: TCPConnectivity
+    },
+    { lifecycle: Lifecycle.Singleton }
+  )
+  .register(
+    Connectivity,
+    {
+      useClass: AMQConnectivity
+    },
+    { lifecycle: Lifecycle.Singleton }
+  )
+  .register(
+    Platform,
+    {
+      useClass: KoaPlatform
+    },
+    { lifecycle: Lifecycle.Singleton }
+  )
+  .register(
+    BreakpointFactory,
+    {
+      useClass: DefaultBreakpointFactory
+    },
+    { lifecycle: Lifecycle.Singleton }
+  )
+  .register(
+    PollingFactory,
+    {
+      useClass: DefaultPollingFactory
+    },
+    { lifecycle: Lifecycle.Singleton }
+  )
+  .register(Scans, { useClass: RestScans }, { lifecycle: Lifecycle.Singleton })
+  .register(
+    Archives,
+    { useClass: RestArchives },
+    { lifecycle: Lifecycle.Singleton }
+  )
+  .register(
+    ParserFactory,
+    { useClass: DefaultParserFactory },
+    { lifecycle: Lifecycle.Singleton }
+  )
+  .register(
+    NexMockConverter,
+    { useClass: BaseNexMockConverter },
+    { lifecycle: Lifecycle.Singleton }
+  )
+  .register(
+    HarRecorder,
+    { useClass: DefaultHarRecorder },
+    { lifecycle: Lifecycle.Singleton }
+  )
+  .register(
+    ScriptLoader,
+    {
+      useClass: FSScriptLoader
+    },
+    { lifecycle: Lifecycle.Singleton }
+  );
 
 export default container;

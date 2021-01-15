@@ -30,7 +30,7 @@ export class VirtualScript {
     if (!code) {
       throw new Error('Code must be declared explicitly.');
     }
-    console.log(this.wrapScriptCode(code));
+
     this.script = new Script(this.wrapScriptCode(code), {
       filename: id
     });

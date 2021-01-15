@@ -1,4 +1,5 @@
 import { Bus, RabbitMQBusOptions } from '../Bus';
+import { ScriptLoader } from '../Scripts';
 import {
   RegisterScriptsHandler,
   RepeaterStatusUpdated,
@@ -10,22 +11,6 @@ import { StartupManagerFactory } from '../StartupScripts';
 import { container } from '../Config';
 import { Arguments, Argv, CommandModule } from 'yargs';
 import Timer = NodeJS.Timer;
-
-const prepareHeaders = (
-  headersStr: string[] | string
-): Record<string, string> => {
-  let headers: Record<string, string> = {};
-
-  try {
-    headers = Array.isArray(headersStr)
-      ? Helpers.parseHeaders(headersStr)
-      : JSON.parse(headersStr);
-  } catch {
-    // noop
-  }
-
-  return headers;
-};
 
 let timer: Timer;
 
@@ -55,19 +40,36 @@ export class RunRepeater implements CommandModule {
         requiresArg: true,
         demandOption: true
       })
+      .option('scripts', {
+        alias: 'S',
+        requiresArg: true,
+        string: true,
+        describe:
+          'JSON string which contains script list, which is initially empty and consists of zero or more host and path pairs. Example: {"*.example.com": "./hmac.js"}',
+        coerce(arg: string): Record<string, string> {
+          return JSON.parse(arg);
+        }
+      })
       .option('header', {
         alias: 'H',
         requiresArg: true,
         conflicts: ['headers'],
         array: true,
         describe:
-          'A list of specific headers that should be included into request.'
+          'A list of specific headers that should be included into request.',
+        coerce(arg: string[]): Record<string, string> {
+          return Array.isArray(arg) ? Helpers.parseHeaders(arg) : {};
+        }
       })
       .option('headers', {
         requiresArg: true,
+        string: true,
         conflicts: ['header'],
         describe:
-          'JSON string which contains header list, which is initially empty and consists of zero or more name and value pairs.'
+          'JSON string which contains header list, which is initially empty and consists of zero or more name and value pairs. Example: {"x-slack-signature": "Z2dFIHJldHNhRQ"}',
+        coerce(arg: string): Record<string, string> {
+          return JSON.parse(arg);
+        }
       })
       .option('daemon', {
         requiresArg: false,
@@ -90,9 +92,7 @@ export class RunRepeater implements CommandModule {
         container
           .register(RequestExecutorOptions, {
             useValue: {
-              headers: prepareHeaders(
-                (args.header ?? args.headers) as string | string[]
-              ),
+              headers: (args.header ?? args.headers) as Record<string, string>,
               timeout: 10000,
               proxyUrl: args.proxy as string
             }
@@ -191,6 +191,12 @@ export class RunRepeater implements CommandModule {
       bus?.publish(new RepeaterStatusUpdated(args.id as string, status));
 
     try {
+      if (args.scripts) {
+        const loader: ScriptLoader = container.resolve(ScriptLoader);
+
+        await loader.load(args.scripts as Record<string, string>);
+      }
+
       await bus.init();
 
       await bus.subscribe(RegisterScriptsHandler);
