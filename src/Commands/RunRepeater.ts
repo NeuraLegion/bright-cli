@@ -105,8 +105,8 @@ export class RunRepeater implements CommandModule {
               url: args.bus as string,
               proxyUrl: args.proxy as string,
               credentials: {
-                username: args.id && ('guest' as string),
-                password: args.token && ('guest' as string)
+                username: args.id as string,
+                password: args.token as string
               },
               onError(e: Error) {
                 clearInterval(timer);
