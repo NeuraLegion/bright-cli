@@ -24,12 +24,12 @@ export class Helpers {
   }): CommandArgs {
     let args: string[] = process.argv.slice(2);
 
-    if (process.pkg?.entrypoint !== process.argv[1]) {
-      args = [process.argv[1], ...args];
+    if (options?.excludeAll) {
+      args = [];
     }
 
-    if (options?.excludeAll) {
-      args.splice(1);
+    if (process.pkg?.entrypoint !== process.argv[1]) {
+      args = [process.argv[1], ...args];
     }
 
     if (options?.include) {
