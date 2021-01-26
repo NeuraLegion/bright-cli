@@ -14,7 +14,7 @@ export class RegisterScriptsHandler implements Handler<RegisterScripts> {
     if (typeof event.script === 'string') {
       this.virtualScripts.set('*', event.script);
     } else {
-      Object.entries(event).map(([wildcard, code]: [string, string]) =>
+      Object.entries(event.script).map(([wildcard, code]: [string, string]) =>
         this.virtualScripts.set(wildcard, code)
       );
     }
