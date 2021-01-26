@@ -9,8 +9,14 @@ interface VirtualScriptContext extends Context {
   __dirname: string;
 }
 
+export enum VirtualScriptType {
+  LOCAL = 'local',
+  REMOTE = 'remote'
+}
+
 export class VirtualScript {
   public readonly id: string;
+  public readonly type: VirtualScriptType;
   private readonly MODULE_EXEC_ARGS: ReadonlyArray<string> = [
     'module.exports',
     'module.require',
@@ -21,11 +27,20 @@ export class VirtualScript {
   private readonly script: Script;
   private context: VirtualScriptContext;
 
-  constructor(id: string, code: string) {
+  constructor(id: string, type: VirtualScriptType, code: string) {
     if (!id) {
       throw new Error('ID must be declared explicitly.');
     }
     this.id = id;
+
+    if (!type) {
+      throw new Error(
+        `Type might accept one of the following values: ${Object.values(
+          VirtualScriptType
+        ).join(', ')}.`
+      );
+    }
+    this.type = type;
 
     if (!code) {
       throw new Error('Code must be declared explicitly.');

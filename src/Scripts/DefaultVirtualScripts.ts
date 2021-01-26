@@ -1,5 +1,5 @@
-import { VirtualScript } from './VirtualScript';
-import { Helpers } from '../Utils/Helpers';
+import { VirtualScript, VirtualScriptType } from './VirtualScript';
+import { Helpers } from '../Utils';
 import { VirtualScripts } from './VirtualScripts';
 import { injectable } from 'tsyringe';
 
@@ -11,8 +11,16 @@ export class DefaultVirtualScripts implements VirtualScripts {
     return this.store[Symbol.iterator]();
   }
 
-  public clear(): void {
-    this.store.clear();
+  public clear(type?: VirtualScriptType): void {
+    if (!type) {
+      this.store.clear();
+    } else {
+      this.store.forEach((x: VirtualScript) => {
+        if (x.type === type) {
+          this.delete(x.id);
+        }
+      });
+    }
   }
 
   public delete(key: string): boolean {
@@ -33,8 +41,8 @@ export class DefaultVirtualScripts implements VirtualScripts {
     return this.store.keys();
   }
 
-  public set(wildcard: string, code: string): this {
-    const script = new VirtualScript(wildcard, code);
+  public set(wildcard: string, type: VirtualScriptType, code: string): this {
+    const script = new VirtualScript(wildcard, type, code);
 
     this.store.set(script.id, script);
 

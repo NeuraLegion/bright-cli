@@ -1,6 +1,7 @@
 import { ScriptLoader } from './ScriptLoader';
 import { VirtualScripts } from './VirtualScripts';
 import { logger } from '../Utils';
+import { VirtualScriptType } from './VirtualScript';
 import { inject, injectable } from 'tsyringe';
 import { readFile } from 'fs';
 import { promisify } from 'util';
@@ -29,6 +30,6 @@ export class FSScriptLoader implements ScriptLoader {
       throw new Error(`Cannot load ${path}`);
     }
 
-    this.virtualScripts.set(wildcard, code);
+    this.virtualScripts.set(wildcard, VirtualScriptType.LOCAL, code);
   }
 }

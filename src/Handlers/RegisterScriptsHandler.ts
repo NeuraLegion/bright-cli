@@ -1,5 +1,5 @@
 import { bind, Handler } from '../Bus';
-import { VirtualScripts } from '../Scripts';
+import { VirtualScripts, VirtualScriptType } from '../Scripts';
 import { RegisterScripts } from './Events';
 import { inject, injectable } from 'tsyringe';
 
@@ -11,11 +11,15 @@ export class RegisterScriptsHandler implements Handler<RegisterScripts> {
   ) {}
 
   public async handle(event: RegisterScripts): Promise<void> {
-    if (typeof event.script === 'string') {
-      this.virtualScripts.set('*', event.script);
-    } else {
-      Object.entries(event.script).map(([wildcard, code]: [string, string]) =>
-        this.virtualScripts.set(wildcard, code)
+    this.virtualScripts.clear(VirtualScriptType.REMOTE);
+
+    const { script } = event;
+
+    if (typeof script === 'string') {
+      this.virtualScripts.set('*', VirtualScriptType.REMOTE, script);
+    } else if (script) {
+      Object.entries(script).map(([wildcard, code]: [string, string]) =>
+        this.virtualScripts.set(wildcard, VirtualScriptType.REMOTE, code)
       );
     }
   }

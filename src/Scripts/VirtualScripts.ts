@@ -1,9 +1,9 @@
-import { VirtualScript } from './VirtualScript';
+import { VirtualScript, VirtualScriptType } from './VirtualScript';
 
 export interface VirtualScripts {
   [Symbol.iterator](): IterableIterator<[string, VirtualScript]>;
 
-  clear(): void;
+  clear(type?: VirtualScriptType): void;
 
   delete(key: string): boolean;
 
@@ -13,7 +13,7 @@ export interface VirtualScripts {
 
   keys(): IterableIterator<string>;
 
-  set(wildcard: string, code: string): this;
+  set(wildcard: string, type: VirtualScriptType, code: string): this;
 
   values(): IterableIterator<VirtualScript>;
 }
