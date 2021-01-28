@@ -3,11 +3,11 @@
     [
       "@semantic-release/commit-analyzer",
       {
-        "releaseRules": [
-          { "type": "docs", "scope": "readme", "release": "patch" }
-        ],
         "parserOpts": {
-          "noteKeywords": ["BREAKING CHANGE", "BREAKING CHANGES"]
+          "noteKeywords": [
+            "BREAKING CHANGE",
+            "BREAKING CHANGES"
+          ]
         }
       }
     ],
@@ -16,10 +16,16 @@
       {
         "preset": "angular",
         "parserOpts": {
-          "noteKeywords": ["BREAKING CHANGE", "BREAKING CHANGES"]
+          "noteKeywords": [
+            "BREAKING CHANGE",
+            "BREAKING CHANGES"
+          ]
         },
         "writerOpts": {
-          "commitsSort": ["subject", "scope"]
+          "commitsSort": [
+            "subject",
+            "scope"
+          ]
         }
       }
     ],
@@ -40,6 +46,15 @@
       }
     ]
   ],
-  "branch": "master",
+  "branches": [
+    {
+      "name": "master"
+    },
+    {
+      "name": "next",
+      "channel": "next",
+      "prerelease": "next"
+    }
+  ],
   "ci": true
 }
