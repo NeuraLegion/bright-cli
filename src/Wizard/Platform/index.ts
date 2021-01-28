@@ -1,2 +1,2 @@
-export { KoaPlatform } from './Koa';
-export { Platform } from './Platform';
+export * from './Koa';
+export * from './Platform';

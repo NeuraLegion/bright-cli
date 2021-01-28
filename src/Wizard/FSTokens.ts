@@ -1,12 +1,14 @@
 import { Credentials } from './Models';
-import logger from '../Utils/Logger';
+import { logger } from '../Utils';
 import { Tokens } from './Tokens';
+import { injectable } from 'tsyringe';
 import { homedir } from 'os';
 import { existsSync, readFileSync, writeFileSync } from 'fs';
 import { join } from 'path';
 
+@injectable()
 export class FSTokens implements Tokens {
-  constructor(private readonly baseDir: string = homedir()) {}
+  private readonly baseDir: string = homedir();
 
   public writeTokens(credentials: Credentials): void {
     logger.debug('Saving tokens to file %s', this.path);
@@ -27,6 +29,6 @@ export class FSTokens implements Tokens {
   }
 
   private get path(): string {
-    return join(this.baseDir, '.nexploit_auth');
+    return join(this.baseDir, '.nexploit-cli');
   }
 }

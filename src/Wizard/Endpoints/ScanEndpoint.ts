@@ -1,16 +1,17 @@
 import { Endpoint } from './Endpoint';
 import { Credentials, ScanId, ScannedUrl } from '../Models';
-import logger from '../../Utils/Logger';
+import { Helpers, logger } from '../../Utils';
 import { Tokens } from '../Tokens';
-import { Helpers } from '../../Utils/Helpers';
 import Koa from 'koa';
+import { inject, injectable } from 'tsyringe';
 import { ChildProcess, spawn } from 'child_process';
 import { URL } from 'url';
 
+@injectable()
 export class ScanEndpoint implements Endpoint {
   private repeaterProcess: ChildProcess;
 
-  constructor(private readonly tokens: Tokens) {}
+  constructor(@inject(Tokens) private readonly tokens: Tokens) {}
 
   public async handle(ctx: Koa.Context): Promise<void> {
     const tokens: Credentials | undefined = this.tokens.readTokens();

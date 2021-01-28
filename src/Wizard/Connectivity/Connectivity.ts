@@ -1,3 +1,10 @@
+import { TestType } from '../Models';
+import { URL } from 'url';
+
 export interface Connectivity {
-  test(): Promise<boolean>;
+  type: TestType;
+
+  test(url: URL): Promise<boolean>;
 }
+
+export const Connectivity: unique symbol = Symbol('Connectivity');

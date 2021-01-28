@@ -1,16 +1,19 @@
-import { Credentials } from '../Models';
+import { Credentials, TestType } from '../Models';
 import { Connectivity } from './Connectivity';
-import logger from '../../Utils/Logger';
+import { logger } from '../../Utils';
 import { Tokens } from '../Tokens';
 import { post } from 'request-promise';
+import { inject, injectable } from 'tsyringe';
 import { URL } from 'url';
 
+@injectable()
 export class AMQConnectivity implements Connectivity {
+  public readonly type = TestType.AUTH;
   private readonly CONNECTION_TIMEOUT = 30 * 1000; // 30 seconds
 
-  constructor(private readonly tokens: Tokens, private readonly url: URL) {}
+  constructor(@inject(Tokens) private readonly tokens: Tokens) {}
 
-  public async test(): Promise<boolean> {
+  public async test(url: URL): Promise<boolean> {
     const {
       repeaterId: username,
       authToken: password
@@ -18,7 +21,7 @@ export class AMQConnectivity implements Connectivity {
 
     try {
       const body = await post({
-        url: this.url,
+        url,
         timeout: this.CONNECTION_TIMEOUT,
         form: {
           username,

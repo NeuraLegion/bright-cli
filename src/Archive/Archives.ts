@@ -20,3 +20,5 @@ export interface Archives {
 
   convertAndUpload(spec: Spec): Promise<string>;
 }
+
+export const Archives: unique symbol = Symbol('Archives');

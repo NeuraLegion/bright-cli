@@ -1,7 +1,5 @@
+import { logger } from '../../../Utils';
 import { KoaRouterFactory } from './KoaRouterFactory';
-import logger from '../../../Utils/Logger';
-import { DefaultKoaRouterFactory } from './DefaultKoaRouterFactory';
-import { TestType } from '../../Models';
 import { Platform } from '../Platform';
 import Koa from 'koa';
 import json from 'koa-json';
@@ -10,19 +8,17 @@ import serve from 'koa-static';
 import send from 'koa-send';
 import Router from 'koa-router';
 import findPort, { makeRange } from 'get-port';
+import { injectable } from 'tsyringe';
 import { join } from 'path';
-import { URL } from 'url';
 import { Server } from 'net';
 
+@injectable()
 export class KoaPlatform implements Platform {
-  private readonly routerFactory: KoaRouterFactory;
   private readonly root = join(__dirname, 'public');
   private readonly BIND_PORT: number = 3000;
   private readonly RANGE_SIZE: number = 500;
 
-  constructor(options: Map<TestType, URL>) {
-    this.routerFactory = new DefaultKoaRouterFactory(options);
-  }
+  constructor(private readonly routerFactory: KoaRouterFactory) {}
 
   public async start(): Promise<Server> {
     logger.debug('Using static path for client %s', this.root);

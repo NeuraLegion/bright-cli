@@ -1,23 +1,36 @@
 import { RequestExecutor } from './RequestExecutor';
-import { ScriptResult } from './ScriptResult';
-import { Script } from './Script';
-import logger from '../Utils/Logger';
-import { Helpers } from '../Utils/Helpers';
+import { Response } from './Response';
+import { Request, RequestOptions } from './Request';
+import { logger } from '../Utils';
+import { VirtualScripts } from '../Scripts';
 import request from 'request-promise';
-import { Response } from 'request';
+import { Response as IncomingResponse } from 'request';
 import { SocksProxyAgent } from 'socks-proxy-agent';
-import { parse } from 'url';
+import { inject, injectable } from 'tsyringe';
+import { parse, URL } from 'url';
 import { OutgoingMessage } from 'http';
 
+type ScriptEntrypoint = (
+  options: RequestOptions
+) => Promise<RequestOptions> | RequestOptions;
+
+export interface RequestExecutorOptions {
+  timeout?: number;
+  proxyUrl?: string;
+  headers?: Record<string, string | string[]>;
+}
+
+export const RequestExecutorOptions = Symbol('RequestExecutorOptions');
+
+@injectable()
 export class DefaultRequestExecutor implements RequestExecutor {
+  private readonly DEFAULT_SCRIPT_ENTRYPOINT = 'handle';
   private readonly agent?: SocksProxyAgent;
 
   constructor(
-    private readonly options: {
-      timeout?: number;
-      proxyUrl?: string;
-      headers?: Record<string, string | string[]>;
-    }
+    @inject(VirtualScripts) private readonly virtualScripts: VirtualScripts,
+    @inject(RequestExecutorOptions)
+    private readonly options: RequestExecutorOptions
   ) {
     this.agent = this.options.proxyUrl
       ? new SocksProxyAgent({
@@ -26,27 +39,13 @@ export class DefaultRequestExecutor implements RequestExecutor {
       : undefined;
   }
 
-  public async execute(script: Script): Promise<ScriptResult> {
+  public async execute(options: Request): Promise<Response> {
     try {
-      const rawHeaders: Record<string, string | string[]> = {
-        ...script.headers,
-        ...this.options.headers
-      };
-      const response: Response = await request({
-        gzip: true,
-        url: Helpers.encodeURL(script.url),
-        strictSSL: false,
-        agent: this.agent,
-        body: script.body,
-        method: script.method?.toUpperCase(),
-        timeout: this.options.timeout,
-        resolveWithFullResponse: true,
-        followRedirect: false
-      }).on('request', (req: OutgoingMessage) =>
-        this.setHeaders(req, rawHeaders)
-      );
+      options = await this.transformScript(options);
 
-      return new ScriptResult({
+      const response = await this.request(options);
+
+      return new Response({
         status: response.statusCode,
         headers: response.headers,
         body: response.body
@@ -55,7 +54,7 @@ export class DefaultRequestExecutor implements RequestExecutor {
       if (err.response) {
         const { response } = err;
 
-        return new ScriptResult({
+        return new Response({
           status: response.statusCode,
           headers: response.headers,
           body: response.body
@@ -67,43 +66,48 @@ export class DefaultRequestExecutor implements RequestExecutor {
 
       logger.error(
         'Error executing request: "%s %s HTTP/1.1"',
-        script.method,
-        script.url
+        options.method,
+        options.url
       );
       logger.error('Cause: %s', message);
 
-      return new ScriptResult({
+      return new Response({
         message,
         errorCode
       });
     }
   }
 
-  private setHeaders(
-    req: OutgoingMessage,
-    rawHeaders: Record<string, string | string[]>
-  ): void {
-    const symbols: symbol[] = Object.getOwnPropertySymbols(req);
-    const kOutHeaders: symbol = symbols.find(
-      (item) => item.toString() === 'Symbol(kOutHeaders)'
+  private async request(options: Request): Promise<IncomingResponse> {
+    return request({
+      agent: this.agent,
+      body: options.body,
+      followRedirect: false,
+      gzip: true,
+      method: options.method,
+      resolveWithFullResponse: true,
+      strictSSL: false,
+      timeout: this.options.timeout,
+      url: options.url
+    }).on('request', (req: OutgoingMessage) =>
+      options.setHeaders(req, this.options.headers)
     );
-
-    if (!req.headersSent && kOutHeaders && rawHeaders) {
-      const headers = (req[kOutHeaders] =
-        req[kOutHeaders] ?? Object.create(null));
-
-      this.mergeHeaders(rawHeaders, headers);
-    }
   }
 
-  private mergeHeaders(
-    src: Record<string, string | string[]>,
-    dest: Record<string, [string, string | string[]]>
-  ) {
-    Object.entries(src).forEach(([key, value]: [string, string | string[]]) => {
-      if (key) {
-        dest[key.toLowerCase()] = [key, value ?? ''];
-      }
-    });
+  private async transformScript(script: Request): Promise<Request> {
+    const { hostname } = new URL(script.url);
+
+    const vm = this.virtualScripts.find(hostname);
+
+    if (!vm) {
+      return script;
+    }
+
+    const result = await vm.exec<ScriptEntrypoint>(
+      this.DEFAULT_SCRIPT_ENTRYPOINT,
+      script
+    );
+
+    return new Request(result);
   }
 }

@@ -1,6 +1,7 @@
-export { NexMockParser } from './NexMockParser';
-export { OasParser } from './OasParser';
-export { BaseParser } from './BaseParser';
-export { Parser } from './Parser';
-export { ParserFactory } from './ParserFactory';
+export * from './NexMockParser';
+export * from './OasParser';
+export * from './BaseParser';
+export * from './Parser';
+export * from './DefaultParserFactory';
+export * from './ParserFactory';
 export * from './NexMock';

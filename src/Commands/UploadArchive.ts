@@ -1,20 +1,23 @@
 import {
-  DefaultParserFactory,
+  Archives,
+  HarRecorderOptions,
+  NexMockConverterOptions,
   Parser,
-  RestArchives,
+  ParserFactory,
+  RestArchivesOptions,
   Spec,
   SpecType
 } from '../Archive';
-import { Helpers } from '../Utils/Helpers';
-import logger from '../Utils/Logger';
+import { Helpers, logger } from '../Utils';
+import { container } from '../Config';
 import { Arguments, Argv, CommandModule } from 'yargs';
 
 export class UploadArchive implements CommandModule {
   public readonly command = 'archive:upload [options] <file>';
   public readonly describe = 'Uploads a archive to nexploit.';
 
-  public builder(args: Argv): Argv {
-    return args
+  public builder(argv: Argv): Argv {
+    return argv
       .option('token', {
         alias: 't',
         describe: 'NexPloit API-key',
@@ -65,18 +68,36 @@ export class UploadArchive implements CommandModule {
         normalize: true
       })
       .group(['header'], 'OAS Options')
-      .group(['header', 'variable'], 'Postman Options');
+      .group(['header', 'variable'], 'Postman Options')
+      .middleware((args: Arguments) => {
+        container
+          .register(HarRecorderOptions, {
+            useValue: {
+              timeout: 10000,
+              maxRedirects: 20,
+              pool: args.pool as number,
+              proxyUrl: args.proxy as string
+            } as HarRecorderOptions
+          })
+          .register(NexMockConverterOptions, {
+            useValue: {
+              headers: Helpers.parseHeaders(args.header as string[]),
+              url: args.target as string
+            } as NexMockConverterOptions
+          })
+          .register(RestArchivesOptions, {
+            useValue: {
+              baseUrl: args.api as string,
+              apiKey: args.token as string,
+              proxyUrl: args.proxy as string
+            }
+          });
+      });
   }
 
   public async handler(args: Arguments): Promise<void> {
     try {
-      const parserFactory = new DefaultParserFactory({
-        timeout: args.timeout as number,
-        pool: args.pool as number,
-        proxyUrl: args.proxy as string,
-        baseUrl: args.target as string,
-        headers: Helpers.parseHeaders(args.header as string[])
-      });
+      const parserFactory: ParserFactory = container.resolve(ParserFactory);
 
       const type = Helpers.selectEnumValue(
         SpecType,
@@ -86,11 +107,7 @@ export class UploadArchive implements CommandModule {
 
       const { content, filename } = await parser.parse(args.file as string);
 
-      const archives = new RestArchives({
-        baseUrl: args.api as string,
-        apiKey: args.token as string,
-        proxyUrl: args.proxy as string
-      });
+      const archives: Archives = container.resolve(Archives);
 
       const spec: Spec = {
         type,
@@ -101,13 +118,10 @@ export class UploadArchive implements CommandModule {
         variables: Helpers.parseHeaders(args.variable as string[])
       };
 
-      let archiveId: string | undefined;
-
-      if (type === SpecType.HAR) {
-        archiveId = await archives.upload(spec);
-      } else {
-        archiveId = await archives.convertAndUpload(spec);
-      }
+      const archiveId: string | undefined =
+        type === SpecType.HAR
+          ? await archives.upload(spec)
+          : await archives.convertAndUpload(spec);
 
       logger.log(archiveId);
       process.exit(0);

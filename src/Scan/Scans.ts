@@ -140,3 +140,5 @@ export interface Scans {
 
   status(scanId: string): Promise<ScanState>;
 }
+
+export const Scans: unique symbol = Symbol('Scans');

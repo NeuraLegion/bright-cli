@@ -1,14 +1,19 @@
-import { bind, ExecuteScript, ForwardResponse, Handler } from '../Bus';
-import { RequestExecutor, Script, ScriptResult } from '../RequestExecutor';
+import { bind, Handler } from '../Bus';
+import { Request, RequestExecutor, Response } from '../RequestExecutor';
+import { ExecuteScript, ForwardResponse } from './Events';
+import { inject, injectable } from 'tsyringe';
 
+@injectable()
 @bind(ExecuteScript)
 export class SendRequestHandler
   implements Handler<ExecuteScript, ForwardResponse> {
-  constructor(private readonly requestExecutor: RequestExecutor) {}
+  constructor(
+    @inject(RequestExecutor) private readonly requestExecutor: RequestExecutor
+  ) {}
 
   public async handle(event: ExecuteScript): Promise<ForwardResponse> {
-    const response: ScriptResult = await this.requestExecutor.execute(
-      new Script(event)
+    const response: Response = await this.requestExecutor.execute(
+      new Request(event)
     );
 
     return new ForwardResponse(

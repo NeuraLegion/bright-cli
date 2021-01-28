@@ -1,91 +1,31 @@
-import { NexMockConverter } from './NexMockConverter';
+import {
+  FileMockRequest,
+  FormData,
+  Headers,
+  MockRequest,
+  MockRequestType,
+  MultiPartField,
+  MultiPartMockRequest,
+  NexMockConverter,
+  SimpleTextMockRequest
+} from './NexMockConverter';
 import { Options } from 'request';
-import { Readable } from 'stream';
+import { inject, injectable } from 'tsyringe';
 import { URL } from 'url';
 
-export interface Headers {
-  [key: string]: string | string[];
+export interface NexMockConverterOptions {
+  headers?: Record<string, string>;
+  url?: string;
 }
 
-type PlanFormData = string | Buffer | Readable;
+export const NexMockConverterOptions: unique symbol = Symbol(
+  'NexMockConverterOptions'
+);
 
-type FormDataField =
-  | PlanFormData
-  | {
-      value: PlanFormData;
-      options: {
-        filename: string;
-        contentType: string;
-      };
-    };
-
-export interface FormData {
-  [key: string]: FormDataField | FormDataField[];
-}
-
-export enum MockRequestType {
-  BUFFER = 'buffer',
-  JSON = 'json',
-  MULTIPART = 'multipart',
-  FILE = 'file',
-  STREAM = 'stream',
-  FORM_URLENCODED = 'form_urlencoded',
-  TEXT = 'text'
-}
-
-export type SimpleBodyType = Exclude<
-  MockRequestType,
-  MockRequestType.MULTIPART & MockRequestType.FORM_URLENCODED
->;
-
-export interface GenericMockRequest<T extends MockRequestType> {
-  readonly type: T;
-
-  readonly method?: string;
-
-  readonly headers?: Headers;
-
-  readonly url?: string;
-}
-
-export interface SimpleTextMockRequest<T extends SimpleBodyType>
-  extends GenericMockRequest<T> {
-  readonly body: string;
-}
-
-export interface FileMockRequest
-  extends SimpleTextMockRequest<MockRequestType.FILE> {
-  readonly mimeType: string;
-
-  readonly fileName: string;
-}
-
-export interface FormUrlencodedMockRequest
-  extends GenericMockRequest<MockRequestType.FORM_URLENCODED> {
-  readonly body: {
-    readonly [key: string]: string;
-  };
-}
-
-export type MultiPartField =
-  | SimpleTextMockRequest<MockRequestType.TEXT>
-  | FileMockRequest;
-
-export interface MultiPartMockRequest
-  extends GenericMockRequest<MockRequestType.MULTIPART> {
-  readonly body: {
-    readonly [key: string]: MultiPartField | MultiPartField[];
-  };
-}
-
-export type MockRequest =
-  | FormUrlencodedMockRequest
-  | MultiPartMockRequest
-  | FileMockRequest
-  | SimpleTextMockRequest<Exclude<SimpleBodyType, MockRequestType.FILE>>;
-
+@injectable()
 export class BaseNexMockConverter implements NexMockConverter {
   constructor(
+    @inject(NexMockConverterOptions)
     private readonly options: { headers?: Record<string, string>; url?: string }
   ) {}
 

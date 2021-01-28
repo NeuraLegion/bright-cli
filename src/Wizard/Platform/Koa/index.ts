@@ -1,1 +1,1 @@
-export { KoaPlatform } from './KoaPlatform';
+export * from './KoaPlatform';

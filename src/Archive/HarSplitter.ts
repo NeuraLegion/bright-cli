@@ -1,19 +1,19 @@
-import { Helpers } from '../Utils/Helpers';
-import { FilenameFactory } from '../Utils/FilenameFactory';
-import logger from '../Utils/Logger';
+import { FilenameFactory, Helpers, logger } from '../Utils';
 import { Entry, Har } from 'har-format';
+import { injectable } from 'tsyringe';
 import { promisify } from 'util';
 import { writeFile as write } from 'fs';
 
 const writeFile = promisify(write);
 
+@injectable()
 export class HarSplitter {
-  constructor(
-    private readonly baseName: string,
-    private readonly fileNameFactory: FilenameFactory = new FilenameFactory()
-  ) {}
+  constructor(private readonly fileNameFactory: FilenameFactory) {}
 
-  public async split(count: number = 1, har: Har): Promise<string[]> {
+  public async split(
+    har: Har,
+    { baseName, count = 1 }: { count?: number; baseName: string }
+  ): Promise<string[]> {
     const { log } = har;
 
     if (log.entries.length > 1000 && count === 1) {
@@ -30,15 +30,13 @@ export class HarSplitter {
 
     return Promise.all(
       chunks.map((items: Entry[]) =>
-        this.saveChunk({ log: { ...log, entries: items } })
+        this.saveChunk(baseName, { log: { ...log, entries: items } })
       )
     );
   }
 
-  private async saveChunk(har: Har): Promise<string> {
-    const fileName: string = this.fileNameFactory.generatorFilename(
-      this.baseName
-    );
+  private async saveChunk(baseName: string, har: Har): Promise<string> {
+    const fileName: string = this.fileNameFactory.generatorFilename(baseName);
 
     await writeFile(fileName, JSON.stringify(har), {
       encoding: 'utf8'
