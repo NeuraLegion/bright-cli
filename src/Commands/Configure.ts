@@ -1,5 +1,6 @@
-import logger from '../Utils/Logger';
-import { KoaPlatform, TestType } from '../Wizard';
+import { logger } from '../Utils';
+import { ConnectivityUrls, Platform, TestType } from '../Wizard';
+import { container } from '../Config';
 import { Arguments, Argv, CommandModule } from 'yargs';
 import { URL } from 'url';
 
@@ -14,8 +15,8 @@ export class Configure implements CommandModule {
   public readonly command = 'configure';
   public readonly describe = 'Start a configuration wizard';
 
-  public builder(args: Argv): Argv {
-    return args
+  public builder(argv: Argv): Argv {
+    return argv
       .option(TestType.TCP, {
         default: Configure.DEFAULT_TCP_TEST_ENDPOINT,
         hidden: true,
@@ -30,22 +31,25 @@ export class Configure implements CommandModule {
         default: Configure.DEFAULT_AUTH_TEST_ENDPOINT,
         hidden: true,
         describe: `NexPloit event message authentication endpoint`
+      })
+      .middleware((args: Arguments) => {
+        container.register(ConnectivityUrls, {
+          useValue: new Map(
+            Object.values(TestType).map((type: TestType) => {
+              try {
+                return [type, new URL(args[type] as string)];
+              } catch (err) {
+                throw new Error(`Invalid value for ${type} testing endpoint`);
+              }
+            })
+          )
+        });
       });
   }
 
-  public async handler(args: Arguments): Promise<void> {
+  public async handler(): Promise<void> {
     try {
-      const options: Map<TestType, URL> = new Map(
-        Object.values(TestType).map((type: TestType) => {
-          try {
-            return [type, new URL(args[type] as string)];
-          } catch (err) {
-            throw new Error(`Invalid value for ${type} testing endpoint`);
-          }
-        })
-      );
-
-      const app = await new KoaPlatform(options).start();
+      const app = await container.resolve<Platform>(Platform).start();
 
       const stop: () => void = () => {
         app.close();

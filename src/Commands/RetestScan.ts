@@ -1,14 +1,15 @@
-import { RestScans } from '../Scan';
-import logger from '../Utils/Logger';
+import { RestScansOptions, Scans } from '../Scan';
+import { logger } from '../Utils';
 import { Arguments, Argv, CommandModule } from 'yargs';
+import { container } from 'tsyringe';
 
 export class RetestScan implements CommandModule {
   public readonly command = 'scan:retest [options] <scan>';
   public readonly describe =
     'Request to start a new scan using the same configuration as an existing scan, by scan ID.';
 
-  public builder(args: Argv): Argv {
-    return args
+  public builder(argv: Argv): Argv {
+    return argv
       .option('token', {
         alias: 't',
         describe: 'NexPloit API-key',
@@ -19,17 +20,21 @@ export class RetestScan implements CommandModule {
         describe: 'ID of an existing scan which you want to re-run.',
         type: 'string',
         demandOption: true
-      });
+      })
+      .middleware((args: Arguments) =>
+        container.register(RestScansOptions, {
+          useValue: {
+            baseUrl: args.api as string,
+            apiKey: args.token as string,
+            proxyUrl: args.proxy as string
+          }
+        })
+      );
   }
 
   public async handler(args: Arguments): Promise<void> {
     try {
-      const scanManager = new RestScans({
-        baseUrl: args.api as string,
-        apiKey: args.token as string,
-        proxyUrl: args.proxy as string
-      });
-
+      const scanManager: Scans = container.resolve(Scans);
       const scanId: string = await scanManager.retest(args.scan as string);
 
       logger.log(scanId);

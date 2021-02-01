@@ -4,6 +4,7 @@ $output_dir = ".\bin\win"
 
 # get package version number
 $version = (Get-Content "package.json" | ConvertFrom-Json).version
+$version = $version -replace '([A-Za-z-.])+','.'
 
 # generate the installer
 $wix_dir="c:\Program Files (x86)\WiX Toolset v3.11\bin"

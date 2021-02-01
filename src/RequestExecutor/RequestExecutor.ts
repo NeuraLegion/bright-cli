@@ -1,6 +1,8 @@
-import { Script } from './Script';
-import { ScriptResult } from './ScriptResult';
+import { Request } from './Request';
+import { Response } from './Response';
 
 export interface RequestExecutor {
-  execute(script: Script): Promise<ScriptResult>;
+  execute(script: Request): Promise<Response>;
 }
+
+export const RequestExecutor: unique symbol = Symbol('RequestExecutor');

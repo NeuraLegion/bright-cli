@@ -1,5 +1,7 @@
+import { injectable } from 'tsyringe';
 import { basename, extname, resolve } from 'path';
 
+@injectable()
 export class FilenameFactory {
   private counter: number = 1;
 

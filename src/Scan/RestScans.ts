@@ -1,21 +1,25 @@
 import { Discovery, ScanConfig, Scans, ScanState } from './Scans';
 import request, { RequestPromiseAPI } from 'request-promise';
 import { SocksProxyAgent } from 'socks-proxy-agent';
+import { inject, injectable } from 'tsyringe';
 
+export interface RestScansOptions {
+  timeout?: number;
+  baseUrl: string;
+  apiKey: string;
+  proxyUrl?: string;
+}
+
+export const RestScansOptions: unique symbol = Symbol('RestScansOptions');
+
+@injectable()
 export class RestScans implements Scans {
   private readonly client: RequestPromiseAPI;
 
-  constructor({
-    baseUrl,
-    apiKey,
-    proxyUrl,
-    timeout = 10000
-  }: {
-    timeout?: number;
-    baseUrl: string;
-    apiKey: string;
-    proxyUrl?: string;
-  }) {
+  constructor(
+    @inject(RestScansOptions)
+    { baseUrl, apiKey, proxyUrl, timeout = 10000 }: RestScansOptions
+  ) {
     this.client = request.defaults({
       baseUrl,
       timeout,

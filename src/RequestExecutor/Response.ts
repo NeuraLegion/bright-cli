@@ -1,4 +1,4 @@
-export class ScriptResult {
+export class Response {
   public readonly status?: number;
   public readonly headers?: Record<string, string | string[]>;
   public readonly body?: string;

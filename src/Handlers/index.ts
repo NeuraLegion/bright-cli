@@ -1,2 +1,3 @@
-export { DefaultHandlerRegistry } from './DefaultHandlerRegistry';
-export { SendRequestHandler } from './SendRequestHandler';
+export * from './Events';
+export * from './SendRequestHandler';
+export * from './RegisterScriptsHandler';

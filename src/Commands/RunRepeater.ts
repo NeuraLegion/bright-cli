@@ -1,19 +1,26 @@
-import { Bus, RabbitMQBus, RepeaterStatusUpdated } from '../Bus';
-import { DefaultHandlerRegistry, SendRequestHandler } from '../Handlers';
-import { DefaultRequestExecutor } from '../RequestExecutor';
-import { Helpers } from '../Utils/Helpers';
-import logger from '../Utils/Logger';
-import { StartupManagerFactory } from '../StartupScripts/StartupManagerFactory';
+import { Bus, RabbitMQBusOptions } from '../Bus';
+import { ScriptLoader } from '../Scripts';
+import {
+  RegisterScriptsHandler,
+  RepeaterStatusUpdated,
+  SendRequestHandler
+} from '../Handlers';
+import { RequestExecutorOptions } from '../RequestExecutor';
+import { Helpers, logger } from '../Utils';
+import { StartupManagerFactory } from '../StartupScripts';
+import { container } from '../Config';
 import { Arguments, Argv, CommandModule } from 'yargs';
 import Timer = NodeJS.Timer;
+
+let timer: Timer;
 
 export class RunRepeater implements CommandModule {
   private static SERVICE_NAME = 'nexploit-repeater';
   public readonly command = 'repeater [options]';
   public readonly describe = 'Starts an on-prem agent.';
 
-  public builder(args: Argv): Argv {
-    return args
+  public builder(argv: Argv): Argv {
+    return argv
       .option('bus', {
         default: 'amqps://amq.nexploit.app:5672',
         demandOption: true,
@@ -33,19 +40,36 @@ export class RunRepeater implements CommandModule {
         requiresArg: true,
         demandOption: true
       })
+      .option('scripts', {
+        alias: 'S',
+        requiresArg: true,
+        string: true,
+        describe:
+          'JSON string which contains script list, which is initially empty and consists of zero or more host and path pairs. Example: {"*.example.com": "./hmac.js"}',
+        coerce(arg: string): Record<string, string> {
+          return JSON.parse(arg);
+        }
+      })
       .option('header', {
         alias: 'H',
         requiresArg: true,
         conflicts: ['headers'],
         array: true,
         describe:
-          'A list of specific headers that should be included into request.'
+          'A list of specific headers that should be included into request.',
+        coerce(arg: string[]): Record<string, string> {
+          return Array.isArray(arg) ? Helpers.parseHeaders(arg) : {};
+        }
       })
       .option('headers', {
         requiresArg: true,
+        string: true,
         conflicts: ['header'],
         describe:
-          'JSON string which contains header list, which is initially empty and consists of zero or more name and value pairs.'
+          'JSON string which contains header list, which is initially empty and consists of zero or more name and value pairs. Example: {"x-slack-signature": "Z2dFIHJldHNhRQ"}',
+        coerce(arg: string): Record<string, string> {
+          return JSON.parse(arg);
+        }
       })
       .option('daemon', {
         requiresArg: false,
@@ -63,23 +87,42 @@ export class RunRepeater implements CommandModule {
       })
       .conflicts('remove-daemon', 'daemon')
       .env('REPEATER')
-      .exitProcess(false);
+      .exitProcess(false)
+      .middleware((args: Arguments) => {
+        container
+          .register(RequestExecutorOptions, {
+            useValue: {
+              headers: (args.header ?? args.headers) as Record<string, string>,
+              timeout: 10000,
+              proxyUrl: args.proxy as string
+            }
+          })
+          .register(RabbitMQBusOptions, {
+            useValue: {
+              exchange: 'EventBus',
+              clientQueue: `agent:${args.id as string}`,
+              connectTimeout: 10000,
+              url: args.bus as string,
+              proxyUrl: args.proxy as string,
+              credentials: {
+                username: args.id as string,
+                password: args.token as string
+              },
+              onError(e: Error) {
+                clearInterval(timer);
+                logger.error(`Error during "repeater": ${e.message}`);
+                process.exit(1);
+              }
+            }
+          });
+      });
   }
 
   public async handler(args: Arguments): Promise<void> {
-    let bus: Bus;
-    let timer: Timer;
-    let headers: Record<string, string> = {};
-
-    try {
-      headers = (args.header as string[])?.length
-        ? Helpers.parseHeaders(args.header as string[])
-        : JSON.parse(args.headers as string);
-    } catch {
-      // noop
-    }
-
-    const startupManagerFactory = new StartupManagerFactory();
+    const bus: Bus = container.resolve(Bus);
+    const startupManagerFactory: StartupManagerFactory = container.resolve(
+      StartupManagerFactory
+    );
 
     const dispose: () => Promise<void> = async (): Promise<void> => {
       clearInterval(timer);
@@ -142,37 +185,21 @@ export class RunRepeater implements CommandModule {
       process.exit(0);
     };
 
+    process.on('SIGTERM', stop).on('SIGINT', stop).on('SIGHUP', stop);
+
     const notify = (status: 'connected' | 'disconnected') =>
       bus?.publish(new RepeaterStatusUpdated(args.id as string, status));
 
     try {
-      const requestExecutor = new DefaultRequestExecutor({
-        headers,
-        timeout: 10000,
-        proxyUrl: args.proxy as string
-      });
-      const handlerRegistry = new DefaultHandlerRegistry(requestExecutor);
+      if (args.scripts) {
+        const loader: ScriptLoader = container.resolve(ScriptLoader);
 
-      bus = new RabbitMQBus(
-        {
-          onError,
-          exchange: 'EventBus',
-          clientQueue: `agent:${args.id as string}`,
-          connectTimeout: 10000,
-          url: args.bus as string,
-          proxyUrl: args.proxy as string,
-          credentials: {
-            username: args.id as string,
-            password: args.token as string
-          }
-        },
-        handlerRegistry
-      );
-
-      process.on('SIGTERM', stop).on('SIGINT', stop).on('SIGHUP', stop);
+        await loader.load(args.scripts as Record<string, string>);
+      }
 
       await bus.init();
 
+      await bus.subscribe(RegisterScriptsHandler);
       await bus.subscribe(SendRequestHandler);
 
       timer = setInterval(() => notify('connected'), 10000);

@@ -1,15 +1,22 @@
-import { RestScans, Module, ScanConfig, TestType } from '../Scan';
-import { Helpers } from '../Utils/Helpers';
-import logger from '../Utils/Logger';
-import { AttackParamLocation, COMPREHENSIVE_SCAN_TESTS } from '../Scan/Scans';
+import {
+  AttackParamLocation,
+  COMPREHENSIVE_SCAN_TESTS,
+  Module,
+  RestScansOptions,
+  ScanConfig,
+  Scans,
+  TestType
+} from '../Scan';
+import { Helpers, logger } from '../Utils';
 import { Arguments, Argv, CommandModule } from 'yargs';
+import { container } from 'tsyringe';
 
 export class RunScan implements CommandModule {
   public readonly command = 'scan:run [options]';
   public readonly describe = 'Start a new scan for the received configuration.';
 
-  public builder(args: Argv): Argv {
-    return args
+  public builder(argv: Argv): Argv {
+    return argv
       .option('token', {
         alias: 't',
         describe: 'NexPloit API-key',
@@ -124,16 +131,21 @@ export class RunScan implements CommandModule {
       .group(
         ['host-filter', 'header', 'module', 'repeater', 'test', 'smart'],
         'Additional Options'
+      )
+      .middleware((args: Arguments) =>
+        container.register(RestScansOptions, {
+          useValue: {
+            baseUrl: args.api as string,
+            apiKey: args.token as string,
+            proxyUrl: args.proxy as string
+          }
+        })
       );
   }
 
   public async handler(args: Arguments): Promise<void> {
     try {
-      const scanManager = new RestScans({
-        baseUrl: args.api as string,
-        apiKey: args.token as string,
-        proxyUrl: args.proxy as string
-      });
+      const scanManager: Scans = container.resolve(Scans);
 
       const scanId: string = await scanManager.create({
         name: args.name,

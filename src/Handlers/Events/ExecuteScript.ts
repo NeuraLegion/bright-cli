@@ -1,4 +1,4 @@
-import { Event } from '../Event';
+import { Event } from '../../Bus/Event';
 
 export class ExecuteScript implements Event {
   constructor(
