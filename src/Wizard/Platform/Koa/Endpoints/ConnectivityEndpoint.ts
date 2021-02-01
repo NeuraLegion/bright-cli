@@ -1,21 +1,21 @@
 import { Endpoint } from './Endpoint';
+import { ConnectivityAnalyzer } from '../../../Services';
+import { ConnectivityTest } from '../../../Models';
 import Koa from 'koa';
 import { inject, injectable } from 'tsyringe';
-import { ConnectivityService } from 'src/Wizard/Services/ConnectivityService';
-import { ConnectivityTest } from 'src/Wizard/Models/ConnectivityTest';
 
 @injectable()
 export class ConnectivityEndpoint implements Endpoint {
   constructor(
-    @inject(ConnectivityService)
-    private readonly connectivityService: ConnectivityService
+    @inject(ConnectivityAnalyzer)
+    private readonly connectivityService: ConnectivityAnalyzer
   ) {}
 
   public async handle(ctx: Koa.Context): Promise<void> {
     const req: ConnectivityTest = ctx.request.body;
 
     ctx.body = {
-      ok: await this.connectivityService.getConnectivityStatus(req.type)
+      ok: await this.connectivityService.verifyAccess(req.type)
     };
   }
 }

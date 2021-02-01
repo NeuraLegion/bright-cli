@@ -46,20 +46,6 @@ export class Helpers {
     };
   }
 
-  public static getDelimitedInput(
-    value: string,
-    delimiter: string | RegExp
-  ): string[] {
-    const inputVal = (value ?? '').trim();
-
-    return inputVal
-      ? inputVal
-          .split(delimiter)
-          .map((x: string) => x.trim())
-          .filter(Boolean)
-      : [];
-  }
-
   public static wildcardToRegExp(s: string): RegExp {
     return new RegExp(`^${s.split(/\*+/).map(this.regExpEscape).join('.*')}$`);
   }

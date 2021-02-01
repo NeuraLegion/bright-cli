@@ -1,20 +1,20 @@
 import { Platform } from '../Platform';
+import { TestType } from '../../Models';
+import { Tokens } from '../../';
+import { ConnectivityAnalyzer } from '../../Services';
 import { inject, injectable } from 'tsyringe';
-import { Helpers } from 'src/Utils';
-import { Tokens } from 'src/Wizard/Tokens';
-import { TestType } from 'src/Wizard/Models';
-import { ConnectivityService } from 'src/Wizard/Services/ConnectivityService';
 import readline from 'readline';
+import { URL } from 'url';
 
 @injectable()
 export class ReadlinePlatform implements Platform {
   private rl: readline.Interface;
-  private delimiter: string = '\n\r--\n';
+  private readonly delimiter = '\n\r--\n';
 
   constructor(
     @inject(Tokens) private readonly tokens: Tokens,
-    @inject(ConnectivityService)
-    private readonly connectivityService: ConnectivityService
+    @inject(ConnectivityAnalyzer)
+    private readonly connectivityService: ConnectivityAnalyzer
   ) {}
 
   public async start(): Promise<ReadlinePlatform> {
@@ -66,13 +66,9 @@ export class ReadlinePlatform implements Platform {
     console.log('\n');
 
     await this.process('Verifying provided Token and Repeater ID', async () => {
-      try {
-        await this.tokens.writeTokens({ repeaterId, authToken });
+      await this.tokens.writeTokens({ repeaterId, authToken });
 
-        return true;
-      } catch (err) {
-        return false;
-      }
+      return true;
     });
   }
 
@@ -81,23 +77,11 @@ export class ReadlinePlatform implements Platform {
 
     await this.process(
       'Validating that the connection to amq.nexploit.app at port 5672 is open',
-      async () => {
-        try {
-          return this.connectivityService.getConnectivityStatus(TestType.AUTH);
-        } catch (err) {
-          return false;
-        }
-      }
+      async () => this.connectivityService.verifyAccess(TestType.AUTH)
     );
     await this.process(
       'Validating that the connection to nexploit.app at port 443 is open',
-      async () => {
-        try {
-          return this.connectivityService.getConnectivityStatus(TestType.HTTP);
-        } catch (err) {
-          return false;
-        }
-      }
+      async () => this.connectivityService.verifyAccess(TestType.HTTP)
     );
 
     console.log('\nEXTERNAL communication diagnostics completed.');
@@ -108,7 +92,7 @@ export class ReadlinePlatform implements Platform {
       'Next step is to validate the connection to your INTERNAL (local) target application(s).\n'
     );
 
-    const urls = Helpers.getDelimitedInput(
+    const urls = this.getDelimitedInput(
       await this.question(
         'Please enter the target URLs to test (separated by commas)'
       ),
@@ -119,18 +103,28 @@ export class ReadlinePlatform implements Platform {
 
     console.log('Starting INTERNAL communication diagnostics:\n');
 
+    let reachedCount = 0;
+
     for (const url of urls) {
-      await this.process(`Trying to reach ${url}`, async () => true);
+      await this.process(`Trying to reach ${url}`, async () => {
+        await this.connectivityService.verifyConnection(new URL(url));
+
+        reachedCount += 1;
+
+        return true;
+      });
     }
 
     console.log('\nEXTERNAL communication diagnostics completed.');
-    console.log('1 out of 3 URLs could not be reached.');
+    console.log(
+      `${urls.length - reachedCount} out of ${
+        urls.length
+      } URLs could not be reached.`
+    );
   }
 
   private async question(question: string): Promise<string> {
-    return new Promise((resolve) => {
-      this.rl.question(`${question}: `, resolve);
-    });
+    return new Promise((resolve) => this.rl.question(`${question}: `, resolve));
   }
 
   private async process(
@@ -140,8 +134,28 @@ export class ReadlinePlatform implements Platform {
     process.stdout.write(`${text}...`);
     readline.cursorTo(process.stdout, 0);
 
-    const result = await handler();
+    let result: boolean;
+
+    try {
+      result = await handler();
+    } catch (err) {
+      result = false;
+    }
 
     console.log(`${text}... ${result ? 'Success' : 'Failed'}`);
+  }
+
+  private getDelimitedInput(
+    value: string,
+    delimiter: string | RegExp
+  ): string[] {
+    const inputVal = (value ?? '').trim();
+
+    return inputVal
+      ? inputVal
+          .split(delimiter)
+          .map((x: string) => x.trim())
+          .filter(Boolean)
+      : [];
   }
 }

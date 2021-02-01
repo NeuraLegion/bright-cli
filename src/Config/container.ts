@@ -38,7 +38,7 @@ import {
   RestArchives
 } from '../Archive';
 import { container, Lifecycle } from 'tsyringe';
-import { ConnectivityService } from 'src/Wizard/Services';
+import { ConnectivityAnalyzer } from 'src/Wizard/Services';
 
 container
   .register('tsyringe', {
@@ -142,6 +142,6 @@ container
     },
     { lifecycle: Lifecycle.Singleton }
   )
-  .registerSingleton(ConnectivityService);
+  .registerSingleton(ConnectivityAnalyzer);
 
 export default container;

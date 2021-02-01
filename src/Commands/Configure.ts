@@ -52,19 +52,11 @@ export class Configure implements CommandModule {
           )
         });
 
-        if (args.nogui) {
-          container.register(
-            Platform,
-            { useClass: ReadlinePlatform },
-            { lifecycle: Lifecycle.Singleton }
-          );
-        } else {
-          container.register(
-            Platform,
-            { useClass: KoaPlatform },
-            { lifecycle: Lifecycle.Singleton }
-          );
-        }
+        container.register<ReadlinePlatform | KoaPlatform>(
+          Platform,
+          { useClass: args.nogui ? ReadlinePlatform : KoaPlatform },
+          { lifecycle: Lifecycle.Singleton }
+        );
       });
   }
 

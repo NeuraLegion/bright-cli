@@ -7,16 +7,28 @@ import { URL } from 'url';
 export const ConnectivityUrls = Symbol('ConnectivityUrls');
 
 @injectable()
-export class ConnectivityService {
+export class ConnectivityAnalyzer {
   constructor(
     @inject(ConnectivityUrls) private readonly options: Map<TestType, URL>,
     @injectAll(Connectivity)
     private readonly connectivityTestRegistry: Connectivity[]
   ) {}
 
-  public async getConnectivityStatus(type: TestType): Promise<boolean> {
+  public async verifyAccess(type: TestType): Promise<boolean> {
     logger.debug('Calling connectivity status test with type %s', type);
 
+    const connectivity = this.findConnectivity(type);
+
+    return connectivity.test(this.options.get(connectivity.type));
+  }
+
+  public async verifyConnection(url: URL): Promise<boolean> {
+    const connectivity = this.findConnectivity(TestType.HTTP);
+
+    return connectivity.test(url);
+  }
+
+  private findConnectivity(type: TestType): Connectivity {
     const connectivity:
       | Connectivity
       | undefined = this.connectivityTestRegistry.find(
@@ -27,6 +39,6 @@ export class ConnectivityService {
       throw new Error('Selected test is not support.');
     }
 
-    return connectivity.test(this.options.get(connectivity.type));
+    return connectivity;
   }
 }
