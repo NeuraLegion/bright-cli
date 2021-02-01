@@ -16,8 +16,6 @@ import {
   Connectivity,
   FSTokens,
   HTTPConnectivity,
-  KoaPlatform,
-  Platform,
   TCPConnectivity,
   Tokens
 } from '../Wizard';
@@ -40,6 +38,7 @@ import {
   RestArchives
 } from '../Archive';
 import { container, Lifecycle } from 'tsyringe';
+import { ConnectivityService } from 'src/Wizard/Services';
 
 container
   .register('tsyringe', {
@@ -102,13 +101,6 @@ container
     { lifecycle: Lifecycle.Singleton }
   )
   .register(
-    Platform,
-    {
-      useClass: KoaPlatform
-    },
-    { lifecycle: Lifecycle.Singleton }
-  )
-  .register(
     BreakpointFactory,
     {
       useClass: DefaultBreakpointFactory
@@ -149,6 +141,7 @@ container
       useClass: FSScriptLoader
     },
     { lifecycle: Lifecycle.Singleton }
-  );
+  )
+  .registerSingleton(ConnectivityService);
 
 export default container;

@@ -4,7 +4,7 @@ import {
   GetTokensEndpoint,
   ScanEndpoint,
   SetTokensEndpoint
-} from '../../Endpoints';
+} from './Endpoints';
 import Router from 'koa-router';
 import Koa from 'koa';
 import { injectable } from 'tsyringe';

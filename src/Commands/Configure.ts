@@ -1,7 +1,9 @@
 import { logger } from '../Utils';
-import { ConnectivityUrls, Platform, TestType } from '../Wizard';
+import { ConnectivityUrls, KoaPlatform, Platform, TestType } from '../Wizard';
 import { container } from '../Config';
 import { Arguments, Argv, CommandModule } from 'yargs';
+import { Lifecycle } from 'tsyringe';
+import { ReadlinePlatform } from 'src/Wizard/Platform/Readline';
 import { URL } from 'url';
 
 export class Configure implements CommandModule {
@@ -12,7 +14,7 @@ export class Configure implements CommandModule {
   private static readonly DEFAULT_AUTH_TEST_ENDPOINT: string =
     'https://nexploit.app/api/v1/repeaters/user';
 
-  public readonly command = 'configure';
+  public readonly command = 'configure [options]';
   public readonly describe = 'Start a configuration wizard';
 
   public builder(argv: Argv): Argv {
@@ -32,6 +34,11 @@ export class Configure implements CommandModule {
         hidden: true,
         describe: `NexPloit event message authentication endpoint`
       })
+      .option('nogui', {
+        default: false,
+        boolean: true,
+        describe: `Start a configuration wizard without GUI`
+      })
       .middleware((args: Arguments) => {
         container.register(ConnectivityUrls, {
           useValue: new Map(
@@ -44,6 +51,20 @@ export class Configure implements CommandModule {
             })
           )
         });
+
+        if (args.nogui) {
+          container.register(
+            Platform,
+            { useClass: ReadlinePlatform },
+            { lifecycle: Lifecycle.Singleton }
+          );
+        } else {
+          container.register(
+            Platform,
+            { useClass: KoaPlatform },
+            { lifecycle: Lifecycle.Singleton }
+          );
+        }
       });
   }
 
@@ -52,7 +73,7 @@ export class Configure implements CommandModule {
       const app = await container.resolve<Platform>(Platform).start();
 
       const stop: () => void = () => {
-        app.close();
+        app.stop();
         process.exit(0);
       };
 
