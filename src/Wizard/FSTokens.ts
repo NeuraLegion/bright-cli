@@ -12,6 +12,7 @@ export class FSTokens implements Tokens {
 
   public writeTokens(credentials: Credentials): void {
     logger.debug('Saving tokens to file %s', this.path);
+
     writeFileSync(this.path, JSON.stringify(credentials));
   }
 

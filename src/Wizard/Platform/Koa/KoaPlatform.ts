@@ -17,10 +17,11 @@ export class KoaPlatform implements Platform {
   private readonly root = join(__dirname, 'public');
   private readonly BIND_PORT: number = 3000;
   private readonly RANGE_SIZE: number = 500;
+  private server: Server;
 
   constructor(private readonly routerFactory: KoaRouterFactory) {}
 
-  public async start(): Promise<Server> {
+  public async start(): Promise<void> {
     logger.debug('Using static path for client %s', this.root);
 
     const router: Router = await this.routerFactory.createRouter();
@@ -40,10 +41,14 @@ export class KoaPlatform implements Platform {
       port: makeRange(this.BIND_PORT, this.BIND_PORT + this.RANGE_SIZE)
     });
 
-    return app.listen(port, () =>
+    this.server = app.listen(port, () =>
       logger.log(
         `Please browse to http://localhost:${port} to begin the configurations of the Repeater`
       )
     );
+  }
+
+  public async stop(): Promise<void> {
+    this.server.close();
   }
 }
