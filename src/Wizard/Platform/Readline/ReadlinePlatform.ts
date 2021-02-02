@@ -18,20 +18,15 @@ export class ReadlinePlatform implements Platform {
     private readonly connectivityService: DefaultConnectivityAnalyzer
   ) {}
 
-  public async start(): Promise<ReadlinePlatform> {
+  public async start(): Promise<void> {
     this.rl = readline.createInterface({
       input: process.stdin,
       output: process.stdout
     });
 
-    this.rl.once('connected', async () => {
-      console.log('Welcome to the NexPloit Network Testing wizard!');
-      await this.configure();
-    });
+    console.log('Welcome to the NexPloit Network Testing wizard!');
 
-    this.rl.emit('connected');
-
-    return this;
+    await this.configure();
   }
 
   public async stop(): Promise<void> {

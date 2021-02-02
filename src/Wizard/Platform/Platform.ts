@@ -1,5 +1,5 @@
 export interface Platform {
-  start(): Promise<Platform>;
+  start(): Promise<void>;
   stop(): Promise<void>;
 }
 

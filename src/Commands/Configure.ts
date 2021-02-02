@@ -67,7 +67,7 @@ export class Configure implements CommandModule {
 
   public async handler(): Promise<void> {
     try {
-      const app = await container.resolve<Platform>(Platform).start();
+      const app = await container.resolve<Platform>(Platform);
 
       const stop: () => void = () => {
         app.stop();
@@ -75,6 +75,8 @@ export class Configure implements CommandModule {
       };
 
       process.on('SIGTERM', stop).on('SIGINT', stop).on('SIGHUP', stop);
+
+      await app.start();
     } catch (e) {
       logger.error(`Error during "configure": ${e.error || e.message}`);
       process.exit(1);

@@ -21,7 +21,7 @@ export class KoaPlatform implements Platform {
 
   constructor(private readonly routerFactory: KoaRouterFactory) {}
 
-  public async start(): Promise<KoaPlatform> {
+  public async start(): Promise<void> {
     logger.debug('Using static path for client %s', this.root);
 
     const router: Router = await this.routerFactory.createRouter();
@@ -46,8 +46,6 @@ export class KoaPlatform implements Platform {
         `Please browse to http://localhost:${port} to begin the configurations of the Repeater`
       )
     );
-
-    return this;
   }
 
   public async stop(): Promise<void> {
