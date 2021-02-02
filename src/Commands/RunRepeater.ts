@@ -50,6 +50,13 @@ export class RunRepeater implements CommandModule {
           return JSON.parse(arg);
         }
       })
+      .option('timeout', {
+        number: true,
+        requiresArg: true,
+        default: 30000,
+        describe:
+          'Time to wait for a server to send response headers (and start the response body) before aborting the request.'
+      })
       .option('header', {
         alias: 'H',
         requiresArg: true,
@@ -93,7 +100,7 @@ export class RunRepeater implements CommandModule {
           .register(RequestExecutorOptions, {
             useValue: {
               headers: (args.header ?? args.headers) as Record<string, string>,
-              timeout: 10000,
+              timeout: args.timeout as number,
               proxyUrl: args.proxy as string
             }
           })
