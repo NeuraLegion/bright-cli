@@ -1,7 +1,7 @@
 import { Platform } from '../Platform';
-import { TestType } from '../../Models';
+import { AUTH_TOKEN_VALIDATION_REGEXP, TestType } from '../../Models';
 import { Tokens } from '../../Tokens';
-import { DefaultConnectivityAnalyzer } from '../../Services';
+import { ConnectivityAnalyzer, ConnectivityUrls } from '../../Services';
 import { inject, injectable } from 'tsyringe';
 import readline from 'readline';
 import { URL } from 'url';
@@ -13,9 +13,10 @@ export class ReadlinePlatform implements Platform {
   private readonly delimiter = `${EOL}\r--${EOL}`;
 
   constructor(
+    @inject(ConnectivityUrls) private readonly urls: ReadonlyMap<TestType, URL>,
     @inject(Tokens) private readonly tokens: Tokens,
-    @inject(DefaultConnectivityAnalyzer)
-    private readonly connectivityService: DefaultConnectivityAnalyzer
+    @inject(ConnectivityAnalyzer)
+    private readonly connectivityService: ConnectivityAnalyzer
   ) {}
 
   public async start(): Promise<void> {
@@ -43,7 +44,7 @@ export class ReadlinePlatform implements Platform {
 
     process.stdout.write(EOL);
 
-    await this.processTokens();
+    await this.requestTokens();
 
     console.log(this.delimiter);
 
@@ -54,10 +55,11 @@ export class ReadlinePlatform implements Platform {
     await this.processInternalCommunication();
 
     console.log(this.delimiter);
+
     console.log('Communication diagnostics done.');
   }
 
-  private async processTokens(): Promise<void> {
+  private async requestTokens(): Promise<void> {
     const repeaterId = await this.question('Please enter your Repeater ID');
     const authToken = await this.question(
       `Please enter your Repeater API Token`
@@ -65,23 +67,39 @@ export class ReadlinePlatform implements Platform {
 
     process.stdout.write(EOL);
 
-    await this.process(`Verifying provided Token and Repeater ID`, async () => {
-      await this.tokens.writeTokens({ repeaterId, authToken });
+    if (!authToken || !AUTH_TOKEN_VALIDATION_REGEXP.test(authToken)) {
+      console.error('Invalid value for authentication token');
 
-      return true;
-    });
+      return;
+    }
+
+    if (!repeaterId) {
+      console.error('Invalid value for repeater id');
+
+      return;
+    }
+
+    await this.tokens.writeTokens({ repeaterId, authToken });
+  }
+
+  private processConnectivity(type: TestType): Promise<void> {
+    const url = this.urls.get(type);
+
+    return this.process(
+      `Validating that the connection to ${url.host} at port ${url.port} is open`,
+      () => this.connectivityService.verifyAccess(type, url)
+    );
   }
 
   private async processExternalCommunication(): Promise<void> {
     console.log(`Starting EXTERNAL communication diagnostics:${EOL}`);
 
-    await this.process(
-      'Validating that the connection to amq.nexploit.app at port 5672 is open',
-      () => this.connectivityService.verifyAccess(TestType.AUTH)
-    );
-    await this.process(
-      'Validating that the connection to nexploit.app at port 443 is open',
-      () => this.connectivityService.verifyAccess(TestType.HTTP)
+    await this.processConnectivity(TestType.TCP);
+
+    await this.processConnectivity(TestType.HTTP);
+
+    await this.process('Verifying provided Token and Repeater ID', () =>
+      this.connectivityService.verifyAccess(TestType.AUTH)
     );
 
     process.stdout.write(EOL);

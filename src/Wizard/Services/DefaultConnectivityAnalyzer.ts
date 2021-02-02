@@ -10,7 +10,7 @@ export const ConnectivityUrls = Symbol('ConnectivityUrls');
 @injectable()
 export class DefaultConnectivityAnalyzer implements ConnectivityAnalyzer {
   constructor(
-    @inject(ConnectivityUrls) private readonly options: Map<TestType, URL>,
+    @inject(ConnectivityUrls) private readonly urls: Map<TestType, URL>,
     @injectAll(Connectivity)
     private readonly connectivityTestRegistry: Connectivity[]
   ) {}
@@ -28,6 +28,6 @@ export class DefaultConnectivityAnalyzer implements ConnectivityAnalyzer {
       throw new Error('Selected test is not support.');
     }
 
-    return connectivity.test(url ?? this.options.get(connectivity.type));
+    return connectivity.test(url ?? this.urls.get(connectivity.type));
   }
 }
