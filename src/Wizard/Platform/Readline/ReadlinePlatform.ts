@@ -114,7 +114,7 @@ export class ReadlinePlatform implements Platform {
           new URL(url)
         );
 
-        reachedCount += result ? 1 : 0;
+        reachedCount += Number(result);
 
         return result;
       });
