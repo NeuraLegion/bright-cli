@@ -17,7 +17,9 @@ import {
   FSTokens,
   HTTPConnectivity,
   TCPConnectivity,
-  Tokens
+  Tokens,
+  DefaultConnectivityAnalyzer,
+  ConnectivityAnalyzer
 } from '../Wizard';
 import {
   BreakpointFactory,
@@ -38,7 +40,6 @@ import {
   RestArchives
 } from '../Archive';
 import { container, Lifecycle } from 'tsyringe';
-import { ConnectivityAnalyzer } from 'src/Wizard/Services';
 
 container
   .register('tsyringe', {
@@ -142,6 +143,12 @@ container
     },
     { lifecycle: Lifecycle.Singleton }
   )
-  .registerSingleton(ConnectivityAnalyzer);
+  .register(
+    ConnectivityAnalyzer,
+    {
+      useClass: DefaultConnectivityAnalyzer
+    },
+    { lifecycle: Lifecycle.Singleton }
+  );
 
 export default container;

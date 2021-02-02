@@ -1,1 +1,2 @@
-export * from './ConnectivityService';
+export * from './DefaultConnectivityAnalyzer';
+export * from './ConnectivityAnalyzer';

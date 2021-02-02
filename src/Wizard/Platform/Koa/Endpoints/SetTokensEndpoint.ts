@@ -1,9 +1,9 @@
 import { Endpoint } from './Endpoint';
 import { Credentials } from '../../../Models';
 import { logger } from '../../../../Utils';
+import { Tokens } from '../../../Tokens';
 import Koa from 'koa';
 import { inject, injectable } from 'tsyringe';
-import { Tokens } from 'src/Wizard/Tokens';
 
 @injectable()
 export class SetTokensEndpoint implements Endpoint {

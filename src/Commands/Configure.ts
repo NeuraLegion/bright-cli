@@ -1,9 +1,14 @@
 import { logger } from '../Utils';
-import { ConnectivityUrls, KoaPlatform, Platform, TestType } from '../Wizard';
+import {
+  ReadlinePlatform,
+  ConnectivityUrls,
+  KoaPlatform,
+  Platform,
+  TestType
+} from '../Wizard';
 import { container } from '../Config';
 import { Arguments, Argv, CommandModule } from 'yargs';
 import { Lifecycle } from 'tsyringe';
-import { ReadlinePlatform } from 'src/Wizard/Platform/Readline';
 import { URL } from 'url';
 
 export class Configure implements CommandModule {
