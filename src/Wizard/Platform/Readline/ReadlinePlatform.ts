@@ -35,10 +35,10 @@ export class ReadlinePlatform implements Platform {
 
   private async configure(): Promise<void> {
     console.log(
-      '\rNote: To run the test, you will require a `Repeater ID` and an `Repeater Token` with the correct scopes.'
+      'Note: To run the test, you will require a `Repeater ID` and an `Repeater Token` with the correct scopes.'
     );
     console.log(
-      '\rIf you are running the configuration as part of a POC, both of these should have been sent to you via your sales contact.'
+      'If you are running the configuration as part of a POC, both of these should have been sent to you via your sales contact.'
     );
 
     process.stdout.write(EOL);
@@ -109,14 +109,14 @@ export class ReadlinePlatform implements Platform {
 
     for (const url of urls) {
       await this.process(`Trying to reach ${url}`, async () => {
-        await this.connectivityService.verifyAccess(
+        const result = await this.connectivityService.verifyAccess(
           TestType.HTTP,
           new URL(url)
         );
 
-        reachedCount += 1;
+        reachedCount += result ? 1 : 0;
 
-        return true;
+        return result;
       });
     }
 
