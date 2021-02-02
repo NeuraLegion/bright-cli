@@ -24,7 +24,7 @@ export class ReadlinePlatform implements Platform {
       output: process.stdout
     });
 
-    console.log('Welcome to the NexPloit Network Testing wizard!');
+    console.log(`Welcome to the NexPloit Network Testing wizard!${EOL}`);
 
     await this.configure();
   }
@@ -34,10 +34,14 @@ export class ReadlinePlatform implements Platform {
   }
 
   private async configure(): Promise<void> {
-    console.log(`
-      \rNote: To run the test, you will require a 'Repeater ID' and an 'Repeater Token' with the correct scopes.
-      \rIf you are running the configuration as part of a POC, both of these should have been sent to you via your sales contact.
-    `);
+    console.log(
+      '\rNote: To run the test, you will require a `Repeater ID` and an `Repeater Token` with the correct scopes.'
+    );
+    console.log(
+      '\rIf you are running the configuration as part of a POC, both of these should have been sent to you via your sales contact.'
+    );
+
+    process.stdout.write(EOL);
 
     await this.processTokens();
 
@@ -56,12 +60,12 @@ export class ReadlinePlatform implements Platform {
   private async processTokens(): Promise<void> {
     const repeaterId = await this.question('Please enter your Repeater ID');
     const authToken = await this.question(
-      'Please enter your Repeater API Token'
+      `Please enter your Repeater API Token`
     );
 
-    console.log(EOL);
+    process.stdout.write(EOL);
 
-    await this.process('Verifying provided Token and Repeater ID', async () => {
+    await this.process(`Verifying provided Token and Repeater ID`, async () => {
       await this.tokens.writeTokens({ repeaterId, authToken });
 
       return true;
@@ -80,7 +84,9 @@ export class ReadlinePlatform implements Platform {
       () => this.connectivityService.verifyAccess(TestType.HTTP)
     );
 
-    console.log(`${EOL}EXTERNAL communication diagnostics completed.`);
+    process.stdout.write(EOL);
+
+    console.log('EXTERNAL communication diagnostics completed.');
   }
 
   private async processInternalCommunication(): Promise<void> {
@@ -114,7 +120,9 @@ export class ReadlinePlatform implements Platform {
       });
     }
 
-    console.log(`${EOL}EXTERNAL communication diagnostics completed.`);
+    process.stdout.write(EOL);
+
+    console.log('EXTERNAL communication diagnostics completed.');
     console.log(
       `${urls.length - reachedCount} out of ${
         urls.length
