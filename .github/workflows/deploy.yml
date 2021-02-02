@@ -75,7 +75,7 @@ jobs:
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GPR_TOKEN }}
 
-      - run: sleep 10
+      - run: sleep 20
 
       - run: docker build . --file Dockerfile --build-arg VERSION=$VERSION -t neuralegion/repeater:$VERSION -t neuralegion/repeater:$TAG
       - run: docker login --username=${{ secrets.DOCKER_USER }} --password=${{ secrets.DOCKER_TOKEN }}
