@@ -1,18 +1,28 @@
 import { bind, Handler } from '../Bus';
 import { Request, RequestExecutor, Response } from '../RequestExecutor';
 import { ExecuteScript, ForwardResponse } from './Events';
-import { inject, injectable } from 'tsyringe';
+import { injectable, injectAll } from 'tsyringe';
 
 @injectable()
 @bind(ExecuteScript)
 export class SendRequestHandler
   implements Handler<ExecuteScript, ForwardResponse> {
   constructor(
-    @inject(RequestExecutor) private readonly requestExecutor: RequestExecutor
+    @injectAll(RequestExecutor)
+    private readonly requestExecutors: RequestExecutor[]
   ) {}
 
   public async handle(event: ExecuteScript): Promise<ForwardResponse> {
-    const response: Response = await this.requestExecutor.execute(
+    const { protocol } = event;
+    const requestExecutor = this.requestExecutors.find(
+      (x) => x.protocol === protocol
+    );
+
+    if (!requestExecutor) {
+      throw new Error(`Unsupported protocol ${event.protocol}`);
+    }
+
+    const response: Response = await requestExecutor.execute(
       new Request(event)
     );
 

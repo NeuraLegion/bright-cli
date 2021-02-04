@@ -47,6 +47,7 @@
     "socks-proxy-agent": "^5.0.0",
     "tslib": "^2.0.3",
     "tsyringe": "^4.4.0",
+    "ws": "^7.4.3",
     "yargonaut": "^1.1.4",
     "yargs": "^16.2.0"
   },
@@ -71,6 +72,7 @@
     "@types/request": "^2.48.5",
     "@types/request-promise": "^4.1.46",
     "@types/semver": "^7.3.4",
+    "@types/ws": "^7.4.0",
     "@types/yargs": "^15.0.11",
     "@typescript-eslint/eslint-plugin": "^4.9.0",
     "@typescript-eslint/parser": "^4.9.0",
@@ -129,6 +131,7 @@
     ]
   },
   "scripts": {
+    "start:debug": "node --inspect  -r ts-node/register/transpile-only -r tsconfig-paths/register ./src/index.ts ",
     "lint": "eslint -c .eslintrc src",
     "format": "prettier --check src",
     "test": "mocha -r ts-node/register -r tsconfig-paths/register src/**/*.spec.ts",
