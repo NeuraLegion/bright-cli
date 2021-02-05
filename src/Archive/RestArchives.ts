@@ -39,7 +39,7 @@ export class RestArchives implements Archives {
 
     const { discard } = spec;
 
-    const { ids }: { ids?: string[] } = await this.client.post({
+    const files: { id: string }[] = await this.client.post({
       uri: `/api/v1/files`,
       qs: { discard },
       formData: {
@@ -47,7 +47,7 @@ export class RestArchives implements Archives {
       }
     });
 
-    return ids[0];
+    return files[0]?.id;
   }
 
   public async convertAndUpload(spec: Spec): Promise<string> {
@@ -61,7 +61,7 @@ export class RestArchives implements Archives {
 
     const { type, discard, headers, variables } = spec;
 
-    const { id }: { id?: string } = await this.client.post({
+    const { id }: { id: string } = await this.client.post({
       uri: `/api/v1/specs`,
       qs: { discard },
       formData: {
