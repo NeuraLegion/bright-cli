@@ -25,10 +25,12 @@ export const RequestExecutorOptions = Symbol('RequestExecutorOptions');
 
 @injectable()
 export class HttpRequestExecutor implements RequestExecutor {
-  public protocol: Protocol = Protocol.HTTP;
-
   private readonly DEFAULT_SCRIPT_ENTRYPOINT = 'handle';
   private readonly agent?: SocksProxyAgent;
+
+  get protocol(): Protocol {
+    return Protocol.HTTP;
+  }
 
   constructor(
     @inject(VirtualScripts) private readonly virtualScripts: VirtualScripts,
@@ -50,7 +52,7 @@ export class HttpRequestExecutor implements RequestExecutor {
 
       return new Response({
         protocol: this.protocol,
-        status: response.statusCode,
+        statusCode: response.statusCode,
         headers: response.headers,
         body: response.body
       });
@@ -60,7 +62,7 @@ export class HttpRequestExecutor implements RequestExecutor {
 
         return new Response({
           protocol: this.protocol,
-          status: response.statusCode,
+          statusCode: response.statusCode,
           headers: response.headers,
           body: response.body
         });
