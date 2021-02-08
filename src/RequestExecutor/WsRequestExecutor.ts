@@ -37,7 +37,7 @@ export class WsRequestExecutor implements RequestExecutor {
     try {
       client = new WebSocket(options.url, {
         rejectUnauthorized: true,
-        headers: options.headers,
+        headers: this.filterHeaders(options.headers),
         timeout: this.options.timeout,
         agent: this.agent
       });
@@ -106,5 +106,15 @@ export class WsRequestExecutor implements RequestExecutor {
         client.close();
       }
     }
+  }
+
+  private filterHeaders(
+    headers: Record<string, string | string[]>
+  ): Record<string, string | string[]> {
+    return Object.fromEntries(
+      Object.entries(headers).filter(
+        ([key, _]: [string, string | string[]]) => key !== 'Sec-WebSocket-Key'
+      )
+    );
   }
 }
