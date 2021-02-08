@@ -2,8 +2,8 @@ import { Connectivity } from './Connectivity';
 import { logger } from '../../Utils';
 import { TestType } from '../Models';
 import { injectable } from 'tsyringe';
-import https from 'https';
-import http, { ClientRequest, RequestOptions } from 'http';
+import https, { RequestOptions } from 'https';
+import http, { ClientRequest } from 'http';
 import { URL } from 'url';
 import { once } from 'events';
 
@@ -32,6 +32,7 @@ export class HTTPConnectivity implements Connectivity {
         port,
         hostname,
         method: 'GET',
+        rejectUnauthorized: false,
         timeout: this.CONNECTION_TIMEOUT
       });
 

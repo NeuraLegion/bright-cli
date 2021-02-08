@@ -86,7 +86,7 @@ export class DefaultRequestExecutor implements RequestExecutor {
       gzip: true,
       method: options.method,
       resolveWithFullResponse: true,
-      strictSSL: false,
+      rejectUnauthorized: false,
       timeout: this.options.timeout,
       url: options.url
     }).on('request', (req: OutgoingMessage) =>

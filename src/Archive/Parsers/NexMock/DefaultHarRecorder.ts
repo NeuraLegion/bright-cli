@@ -34,7 +34,7 @@ export class DefaultHarRecorder implements HarRecorder {
       request.defaults({
         timeout,
         maxRedirects,
-        strictSSL: false,
+        rejectUnauthorized: false,
         agent: proxyUrl ? new SocksProxyAgent(proxyUrl) : undefined
       })
     );
