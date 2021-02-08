@@ -41,7 +41,13 @@ export class DefaultRequestExecutor implements RequestExecutor {
 
   public async execute(options: Request): Promise<Response> {
     try {
+      if (this.options.headers) {
+        options.setHeaders(this.options.headers);
+      }
+
       options = await this.transformScript(options);
+
+      logger.debug('Executing HTTP request with following params: %j', options);
 
       const response = await this.request(options);
 
@@ -89,9 +95,32 @@ export class DefaultRequestExecutor implements RequestExecutor {
       rejectUnauthorized: false,
       timeout: this.options.timeout,
       url: options.url
-    }).on('request', (req: OutgoingMessage) =>
-      options.setHeaders(req, this.options.headers)
+    }).on('request', (req: OutgoingMessage) => this.setHeaders(req, options));
+  }
+
+  /**
+   * Allows to attack headers. Node.js does not accept any other characters
+   * which violate [rfc7230](https://tools.ietf.org/html/rfc7230#section-3.2.6).
+   * To override default behavior bypassing {@link OutgoingMessage.setHeader} method we have to set headers via internal symbol.
+   */
+  private setHeaders(req: OutgoingMessage, options: Request): void {
+    const symbols: symbol[] = Object.getOwnPropertySymbols(req);
+    const kOutHeaders: symbol = symbols.find(
+      (item) => item.toString() === 'Symbol(kOutHeaders)'
     );
+
+    if (!req.headersSent && kOutHeaders && options.headers) {
+      const headers = (req[kOutHeaders] =
+        req[kOutHeaders] ?? Object.create(null));
+
+      Object.entries(options.headers).forEach(
+        ([key, value]: [string, string | string[]]) => {
+          if (key) {
+            headers[key.toLowerCase()] = [key, value ?? ''];
+          }
+        }
+      );
+    }
   }
 
   private async transformScript(script: Request): Promise<Request> {
