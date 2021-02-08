@@ -1,7 +1,7 @@
 import { Endpoint } from './Endpoint';
-import { Credentials, ScanId, ScannedUrl } from '../Models';
-import { Helpers, logger } from '../../Utils';
-import { Tokens } from '../Tokens';
+import { Credentials, ScanId, ScannedUrl } from '../../../Models';
+import { Helpers, logger } from '../../../../Utils';
+import { Tokens } from '../../../Tokens';
 import Koa from 'koa';
 import { inject, injectable } from 'tsyringe';
 import { ChildProcess, spawn } from 'child_process';
