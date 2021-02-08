@@ -1,6 +1,5 @@
 import { Helpers } from '../Utils';
 import { URL } from 'url';
-import { OutgoingMessage } from 'http';
 
 export interface RequestOptions {
   method: string;
@@ -12,8 +11,13 @@ export interface RequestOptions {
 export class Request {
   public readonly method: string;
   public readonly url: string;
-  public readonly headers: Record<string, string | string[]>;
   public readonly body?: string;
+
+  private _headers: Record<string, string | string[]>;
+
+  get headers(): Record<string, string | string[]> {
+    return this._headers;
+  }
 
   constructor({ method, url, body, headers = {} }: RequestOptions) {
     if (!method) {
@@ -40,7 +44,7 @@ export class Request {
 
     this.body = body;
 
-    this.headers = headers;
+    this._headers = headers;
   }
 
   /**
@@ -48,36 +52,19 @@ export class Request {
    * which violate [rfc7230](https://tools.ietf.org/html/rfc7230#section-3.2.6).
    * To override default behavior bypassing {@link OutgoingMessage.setHeader} method we have to set headers via internal symbol.
    */
-  public setHeaders(
-    req: OutgoingMessage,
-    extraHeaders?: Record<string, string | string[]>
-  ): void {
-    const symbols: symbol[] = Object.getOwnPropertySymbols(req);
-    const kOutHeaders: symbol = symbols.find(
-      (item) => item.toString() === 'Symbol(kOutHeaders)'
-    );
-
-    const rawHeaders: Record<string, string | string[]> = {
-      ...this.headers,
-      ...(extraHeaders ?? {})
+  public setHeaders(headers: Record<string, string | string[]>): void {
+    this._headers = {
+      ...this._headers,
+      ...(headers ?? {})
     };
-
-    if (!req.headersSent && kOutHeaders && rawHeaders) {
-      const headers = (req[kOutHeaders] =
-        req[kOutHeaders] ?? Object.create(null));
-
-      this.mergeHeaders(rawHeaders, headers);
-    }
   }
 
-  private mergeHeaders(
-    src: Record<string, string | string[]>,
-    dest: Record<string, [string, string | string[]]>
-  ) {
-    Object.entries(src).forEach(([key, value]: [string, string | string[]]) => {
-      if (key) {
-        dest[key.toLowerCase()] = [key, value ?? ''];
-      }
-    });
+  public toJSON(): RequestOptions {
+    return {
+      url: this.url,
+      method: this.method,
+      headers: this._headers,
+      body: this.body
+    };
   }
 }
