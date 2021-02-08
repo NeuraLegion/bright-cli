@@ -1,9 +1,9 @@
-import { ExecutionResult, Handler, HandlerType } from '../Handler';
-import { Event, EventType } from '../Event';
-import { Bus } from '../Bus';
+import { ExecutionResult } from '../Handler';
+import { Event } from '../Event';
 import { Proxy } from '../Proxy';
 import { logger } from '../../Utils';
 import { RabbitBackoff } from './RabbitBackoff';
+import { BaseBus } from './BaseBus';
 import {
   Channel,
   ConfirmChannel,
@@ -12,7 +12,6 @@ import {
   ConsumeMessage
 } from 'amqplib';
 import { DependencyContainer, inject, injectable } from 'tsyringe';
-import { ok } from 'assert';
 import { format, parse, UrlWithParsedQuery } from 'url';
 
 export interface RabbitMQBusOptions {
@@ -31,13 +30,9 @@ export interface RabbitMQBusOptions {
 export const RabbitMQBusOptions: unique symbol = Symbol('RabbitMQBusOptions');
 
 @injectable()
-export class RabbitMQBus implements Bus {
+export class RabbitMQBus extends BaseBus {
   private client: Connection;
   private channel: ConfirmChannel;
-  private readonly handlers = new Map<
-    string,
-    Handler<Event, ExecutionResult>
-  >();
   private readonly DEFAULT_RECONNECT_TIMES = 20;
   private readonly DEFAULT_RECONNECT_TIMEOUT = 10;
   private readonly DEFAULT_HEARTBEAT_INTERVAL = 30;
@@ -45,8 +40,10 @@ export class RabbitMQBus implements Bus {
 
   constructor(
     @inject(RabbitMQBusOptions) private readonly options: RabbitMQBusOptions,
-    @inject('tsyringe') private readonly container: DependencyContainer
-  ) {}
+    @inject('tsyringe') container: DependencyContainer
+  ) {
+    super(container);
+  }
 
   public async destroy(): Promise<void> {
     try {
@@ -83,62 +80,29 @@ export class RabbitMQBus implements Bus {
     await backoff.execute(() => this.connect());
   }
 
-  public async subscribe(handler: HandlerType): Promise<void> {
-    ok(handler, 'Event handler is not defined.');
-
-    const instance:
-      | Handler<Event, ExecutionResult>
-      | undefined = await this.container.resolve(handler);
-    ok(instance, `Cannot create instance of "${handler.name}" handler.`);
-
-    const eventType: EventType | undefined = Reflect.getMetadata(
-      Event,
-      handler
-    );
-    ok(
-      eventType,
-      `Cannot determine event that "${handler.name}" handler can process.`
-    );
-
-    this.handlers.set(eventType.name, instance);
-
-    await this.subscribeTo(eventType.name);
-  }
-
-  public async publish<T extends Event>(...events: T[]): Promise<void> {
-    if (!Array.isArray(events) || !events.length) {
-      return;
-    }
-
+  public async dispatch<T extends Event>(
+    eventName: string,
+    event: T
+  ): Promise<ExecutionResult> {
     if (!this.channel) {
       return;
     }
 
-    await Promise.all(
-      events.map((event: T) => {
-        const eventName: string = this.getEventName(event);
-
-        logger.debug(
-          'Emits %s event with following payload: %j',
-          eventName,
-          event
-        );
-
-        return this.channel.publish(
-          this.options.exchange,
-          eventName,
-          Buffer.from(JSON.stringify(event)),
-          {
-            contentType: 'application/json',
-            mandatory: true,
-            persistent: true
-          }
-        );
-      })
+    await this.channel.publish(
+      this.options.exchange,
+      eventName,
+      Buffer.from(JSON.stringify(event)),
+      {
+        contentType: 'application/json',
+        mandatory: true,
+        persistent: true
+      }
     );
+
+    return undefined;
   }
 
-  private async subscribeTo(eventName: string): Promise<void> {
+  protected async subscribeTo(eventName: string): Promise<void> {
     logger.debug(
       'Binds the queue %s to %s by %s routing key.',
       this.options.clientQueue,
@@ -226,12 +190,6 @@ export class RabbitMQBus implements Bus {
     return format(url);
   }
 
-  private getEventName(event: Event): string {
-    const { constructor } = Object.getPrototypeOf(event);
-
-    return constructor.name as string;
-  }
-
   private async consumeReceived(message: ConsumeMessage): Promise<void> {
     try {
       if (message) {
@@ -250,13 +208,7 @@ export class RabbitMQBus implements Bus {
           event
         );
 
-        const handler:
-          | Handler<Event, ExecutionResult>
-          | undefined = this.handlers.get(eventType);
-
-        ok(handler, `Cannot find a handler for ${eventType} event.`);
-
-        const response: ExecutionResult = await handler.handle(event);
+        const response: ExecutionResult = await this.execute(eventType, event);
 
         // eslint-disable-next-line max-depth
         if (response) {
