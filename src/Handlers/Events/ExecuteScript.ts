@@ -1,5 +1,5 @@
 import { Event } from '../../Bus/Event';
-import { Protocol } from './Protocol';
+import { Protocol } from '../../RequestExecutor';
 
 export class ExecuteScript implements Event {
   constructor(

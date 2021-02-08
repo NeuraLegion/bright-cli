@@ -1,7 +1,7 @@
 import { RequestExecutor } from './RequestExecutor';
 import { Response } from './Response';
 import { Request } from './Request';
-import { Protocol } from '../Handlers';
+import { Protocol } from './Protocol';
 import { RequestExecutorOptions } from './HttpRequestExecutor';
 import { inject, injectable } from 'tsyringe';
 import WebSocket from 'ws';
@@ -10,15 +10,6 @@ import { parse } from 'url';
 import { once } from 'events';
 import { promisify } from 'util';
 import { IncomingMessage } from 'http';
-
-interface Timeout {
-  timeoutCode: string;
-}
-
-interface Closed {
-  closeCode: number;
-  reason: string;
-}
 
 @injectable()
 export class WsRequestExecutor implements RequestExecutor {
@@ -40,8 +31,11 @@ export class WsRequestExecutor implements RequestExecutor {
   }
 
   public async execute(options: Request): Promise<Response> {
+    let timeout: NodeJS.Timeout;
+    let client: WebSocket;
+
     try {
-      const client = new WebSocket(options.url, {
+      client = new WebSocket(options.url, {
         rejectUnauthorized: true,
         headers: options.headers,
         timeout: this.options.timeout,
@@ -53,50 +47,47 @@ export class WsRequestExecutor implements RequestExecutor {
       await opened;
       const [upgradeResponse]: [IncomingMessage] = await upgrate;
 
-      await new Promise<void>((resolve, reject) =>
-        client.send(options.body, (err) => {
-          if (err) {
-            return reject(err);
-          }
-          resolve();
-        })
+      await promisify(client.send.bind(client))(options.body);
+
+      timeout = setTimeout(
+        () =>
+          client.emit(
+            'error',
+            Object.assign(new Error('Waiting frame has timed out'), {
+              code: 'ETIMEDOUT'
+            })
+          ),
+        this.options.timeout
       );
 
       const result = await Promise.race([
         once(client, 'message'),
-        once(client, 'close').then((x) => ({ closeCode: x[0], reason: x[1] })),
-        promisify(setTimeout)(this.options.timeout, { timeoutCode: 'ETIMEOUT' })
+        once(client, 'close')
       ]);
 
-      const timeout = result as Timeout;
-      const closed = result as Closed;
+      let response:
+        | { body: string; code?: number; message: string }
+        | undefined;
 
-      if (timeout.timeoutCode) {
-        return new Response({
-          protocol: this.protocol,
-          headers: upgradeResponse.headers,
-          errorCode: timeout.timeoutCode,
-          message: 'Timeout exceed'
-        });
-      }
+      if (result.length) {
+        const [data, reason]: [string | number, string | undefined] = result;
+        const body = typeof data === 'string' ? data : undefined;
+        const message = typeof data === 'number' ? reason : undefined;
+        const code = typeof data === 'number' ? data : undefined;
 
-      if (closed.closeCode) {
-        return new Response({
-          protocol: this.protocol,
-          headers: upgradeResponse.headers,
-          statusCode: closed.closeCode,
-          message: closed.reason
-        });
-      }
-
-      if (client.readyState === client.OPEN) {
-        client.close();
+        response = {
+          body,
+          code,
+          message
+        };
       }
 
       return new Response({
         protocol: this.protocol,
+        message: response.message,
+        statusCode: response.code,
         headers: upgradeResponse.headers,
-        body: result[0].toString()
+        body: response.body
       });
     } catch (err) {
       const message = err?.info ?? err.message;
@@ -107,6 +98,13 @@ export class WsRequestExecutor implements RequestExecutor {
         errorCode,
         protocol: this.protocol
       });
+    } finally {
+      if (timeout) {
+        clearTimeout(timeout);
+      }
+      if (client?.readyState === client.OPEN) {
+        client.close();
+      }
     }
   }
 }

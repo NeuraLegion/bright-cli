@@ -26,10 +26,15 @@ export class SendRequestHandler
       new Request(event)
     );
 
+    const { statusCode, message, errorCode, body, headers } = response;
+
     return new ForwardResponse(
-      response.status,
-      response.headers,
-      response.body
+      protocol,
+      body,
+      headers,
+      statusCode,
+      errorCode,
+      message
     );
   }
 }

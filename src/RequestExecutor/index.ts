@@ -3,3 +3,4 @@ export * from './HttpRequestExecutor';
 export * from './WsRequestExecutor';
 export * from './Response';
 export * from './Request';
+export * from './Protocol';

@@ -1,6 +1,6 @@
 import { Request } from './Request';
 import { Response } from './Response';
-import { Protocol } from '../Handlers';
+import { Protocol } from './Protocol';
 
 export interface RequestExecutor {
   execute(script: Request): Promise<Response>;

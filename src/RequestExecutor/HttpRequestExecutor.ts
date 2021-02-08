@@ -3,7 +3,7 @@ import { Response } from './Response';
 import { Request, RequestOptions } from './Request';
 import { logger } from '../Utils';
 import { VirtualScripts } from '../Scripts';
-import { Protocol } from '../Handlers';
+import { Protocol } from './Protocol';
 import request from 'request-promise';
 import { Response as IncomingResponse } from 'request';
 import { SocksProxyAgent } from 'socks-proxy-agent';
