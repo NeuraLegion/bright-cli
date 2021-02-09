@@ -1,0 +1,14 @@
+{
+  "extends": "../tsconfig.json",
+  "compilerOptions": {
+    "outDir": "./dist/e2e",
+    "types": [
+      "mocha",
+      "node"
+    ]
+  },
+  "include": [
+    "**/*",
+    "../src/**/*"
+  ]
+}
