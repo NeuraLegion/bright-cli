@@ -37,7 +37,7 @@ export class WsRequestExecutor implements RequestExecutor {
     try {
       client = new WebSocket(options.url, {
         rejectUnauthorized: true,
-        headers: this.filterHeaders(options.headers),
+        headers: this.normalizeHeaders(options.headers),
         timeout: this.options.timeout,
         agent: this.agent
       });
@@ -73,7 +73,8 @@ export class WsRequestExecutor implements RequestExecutor {
         const [data, reason]: [string | number, string | undefined] = result;
         const body = typeof data === 'string' ? data : undefined;
         const message = typeof data === 'number' ? reason : undefined;
-        const code = typeof data === 'number' ? data : undefined;
+        const code =
+          typeof data === 'number' ? data : upgradeResponse.statusCode;
 
         response = {
           body,
@@ -108,12 +109,15 @@ export class WsRequestExecutor implements RequestExecutor {
     }
   }
 
-  private filterHeaders(
+  private normalizeHeaders(
     headers: Record<string, string | string[]>
   ): Record<string, string | string[]> {
     return Object.fromEntries(
       Object.entries(headers).filter(
-        ([key, _]: [string, string | string[]]) => key !== 'Sec-WebSocket-Key'
+        ([key, _]: [string, string | string[]]) =>
+          !['sec-websocket-version', 'sec-websocket-key'].includes(
+            key.trim().toLowerCase()
+          )
       )
     );
   }

@@ -19,7 +19,8 @@ export class ForwardResponse implements Event {
     errorCode?: string,
     message?: string
   ) {
-    (this.protocol = protocol), (this.body = body);
+    this.protocol = protocol;
+    this.body = body;
     this.headers = headers;
     this.status_code = statusCode;
     this.error_code = errorCode;
