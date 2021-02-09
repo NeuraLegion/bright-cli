@@ -3,6 +3,7 @@ import { Response } from './Response';
 import { Request, RequestOptions } from './Request';
 import { logger } from '../Utils';
 import { VirtualScripts } from '../Scripts';
+import { Protocol } from './Protocol';
 import request from 'request-promise';
 import { Response as IncomingResponse } from 'request';
 import { SocksProxyAgent } from 'socks-proxy-agent';
@@ -23,9 +24,13 @@ export interface RequestExecutorOptions {
 export const RequestExecutorOptions = Symbol('RequestExecutorOptions');
 
 @injectable()
-export class DefaultRequestExecutor implements RequestExecutor {
+export class HttpRequestExecutor implements RequestExecutor {
   private readonly DEFAULT_SCRIPT_ENTRYPOINT = 'handle';
   private readonly agent?: SocksProxyAgent;
+
+  get protocol(): Protocol {
+    return Protocol.HTTP;
+  }
 
   constructor(
     @inject(VirtualScripts) private readonly virtualScripts: VirtualScripts,
@@ -52,7 +57,8 @@ export class DefaultRequestExecutor implements RequestExecutor {
       const response = await this.request(options);
 
       return new Response({
-        status: response.statusCode,
+        protocol: this.protocol,
+        statusCode: response.statusCode,
         headers: response.headers,
         body: response.body
       });
@@ -61,7 +67,8 @@ export class DefaultRequestExecutor implements RequestExecutor {
         const { response } = err;
 
         return new Response({
-          status: response.statusCode,
+          protocol: this.protocol,
+          statusCode: response.statusCode,
           headers: response.headers,
           body: response.body
         });
@@ -78,6 +85,7 @@ export class DefaultRequestExecutor implements RequestExecutor {
       logger.error('Cause: %s', message);
 
       return new Response({
+        protocol: this.protocol,
         message,
         errorCode
       });

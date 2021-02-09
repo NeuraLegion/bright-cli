@@ -1,6 +1,7 @@
 import 'reflect-metadata';
 import { Bus, RabbitMQBus } from '../Bus';
-import { DefaultRequestExecutor, RequestExecutor } from '../RequestExecutor';
+import { HttpRequestExecutor, RequestExecutor } from '../RequestExecutor';
+import { WsRequestExecutor } from '../RequestExecutor';
 import {
   DefaultVirtualScripts,
   FSScriptLoader,
@@ -48,7 +49,14 @@ container
   .register(
     RequestExecutor,
     {
-      useClass: DefaultRequestExecutor
+      useClass: HttpRequestExecutor
+    },
+    { lifecycle: Lifecycle.Singleton }
+  )
+  .register(
+    RequestExecutor,
+    {
+      useClass: WsRequestExecutor
     },
     { lifecycle: Lifecycle.Singleton }
   )
