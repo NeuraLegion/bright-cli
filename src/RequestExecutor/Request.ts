@@ -9,9 +9,14 @@ export interface RequestOptions {
 }
 
 export class Request {
-  public readonly method?: string;
   public readonly url: string;
   public readonly body?: string;
+
+  private _method?: string;
+
+  get method(): string {
+    return this._method;
+  }
 
   private _headers: Record<string, string | string[]>;
 
@@ -20,11 +25,7 @@ export class Request {
   }
 
   constructor({ method, url, body, headers = {} }: RequestOptions) {
-    if (!method) {
-      throw new Error('Method must be declared explicitly.');
-    }
-
-    this.method = method?.toUpperCase();
+    this._method = method?.toUpperCase() ?? 'GET';
 
     if (!url) {
       throw new Error('Url must be declared explicitly.');
@@ -62,7 +63,7 @@ export class Request {
   public toJSON(): RequestOptions {
     return {
       url: this.url,
-      method: this.method,
+      method: this._method,
       headers: this._headers,
       body: this.body
     };

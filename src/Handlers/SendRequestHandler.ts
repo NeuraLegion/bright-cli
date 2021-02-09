@@ -14,12 +14,13 @@ export class SendRequestHandler
 
   public async handle(event: ExecuteScript): Promise<ForwardResponse> {
     const { protocol } = event;
+
     const requestExecutor = this.requestExecutors.find(
       (x) => x.protocol === protocol
     );
 
     if (!requestExecutor) {
-      throw new Error(`Unsupported protocol ${event.protocol}`);
+      throw new Error(`Unsupported protocol "${protocol}"`);
     }
 
     const response: Response = await requestExecutor.execute(
