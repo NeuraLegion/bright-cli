@@ -45,7 +45,9 @@ export class WsRequestExecutor implements RequestExecutor {
       const opened = once(client, 'open');
       const upgrate = once(client, 'upgrade');
       await opened;
-      const [upgradeResponse]: [IncomingMessage] = await upgrate;
+      const [upgradeResponse]: [IncomingMessage] = (await upgrate) as [
+        IncomingMessage
+      ];
 
       await promisify(client.send.bind(client))(options.body);
 
@@ -60,10 +62,10 @@ export class WsRequestExecutor implements RequestExecutor {
         this.options.timeout
       );
 
-      const result = await Promise.race([
+      const result = (await Promise.race([
         once(client, 'message'),
         once(client, 'close')
-      ]);
+      ])) as [string | number, string | undefined];
 
       let response:
         | { body: string; code?: number; message: string }

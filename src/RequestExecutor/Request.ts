@@ -2,14 +2,14 @@ import { Helpers } from '../Utils';
 import { URL } from 'url';
 
 export interface RequestOptions {
-  method: string;
+  method?: string;
   url: string;
   headers: Record<string, string | string[]>;
   body?: string;
 }
 
 export class Request {
-  public readonly method: string;
+  public readonly method?: string;
   public readonly url: string;
   public readonly body?: string;
 
@@ -24,7 +24,7 @@ export class Request {
       throw new Error('Method must be declared explicitly.');
     }
 
-    this.method = method.toUpperCase();
+    this.method = method?.toUpperCase();
 
     if (!url) {
       throw new Error('Url must be declared explicitly.');
