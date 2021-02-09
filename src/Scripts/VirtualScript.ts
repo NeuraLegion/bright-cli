@@ -84,7 +84,9 @@ export class VirtualScript {
   }
 
   private wrapScriptCode(code: string): string {
-    const decoratedModule = Module.wrap(code);
+    const decoratedModule = Module.wrap(
+      code.replace(/[\u200B-\u200D\uFEFF]/g, '')
+    );
 
     return `${decoratedModule.slice(
       0,

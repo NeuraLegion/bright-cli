@@ -1,6 +1,6 @@
 import { Endpoint } from './Endpoint';
-import { logger } from '../../Utils';
-import { Tokens } from '../Tokens';
+import { logger } from '../../../../Utils';
+import { Tokens } from '../../../Tokens';
 import Koa from 'koa';
 import { inject, injectable } from 'tsyringe';
 

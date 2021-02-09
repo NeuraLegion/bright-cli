@@ -1,7 +1,7 @@
 import { Endpoint } from './Endpoint';
-import { AUTH_TOKEN_VALIDATION_REGEXP, Credentials } from '../Models';
-import { logger } from '../../Utils';
-import { Tokens } from '../Tokens';
+import { AUTH_TOKEN_VALIDATION_REGEXP, Credentials } from '../../../Models';
+import { logger } from '../../../../Utils';
+import { Tokens } from '../../../Tokens';
 import Koa from 'koa';
 import { inject, injectable } from 'tsyringe';
 

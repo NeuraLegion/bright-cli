@@ -17,10 +17,10 @@ import {
   Connectivity,
   FSTokens,
   HTTPConnectivity,
-  KoaPlatform,
-  Platform,
   TCPConnectivity,
-  Tokens
+  Tokens,
+  DefaultConnectivityAnalyzer,
+  ConnectivityAnalyzer
 } from '../Wizard';
 import {
   BreakpointFactory,
@@ -110,13 +110,6 @@ container
     { lifecycle: Lifecycle.Singleton }
   )
   .register(
-    Platform,
-    {
-      useClass: KoaPlatform
-    },
-    { lifecycle: Lifecycle.Singleton }
-  )
-  .register(
     BreakpointFactory,
     {
       useClass: DefaultBreakpointFactory
@@ -155,6 +148,13 @@ container
     ScriptLoader,
     {
       useClass: FSScriptLoader
+    },
+    { lifecycle: Lifecycle.Singleton }
+  )
+  .register(
+    ConnectivityAnalyzer,
+    {
+      useClass: DefaultConnectivityAnalyzer
     },
     { lifecycle: Lifecycle.Singleton }
   );
