@@ -1,7 +1,14 @@
 import { logger } from '../Utils';
-import { ConnectivityUrls, Platform, TestType } from '../Wizard';
+import {
+  ReadlinePlatform,
+  ConnectivityUrls,
+  KoaPlatform,
+  Platform,
+  TestType
+} from '../Wizard';
 import { container } from '../Config';
 import { Arguments, Argv, CommandModule } from 'yargs';
+import { Lifecycle } from 'tsyringe';
 import { URL } from 'url';
 
 export class Configure implements CommandModule {
@@ -12,7 +19,7 @@ export class Configure implements CommandModule {
   private static readonly DEFAULT_AUTH_TEST_ENDPOINT: string =
     'https://nexploit.app/api/v1/repeaters/user';
 
-  public readonly command = 'configure';
+  public readonly command = 'configure [options]';
   public readonly describe = 'Start a configuration wizard';
 
   public builder(argv: Argv): Argv {
@@ -32,6 +39,11 @@ export class Configure implements CommandModule {
         hidden: true,
         describe: `NexPloit event message authentication endpoint`
       })
+      .option('nogui', {
+        default: false,
+        boolean: true,
+        describe: `Start a configuration wizard without GUI`
+      })
       .middleware((args: Arguments) => {
         container.register(ConnectivityUrls, {
           useValue: new Map(
@@ -44,19 +56,27 @@ export class Configure implements CommandModule {
             })
           )
         });
+
+        container.register<ReadlinePlatform | KoaPlatform>(
+          Platform,
+          { useClass: args.nogui ? ReadlinePlatform : KoaPlatform },
+          { lifecycle: Lifecycle.Singleton }
+        );
       });
   }
 
   public async handler(): Promise<void> {
     try {
-      const app = await container.resolve<Platform>(Platform).start();
+      const app = await container.resolve<Platform>(Platform);
 
       const stop: () => void = () => {
-        app.close();
+        app.stop();
         process.exit(0);
       };
 
       process.on('SIGTERM', stop).on('SIGINT', stop).on('SIGHUP', stop);
+
+      await app.start();
     } catch (e) {
       logger.error(`Error during "configure": ${e.error || e.message}`);
       process.exit(1);

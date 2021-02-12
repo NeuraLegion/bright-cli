@@ -1,6 +1,7 @@
 import 'reflect-metadata';
 import { Bus, RabbitMQBus } from '../Bus';
-import { DefaultRequestExecutor, RequestExecutor } from '../RequestExecutor';
+import { HttpRequestExecutor, RequestExecutor } from '../RequestExecutor';
+import { WsRequestExecutor } from '../RequestExecutor';
 import {
   DefaultVirtualScripts,
   FSScriptLoader,
@@ -16,10 +17,10 @@ import {
   Connectivity,
   FSTokens,
   HTTPConnectivity,
-  KoaPlatform,
-  Platform,
   TCPConnectivity,
-  Tokens
+  Tokens,
+  DefaultConnectivityAnalyzer,
+  ConnectivityAnalyzer
 } from '../Wizard';
 import {
   BreakpointFactory,
@@ -48,7 +49,14 @@ container
   .register(
     RequestExecutor,
     {
-      useClass: DefaultRequestExecutor
+      useClass: HttpRequestExecutor
+    },
+    { lifecycle: Lifecycle.Singleton }
+  )
+  .register(
+    RequestExecutor,
+    {
+      useClass: WsRequestExecutor
     },
     { lifecycle: Lifecycle.Singleton }
   )
@@ -102,13 +110,6 @@ container
     { lifecycle: Lifecycle.Singleton }
   )
   .register(
-    Platform,
-    {
-      useClass: KoaPlatform
-    },
-    { lifecycle: Lifecycle.Singleton }
-  )
-  .register(
     BreakpointFactory,
     {
       useClass: DefaultBreakpointFactory
@@ -147,6 +148,13 @@ container
     ScriptLoader,
     {
       useClass: FSScriptLoader
+    },
+    { lifecycle: Lifecycle.Singleton }
+  )
+  .register(
+    ConnectivityAnalyzer,
+    {
+      useClass: DefaultConnectivityAnalyzer
     },
     { lifecycle: Lifecycle.Singleton }
   );

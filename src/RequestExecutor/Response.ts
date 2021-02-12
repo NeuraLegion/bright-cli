@@ -1,24 +1,30 @@
+import { Protocol } from './Protocol';
+
 export class Response {
-  public readonly status?: number;
+  public readonly protocol: Protocol;
+  public readonly statusCode?: number;
   public readonly headers?: Record<string, string | string[]>;
   public readonly body?: string;
   public readonly message?: string;
   public readonly errorCode?: string;
 
   constructor({
-    status,
+    protocol,
+    statusCode,
     headers,
     body,
     message,
     errorCode
   }: {
-    status?: number;
+    protocol: Protocol;
+    statusCode?: number;
     message?: string;
     errorCode?: string;
     headers?: Record<string, string | string[]>;
     body?: string;
   }) {
-    this.status = status;
+    this.protocol = protocol;
+    this.statusCode = statusCode;
     this.headers = headers;
     this.body = body;
     this.errorCode = errorCode;

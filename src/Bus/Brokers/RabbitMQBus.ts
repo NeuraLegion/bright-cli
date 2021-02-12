@@ -260,6 +260,11 @@ export class RabbitMQBus implements Bus {
 
         // eslint-disable-next-line max-depth
         if (response) {
+          logger.debug(
+            'Sending data back with following payload: %j',
+            response
+          );
+
           this.channel?.sendToQueue(
             replyTo,
             Buffer.from(JSON.stringify(response)),
@@ -272,10 +277,12 @@ export class RabbitMQBus implements Bus {
       }
     } catch (err) {
       logger.debug('Error processing message: %j. Details: %s', message, err);
-      logger.error(
-        'Cannot process message with correlation ID: %s.',
-        message.properties.correlationId
-      );
+      if (message.properties.correlationId) {
+        logger.error(
+          'Cannot process message with correlation ID: %s.',
+          message.properties.correlationId
+        );
+      }
       logger.error('Error: %s', err.message);
     }
   }

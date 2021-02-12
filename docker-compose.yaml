@@ -1,0 +1,13 @@
+version: "3.3"
+
+services:
+  rabbitmq:
+    image: "rabbitmq:3.8.3-management-alpine"
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    healthcheck:
+      test: [ "CMD", "nc", "-z", "localhost", "5672" ]
+      timeout: 10s
+      interval: 30s
+      retries: 3
