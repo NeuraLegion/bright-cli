@@ -56,7 +56,7 @@ export class ReadlinePlatform implements Platform {
 
     console.log(this.delimiter);
 
-    console.log('Communication diagnostics done.');
+    console.log('Communication diagnostics done, close the terminal to exit.');
   }
 
   private async requestTokens(): Promise<void> {
