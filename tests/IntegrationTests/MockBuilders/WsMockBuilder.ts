@@ -11,13 +11,15 @@ export class WsMockBuilder {
     });
   }
 
-  public echoOnMessage(): WsMockBuilder {
+  public echoOnMessage(delay: number = 1): WsMockBuilder {
     this.onMessageHandlers.push((socket, msg) => {
-      socket.send(msg);
+      setTimeout(()=>socket.send(msg), delay)
     });
 
     return this;
   }
+
+
 
   public closeOnMessage(code?: number, reason?: string): WsMockBuilder {
     this.onMessageHandlers.push((socket, _) => {
