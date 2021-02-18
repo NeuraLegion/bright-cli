@@ -1,7 +1,10 @@
 import { container } from '../Config';
 import { Bus, RabbitMQBusOptions } from '../Bus';
 import { IntegrationConnected } from '../Handlers';
-import { logger } from '../Utils';
+import { ConnectivityStatus, JiraApiOptions, JiraClient } from '../Integrations';
+import { Helpers, logger } from '../Utils';
+import { StartupManagerFactory } from '../StartupScripts';
+import { RegisterIssueHandler } from '../Handlers/RegisterIssueHandler';
 import { Arguments, Argv, CommandModule } from 'yargs';
 import Timer = NodeJS.Timer;
 
@@ -19,17 +22,17 @@ export class Integrate implements CommandModule {
         demandOption: true,
         describe: 'NexPloit Event Bus'
       })
-      .option('type', {
-        choices: ['jira'],
-        requiresArg: true,
-        default: 'jira',
-        describe: 'Integration service type'
-      })
       .option('token', {
         alias: 't',
         describe: 'NexPloit API-key',
         requiresArg: true,
         demandOption: true
+      })
+      .option('type', {
+        choices: ['jira'],
+        requiresArg: true,
+        default: 'jira',
+        describe: 'Integration service type'
       })
       .option('access-key', {
         alias: ['accessKey'],
@@ -61,6 +64,13 @@ export class Integrate implements CommandModule {
       })
       .middleware((args: Arguments) => {
         container
+          .register(JiraApiOptions, {
+            useValue: {
+              baseUrl: args.baseUrl,
+              user: args.user,
+              apiKey: args.password,
+            }
+          })
           .register(RabbitMQBusOptions, {
             useValue: {
               exchange: 'EventBus',
@@ -85,12 +95,40 @@ export class Integrate implements CommandModule {
 
   public async handler(args: Arguments): Promise<void> {
     const bus: Bus = container.resolve(Bus);
+    const startupManagerFactory: StartupManagerFactory = container.resolve(
+      StartupManagerFactory
+    );
+    const jiraClient: JiraClient = container.resolve(JiraClient);
 
     const dispose: () => Promise<void> = async (): Promise<void> => {
       clearInterval(timer);
-      await notify('disconnected');
+      await notify(ConnectivityStatus.DISCONNECTED);
       await bus.destroy();
     };
+
+    if (args.daemon) {
+      const { command, args: execArgs } = Helpers.getExecArgs({
+        exclude: ['--daemon', '-d'],
+        include: ['--run']
+      });
+
+      const startupManager = startupManagerFactory.create({ dispose });
+      await startupManager.install({
+        command,
+        args: execArgs,
+        name: Integrate.SERVICE_NAME,
+        displayName: 'NexPloit Integration'
+      });
+
+      logger.log(
+        'A Integration daemon process was initiated successfully (SERVICE: %s)',
+        Integrate.SERVICE_NAME
+      );
+
+      process.exit(0);
+
+      return;
+    }
 
     const onError = (e: Error) => {
       clearInterval(timer);
@@ -105,19 +143,20 @@ export class Integrate implements CommandModule {
 
     process.on('SIGTERM', stop).on('SIGINT', stop).on('SIGHUP', stop);
 
-    const notify = (connectivity: 'connected' | 'disconnected') =>
-      bus?.publish(new IntegrationConnected(args.accessKey as string, connectivity));
+    const notify = (connectivity: ConnectivityStatus) => bus?.publish(new IntegrationConnected(args.accessKey as string, connectivity));
+
+    const updateConnectivity = async (): Promise<void> => notify(await jiraClient.getConnectivity());
 
     try {
       await bus.init();
 
-      // await bus.subscribe(RegisterScriptsHandler);
+      await bus.subscribe(RegisterIssueHandler);
 
-      timer = setInterval(() => notify('connected'), 10000);
+      timer = setInterval(() => updateConnectivity(), 10000);
 
-      await notify('connected');
+      await updateConnectivity();
     } catch (e) {
-      await notify('disconnected');
+      await notify(ConnectivityStatus.DISCONNECTED);
       onError(e);
     }
   }

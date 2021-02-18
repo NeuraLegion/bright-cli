@@ -40,6 +40,7 @@ import {
   ParserFactory,
   RestArchives
 } from '../Archive';
+import { AxiosJiraClient, JiraClient } from '../Integrations';
 import { container, Lifecycle } from 'tsyringe';
 
 container
@@ -155,6 +156,13 @@ container
     ConnectivityAnalyzer,
     {
       useClass: DefaultConnectivityAnalyzer
+    },
+    { lifecycle: Lifecycle.Singleton }
+  )
+  .register(
+    JiraClient,
+    {
+      useClass: AxiosJiraClient
     },
     { lifecycle: Lifecycle.Singleton }
   );
