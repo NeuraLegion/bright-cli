@@ -45,7 +45,26 @@ describe('Helpers', () => {
   });
 
   describe('wildcardToRegExp', () => {
-    // TODO
+    [
+   //   { wildcard: '*.example.com', input: 'example.com', expected: true },
+      { wildcard: '*.example.com', input: 'sub.example.com', expected: true },
+      { wildcard: '*.example.com',input: 'sub.sub.example.com', expected: true },
+      { wildcard: '*.example.com',input: 'examp1e.com', expected: false },
+      { wildcard: '*.example.com',input: 'example.co', expected: false },
+      { wildcard: '*',input: 'sub.example.co', expected: true },
+      { wildcard: '*',input: 'sub.sub.example.co', expected: true },
+      { wildcard: '*',input: 'example.com', expected: true },
+
+    ].forEach(({wildcard,  input, expected }) => {
+      it(`regexp '${wildcard}' tests '${input}' ${expected ? 'positive' : 'negative'}`, () => {
+        // arrange
+        const regex = Helpers.wildcardToRegExp(wildcard);
+        // act
+        const test = regex.test(input);
+        // assert
+        test.should.be.equal(expected);
+      });
+    });
   });
 
   describe('selectEnumValue', () => {
