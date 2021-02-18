@@ -79,7 +79,7 @@ jobs:
 
       - run: docker build . --file Dockerfile --build-arg VERSION=$VERSION -t neuralegion/repeater:$VERSION -t neuralegion/repeater:$TAG
       - run: docker login --username=${{ secrets.DOCKER_USER }} --password=${{ secrets.DOCKER_TOKEN }}
-      - run: docker push neuralegion/repeater
+      - run: docker push neuralegion/repeater --all-tags
 
   publish:
     runs-on: windows-latest
