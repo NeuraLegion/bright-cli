@@ -1,5 +1,6 @@
 import { JiraApiOptions, JiraClient, JiraIssue, JiraProject } from './JiraClient';
 import { ConnectivityStatus } from './ConnectivityStatus';
+import { logger } from '../Utils';
 import axios from 'axios';
 import { inject, injectable } from 'tsyringe';
 
@@ -10,28 +11,17 @@ export class AxiosJiraClient implements JiraClient {
   ) {}
 
   public async createIssue(issue: JiraIssue): Promise<void> {
-    const projects = await this.getProjects();
+    const { baseUrl, user, apiKey } = this.options;
 
-    await Promise.all(projects.map(({ key }: JiraProject) => this.createTicket({
-        ...issue,
-        fields: {
-          ...issue.fields,
-          project: { key }
-        }
-    })));
+    await axios.post('/rest/api/2/issue', issue, {
+      baseURL: baseUrl,
+      headers: {
+        authorization: `Basic ${this.getToken(user, apiKey)}`
+      }
+    });
   }
 
-  public async getConnectivity(): Promise<ConnectivityStatus> {
-    try {
-      await this.getProjects();
-    } catch (err) {
-      return ConnectivityStatus.DISCONNECTED;
-    }
-
-    return ConnectivityStatus.CONNECTED;
-  }
-
-  private async getProjects(): Promise<JiraProject[]> {
+  public async getProjects(): Promise<JiraProject[]> {
     const { baseUrl, user, apiKey } = this.options;
 
     const response: { data: JiraProject[] } = await axios.get(
@@ -39,8 +29,7 @@ export class AxiosJiraClient implements JiraClient {
       {
         baseURL: baseUrl,
         headers: {
-          // eslint-disable-next-line @typescript-eslint/naming-convention
-          Authorization: `Basic ${this.getToken(user, apiKey)}`
+          authorization: `Basic ${this.getToken(user, apiKey)}`
         }
       }
     );
@@ -48,16 +37,16 @@ export class AxiosJiraClient implements JiraClient {
     return response.data;
   }
 
-  private async createTicket(ticket: JiraIssue) {
-    const { baseUrl, user, apiKey } = this.options;
+  public async getConnectivity(): Promise<ConnectivityStatus> {
+    try {
+      await this.getProjects();
+    } catch (err) {
+      logger.error(`Failed connect to the Jira integration, ${err.message}`);
 
-    await axios.post('/rest/api/2/issue', ticket, {
-      baseURL: baseUrl,
-      headers: {
-        // eslint-disable-next-line @typescript-eslint/naming-convention
-        Authorization: `Basic ${this.getToken(user, apiKey)}`
-      }
-    });
+      return ConnectivityStatus.DISCONNECTED;
+    }
+
+    return ConnectivityStatus.CONNECTED;
   }
 
   private getToken(user: string, apiKey: string): string {

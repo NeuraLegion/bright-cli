@@ -36,6 +36,7 @@ export interface JiraIssue extends Ticket {
 
 export interface JiraClient {
   createIssue(issue: JiraIssue): Promise<void>;
+  getProjects(): Promise<JiraProject[]>;
   getConnectivity(): Promise<ConnectivityStatus>;
 }
 

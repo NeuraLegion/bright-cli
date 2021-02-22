@@ -11,9 +11,6 @@ export class RegisterIssueHandler implements Handler<RegisterIssue> {
   ) {}
 
   public async handle({ issue }: RegisterIssue): Promise<void> {
-    console.log('REGISTERED ISSUE');
-    console.log(issue);
-
     await this.jiraClient.createIssue(issue);
   }
 }

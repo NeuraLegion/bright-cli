@@ -5,6 +5,7 @@ import { ConnectivityStatus, JiraApiOptions, JiraClient } from '../Integrations'
 import { Helpers, logger } from '../Utils';
 import { StartupManagerFactory } from '../StartupScripts';
 import { RegisterIssueHandler } from '../Handlers/RegisterIssueHandler';
+import { GetProjectsHandler } from '../Handlers/GetProjectsHandler';
 import { Arguments, Argv, CommandModule } from 'yargs';
 import Timer = NodeJS.Timer;
 
@@ -79,9 +80,8 @@ export class Integrate implements CommandModule {
               url: args.bus as string,
               proxyUrl: args.proxy as string,
               credentials: {
-                // TODO: for tests
-                username: 'guest', // args.accessKey as string,
-                password: 'guest', // args.token as string
+                username: args.accessKey as string,
+                password: args.token as string
               },
               onError(e: Error) {
                 clearInterval(timer);
@@ -151,6 +151,7 @@ export class Integrate implements CommandModule {
       await bus.init();
 
       await bus.subscribe(RegisterIssueHandler);
+      await bus.subscribe(GetProjectsHandler);
 
       timer = setInterval(() => updateConnectivity(), 10000);
 
