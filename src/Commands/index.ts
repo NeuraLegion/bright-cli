@@ -7,4 +7,4 @@ export { StopScan } from './StopScan';
 export { PollingScanStatus } from './PollingScanStatus';
 export { RunRepeater } from './RunRepeater';
 export { Configure } from './Configure';
-export { Integrate } from './Integrate';
+export { Integration as Integrate } from './Integration';

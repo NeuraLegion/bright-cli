@@ -18,7 +18,7 @@ export interface Project {
 }
 
 export interface Fields {
-  project?: Project;
+  readonly project: Project;
   readonly summary: string;
   readonly description: string;
   readonly issuetype: IssueType;
@@ -37,7 +37,5 @@ export interface JiraIssue extends Ticket {
 export interface JiraClient {
   createIssue(issue: JiraIssue): Promise<void>;
   getProjects(): Promise<JiraProject[]>;
-  getConnectivity(): Promise<ConnectivityStatus>;
+  ping(): Promise<ConnectivityStatus>;
 }
-
-export const JiraClient: symbol = Symbol.for('JiraClient');

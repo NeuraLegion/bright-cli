@@ -1,4 +1,4 @@
-import { Event } from '../../Bus/Event';
+import { Event } from '../../Bus';
 
 export class IntegrationConnected implements Event {
   constructor(

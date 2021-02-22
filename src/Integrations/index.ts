@@ -1,4 +1,4 @@
-export * from './AxiosJiraClient';
+export * from './RequestJiraClient';
 export * from './JiraClient';
 export * from './Ticket';
 export * from './ConnectivityStatus';

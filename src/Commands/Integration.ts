@@ -1,7 +1,7 @@
 import { container } from '../Config';
 import { Bus, RabbitMQBusOptions } from '../Bus';
 import { IntegrationConnected } from '../Handlers';
-import { ConnectivityStatus, JiraApiOptions, JiraClient } from '../Integrations';
+import { RequestJiraClientType, ConnectivityStatus, JiraApiOptions, JiraClient } from '../Integrations';
 import { Helpers, logger } from '../Utils';
 import { StartupManagerFactory } from '../StartupScripts';
 import { RegisterIssueHandler } from '../Handlers/RegisterIssueHandler';
@@ -11,10 +11,10 @@ import Timer = NodeJS.Timer;
 
 let timer: Timer;
 
-export class Integrate implements CommandModule {
+export class Integration implements CommandModule {
   private static SERVICE_NAME = 'nexploit-integration';
   public readonly command = 'integration [options]';
-  public readonly describe = 'Starts an on-prem agent.';
+  public readonly describe = 'Starts an on-prem integration.';
 
   public builder(argv: Argv): Argv {
     return argv
@@ -32,11 +32,9 @@ export class Integrate implements CommandModule {
       .option('type', {
         choices: ['jira'],
         requiresArg: true,
-        default: 'jira',
         describe: 'Integration service type'
       })
       .option('access-key', {
-        alias: ['accessKey'],
         describe: 'Integration service key',
         requiresArg: true,
         demandOption: true
@@ -44,17 +42,17 @@ export class Integrate implements CommandModule {
       .option('base-url', {
         default: 'http://localhost:8080',
         demandOption: true,
-        describe: 'Service local URL'
+        describe: 'The base URL to the Jira instance API'
       })
       .option('user', {
         alias: 'u',
-        describe: 'Service username',
+        describe: 'Use username for Jira Server or email for Jira on Atlassian cloud.',
         requiresArg: true,
         demandOption: true
       })
       .option('password', {
         alias: 'p',
-        describe: 'Service password',
+        describe: 'Use password for Jira Server or API token for Jira on Atlassian cloud.',
         requiresArg: true,
         demandOption: true
       })
@@ -75,13 +73,15 @@ export class Integrate implements CommandModule {
           .register(RabbitMQBusOptions, {
             useValue: {
               exchange: 'EventBus',
-              clientQueue: `integration:${args.accessKey as string}`,
+              clientQueue: `integration:${args.accessKey}`,
               connectTimeout: 10000,
               url: args.bus as string,
               proxyUrl: args.proxy as string,
               credentials: {
-                username: args.accessKey as string,
-                password: args.token as string
+                // username: args.accessKey as string,
+                // password: args.token as string
+                username: 'guest',
+                password: 'guest'
               },
               onError(e: Error) {
                 clearInterval(timer);
@@ -98,7 +98,7 @@ export class Integrate implements CommandModule {
     const startupManagerFactory: StartupManagerFactory = container.resolve(
       StartupManagerFactory
     );
-    const jiraClient: JiraClient = container.resolve(JiraClient);
+    const jiraClient: JiraClient = container.resolve(RequestJiraClientType);
 
     const dispose: () => Promise<void> = async (): Promise<void> => {
       clearInterval(timer);
@@ -116,13 +116,13 @@ export class Integrate implements CommandModule {
       await startupManager.install({
         command,
         args: execArgs,
-        name: Integrate.SERVICE_NAME,
+        name: Integration.SERVICE_NAME,
         displayName: 'NexPloit Integration'
       });
 
       logger.log(
         'A Integration daemon process was initiated successfully (SERVICE: %s)',
-        Integrate.SERVICE_NAME
+        Integration.SERVICE_NAME
       );
 
       process.exit(0);
@@ -145,7 +145,7 @@ export class Integrate implements CommandModule {
 
     const notify = (connectivity: ConnectivityStatus) => bus?.publish(new IntegrationConnected(args.accessKey as string, connectivity));
 
-    const updateConnectivity = async (): Promise<void> => notify(await jiraClient.getConnectivity());
+    const updateConnectivity = async (): Promise<void> => notify(await jiraClient.ping());
 
     try {
       await bus.init();
