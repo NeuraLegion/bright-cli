@@ -26,11 +26,11 @@ export class RequestJiraClient implements JiraClient {
   }
 
   public async getProjects(): Promise<JiraProject[]> {
-    const response: JiraProject[] = await this.client.get({
+    const projects: JiraProject[] = await this.client.get({
       uri: '/rest/api/2/project',
     });
 
-    return response;
+    return projects;
   }
 
   public async ping(): Promise<ConnectivityStatus> {

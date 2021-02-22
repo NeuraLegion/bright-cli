@@ -1,7 +1,7 @@
 import { container } from '../Config';
 import { Bus, RabbitMQBusOptions } from '../Bus';
 import { IntegrationConnected } from '../Handlers';
-import { RequestJiraClientType, ConnectivityStatus, JiraApiOptions, JiraClient } from '../Integrations';
+import { ConnectivityStatus, IntegrationClient, JiraApiOptions } from '../Integrations';
 import { Helpers, logger } from '../Utils';
 import { StartupManagerFactory } from '../StartupScripts';
 import { RegisterIssueHandler } from '../Handlers/RegisterIssueHandler';
@@ -78,10 +78,8 @@ export class Integration implements CommandModule {
               url: args.bus as string,
               proxyUrl: args.proxy as string,
               credentials: {
-                // username: args.accessKey as string,
-                // password: args.token as string
-                username: 'guest',
-                password: 'guest'
+                username: args.accessKey as string,
+                password: args.token as string
               },
               onError(e: Error) {
                 clearInterval(timer);
@@ -98,7 +96,7 @@ export class Integration implements CommandModule {
     const startupManagerFactory: StartupManagerFactory = container.resolve(
       StartupManagerFactory
     );
-    const jiraClient: JiraClient = container.resolve(RequestJiraClientType);
+    const integrationClient: IntegrationClient = container.resolve(IntegrationClient);
 
     const dispose: () => Promise<void> = async (): Promise<void> => {
       clearInterval(timer);
@@ -145,7 +143,7 @@ export class Integration implements CommandModule {
 
     const notify = (connectivity: ConnectivityStatus) => bus?.publish(new IntegrationConnected(args.accessKey as string, connectivity));
 
-    const updateConnectivity = async (): Promise<void> => notify(await jiraClient.ping());
+    const updateConnectivity = async (): Promise<void> => notify(await integrationClient.ping());
 
     try {
       await bus.init();

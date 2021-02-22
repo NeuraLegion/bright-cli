@@ -40,7 +40,7 @@ import {
   ParserFactory,
   RestArchives
 } from '../Archive';
-import { RequestJiraClient, RequestJiraClientType } from '../Integrations';
+import { RequestJiraClient, IntegrationClient } from '../Integrations';
 import { container, Lifecycle } from 'tsyringe';
 
 container
@@ -160,7 +160,7 @@ container
     { lifecycle: Lifecycle.Singleton }
   )
   .register(
-    RequestJiraClientType,
+    IntegrationClient,
     {
       useClass: RequestJiraClient
     },

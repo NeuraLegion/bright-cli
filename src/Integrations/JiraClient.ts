@@ -1,4 +1,4 @@
-import { ConnectivityStatus } from './ConnectivityStatus';
+import { IntegrationClient } from './IntegrationClient';
 import { Ticket } from './Ticket';
 
 export interface JiraApiOptions {
@@ -34,8 +34,7 @@ export interface JiraIssue extends Ticket {
   readonly fields: Fields;
 }
 
-export interface JiraClient {
+export interface JiraClient extends IntegrationClient {
   createIssue(issue: JiraIssue): Promise<void>;
   getProjects(): Promise<JiraProject[]>;
-  ping(): Promise<ConnectivityStatus>;
 }
