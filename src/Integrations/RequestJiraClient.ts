@@ -49,5 +49,3 @@ export class RequestJiraClient implements JiraClient {
     return Buffer.from(`${user}:${apiKey}`).toString('base64');
   }
 }
-
-export const RequestJiraClientType: unique symbol = Symbol('RequestJiraClient');
