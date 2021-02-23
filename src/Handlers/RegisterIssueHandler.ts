@@ -7,7 +7,8 @@ import { injectable, injectAll } from 'tsyringe';
 @bind(RegisterIssue)
 export class RegisterIssueHandler implements Handler<RegisterIssue> {
   constructor(
-    @injectAll(IntegrationClient) private readonly integrations: IntegrationClient<Ticket>[]
+    @injectAll(IntegrationClient)
+    private readonly integrations: IntegrationClient<Ticket>[]
   ) {}
 
   public handle({ issue, type }: RegisterIssue): Promise<void> {

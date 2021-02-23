@@ -1,7 +1,11 @@
 import { container } from '../Config';
 import { Bus, RabbitMQBusOptions } from '../Bus';
 import { IntegrationConnected } from '../Handlers';
-import { ConnectivityStatus, IntegrationClient, IntegrationPingTracer } from '../Integrations';
+import {
+  ConnectivityStatus,
+  IntegrationClient,
+  IntegrationPingTracer
+} from '../Integrations';
 import { Helpers, logger } from '../Utils';
 import { StartupManagerFactory } from '../StartupScripts';
 import { RequestProjectsHandler, RegisterIssueHandler } from '../Handlers';
@@ -54,13 +58,15 @@ export class Integration implements CommandModule {
       })
       .option('user', {
         alias: 'u',
-        describe: 'Use username for Jira Server or email for Jira on Atlassian cloud.',
+        describe:
+          'Use username for Jira Server or email for Jira on Atlassian cloud.',
         requiresArg: true,
         demandOption: true
       })
       .option('password', {
         alias: 'p',
-        describe: 'Use password for Jira Server or API token for Jira on Atlassian cloud.',
+        describe:
+          'Use password for Jira Server or API token for Jira on Atlassian cloud.',
         requiresArg: true,
         demandOption: true
       })
@@ -76,7 +82,7 @@ export class Integration implements CommandModule {
               timeout: Number(args.timeout),
               baseUrl: args.baseUrl,
               user: args.user,
-              apiKey: args.password,
+              apiKey: args.password
             }
           })
           .register(RabbitMQBusOptions, {
@@ -87,10 +93,8 @@ export class Integration implements CommandModule {
               url: args.bus as string,
               proxyUrl: args.proxy as string,
               credentials: {
-                username: 'guest',
-                password: 'guest'
-                // username: args.accessKey as string,
-                // password: args.token as string
+                username: args.accessKey as string,
+                password: args.token as string
               },
               onError(e: Error) {
                 clearInterval(timer);
@@ -107,7 +111,9 @@ export class Integration implements CommandModule {
     const startupManagerFactory: StartupManagerFactory = container.resolve(
       StartupManagerFactory
     );
-    const pingTracers: IntegrationPingTracer[] = container.resolveAll(IntegrationClient);
+    const pingTracers: IntegrationPingTracer[] = container.resolveAll(
+      IntegrationClient
+    );
     const pingTracer = pingTracers.find((p) => p.type === args.type);
 
     if (!pingTracer) {
@@ -158,9 +164,13 @@ export class Integration implements CommandModule {
 
     process.on('SIGTERM', stop).on('SIGINT', stop).on('SIGHUP', stop);
 
-    const notify = (connectivity: ConnectivityStatus) => bus?.publish(new IntegrationConnected(args.accessKey as string, connectivity));
+    const notify = (connectivity: ConnectivityStatus) =>
+      bus?.publish(
+        new IntegrationConnected(args.accessKey as string, connectivity)
+      );
 
-    const updateConnectivity = async (): Promise<void> => notify(await pingTracer.ping());
+    const updateConnectivity = async (): Promise<void> =>
+      notify(await pingTracer.ping());
 
     try {
       await bus.init();

@@ -270,7 +270,7 @@ export class RabbitMQBus implements Bus {
             Buffer.from(JSON.stringify(response)),
             {
               correlationId,
-              mandatory: true,
+              mandatory: true
             }
           );
         }
