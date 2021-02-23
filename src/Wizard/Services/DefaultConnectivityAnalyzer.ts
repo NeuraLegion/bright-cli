@@ -1,8 +1,8 @@
 import { Connectivity } from '../Connectivity';
-import { TestType } from '../Models/ConnectivityTest';
+import { TestType } from '../Models';
 import { ConnectivityAnalyzer } from './ConnectivityAnalyzer';
+import { logger } from '../../Utils';
 import { inject, injectable, injectAll } from 'tsyringe';
-import { logger } from 'src/Utils';
 import { URL } from 'url';
 
 export const ConnectivityUrls = Symbol('ConnectivityUrls');

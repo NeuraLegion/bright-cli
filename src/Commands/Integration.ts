@@ -4,10 +4,9 @@ import { IntegrationConnected } from '../Handlers';
 import { ConnectivityStatus, IntegrationClient, IntegrationPingTracer } from '../Integrations';
 import { Helpers, logger } from '../Utils';
 import { StartupManagerFactory } from '../StartupScripts';
-import { RegisterIssueHandler } from '../Handlers/RegisterIssueHandler';
-import { RequestProjectsHandler } from '../Handlers/RequestProjectsHandler';
+import { RequestProjectsHandler, RegisterIssueHandler } from '../Handlers';
+import { IntegrationOptions } from '../Integrations';
 import { Arguments, Argv, CommandModule } from 'yargs';
-import { IntegrationOptions } from 'src/Integrations/IntegrationOptions';
 import Timer = NodeJS.Timer;
 
 let timer: Timer;
