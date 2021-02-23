@@ -9,8 +9,11 @@ import { inject, injectable } from 'tsyringe';
 
 @injectable()
 export class JiraIntegrationClient implements IntegrationClient<JiraIssue> {
-  public readonly type = IntegrationType.JIRA;
   private readonly client: RequestPromiseAPI;
+
+  get type(): IntegrationType {
+    return IntegrationType.JIRA;
+  }
 
   constructor(
     @inject(IntegrationOptions) private readonly options: IntegrationOptions,

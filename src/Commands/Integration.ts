@@ -5,7 +5,7 @@ import { ConnectivityStatus, IntegrationClient, IntegrationPingTracer } from '..
 import { Helpers, logger } from '../Utils';
 import { StartupManagerFactory } from '../StartupScripts';
 import { RegisterIssueHandler } from '../Handlers/RegisterIssueHandler';
-import { GetProjectsHandler } from '../Handlers/GetProjectsHandler';
+import { RequestProjectsHandler } from '../Handlers/RequestProjectsHandler';
 import { Arguments, Argv, CommandModule } from 'yargs';
 import { IntegrationOptions } from 'src/Integrations/IntegrationOptions';
 import Timer = NodeJS.Timer;
@@ -111,6 +111,11 @@ export class Integration implements CommandModule {
     const pingTracers: IntegrationPingTracer[] = container.resolveAll(IntegrationClient);
     const pingTracer = pingTracers.find((p) => p.type === args.type);
 
+    if (!pingTracer) {
+      logger.error(`Unsupported integration: ${args.type}`);
+      process.exit(1);
+    }
+
     const dispose: () => Promise<void> = async (): Promise<void> => {
       clearInterval(timer);
       await notify(ConnectivityStatus.DISCONNECTED);
@@ -162,7 +167,7 @@ export class Integration implements CommandModule {
       await bus.init();
 
       await bus.subscribe(RegisterIssueHandler);
-      await bus.subscribe(GetProjectsHandler);
+      await bus.subscribe(RequestProjectsHandler);
 
       timer = setInterval(() => updateConnectivity(), 10000);
 
