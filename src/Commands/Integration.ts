@@ -88,8 +88,10 @@ export class Integration implements CommandModule {
               url: args.bus as string,
               proxyUrl: args.proxy as string,
               credentials: {
-                username: args.accessKey as string,
-                password: args.token as string
+                username: 'guest',
+                password: 'guest'
+                // username: args.accessKey as string,
+                // password: args.token as string
               },
               onError(e: Error) {
                 clearInterval(timer);

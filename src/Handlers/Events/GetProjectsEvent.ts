@@ -1,7 +1,7 @@
 import { IntegrationType } from '../../Integrations';
 import { Event } from '../../Bus';
 
-export class GetProjects implements Event {
+export class GetProjectsEvent implements Event {
   constructor(
     public readonly type: IntegrationType,
   ) {}
