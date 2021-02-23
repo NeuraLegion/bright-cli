@@ -16,26 +16,31 @@ export class JiraIntegrationClient implements IntegrationClient<JiraIssue> {
   }
 
   constructor(
-    @inject(IntegrationOptions) private readonly options: IntegrationOptions,
+    @inject(IntegrationOptions) private readonly options: IntegrationOptions
   ) {
     this.client = request.defaults({
       baseUrl: this.options.baseUrl,
       json: true,
       timeout: this.options.timeout,
-      headers: { authorization: `Basic ${this.createToken(this.options.user, this.options.apiKey)}` }
+      headers: {
+        authorization: `Basic ${this.createToken(
+          this.options.user,
+          this.options.apiKey
+        )}`
+      }
     });
   }
 
   public async createTicket(issue: JiraIssue): Promise<void> {
     await this.client.post({
       body: issue,
-      uri: '/rest/api/2/issue',
+      uri: '/rest/api/2/issue'
     });
   }
 
   public async getProjects(): Promise<JiraProject[]> {
     const projects: JiraProject[] = await this.client.get({
-      uri: '/rest/api/2/project',
+      uri: '/rest/api/2/project'
     });
 
     return projects;

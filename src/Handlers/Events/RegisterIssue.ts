@@ -4,6 +4,6 @@ import { Event } from '../../Bus';
 export class RegisterIssue implements Event {
   constructor(
     public readonly type: IntegrationType,
-    public readonly issue: JiraIssue,
+    public readonly issue: JiraIssue
   ) {}
 }

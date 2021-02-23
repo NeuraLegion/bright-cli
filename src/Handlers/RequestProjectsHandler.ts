@@ -5,9 +5,11 @@ import { injectable, injectAll } from 'tsyringe';
 
 @injectable()
 @bind(RequestProjects)
-export class RequestProjectsHandler implements Handler<RequestProjects, Project[]> {
+export class RequestProjectsHandler
+  implements Handler<RequestProjects, Project[]> {
   constructor(
-    @injectAll(IntegrationClient) private readonly integrations: IntegrationClient<Ticket>[]
+    @injectAll(IntegrationClient)
+    private readonly integrations: IntegrationClient<Ticket>[]
   ) {}
 
   public handle({ type }: RequestProjects): Promise<Project[]> {
