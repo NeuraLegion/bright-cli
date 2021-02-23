@@ -1,12 +1,13 @@
 import { container } from '../Config';
 import { Bus, RabbitMQBusOptions } from '../Bus';
 import { IntegrationConnected } from '../Handlers';
-import { ConnectivityStatus, IntegrationClient, JiraApiOptions } from '../Integrations';
+import { ConnectivityStatus, IntegrationClient, IntegrationPingTracer } from '../Integrations';
 import { Helpers, logger } from '../Utils';
 import { StartupManagerFactory } from '../StartupScripts';
 import { RegisterIssueHandler } from '../Handlers/RegisterIssueHandler';
 import { GetProjectsHandler } from '../Handlers/GetProjectsHandler';
 import { Arguments, Argv, CommandModule } from 'yargs';
+import { IntegrationOptions } from 'src/Integrations/IntegrationOptions';
 import Timer = NodeJS.Timer;
 
 let timer: Timer;
@@ -32,6 +33,7 @@ export class Integration implements CommandModule {
       .option('type', {
         choices: ['jira'],
         requiresArg: true,
+        default: 'jira',
         describe: 'Integration service type'
       })
       .option('access-key', {
@@ -43,6 +45,13 @@ export class Integration implements CommandModule {
         default: 'http://localhost:8080',
         demandOption: true,
         describe: 'The base URL to the Jira instance API'
+      })
+      .option('timeout', {
+        number: true,
+        requiresArg: true,
+        default: 10000,
+        describe:
+          'Time to wait for a server to send response headers (and start the response body) before aborting the request.'
       })
       .option('user', {
         alias: 'u',
@@ -63,8 +72,9 @@ export class Integration implements CommandModule {
       })
       .middleware((args: Arguments) => {
         container
-          .register(JiraApiOptions, {
+          .register(IntegrationOptions, {
             useValue: {
+              timeout: Number(args.timeout),
               baseUrl: args.baseUrl,
               user: args.user,
               apiKey: args.password,
@@ -96,7 +106,8 @@ export class Integration implements CommandModule {
     const startupManagerFactory: StartupManagerFactory = container.resolve(
       StartupManagerFactory
     );
-    const integrationClient: IntegrationClient = container.resolve(IntegrationClient);
+    const pingTracers: IntegrationPingTracer[] = container.resolveAll(IntegrationClient);
+    const pingTracer = pingTracers.find((p) => p.type === args.type);
 
     const dispose: () => Promise<void> = async (): Promise<void> => {
       clearInterval(timer);
@@ -143,7 +154,7 @@ export class Integration implements CommandModule {
 
     const notify = (connectivity: ConnectivityStatus) => bus?.publish(new IntegrationConnected(args.accessKey as string, connectivity));
 
-    const updateConnectivity = async (): Promise<void> => notify(await integrationClient.ping());
+    const updateConnectivity = async (): Promise<void> => notify(await pingTracer.ping());
 
     try {
       await bus.init();

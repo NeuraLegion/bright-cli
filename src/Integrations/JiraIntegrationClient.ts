@@ -1,24 +1,29 @@
-import { JiraApiOptions, JiraClient, JiraIssue, JiraProject } from './JiraClient';
+import { JiraIssue, JiraProject } from './JiraClient';
 import { ConnectivityStatus } from './ConnectivityStatus';
 import { logger } from '../Utils';
+import { IntegrationClient } from './IntegrationClient';
+import { IntegrationType } from './IntegrationType';
+import { IntegrationOptions } from './IntegrationOptions';
 import request, { RequestPromiseAPI } from 'request-promise';
 import { inject, injectable } from 'tsyringe';
 
 @injectable()
-export class RequestJiraClient implements JiraClient {
+export class JiraIntegrationClient implements IntegrationClient<JiraIssue> {
+  public readonly type = IntegrationType.JIRA;
   private readonly client: RequestPromiseAPI;
 
   constructor(
-    @inject(JiraApiOptions) private readonly options: JiraApiOptions,
+    @inject(IntegrationOptions) private readonly options: IntegrationOptions,
   ) {
     this.client = request.defaults({
       baseUrl: this.options.baseUrl,
       json: true,
+      timeout: this.options.timeout,
       headers: { authorization: `Basic ${this.createToken(this.options.user, this.options.apiKey)}` }
     });
   }
 
-  public async createIssue(issue: JiraIssue): Promise<void> {
+  public async createTicket(issue: JiraIssue): Promise<void> {
     await this.client.post({
       body: issue,
       uri: '/rest/api/2/issue',

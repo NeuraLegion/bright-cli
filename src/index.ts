@@ -10,7 +10,7 @@ import {
   UploadArchive,
   VersionCommand,
   Configure,
-  Integrate
+  Integration
 } from './Commands';
 import { CliBuilder, DefaultConfigReader } from './Config';
 
@@ -32,7 +32,7 @@ cli
       new StopScan(),
       new UploadArchive(),
       new Configure(),
-      new Integrate()
+      new Integration()
     ]
   })
   .wrap(null).argv;

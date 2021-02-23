@@ -1,16 +1,18 @@
 import { bind, Handler } from '../Bus';
 import { RegisterIssue } from './Events';
-import { IntegrationClient, JiraClient } from '../Integrations';
-import { inject, injectable } from 'tsyringe';
+import { IntegrationClient, Ticket } from '../Integrations';
+import { injectable, injectAll } from 'tsyringe';
 
 @injectable()
 @bind(RegisterIssue)
 export class RegisterIssueHandler implements Handler<RegisterIssue> {
   constructor(
-    @inject(IntegrationClient) private readonly jiraClient: JiraClient
+    @injectAll(IntegrationClient) private readonly integrations: IntegrationClient<Ticket>[]
   ) {}
 
-  public handle({ issue }: RegisterIssue): Promise<void> {
-    return this.jiraClient.createIssue(issue);
+  public handle({ issue, type }: RegisterIssue): Promise<void> {
+    const integration = this.integrations.find((x) => x.type === type);
+
+    return integration.createTicket(issue);
   }
 }

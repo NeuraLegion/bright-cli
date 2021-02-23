@@ -1,16 +1,18 @@
 import { bind, Handler } from '../Bus';
 import { GetProjects } from './Events';
-import { IntegrationClient, JiraClient, JiraProject } from '../Integrations';
-import { inject, injectable } from 'tsyringe';
+import { IntegrationClient, Project, Ticket } from '../Integrations';
+import { injectable, injectAll } from 'tsyringe';
 
 @injectable()
 @bind(GetProjects)
-export class GetProjectsHandler implements Handler<GetProjects, JiraProject[]> {
+export class GetProjectsHandler implements Handler<GetProjects, Project[]> {
   constructor(
-    @inject(IntegrationClient) private readonly jiraClient: JiraClient
+    @injectAll(IntegrationClient) private readonly integrations: IntegrationClient<Ticket>[]
   ) {}
 
-  public handle(_event: GetProjects): Promise<JiraProject[]> {
-    return this.jiraClient.getProjects();
+  public handle({ type }: GetProjects): Promise<Project[]> {
+    const integration = this.integrations.find((x) => x.type === type);
+
+    return integration.getProjects();
   }
 }
