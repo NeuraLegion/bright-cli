@@ -2,12 +2,21 @@ version: "3.3"
 
 services:
   rabbitmq:
-    image: "rabbitmq:3.8.3-management-alpine"
+    image: "rabbitmq:management"
     ports:
       - "5672:5672"
       - "15672:15672"
+    # networks:
+    #   - nexploit-network
     healthcheck:
-      test: [ "CMD", "nc", "-z", "localhost", "5672" ]
+      test: [ 'CMD', 'rabbitmqctl', 'status' ]
       timeout: 10s
       interval: 30s
       retries: 3
+    volumes:
+      - ./rabbit/rabbitmq.conf:/etc/rabbitmq/rabbitmq.conf
+      - ./rabbit/enabled_plugins:/etc/rabbitmq/enabled_plugins
+
+# networks:
+#   nexploit-network:
+#     driver: bridge

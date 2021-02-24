@@ -31,6 +31,7 @@ export class RabbitBackoff {
     try {
       return await task();
     } catch (e) {
+      console.error(e);
       const timeout: number | null = this.next();
 
       if (!this.isFatal(e) && timeout != null) {

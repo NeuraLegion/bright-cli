@@ -88,12 +88,12 @@ export class Integration implements CommandModule {
           .register(RabbitMQBusOptions, {
             useValue: {
               exchange: 'EventBus',
-              clientQueue: `integration:${args.accessKey}`,
+              clientQueue: `agent:${args.accessKey}`,
               connectTimeout: 10000,
               url: args.bus as string,
               proxyUrl: args.proxy as string,
               credentials: {
-                username: args.accessKey as string,
+                username: 'bot',
                 password: args.token as string
               },
               onError(e: Error) {
