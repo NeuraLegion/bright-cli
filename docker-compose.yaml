@@ -6,8 +6,6 @@ services:
     ports:
       - "5672:5672"
       - "15672:15672"
-    # networks:
-    #   - nexploit-network
     healthcheck:
       test: [ 'CMD', 'rabbitmqctl', 'status' ]
       timeout: 10s
@@ -16,7 +14,3 @@ services:
     volumes:
       - ./rabbit/rabbitmq.conf:/etc/rabbitmq/rabbitmq.conf
       - ./rabbit/enabled_plugins:/etc/rabbitmq/enabled_plugins
-
-# networks:
-#   nexploit-network:
-#     driver: bridge
