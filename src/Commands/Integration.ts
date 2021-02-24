@@ -91,7 +91,7 @@ export class Integration implements CommandModule {
           .register(RabbitMQBusOptions, {
             useValue: {
               exchange: 'EventBus',
-              clientQueue: `agent:${args.accessKey}`,
+              clientQueue: `integration:${args.accessKey}`,
               connectTimeout: 10000,
               url: args.bus as string,
               proxyUrl: args.proxy as string,
