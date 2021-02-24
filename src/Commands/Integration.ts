@@ -8,7 +8,10 @@ import {
 } from '../Integrations';
 import { Helpers, logger } from '../Utils';
 import { StartupManagerFactory } from '../StartupScripts';
-import { RequestProjectsHandler, RegisterIssueHandler } from '../Handlers';
+import {
+  RequestProjectsHandler,
+  RegisterIssueHandler,
+} from '../Handlers';
 import { IntegrationOptions } from '../Integrations';
 import { Arguments, Argv, CommandModule } from 'yargs';
 import Timer = NodeJS.Timer;
@@ -93,7 +96,7 @@ export class Integration implements CommandModule {
               url: args.bus as string,
               proxyUrl: args.proxy as string,
               credentials: {
-                username: args.accessKey as string,
+                username: 'bot',
                 password: args.token as string
               },
               onError(e: Error) {
