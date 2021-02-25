@@ -1,12 +1,12 @@
 # NexPloit CLI
 
-**NexPloit CLI** is a Command Line Interface ([CLI](https://en.wikipedia.org/wiki/Command-line_interface)) tool for [NeuraLegion's solutions](https://www.neuralegion.com). You can use **NexPloit CLI** for full control over scans such as: initialize, stop, poll, maintain and more. In addition, **NexPloit CLI** can serve as a [Repeater](https://kb.neuralegion.com/#/deployment/repeater) to scan local targets, without exposing them to the internet.
+**NexPloit CLI** is a Command Line Interface ([CLI](https://en.wikipedia.org/wiki/Command-line_interface)) tool for [NeuraLegion's solutions](https://www.neuralegion.com). You can use **NexPloit CLI** for full control over scans such as: initialize, stop, poll, maintain and more. In addition, **NexPloit CLI** can serve as a [Repeater](https://kb.neuralegion.com/#/guide/introduction/deployment-onprem) to scan local targets, without exposing them to the internet.
 
 ##### Features:
 - Supports official API
 - Configurable using JSON / XML / YML / JS formats
 - Can generate real interaction data (.har files) from mock interactions (Unit Tests), more info about NexMock [here](https://www.npmjs.com/package/@neuralegion/nexmock)
-- Can serve as a [Repeater](https://kb.neuralegion.com/#/deployment/repeater) for communication from the cloud to a local target
+- Can serve as a [Repeater](https://kb.neuralegion.com/#/guide/introduction/deployment-onprem) for communication from the cloud to a local target
 
 ## 🔎 Table of Contents
 - [Quick Start](#🚀-quick-start)
@@ -18,9 +18,9 @@ Before you can use **NexPloit CLI** make sure you have the following:
 - An active user on www.nexploit.app
 - A valid `TOKEN`
   - For the quick start these scopes are required: `bot`, `scans:run` and `scans:read`
-  - More info about [setting up an API key](https://kb.neuralegion.com/#/user-guide/organization-administration/details-and-policies#managing-organization-api-keys)
+  - More info about [setting up an API key](https://kb.neuralegion.com/#/guide/np-web-ui/advanced-set-up/managing-org?id=managing-organization-apicli-authentication-tokens)
 - An active `ID`
-  - More info about [Setting up a New Repeater](https://kb.neuralegion.com/#/user-guide/agents/overview.md)
+  - More info about [Setting up a New Repeater](https://kb.neuralegion.com/#/guide/np-web-ui/advanced-set-up/managing-repeaters)
 
 #### 1. Install NexPloit CLI globally
 ```bash
@@ -31,7 +31,7 @@ You can validate the installation by going to the directory of your project and 
 ```bash
 nexploit-cli -h
 ```
-This will show you a list of possible commands for NexPloit CLI, for a full list go [here](https://kb.neuralegion.com/#/nexploit-cli/commands)
+This will show you a list of possible commands for NexPloit CLI, for a full list go [here](https://kb.neuralegion.com/#/guide/np-cli/command-list)
 
 #### 2. Activate the Repeater
 ```bash
@@ -50,10 +50,10 @@ nexploit-cli scan:run \
   --crawler https://www.example.com \
   --smart
 ```
-This command will initialize a new scan engine in the cloud, which will start scanning the target via the local [Repeater](https://kb.neuralegion.com/#/deployment/repeater).
+This command will initialize a new scan engine in the cloud, which will start scanning the target via the local [Repeater](https://kb.neuralegion.com/#/guide/introduction/deployment-onprem).
 
 #### 4. Check out the scan results
-You can follow the scan status here: https://nexploit.app/scans, or by using the [NexPloit CLI polling](https://kb.neuralegion.com/#/commands.md#🚨-check-scan-status) command.
+You can follow the scan status here: https://nexploit.app/scans, or by using the [NexPloit CLI polling](https://kb.neuralegion.com/#/guide/np-cli/commands/checking-scan-status) command.
 
 ## 📚 Full Documentation
 **NexPloit CLI** can do so much more! A full documentation with usage examples is available on [NeuraLegion's knowledgebase](https://kb.neuralegion.com)
