@@ -17,7 +17,7 @@
 Before you can use **NexPloit CLI** make sure you have the following:
 - An active user on www.nexploit.app
 - A valid `TOKEN`
-  - For the quick start these scopes are required: `repeaters:write`, `scans:run` and `scans:read`
+  - For the quick start these scopes are required: `bot`, `scans:run` and `scans:read`
   - More info about [setting up an API key](https://kb.neuralegion.com/#/user-guide/organization-administration/details-and-policies#managing-organization-api-keys)
 - An active `ID`
   - More info about [Setting up a New Repeater](https://kb.neuralegion.com/#/user-guide/agents/overview.md)
