@@ -112,7 +112,7 @@ export class RunRepeater implements CommandModule {
               url: args.bus as string,
               proxyUrl: args.proxy as string,
               credentials: {
-                username: 'bot',
+                username: 'guest',
                 password: args.token as string
               },
               onError(e: Error) {

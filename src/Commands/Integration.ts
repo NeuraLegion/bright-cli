@@ -1,6 +1,5 @@
 import { container } from '../Config';
 import { Bus, RabbitMQBusOptions } from '../Bus';
-import { IntegrationConnected } from '../Handlers';
 import {
   ConnectivityStatus,
   IntegrationClient,
@@ -8,7 +7,12 @@ import {
 } from '../Integrations';
 import { Helpers, logger } from '../Utils';
 import { StartupManagerFactory } from '../StartupScripts';
-import { RequestProjectsHandler, RegisterIssueHandler } from '../Handlers';
+import {
+  RequestProjectsHandler,
+  RegisterIssueHandler,
+  IntegrationConnected,
+  NetworkTestHandler
+} from '../Handlers';
 import { IntegrationOptions } from '../Integrations';
 import { Arguments, Argv, CommandModule } from 'yargs';
 import Timer = NodeJS.Timer;
@@ -177,6 +181,7 @@ export class Integration implements CommandModule {
 
       await bus.subscribe(RegisterIssueHandler);
       await bus.subscribe(RequestProjectsHandler);
+      await bus.subscribe(NetworkTestHandler);
 
       timer = setInterval(() => updateConnectivity(), 10000);
 
