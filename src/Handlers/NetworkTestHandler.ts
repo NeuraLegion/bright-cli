@@ -1,5 +1,5 @@
 import { bind, Handler } from '../Bus';
-import { NetworkTestIntegrationEvent } from './Events';
+import { NetworkTest } from './Events';
 import { NetworkTestResult } from '../Integrations';
 import { ReadlinePlatform } from '../Wizard';
 import { Helpers } from '../Utils';
@@ -7,11 +7,11 @@ import { injectable } from 'tsyringe';
 import { spawn } from 'nexpect';
 
 @injectable()
-@bind(NetworkTestIntegrationEvent)
+@bind(NetworkTest)
 export class NetworkTestHandler
-  implements Handler<NetworkTestIntegrationEvent, NetworkTestResult> {
+  implements Handler<NetworkTest, NetworkTestResult> {
 
-  public async handle({ repeaterId, urls }: NetworkTestIntegrationEvent): Promise<NetworkTestResult> {
+  public async handle({ repeaterId, urls }: NetworkTest): Promise<NetworkTestResult> {
     const output = await this.getOutput(urls);
 
     return { output, repeaterId };

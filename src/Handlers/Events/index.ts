@@ -5,4 +5,4 @@ export * from './RegisterScripts';
 export * from './IntegrationConnected';
 export * from './RegisterIssue';
 export * from './RequestProjects';
-export * from './NetworkTestIntegrationEvent ';
+export * from './NetworkTest';

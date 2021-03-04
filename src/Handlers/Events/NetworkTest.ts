@@ -1,6 +1,6 @@
 import { Event } from '../../Bus';
 
-export class NetworkTestIntegrationEvent implements Event {
+export class NetworkTest implements Event {
   constructor(
     public readonly repeaterId: string,
     public readonly urls: string[]
