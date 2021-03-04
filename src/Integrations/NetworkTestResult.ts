@@ -1,4 +1,4 @@
 export interface NetworkTestResult {
-  output : string,
-  repeaterId: string
+  output : string;
+  repeaterId: string;
 }

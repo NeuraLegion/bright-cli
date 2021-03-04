@@ -25,8 +25,7 @@ export class NetworkTestHandler
         include: ['configure', '--nogui', '--networkonly']
       });
 
-      console.log(args);
-      const child = spawn(args.command, args.args)
+      spawn(args.command, args.args)
         .wait(ReadlinePlatform.URL_QUESTION)
         .sendline(urls.join(','))
         .wait(ReadlinePlatform.COMPELED_MESSAGE)
@@ -36,10 +35,11 @@ export class NetworkTestHandler
           if (err) {
             return reject(err);
           }
+          if (exit!==0){
+            return  reject(`Process finished with code: ${exit}`)
+          }
           resolve(output.join('\n'));
         });
-
-      child.on('error', reject);
     });
   }
 }
