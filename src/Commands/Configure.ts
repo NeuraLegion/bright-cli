@@ -44,6 +44,13 @@ export class Configure implements CommandModule {
         boolean: true,
         describe: `Start a configuration wizard without GUI`
       })
+      .option('networkonly', {
+        default: false,
+        boolean: true,
+        alias: 'networkTestOnly',
+        hidden: true,
+        describe: `Network test only`
+      })
       .middleware((args: Arguments) => {
         container.register(ConnectivityUrls, {
           useValue: new Map(
@@ -65,7 +72,7 @@ export class Configure implements CommandModule {
       });
   }
 
-  public async handler(): Promise<void> {
+  public async handler(args: Arguments): Promise<void> {
     try {
       const app = await container.resolve<Platform>(Platform);
 
@@ -75,8 +82,8 @@ export class Configure implements CommandModule {
       };
 
       process.on('SIGTERM', stop).on('SIGINT', stop).on('SIGHUP', stop);
-
-      await app.start();
+      console.log(args.networkTestOnly);
+      await app.start({networkTestOnly: !!args.networkTestOnly});
     } catch (e) {
       logger.error(`Error during "configure": ${e.error || e.message}`);
       process.exit(1);
