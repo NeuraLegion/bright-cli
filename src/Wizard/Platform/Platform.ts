@@ -1,5 +1,5 @@
 export interface StartOptions {
-  networkTestOnly: boolean
+  networkTestOnly: boolean;
 }
 
 export interface Platform {

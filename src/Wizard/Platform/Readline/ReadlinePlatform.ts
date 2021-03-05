@@ -9,9 +9,10 @@ import { EOL } from 'os';
 
 @injectable()
 export class ReadlinePlatform implements Platform {
-
-  public static URL_QUESTION = 'Please enter the target URLs to test (separated by commas)';
-  public static COMPELED_MESSAGE = 'Communication diagnostics done, close the terminal to exit.';
+  public static URL_QUESTION =
+    'Please enter the target URLs to test (separated by commas)';
+  public static COMPELED_MESSAGE =
+    'Communication diagnostics done, close the terminal to exit.';
 
   private rl: readline.Interface;
   private readonly delimiter = `${EOL}\r--${EOL}`;
@@ -22,8 +23,7 @@ export class ReadlinePlatform implements Platform {
     @inject(Tokens) private readonly tokens: Tokens,
     @inject(ConnectivityAnalyzer)
     private readonly connectivityService: ConnectivityAnalyzer
-  ) {
-  }
+  ) {}
 
   public async start(options: StartOptions): Promise<void> {
     this.rl = readline.createInterface({
@@ -43,9 +43,13 @@ export class ReadlinePlatform implements Platform {
     if (!this.options?.networkTestOnly) {
       console.log(`Welcome to the NexPloit Network Testing wizard!${EOL}`);
 
-      console.log('Note: To run the test, you will require a `Repeater ID` and an `Repeater Token` with the correct scopes.');
+      console.log(
+        'Note: To run the test, you will require a `Repeater ID` and an `Repeater Token` with the correct scopes.'
+      );
 
-      console.log('If you are running the configuration as part of a POC, both of these should have been sent to you via your sales contact.');
+      console.log(
+        'If you are running the configuration as part of a POC, both of these should have been sent to you via your sales contact.'
+      );
 
       process.stdout.write(EOL);
 
@@ -104,13 +108,11 @@ export class ReadlinePlatform implements Platform {
 
     await this.processConnectivity(TestType.HTTP);
 
-
     await this.process('Verifying provided Token and Repeater ID', () =>
       this.connectivityService.verifyAccess(TestType.AUTH)
     );
 
     process.stdout.write(EOL);
-
 
     console.log('EXTERNAL communication diagnostics completed.');
   }
@@ -183,9 +185,9 @@ export class ReadlinePlatform implements Platform {
 
     return inputVal
       ? inputVal
-        .split(delimiter)
-        .map((x: string) => x.trim())
-        .filter(Boolean)
+          .split(delimiter)
+          .map((x: string) => x.trim())
+          .filter(Boolean)
       : [];
   }
 }

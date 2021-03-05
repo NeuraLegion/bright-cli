@@ -10,8 +10,10 @@ import { spawn } from 'nexpect';
 @bind(NetworkTest)
 export class NetworkTestHandler
   implements Handler<NetworkTest, NetworkTestResult> {
-
-  public async handle({ repeaterId, urls }: NetworkTest): Promise<NetworkTestResult> {
+  public async handle({
+    repeaterId,
+    urls
+  }: NetworkTest): Promise<NetworkTestResult> {
     const output = await this.getOutput(urls);
 
     return { output, repeaterId };
@@ -19,7 +21,6 @@ export class NetworkTestHandler
 
   private async getOutput(urls: string[]): Promise<string> {
     return new Promise((resolve, reject) => {
-
       const args = Helpers.getExecArgs({
         excludeAll: true,
         include: ['configure', '--nogui', '--network-only']
