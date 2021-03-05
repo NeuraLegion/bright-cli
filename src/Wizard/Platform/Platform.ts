@@ -4,6 +4,7 @@ export interface StartOptions {
 
 export interface Platform {
   start(options?: StartOptions): Promise<void>;
+
   stop(): Promise<void>;
 }
 

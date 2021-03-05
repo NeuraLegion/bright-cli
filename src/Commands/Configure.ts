@@ -44,10 +44,9 @@ export class Configure implements CommandModule {
         boolean: true,
         describe: `Start a configuration wizard without GUI`
       })
-      .option('networkonly', {
+      .option('network-only', {
         default: false,
         boolean: true,
-        alias: 'networkTestOnly',
         hidden: true,
         describe: `Network test only`
       })
@@ -82,8 +81,7 @@ export class Configure implements CommandModule {
       };
 
       process.on('SIGTERM', stop).on('SIGINT', stop).on('SIGHUP', stop);
-      console.log(args.networkTestOnly);
-      await app.start({networkTestOnly: !!args.networkTestOnly});
+      await app.start({ networkTestOnly: !!args['network-only'] });
     } catch (e) {
       logger.error(`Error during "configure": ${e.error || e.message}`);
       process.exit(1);

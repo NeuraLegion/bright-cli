@@ -22,7 +22,7 @@ export class NetworkTestHandler
 
       const args = Helpers.getExecArgs({
         excludeAll: true,
-        include: ['configure', '--nogui', '--networkonly']
+        include: ['configure', '--nogui', '--network-only']
       });
 
       spawn(args.command, args.args)
@@ -31,12 +31,11 @@ export class NetworkTestHandler
         .wait(ReadlinePlatform.COMPELED_MESSAGE)
         .sendEof()
         .run((err, output, exit) => {
-          console.log(err, output, exit)
           if (err) {
             return reject(err);
           }
-          if (exit!==0){
-            return  reject(`Process finished with code: ${exit}`)
+          if (exit !== 0) {
+            return reject(`Process finished with code: ${exit}`);
           }
           resolve(output.join('\n'));
         });
