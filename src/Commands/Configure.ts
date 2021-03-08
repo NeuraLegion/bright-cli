@@ -81,7 +81,7 @@ export class Configure implements CommandModule {
       };
 
       process.on('SIGTERM', stop).on('SIGINT', stop).on('SIGHUP', stop);
-      await app.start({ networkTestOnly: !!args['network-only'] });
+      await app.start({ networkTestOnly: !!args.networkOnly });
     } catch (e) {
       logger.error(`Error during "configure": ${e.error || e.message}`);
       process.exit(1);
