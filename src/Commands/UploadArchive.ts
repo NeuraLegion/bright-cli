@@ -49,7 +49,10 @@ export class UploadArchive implements CommandModule {
         requiresArg: true,
         array: true,
         describe:
-          'A list of specific headers that should be included into request.'
+          'A list of specific headers that should be included into request.',
+        coerce(arg: string[]): Record<string, string> {
+          return Array.isArray(arg) ? Helpers.parseHeaders(arg) : {};
+        }
       })
       .option('variable', {
         alias: 'V',
@@ -57,7 +60,10 @@ export class UploadArchive implements CommandModule {
         requiresArg: true,
         array: true,
         describe:
-          'A list of specific variables that should be included into request. Only for Postman'
+          'A list of specific variables that should be included into request. Only for Postman',
+        coerce(arg: string[]): Record<string, string> {
+          return Array.isArray(arg) ? Helpers.parseHeaders(arg) : {};
+        }
       })
       .positional('file', {
         describe:
@@ -81,7 +87,7 @@ export class UploadArchive implements CommandModule {
           })
           .register(NexMockConverterOptions, {
             useValue: {
-              headers: Helpers.parseHeaders(args.header as string[]),
+              headers: args.header as Record<string, string>,
               url: args.target as string
             } as NexMockConverterOptions
           })
@@ -98,32 +104,24 @@ export class UploadArchive implements CommandModule {
   public async handler(args: Arguments): Promise<void> {
     try {
       const parserFactory: ParserFactory = container.resolve(ParserFactory);
+      const archives: Archives = container.resolve(Archives);
 
       const type = Helpers.selectEnumValue(
         SpecType,
         args.type as string
       ) as SpecType;
       const parser: Parser = parserFactory.create(type);
-
-      const { content, filename } = await parser.parse(args.file as string);
-
-      const archives: Archives = container.resolve(Archives);
+      const file = await parser.parse(args.file as string);
 
       const spec: Spec = {
+        ...file,
         type,
-        content,
-        filename,
         discard: args.discard as boolean,
-        headers: Helpers.parseHeaders(args.header as string[]),
-        variables: Helpers.parseHeaders(args.variable as string[])
+        headers: args.header as Record<string, string>,
+        variables: args.variable as Record<string, string>
       };
 
-      const archiveId: string | undefined =
-        type === SpecType.HAR
-          ? await archives.upload(spec)
-          : await archives.convertAndUpload(spec);
-
-      logger.log(archiveId);
+      logger.log(await archives.upload(spec));
       process.exit(0);
     } catch (e) {
       logger.error(`Error during "archive:generate": ${e.message}`);

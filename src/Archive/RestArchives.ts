@@ -16,6 +16,11 @@ export const RestArchivesOptions: unique symbol = Symbol('RestArchivesOptions');
 @injectable()
 export class RestArchives implements Archives {
   private readonly client: RequestPromiseAPI;
+  private readonly ALLOWED_SPECS: ReadonlyArray<SpecType> = [
+    SpecType.OPENAPI,
+    SpecType.POSTMAN,
+    SpecType.HAR
+  ];
 
   constructor(
     @inject(RestArchivesOptions)
@@ -32,41 +37,18 @@ export class RestArchives implements Archives {
 
   public async upload(spec: Spec): Promise<string> {
     ok(
-      spec.type === SpecType.HAR,
-      `Invalid specification type. Allowed: ${SpecType.HAR}`
+      this.ALLOWED_SPECS.includes(spec.type),
+      `Invalid specification type. Allowed: ${this.ALLOWED_SPECS}`
     );
+
+    const { discard, headers, variables } = spec;
     const file = this.castToFile(spec);
 
-    const { discard } = spec;
-
-    const files: { id: string }[] = await this.client.post({
+    const { id }: { id: string } = await this.client.post({
       uri: `/api/v1/files`,
       qs: { discard },
       formData: {
-        file
-      }
-    });
-
-    return files[0]?.id;
-  }
-
-  public async convertAndUpload(spec: Spec): Promise<string> {
-    const allowedSpec = [SpecType.OPENAPI, SpecType.POSTMAN];
-    ok(
-      allowedSpec.includes(spec.type),
-      `Invalid specification type. Allowed: ${allowedSpec}`
-    );
-
-    const file = this.castToFile(spec);
-
-    const { type, discard, headers, variables } = spec;
-
-    const { id }: { id: string } = await this.client.post({
-      uri: `/api/v1/specs`,
-      qs: { discard },
-      formData: {
         file,
-        spec: type,
         headers: JSON.stringify(headers ?? {}),
         variables: JSON.stringify(variables ?? {})
       }
@@ -75,19 +57,20 @@ export class RestArchives implements Archives {
     return id;
   }
 
-  private castToFile({ filename, content }: Spec) {
-    const options: { filename: string; contentType: string } = {
-      filename,
-      contentType: 'application/json'
-    };
-    const file: {
-      options: { filename: string; contentType: string };
-      value: Buffer;
-    } = {
-      options,
+  private castToFile({
+    filename,
+    content,
+    contentType = 'application/json'
+  }: Spec): {
+    options: { filename: string; contentType: string };
+    value: Buffer;
+  } {
+    return {
+      options: {
+        filename,
+        contentType
+      },
       value: Buffer.from(content)
     };
-
-    return file;
   }
 }

@@ -1,6 +1,7 @@
 export interface File {
   content: string;
   filename: string;
+  contentType: string;
 }
 
 export interface Parser {

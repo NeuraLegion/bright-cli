@@ -22,6 +22,7 @@ export class NexMockParser extends BaseParser<MockRequest[]> {
 
     return {
       filename,
+      contentType: 'application/json',
       content: await this.harRecorder.record(requests)
     };
   }
