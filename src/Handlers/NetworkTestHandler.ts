@@ -6,14 +6,15 @@ import { Helpers } from '../Utils';
 import { injectable } from 'tsyringe';
 import { spawn } from 'nexpect';
 
+
 @injectable()
 @bind(NetworkTest)
 export class NetworkTestHandler
   implements Handler<NetworkTest, NetworkTestResult> {
   public async handle({
-    repeaterId,
-    urls
-  }: NetworkTest): Promise<NetworkTestResult> {
+                        repeaterId,
+                        urls
+                      }: NetworkTest): Promise<NetworkTestResult> {
     const output = await this.getOutput(urls);
 
     return { output, repeaterId };
@@ -38,8 +39,17 @@ export class NetworkTestHandler
           if (exit !== 0) {
             return reject(`Process finished with code: ${exit}`);
           }
-          resolve(output.join('\n'));
+
+          resolve(this.processOutput(output));
         });
     });
+  }
+
+  // this is workaround of \x1B[1G control code that retype string in console
+  private processOutput(input: string[]): string {
+    return input
+      .filter((element, index, arr) =>
+        !(element.endsWith('\u001b[1G') || (!!arr[index + 1] && arr[index + 1] === '\u001b[1G')))
+      .join('\n');
   }
 }
