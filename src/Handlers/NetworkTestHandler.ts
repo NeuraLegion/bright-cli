@@ -38,7 +38,7 @@ export class NetworkTestHandler
           if (exit !== 0) {
             return reject(`Process finished with code: ${exit}`);
           }
-          console.log(output);
+
           resolve(this.processOutput(output));
         });
     });
