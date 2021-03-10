@@ -82,6 +82,7 @@ jobs:
       - run: docker push neuralegion/repeater --all-tags
 
       - run: docker login https://docker.pkg.github.com --username=rielas --password=${{ secrets.PACKAGES_TOKEN }}
+      - run: docker build . --file Dockerfile --build-arg VERSION=$VERSION -t docker.pkg.github.com/neuralegion/nexploit-cli/repeater:$VERSION -t docker.pkg.github.com/neuralegion/nexploit-cli/repeater:$TAG
       - run: docker push docker.pkg.github.com/neuralegion/nexploit-cli/repeater --all-tags
 
   publish:
