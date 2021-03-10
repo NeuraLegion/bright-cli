@@ -11,9 +11,9 @@ import { spawn } from 'nexpect';
 export class NetworkTestHandler
   implements Handler<NetworkTest, NetworkTestResult> {
   public async handle({
-                        repeaterId,
-                        urls
-                      }: NetworkTest): Promise<NetworkTestResult> {
+    repeaterId,
+    urls
+  }: NetworkTest): Promise<NetworkTestResult> {
     const output = await this.getOutput(urls);
 
     return { output, repeaterId };
@@ -38,7 +38,7 @@ export class NetworkTestHandler
           if (exit !== 0) {
             return reject(`Process finished with code: ${exit}`);
           }
-          console.log(output)
+          console.log(output);
           resolve(this.processOutput(output));
         });
     });
@@ -54,7 +54,7 @@ export class NetworkTestHandler
             (!!arr[index + 1] && arr[index + 1] === '\u001b[1G')
           )
       )
-      .filter(x => !x.startsWith(ReadlinePlatform.URL_QUESTION))
+      .filter((x) => !x.startsWith(ReadlinePlatform.URL_QUESTION))
       .join('\n');
   }
 }
