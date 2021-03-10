@@ -8,10 +8,7 @@ import {
 } from '../Integrations';
 import { Helpers, logger } from '../Utils';
 import { StartupManagerFactory } from '../StartupScripts';
-import {
-  RequestProjectsHandler,
-  RegisterIssueHandler,
-} from '../Handlers';
+import { RequestProjectsHandler, RegisterIssueHandler } from '../Handlers';
 import { IntegrationOptions } from '../Integrations';
 import { Arguments, Argv, CommandModule } from 'yargs';
 import Timer = NodeJS.Timer;
