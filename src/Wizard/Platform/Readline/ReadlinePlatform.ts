@@ -1,4 +1,4 @@
-import { Platform } from '../Platform';
+import { Platform, StartOptions } from '../Platform';
 import { AUTH_TOKEN_VALIDATION_REGEXP, TestType } from '../../Models';
 import { Tokens } from '../../Tokens';
 import { ConnectivityAnalyzer, ConnectivityUrls } from '../../Services';
@@ -9,6 +9,11 @@ import { EOL } from 'os';
 
 @injectable()
 export class ReadlinePlatform implements Platform {
+  public static URL_QUESTION =
+    'Please enter the target URLs to test (separated by commas)';
+  public static COMPELED_MESSAGE =
+    'Communication diagnostics done, close the terminal to exit.';
+
   private rl: readline.Interface;
   private readonly delimiter = `${EOL}\r--${EOL}`;
 
@@ -19,44 +24,46 @@ export class ReadlinePlatform implements Platform {
     private readonly connectivityService: ConnectivityAnalyzer
   ) {}
 
-  public async start(): Promise<void> {
+  public async start(options?: StartOptions): Promise<void> {
     this.rl = readline.createInterface({
       input: process.stdin,
       output: process.stdout
     });
-
-    console.log(`Welcome to the NexPloit Network Testing wizard!${EOL}`);
-
-    await this.configure();
+    await this.configure(options);
   }
 
   public async stop(): Promise<void> {
     this.rl.close();
   }
 
-  private async configure(): Promise<void> {
-    console.log(
-      'Note: To run the test, you will require a `Repeater ID` and an `Repeater Token` with the correct scopes.'
-    );
-    console.log(
-      'If you are running the configuration as part of a POC, both of these should have been sent to you via your sales contact.'
-    );
+  private async configure(options?: StartOptions): Promise<void> {
+    if (!options?.networkTestOnly) {
+      console.log(`Welcome to the NexPloit Network Testing wizard!${EOL}`);
 
-    process.stdout.write(EOL);
+      console.log(
+        'Note: To run the test, you will require a `Repeater ID` and an `Repeater Token` with the correct scopes.'
+      );
 
-    await this.requestTokens();
+      console.log(
+        'If you are running the configuration as part of a POC, both of these should have been sent to you via your sales contact.'
+      );
 
-    console.log(this.delimiter);
+      process.stdout.write(EOL);
 
-    await this.processExternalCommunication();
+      await this.requestTokens();
 
-    console.log(this.delimiter);
+      console.log(this.delimiter);
+
+      await this.processExternalCommunication();
+
+      console.log(this.delimiter);
+    }
 
     await this.processInternalCommunication();
 
     console.log(this.delimiter);
 
-    console.log('Communication diagnostics done, close the terminal to exit.');
+    console.log(ReadlinePlatform.COMPELED_MESSAGE);
   }
 
   private async requestTokens(): Promise<void> {
@@ -111,11 +118,8 @@ export class ReadlinePlatform implements Platform {
     console.log(
       `Next step is to validate the connection to your INTERNAL (local) target application(s).${EOL}`
     );
-
     const urls = this.getDelimitedInput(
-      await this.question(
-        'Please enter the target URLs to test (separated by commas)'
-      ),
+      await this.question(ReadlinePlatform.URL_QUESTION),
       ','
     );
 

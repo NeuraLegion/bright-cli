@@ -1,5 +1,10 @@
+export interface StartOptions {
+  networkTestOnly: boolean;
+}
+
 export interface Platform {
-  start(): Promise<void>;
+  start(options?: StartOptions): Promise<void>;
+
   stop(): Promise<void>;
 }
 
