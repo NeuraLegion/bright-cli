@@ -2,7 +2,7 @@ name: Automated deploy
 
 on:
   release:
-    types: [created]
+    types: [ created ]
 
 jobs:
   build:
@@ -77,13 +77,22 @@ jobs:
 
       - run: sleep 30
 
-      - run: docker build . --file Dockerfile --build-arg VERSION=$VERSION -t neuralegion/repeater:$VERSION -t neuralegion/repeater:$TAG
-      - run: docker login --username=${{ secrets.DOCKER_USER }} --password=${{ secrets.DOCKER_TOKEN }}
-      - run: docker push neuralegion/repeater --all-tags
+      - name: Prepare Image Tags
+        run: |
+          echo "TAG_REPEATER_GPR=docker.pkg.github.com/neuralegion/nexploit-cli/repeater" >> $GITHUB_ENV
+          echo "TAG_REPEATER=neuralegion/repeater" >> $GITHUB_ENV
 
-      - run: docker login https://docker.pkg.github.com --username=rielas --password=${{ secrets.PACKAGES_TOKEN }}
-      - run: docker build . --file Dockerfile --build-arg VERSION=$VERSION -t docker.pkg.github.com/neuralegion/nexploit-cli/repeater:$VERSION -t docker.pkg.github.com/neuralegion/nexploit-cli/repeater:$TAG
-      - run: docker push docker.pkg.github.com/neuralegion/nexploit-cli/repeater --all-tags
+      - name: Build Images
+        run: |
+          docker build . --file Dockerfile --build-arg VERSION=$VERSION -t $TAG_REPEATER:$VERSION -t $TAG_REPEATER:$TAG
+          docker build . --file Dockerfile --build-arg VERSION=$VERSION -t $TAG_REPEATER_GPR:$VERSION -t $TAG_REPEATER_GPR:$TAG
+
+      - name: Push Images
+        run: |
+          docker login --username=${{ secrets.DOCKER_USER }} --password=${{ secrets.DOCKER_TOKEN }}
+          docker push $TAG_REPEATER --all-tags
+          docker login https://docker.pkg.github.com --username=rielas --password=${{ secrets.PACKAGES_TOKEN }}
+          docker push $TAG_REPEATER_GPR --all-tags
 
   publish:
     runs-on: windows-latest
