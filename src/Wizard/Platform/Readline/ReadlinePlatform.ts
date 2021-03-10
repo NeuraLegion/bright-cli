@@ -16,7 +16,6 @@ export class ReadlinePlatform implements Platform {
 
   private rl: readline.Interface;
   private readonly delimiter = `${EOL}\r--${EOL}`;
-  private options?: StartOptions;
 
   constructor(
     @inject(ConnectivityUrls) private readonly urls: ReadonlyMap<TestType, URL>,
@@ -25,22 +24,20 @@ export class ReadlinePlatform implements Platform {
     private readonly connectivityService: ConnectivityAnalyzer
   ) {}
 
-  public async start(options: StartOptions): Promise<void> {
+  public async start(options?: StartOptions): Promise<void> {
     this.rl = readline.createInterface({
       input: process.stdin,
       output: process.stdout
     });
-    this.options = options;
-
-    await this.configure();
+    await this.configure(options);
   }
 
   public async stop(): Promise<void> {
     this.rl.close();
   }
 
-  private async configure(): Promise<void> {
-    if (!this.options?.networkTestOnly) {
+  private async configure(options?: StartOptions): Promise<void> {
+    if (!options?.networkTestOnly) {
       console.log(`Welcome to the NexPloit Network Testing wizard!${EOL}`);
 
       console.log(

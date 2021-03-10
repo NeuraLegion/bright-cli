@@ -48,7 +48,7 @@ export class Configure implements CommandModule {
         default: false,
         boolean: true,
         hidden: true,
-        describe: `Network test only`
+        describe: `Enables network tests only`
       })
       .middleware((args: Arguments) => {
         container.register(ConnectivityUrls, {
@@ -73,7 +73,7 @@ export class Configure implements CommandModule {
 
   public async handler(args: Arguments): Promise<void> {
     try {
-      const app = await container.resolve<Platform>(Platform);
+      const app = container.resolve<Platform>(Platform);
 
       const stop: () => void = () => {
         app.stop();
