@@ -58,7 +58,7 @@ export class WsRequestExecutor implements RequestExecutor {
 
       timeout = this.setTimeout(client);
 
-      const msg = await this.consume(client);
+      const msg = await this.consume(client, options.correlationIdRegex);
 
       return new Response({
         protocol: this.protocol,
@@ -106,9 +106,12 @@ export class WsRequestExecutor implements RequestExecutor {
     return timeout;
   }
 
-  private async consume(client: WebSocket): Promise<WSMessage> {
+  private async consume(
+    client: WebSocket,
+    matcher?: RegExp
+  ): Promise<WSMessage> {
     const result = (await Promise.race([
-      once(client, 'message'),
+      this.waitForResponse(client, matcher),
       once(client, 'close')
     ])) as [string | number, string | undefined];
 
@@ -126,6 +129,17 @@ export class WsRequestExecutor implements RequestExecutor {
     }
 
     return msg;
+  }
+
+  private waitForResponse(
+    client: WebSocket,
+    matcher: RegExp
+  ): Promise<[string]> {
+    return new Promise((resolve) => {
+      client.on('message', (data: string) => {
+        !matcher || matcher.test(data) ? resolve([data]) : undefined;
+      });
+    });
   }
 
   private async connect(client: WebSocket): Promise<IncomingMessage> {

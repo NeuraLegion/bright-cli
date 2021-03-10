@@ -1,4 +1,4 @@
-import { Event } from '../../Bus/Event';
+import { Event } from '../../Bus';
 import { Protocol } from '../../RequestExecutor';
 
 export class ExecuteScript implements Event {
@@ -7,6 +7,8 @@ export class ExecuteScript implements Event {
     public readonly url: string,
     public readonly headers: Record<string, string | string[]>,
     public readonly method?: string,
-    public readonly body?: string
+    public readonly body?: string,
+    // eslint-disable-next-line @typescript-eslint/naming-convention
+    public readonly correlation_id_regex?: string
   ) {}
 }

@@ -6,11 +6,13 @@ export interface RequestOptions {
   url: string;
   headers: Record<string, string | string[]>;
   body?: string;
+  correlationIdRegex?: string | RegExp;
 }
 
 export class Request {
   public readonly url: string;
   public readonly body?: string;
+  public readonly correlationIdRegex?: RegExp;
 
   private _method?: string;
 
@@ -24,7 +26,13 @@ export class Request {
     return this._headers;
   }
 
-  constructor({ method, url, body, headers = {} }: RequestOptions) {
+  constructor({
+    method,
+    url,
+    body,
+    correlationIdRegex,
+    headers = {}
+  }: RequestOptions) {
     this._method = method?.toUpperCase() ?? 'GET';
 
     if (!url) {
@@ -44,6 +52,14 @@ export class Request {
     }
 
     this.body = body;
+
+    if (correlationIdRegex) {
+      try {
+        this.correlationIdRegex = new RegExp(correlationIdRegex, 'i');
+      } catch {
+        // noop
+      }
+    }
 
     this._headers = headers;
   }
@@ -65,7 +81,8 @@ export class Request {
       url: this.url,
       method: this._method,
       headers: this._headers,
-      body: this.body
+      body: this.body,
+      correlationIdRegex: this.correlationIdRegex
     };
   }
 }
