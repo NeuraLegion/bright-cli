@@ -21,15 +21,12 @@ export class NetworkTestHandler
 
   private async getOutput(urls: string[]): Promise<string> {
     return new Promise((resolve, reject) => {
-      const helperArgs = Helpers.getExecArgs();
-      const commandIndex = helperArgs.args.indexOf('repeater');
-      const args = helperArgs.args
-        .filter((_, i) => i < commandIndex)
-        .concat(['configure', '--nogui', '--network-only']);
-      console.log(process.argv);
-      console.log(helperArgs);
-      console.log(args);
-      spawn(helperArgs.command, args)
+      const args = Helpers.getExecArgs({
+        excludeAll: true,
+        include: ['configure', '--nogui', '--network-only']
+      });
+
+      spawn(args.command, args.args)
         .wait(ReadlinePlatform.URL_QUESTION)
         .sendline(urls.join(','))
         .wait(ReadlinePlatform.COMPELED_MESSAGE)
