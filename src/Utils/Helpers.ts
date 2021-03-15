@@ -1,6 +1,5 @@
 import { ok } from 'assert';
-import {parse} from 'path';
-//import { platform } from 'os';
+import * as path from 'path';
 
 declare global {
   // eslint-disable-next-line @typescript-eslint/no-namespace
@@ -32,7 +31,9 @@ export class Helpers {
 
     if (
       process.pkg?.entrypoint !== process.argv[1] ||
-      parse(process.execPath).name === 'nexploit-cli') { // packed run
+      path.parse(process.execPath).name === 'nexploit-cli'
+    ) {
+      // packed run
       args = [process.argv[1], ...args];
     }
 
@@ -46,7 +47,7 @@ export class Helpers {
 
     return {
       command: process.execPath,
-      args: [ ...process.execArgv, ...args]
+      args: [...process.execArgv, ...args]
     };
   }
 
