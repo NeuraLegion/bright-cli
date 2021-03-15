@@ -9,7 +9,7 @@ import { URL } from 'url';
 @injectable()
 export class AMQConnectivity implements Connectivity {
   public readonly type = TestType.AUTH;
-  private readonly CONNECTION_TIMEOUT = 30 * 1000; // 30 seconds
+  private readonly CONNECTION_TIMEOUT = 10 * 1000; // 10 seconds
 
   constructor(@inject(Tokens) private readonly tokens: Tokens) {}
 
