@@ -2,9 +2,9 @@ import { bind, Handler } from '../Bus';
 import { NetworkTest } from './Events';
 import { NetworkTestResult } from '../Integrations';
 import { ReadlinePlatform } from '../Wizard';
+import { Helpers } from '../Utils';
 import { injectable } from 'tsyringe';
 import { spawn } from 'nexpect';
-
 
 @injectable()
 @bind(NetworkTest)
@@ -21,18 +21,20 @@ export class NetworkTestHandler
 
   private async getOutput(urls: string[]): Promise<string> {
     return new Promise((resolve, reject) => {
-      const commandIndex = process.argv.indexOf('repeater');
-      const args = process.argv
-        .filter((_, i)=> i < commandIndex)
+      const helperArgs = Helpers.getExecArgs();
+      const commandIndex = helperArgs.args.indexOf('repeater');
+      const args = helperArgs.args
+        .filter((_, i) => i < commandIndex)
         .concat(['configure', '--nogui', '--network-only']);
-      spawn(args.join(' '))
+      console.log(process.argv);
+      console.log(helperArgs);
+      console.log(args);
+      spawn(helperArgs.command, args)
         .wait(ReadlinePlatform.URL_QUESTION)
         .sendline(urls.join(','))
         .wait(ReadlinePlatform.COMPELED_MESSAGE)
         .sendEof()
         .run((err, output, exit) => {
-          console.log(err, output, exit);
-
           if (err) {
             return reject(err);
           }
