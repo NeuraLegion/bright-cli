@@ -24,7 +24,7 @@ export class SendRequestHandler
     }
 
     const response: Response = await requestExecutor.execute(
-      new Request(event)
+      new Request({ ...event, correlationIdRegex: event.correlation_id_regex })
     );
 
     const { statusCode, message, errorCode, body, headers } = response;

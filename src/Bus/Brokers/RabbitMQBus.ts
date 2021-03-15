@@ -88,7 +88,7 @@ export class RabbitMQBus implements Bus {
 
     const instance:
       | Handler<Event, ExecutionResult>
-      | undefined = await this.container.resolve(handler);
+      | undefined = this.container.resolve(handler);
     ok(instance, `Cannot create instance of "${handler.name}" handler.`);
 
     const eventType: EventType | undefined = Reflect.getMetadata(

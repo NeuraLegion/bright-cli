@@ -1,6 +1,7 @@
 import { Bus, RabbitMQBusOptions } from '../Bus';
 import { ScriptLoader } from '../Scripts';
 import {
+  NetworkTestHandler,
   RegisterScriptsHandler,
   RepeaterStatusUpdated,
   SendRequestHandler
@@ -208,6 +209,7 @@ export class RunRepeater implements CommandModule {
 
       await bus.subscribe(RegisterScriptsHandler);
       await bus.subscribe(SendRequestHandler);
+      await bus.subscribe(NetworkTestHandler);
 
       timer = setInterval(() => notify('connected'), 10000);
 
