@@ -31,7 +31,9 @@ export class Helpers {
 
     if (
       process.pkg?.entrypoint !== process.argv[1] ||
-      path.parse(process.execPath).name === 'nexploit-cli') { // packed run
+      path.parse(process.execPath).name === 'nexploit-cli'
+    ) {
+      // packed run
       args = [process.argv[1], ...args];
     }
 
@@ -45,7 +47,7 @@ export class Helpers {
 
     return {
       command: process.execPath,
-      args: [ ...process.execArgv, ...args]
+      args: [...process.execArgv, ...args]
     };
   }
 
