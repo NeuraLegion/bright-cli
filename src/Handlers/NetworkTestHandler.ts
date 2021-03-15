@@ -5,6 +5,7 @@ import { ReadlinePlatform } from '../Wizard';
 import { Helpers } from '../Utils';
 import { injectable } from 'tsyringe';
 import { spawn } from 'nexpect';
+import * as path from 'path';
 
 @injectable()
 @bind(NetworkTest)
@@ -26,7 +27,9 @@ export class NetworkTestHandler
         include: ['configure', '--nogui', '--network-only']
       });
 
-      spawn(args.command, args.args)
+      const execPath = path.parse(args.command);
+
+      spawn(execPath.base, args.args, {cwd: execPath.dir})
         .wait(ReadlinePlatform.URL_QUESTION)
         .sendline(urls.join(','))
         .wait(ReadlinePlatform.COMPELED_MESSAGE)
