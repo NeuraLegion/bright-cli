@@ -46,6 +46,34 @@ export class Helpers {
     };
   }
 
+  public static async pool<T, R>(
+    poolLimit: number,
+    items: Iterable<T>,
+    iterator: (subject: T) => Promise<R>
+  ): Promise<R[]> {
+    const promises: Promise<R>[] = [];
+
+    const poolPromises: Promise<void>[] = [];
+
+    for (const item of items) {
+      const promise = iterator(item);
+
+      promises.push(promise);
+
+      const poolMember: Promise<void> = promise.then(() => {
+        poolPromises.splice(poolPromises.indexOf(poolMember), 1);
+      });
+
+      poolPromises.push(poolMember);
+
+      if (poolPromises.length >= poolLimit) {
+        await Promise.race(poolPromises);
+      }
+    }
+
+    return Promise.all(promises);
+  }
+
   public static wildcardToRegExp(s: string): RegExp {
     return new RegExp(`^${s.split(/\*+/).map(this.regExpEscape).join('.*')}$`);
   }
@@ -129,3 +157,4 @@ export class Helpers {
     return s.replace(/[|\\{}()[\]^$+*?.]/g, '\\$&');
   }
 }
+

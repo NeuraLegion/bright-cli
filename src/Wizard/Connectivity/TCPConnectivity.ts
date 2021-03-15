@@ -9,7 +9,7 @@ import { once } from 'events';
 @injectable()
 export class TCPConnectivity implements Connectivity {
   public readonly type = TestType.TCP;
-  private readonly CONNECTION_TIMEOUT = 30 * 1000; // 30 seconds
+  private readonly CONNECTION_TIMEOUT = 10 * 1000; // 10 seconds
 
   public async test({ hostname, port }: URL): Promise<boolean> {
     const socket: Socket = new Socket();
@@ -36,7 +36,9 @@ export class TCPConnectivity implements Connectivity {
 
       return false;
     } finally {
-      socket.destroy();
+      if (!socket.destroyed) {
+        socket.destroy();
+      }
     }
   }
 }

@@ -2,6 +2,7 @@ import { Platform, StartOptions } from '../Platform';
 import { AUTH_TOKEN_VALIDATION_REGEXP, TestType } from '../../Models';
 import { Tokens } from '../../Tokens';
 import { ConnectivityAnalyzer, ConnectivityUrls } from '../../Services';
+import { Helpers } from '../../../Utils';
 import { inject, injectable } from 'tsyringe';
 import readline from 'readline';
 import { URL } from 'url';
@@ -129,8 +130,8 @@ export class ReadlinePlatform implements Platform {
 
     let reachedCount = 0;
 
-    for (const url of urls) {
-      await this.process(`Trying to reach ${url}`, async () => {
+    await Helpers.pool(250, urls, (url: string) =>
+      this.process(`Trying to reach ${url}`, async () => {
         const result = await this.connectivityService.verifyAccess(
           TestType.HTTP,
           new URL(url)
@@ -139,8 +140,8 @@ export class ReadlinePlatform implements Platform {
         reachedCount += Number(result);
 
         return result;
-      });
-    }
+      })
+    );
 
     process.stdout.write(EOL);
 

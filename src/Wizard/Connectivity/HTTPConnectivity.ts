@@ -15,7 +15,7 @@ interface ReqFactory {
 export class HTTPConnectivity implements Connectivity {
   public readonly type = TestType.HTTP;
 
-  private readonly CONNECTION_TIMEOUT = 30 * 1000; // 30 seconds
+  private readonly CONNECTION_TIMEOUT = 10 * 1000; // 10 seconds
   private readonly FACTORY_REGISTRY: ReadonlyMap<string, ReqFactory> = new Map<
     string,
     ReqFactory
@@ -27,15 +27,15 @@ export class HTTPConnectivity implements Connectivity {
   public async test({ port, hostname, protocol }: URL): Promise<boolean> {
     const factory = this.FACTORY_REGISTRY.get(protocol);
 
-    try {
-      const req: ClientRequest = factory.request({
-        port,
-        hostname,
-        method: 'GET',
-        rejectUnauthorized: false,
-        timeout: this.CONNECTION_TIMEOUT
-      });
+    const req: ClientRequest = factory.request({
+      port,
+      hostname,
+      method: 'GET',
+      rejectUnauthorized: false,
+      timeout: this.CONNECTION_TIMEOUT
+    });
 
+    try {
       req.once('timeout', () => req.destroy(new Error('Reached timeout.')));
       req.end();
 
@@ -51,6 +51,10 @@ export class HTTPConnectivity implements Connectivity {
       );
 
       return false;
+    } finally {
+      if (!req.aborted) {
+        req.abort();
+      }
     }
   }
 }
