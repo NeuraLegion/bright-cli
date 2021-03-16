@@ -2,9 +2,9 @@ import { bind, Handler } from '../Bus';
 import { NetworkTest } from './Events';
 import { NetworkTestResult } from '../Integrations';
 import { ReadlinePlatform } from '../Wizard';
-import { Helpers } from '../Utils';
+import { Helpers, logger } from '../Utils';
 import { injectable } from 'tsyringe';
-import { spawn } from 'nexpect';
+import { EOL } from 'os';
 
 @injectable()
 @bind(NetworkTest)
@@ -21,26 +21,54 @@ export class NetworkTestHandler
 
   private async getOutput(urls: string[]): Promise<string> {
     return new Promise((resolve, reject) => {
-      const args = Helpers.getExecArgs({
-        excludeAll: true,
-        include: ['configure', '--nogui', '--network-only']
+      const args = ['configure', '--nogui', '--network-only'];
+
+      logger.debug('Launching "Network Diagnostic" process with cmd: %j', args);
+
+      const child = Helpers.spawn({
+        include: args
       });
 
-      spawn(args.command, args.args)
-        .wait(ReadlinePlatform.URL_QUESTION)
-        .sendline(urls.join(','))
-        .wait(ReadlinePlatform.COMPELED_MESSAGE)
-        .sendEof()
-        .run((err, output, exit) => {
-          if (err) {
-            return reject(err);
-          }
-          if (exit !== 0) {
-            return reject(`Process finished with code: ${exit}`);
-          }
+      child.unref();
 
-          resolve(this.processOutput(output));
-        });
+      const stdout: string[] = [];
+
+      child.stdout.on('data', (data: Buffer) => {
+        const chunk = data.toString();
+        const lines: string[] = chunk
+          .split('\n')
+          .filter((line: string) => line.length > 0);
+
+        stdout.push(...lines);
+
+        if (chunk.indexOf(ReadlinePlatform.URL_QUESTION) > -1) {
+          child.stdin.write(`${urls.join(',')}${EOL}`);
+        }
+
+        if (chunk.indexOf(ReadlinePlatform.COMPELED_MESSAGE) > -1) {
+          child.stdin.end();
+        }
+      });
+
+      child.once('error', (err: Error) => {
+        logger.warn(
+          `Failed to start "Network Diagnostic" due to %s`,
+          err.message
+        );
+        reject(err);
+      });
+
+      child.on('close', (code: number) => {
+        if (code !== 0 || stdout.length === 0) {
+          const msg = `"Network Diagnostic" did not start successfully. Process exited with code ${code}`;
+
+          logger.warn(msg);
+
+          return reject(new Error(msg));
+        }
+
+        resolve(this.processOutput(stdout));
+      });
     });
   }
 
