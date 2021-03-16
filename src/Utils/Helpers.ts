@@ -1,4 +1,5 @@
 import { ok } from 'assert';
+import { ChildProcess, spawn } from 'child_process';
 
 declare global {
   // eslint-disable-next-line @typescript-eslint/no-namespace
@@ -17,19 +18,43 @@ export interface CommandArgs {
 }
 
 export class Helpers {
+  private static readonly META_CHARS_REGEXP = /([()\][%!^"`<>&|;, *?])/g;
+
+  public static spawn(
+    options: {
+      exclude?: string[];
+      include?: string[];
+      detached?: boolean;
+    } = { detached: false }
+  ): ChildProcess {
+    let { command, args } = Helpers.getExecArgs({
+      excludeAll: true,
+      include: options.include,
+      exclude: options.exclude
+    });
+
+    const shell = this.win();
+
+    if (shell) {
+      command = `"${command}"`;
+      args = args.map(this.escapeShellArgument, this);
+    }
+
+    return spawn(command, args, {
+      shell,
+      detached: options.detached
+    });
+  }
+
   public static getExecArgs(options?: {
     exclude?: string[];
     include?: string[];
     excludeAll?: boolean;
   }): CommandArgs {
-    let args: string[] = process.argv.slice(2);
+    let args: string[] = process.argv.slice(1);
 
     if (options?.excludeAll) {
-      args = [];
-    }
-
-    if (process.pkg?.entrypoint !== process.argv[1]) {
-      args = [process.argv[1], ...args];
+      args = args.slice(0, 1);
     }
 
     if (options?.include) {
@@ -40,9 +65,11 @@ export class Helpers {
       args = args.filter((x: string) => !options.exclude.includes(x));
     }
 
+    args = [...process.execArgv, ...args];
+
     return {
-      command: process.execPath,
-      args: [...process.execArgv, ...args]
+      args,
+      command: process.execPath
     };
   }
 
@@ -135,6 +162,19 @@ export class Helpers {
     return encodeURI(decodedStr).replace(/%5B/g, '[').replace(/%5D/g, ']');
   }
 
+  // It's based on https://qntm.org/cmd
+  private static escapeShellArgument(val: string): string {
+    val = `${val}`;
+
+    val = val.replace(/(\\*)"/g, '$1$1\\"');
+
+    val = val.replace(/(\\*)$/, '$1$1');
+
+    val = `"${val}"`;
+
+    return val.replace(this.META_CHARS_REGEXP, '^$1');
+  }
+
   private static parseHeader(header: string): [string, string] | undefined {
     ok(
       typeof header === 'string',
@@ -148,6 +188,10 @@ export class Helpers {
         decodeURIComponent(item.trim())
       ) as [string, string];
     }
+  }
+
+  private static win(): boolean {
+    return process.platform === 'win32';
   }
 
   /**

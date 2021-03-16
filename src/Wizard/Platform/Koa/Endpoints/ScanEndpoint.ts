@@ -4,7 +4,7 @@ import { Helpers, logger } from '../../../../Utils';
 import { Tokens } from '../../../Tokens';
 import Koa from 'koa';
 import { inject, injectable } from 'tsyringe';
-import { ChildProcess, spawn } from 'child_process';
+import { ChildProcess } from 'child_process';
 import { URL } from 'url';
 
 @injectable()
@@ -64,26 +64,13 @@ export class ScanEndpoint implements Endpoint {
       return true;
     }
 
-    const { command, args: execArgs } = Helpers.getExecArgs({
-      excludeAll: true
-    });
-    const args: string[] = [
-      ...execArgs,
-      'repeater',
-      '--token',
-      authToken,
-      '--agent',
-      repeaterId
-    ];
-
-    logger.debug(
-      'Launching Repeater process with cmd: %s and arguments: %j',
-      command,
-      args
-    );
-
     try {
-      this.repeaterProcess = spawn(command, args, {
+      const args = ['repeater', '--token', authToken, '--agent', repeaterId];
+
+      logger.debug('Launching "Repeater" process with cmd: %j', args);
+
+      this.repeaterProcess = Helpers.spawn({
+        include: args,
         detached: true
       });
 
@@ -120,48 +107,42 @@ export class ScanEndpoint implements Endpoint {
     url: string,
     { authToken, repeaterId }: Credentials
   ): Promise<string> {
-    const { command, args: execArgs } = Helpers.getExecArgs({
-      excludeAll: true
-    });
-    const args: string[] = [
-      ...execArgs,
-      'scan:run',
-      '--token',
-      authToken,
-      '--name',
-      '"My First Demo Scan"',
-      '--repeater',
-      repeaterId,
-      '--crawler',
-      url,
-      '--smart',
-      '--test',
-      'header_security'
-    ];
-
-    logger.debug(
-      `Launching scanner process with cmd: %s and arguments: %j`,
-      command,
-      args
-    );
-
     return new Promise<string>((resolve, reject) => {
       try {
-        const scanProcess: ChildProcess = spawn(command, args);
+        const args = [
+          'scan:run',
+          '--token',
+          authToken,
+          '--name',
+          'My First Demo Scan',
+          '--repeater',
+          repeaterId,
+          '--crawler',
+          url,
+          '--smart',
+          '--test',
+          'header_security'
+        ];
+
+        logger.debug('Launching "Scan" process with cmd: %j', args);
+
+        const child = Helpers.spawn({
+          include: args
+        });
 
         const output: Buffer[] = [];
 
-        scanProcess.stdout.on('data', (data: Buffer) => {
+        child.stdout.on('data', (data: Buffer) => {
           logger.debug('Scanner (stdout): %s', data);
           output.push(data);
         });
 
-        scanProcess.on('error', (err: Error) => {
+        child.on('error', (err: Error) => {
           logger.warn(`Failed to start Scanner process due to %s`, err.message);
           reject(err);
         });
 
-        scanProcess.on('exit', (code: number) => {
+        child.on('exit', (code: number) => {
           const response: string = Buffer.concat(output).toString('utf8');
 
           if (code !== 0 || response.length === 0) {
