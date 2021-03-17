@@ -145,7 +145,7 @@ export class ReadlinePlatform implements Platform {
 
     process.stdout.write(EOL);
 
-    console.log('EXTERNAL communication diagnostics completed.');
+    console.log('INTERNAL communication diagnostics completed.');
     console.log(
       `${urls.length - reachedCount} out of ${
         urls.length
