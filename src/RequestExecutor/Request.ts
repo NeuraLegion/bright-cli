@@ -1,10 +1,17 @@
-import { Helpers } from '../Utils';
+import { Helpers, logger } from '../Utils';
 import { URL } from 'url';
+import fs from 'fs';
+import { extname } from 'path';
+import { promisify } from 'util';
+
+const readFile = promisify(fs.readFile);
+const fileExists = promisify(fs.access);
 
 export interface RequestOptions {
   method?: string;
   url: string;
   headers: Record<string, string | string[]>;
+  certs?: Record<string, string>;
   body?: string;
   correlationIdRegex?: string | RegExp;
 }
@@ -26,11 +33,18 @@ export class Request {
     return this._headers;
   }
 
+  private _certs: Record<string, string>;
+
+  get certs(): Readonly<Record<string, string>> {
+    return this._certs;
+  }
+
   constructor({
     method,
     url,
     body,
     correlationIdRegex,
+    certs = {},
     headers = {}
   }: RequestOptions) {
     this._method = method?.toUpperCase() ?? 'GET';
@@ -62,6 +76,8 @@ export class Request {
     }
 
     this._headers = headers;
+
+    this._certs = certs;
   }
 
   /**
@@ -76,13 +92,83 @@ export class Request {
     };
   }
 
+  public async appendCerts(certs: Record<string, string> = {}): Promise<void> {
+    const { hostname } = new URL(this.url);
+    const filePath = certs?.[hostname];
+    if (!filePath) {
+      logger.warn(`Warning: Certificate for ${hostname} not found.`);
+
+      return;
+    }
+
+    await this.verifyCertificate(this.url, certs);
+    this._certs = {
+      [hostname]: certs[hostname]
+    };
+  }
+
+  public async getCerts(): Promise<{ ca?: Buffer; pfx?: Buffer } | undefined> {
+    const { hostname } = new URL(this.url);
+    const filePath = this.certs?.[hostname];
+    if (!filePath) {
+      logger.warn(`Warning: Certificate for ${hostname} not found.`);
+
+      return;
+    }
+
+    const extension = extname(filePath);
+    switch (extension) {
+      case '.pem':
+      case '.crt':
+      case '.ca':
+        return {
+          ca: await readFile(filePath)
+        };
+      case '.pfx':
+        return {
+          pfx: await readFile(filePath)
+        };
+      default:
+        return;
+    }
+  }
+
   public toJSON(): RequestOptions {
     return {
       url: this.url,
       method: this._method,
       headers: this._headers,
+      certs: this._certs,
       body: this.body,
       correlationIdRegex: this.correlationIdRegex
     };
+  }
+
+  private async verifyCertificate(
+    url: string,
+    certs: Record<string, string> = {}
+  ): Promise<void> {
+    const { hostname } = new URL(url);
+    const filePath = certs?.[hostname];
+    if (!filePath) {
+      logger.warn(`Warning: Certificate for ${hostname} not found.`);
+
+      return;
+    }
+
+    const AVAILABLE_CERTIFICATES = ['.pem', '.crt', '.ca', '.pfx'];
+    const extension = filePath ? extname(filePath) : '';
+    if (!AVAILABLE_CERTIFICATES.includes(extension)) {
+      logger.warn(
+        `Warning: Certificate of type ${extension} does not support.`
+      );
+    }
+    try {
+      await fileExists(filePath);
+
+      return;
+    } catch (e) {
+      logger.warn(`Warning: Certificate ${e.path} not found.`);
+    }
   }
 }

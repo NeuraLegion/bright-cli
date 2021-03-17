@@ -6,7 +6,7 @@ import {
   RepeaterStatusUpdated,
   SendRequestHandler
 } from '../Handlers';
-import { RequestExecutorOptions } from '../RequestExecutor';
+import { RequestExecutorOptions, Certificates } from '../RequestExecutor';
 import { Helpers, logger } from '../Utils';
 import { StartupManagerFactory } from '../StartupScripts';
 import { container } from '../Config';
@@ -79,6 +79,16 @@ export class RunRepeater implements CommandModule {
           return JSON.parse(arg);
         }
       })
+      .option('certs', {
+        alias: 'c',
+        requiresArg: true,
+        string: true,
+        describe:
+          'JSON string which contains private CA used to sign the server cert. Example: {"google.com": "path/to/cert"}',
+        coerce(arg: string): Record<string, string> {
+          return JSON.parse(arg);
+        }
+      })
       .option('daemon', {
         requiresArg: false,
         alias: 'd',
@@ -102,7 +112,8 @@ export class RunRepeater implements CommandModule {
             useValue: {
               headers: (args.header ?? args.headers) as Record<string, string>,
               timeout: args.timeout as number,
-              proxyUrl: args.proxy as string
+              proxyUrl: args.proxy as string,
+              certs: args.certs as Record<string, string>
             }
           })
           .register(RabbitMQBusOptions, {
@@ -131,6 +142,8 @@ export class RunRepeater implements CommandModule {
     const startupManagerFactory: StartupManagerFactory = container.resolve(
       StartupManagerFactory
     );
+    const certificates: Certificates = container.resolve(Certificates);
+    await certificates.load();
 
     const dispose: () => Promise<void> = async (): Promise<void> => {
       clearInterval(timer);

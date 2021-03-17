@@ -19,6 +19,7 @@ export interface RequestExecutorOptions {
   timeout?: number;
   proxyUrl?: string;
   headers?: Record<string, string | string[]>;
+  certs?: Record<string, string>;
 }
 
 export const RequestExecutorOptions = Symbol('RequestExecutorOptions');
@@ -48,6 +49,10 @@ export class HttpRequestExecutor implements RequestExecutor {
     try {
       if (this.options.headers) {
         options.setHeaders(this.options.headers);
+      }
+
+      if (this.options.certs) {
+        await options.appendCerts(this.options.certs);
       }
 
       options = await this.transformScript(options);
@@ -93,7 +98,10 @@ export class HttpRequestExecutor implements RequestExecutor {
   }
 
   private async request(options: Request): Promise<IncomingResponse> {
+    const agentOptions = await options.getCerts();
+
     return request({
+      agentOptions,
       agent: this.agent,
       body: options.body,
       followRedirect: false,
