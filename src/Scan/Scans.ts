@@ -83,6 +83,7 @@ export enum AttackParamLocation {
 export interface ScanConfig {
   name: string;
   module: Module;
+  authObjectId?: string;
   discoveryTypes?: Discovery[];
   tests: TestType[];
   poolSize?: number;
