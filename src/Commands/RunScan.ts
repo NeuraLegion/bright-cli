@@ -29,6 +29,11 @@ export class RunScan implements CommandModule {
         requiresArg: true,
         demandOption: true
       })
+      .option('auth', {
+        alias: 'o',
+        describe: 'Auth object ID.',
+        requiresArg: true
+      })
       .option('repeater', {
         alias: 'agent',
         requiresArg: true,
@@ -150,6 +155,7 @@ export class RunScan implements CommandModule {
       const scanId: string = await scanManager.create({
         name: args.name,
         module: args.module,
+        authObjectId: args.auth,
         tests: args.test,
         hostsFilter: args.hostFilter,
         headers: Helpers.parseHeaders(args.header as string[]),
