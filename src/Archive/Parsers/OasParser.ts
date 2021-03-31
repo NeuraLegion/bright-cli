@@ -11,7 +11,7 @@ export class OasParser extends BaseParser<any> {
     meta: { ext: string }
   ): Promise<any> {
     if (meta.ext === '.yml' || meta.ext === '.yaml') {
-      return (await import('js-yaml')).safeLoad(file);
+      return (await import('js-yaml')).load(file);
     } else {
       return JSON.parse(file);
     }
