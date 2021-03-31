@@ -32,7 +32,9 @@ export class DefaultConfigReader implements ConfigReader {
     if (rcExt === '.js') {
       this.configure(this.loadCommonJsModule(rcPath));
     } else if (rcExt === '.yml' || rcExt === '.yaml') {
-      this.configure(load(readFileSync(rcPath, 'utf8')));
+      this.configure(
+        load(readFileSync(rcPath, 'utf8')) as Record<string, unknown>
+      );
     } else {
       this.configure(JSON.parse(readFileSync(rcPath, 'utf-8')));
     }
