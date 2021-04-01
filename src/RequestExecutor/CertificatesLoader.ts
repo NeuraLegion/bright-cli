@@ -1,12 +1,11 @@
 import { logger } from '../Utils';
+import { Certificates } from './Certificates';
 import loadWinCertificates from 'win-ca';
 import https from 'https';
-import fs from 'fs';
+import { readFile } from 'fs';
 import { promisify } from 'util';
 
-const readFile = promisify(fs.readFile);
-
-export class CertificatesLoader {
+export class CertificatesLoader implements Certificates {
   async load(): Promise<void> {
     switch (process.platform) {
       case 'win32':
@@ -14,21 +13,28 @@ export class CertificatesLoader {
           loadWinCertificates();
         } catch {
           logger.warn(
-            `Warning: Cannot load certificates from Trusted Root Certification Authorities Certificate Store.`
+            `Warning: cannot load certificates from Trusted Root Certification Authorities Certificate Store.`
           );
         }
         break;
 
       case 'freebsd':
-        await this.loadCertsFromFile('/etc/openssl/certs/ca-certificates.crt');
+        await this.loadCertsFromFile(
+          process.env.CERTIFICATE_PATH ??
+            '/etc/openssl/certs/ca-certificates.crt'
+        );
         break;
 
       case 'linux':
-        await this.loadCertsFromFile('/etc/ssl/certs/ca-certificates.crt');
+        await this.loadCertsFromFile(
+          process.env.CERTIFICATE_PATH ?? '/etc/ssl/certs/ca-certificates.crt'
+        );
         break;
 
       case 'openbsd':
-        await this.loadCertsFromFile('/etc/ssl/ca-certificates.crt');
+        await this.loadCertsFromFile(
+          process.env.CERTIFICATE_PATH ?? '/etc/ssl/ca-certificates.crt'
+        );
         break;
 
       default:
@@ -42,18 +48,13 @@ export class CertificatesLoader {
    */
   private async loadCertsFromFile(path: string): Promise<void> {
     try {
-      const ca = await readFile(process.env.CERTIFICATE_PATH ?? path);
+      const ca: string = await promisify(readFile)(path, 'utf8');
       https.globalAgent.options.ca = ca
-        .toString()
         .split(/-----END CERTIFICATE-----\n?/)
         .filter((cert) => !!cert)
         .map((cert) => `${cert}-----END CERTIFICATE-----\n`);
     } catch {
-      logger.warn(
-        `Warning: Cannot load certificates from ${
-          process.env.CERTIFICATE_PATH ?? path
-        }.`
-      );
+      logger.warn(`Warning: cannot load certificates from ${path}.`);
     }
   }
 }

@@ -44,18 +44,16 @@ export class WsRequestExecutor implements RequestExecutor {
       logger.debug('Executing HTTP request with following params: %j', options);
 
       if (this.options.certs) {
-        await options.appendCerts(this.options.certs);
+        await options.setCerts(this.options.certs);
       }
-
-      const agentOptions = await options.getCerts();
 
       client = new WebSocket(options.url, {
         agent: this.agent,
         rejectUnauthorized: true,
         timeout: this.options.timeout,
         headers: this.normalizeHeaders(options.headers),
-        ca: agentOptions?.ca,
-        pfx: agentOptions?.pfx
+        ca: options?.ca,
+        pfx: options?.pfx
       });
 
       const res: IncomingMessage = await this.connect(client);

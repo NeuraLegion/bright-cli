@@ -51,11 +51,11 @@ export class HttpRequestExecutor implements RequestExecutor {
         options.setHeaders(this.options.headers);
       }
 
-      if (this.options.certs) {
-        await options.appendCerts(this.options.certs);
-      }
-
       options = await this.transformScript(options);
+
+      if (this.options.certs) {
+        await options.setCerts(this.options.certs);
+      }
 
       logger.debug('Executing HTTP request with following params: %j', options);
 
@@ -98,10 +98,11 @@ export class HttpRequestExecutor implements RequestExecutor {
   }
 
   private async request(options: Request): Promise<IncomingResponse> {
-    const agentOptions = await options.getCerts();
-
     return request({
-      agentOptions,
+      agentOptions: {
+        ca: options.ca,
+        pfx: options.pfx
+      },
       agent: this.agent,
       body: options.body,
       followRedirect: false,

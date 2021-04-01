@@ -1,17 +1,15 @@
 import { Helpers, logger } from '../Utils';
 import { URL } from 'url';
-import fs from 'fs';
+import { readFile } from 'fs';
 import { extname } from 'path';
 import { promisify } from 'util';
-
-const readFile = promisify(fs.readFile);
-const fileExists = promisify(fs.access);
 
 export interface RequestOptions {
   method?: string;
   url: string;
   headers: Record<string, string | string[]>;
-  certs?: Record<string, string>;
+  pfx?: Buffer | string;
+  ca?: Buffer | string;
   body?: string;
   correlationIdRegex?: string | RegExp;
 }
@@ -33,18 +31,25 @@ export class Request {
     return this._headers;
   }
 
-  private _certs: Record<string, string>;
+  private _ca?: Buffer;
 
-  get certs(): Readonly<Record<string, string>> {
-    return this._certs;
+  get ca(): Buffer {
+    return this._ca;
+  }
+
+  private _pfx?: Buffer;
+
+  get pfx(): Buffer {
+    return this._pfx;
   }
 
   constructor({
     method,
     url,
     body,
+    ca,
+    pfx,
     correlationIdRegex,
-    certs = {},
     headers = {}
   }: RequestOptions) {
     this._method = method?.toUpperCase() ?? 'GET';
@@ -77,7 +82,13 @@ export class Request {
 
     this._headers = headers;
 
-    this._certs = certs;
+    if (pfx) {
+      this._pfx = Buffer.from(pfx);
+    }
+
+    if (ca) {
+      this._ca = Buffer.from(ca);
+    }
   }
 
   /**
@@ -92,83 +103,53 @@ export class Request {
     };
   }
 
-  public async appendCerts(certs: Record<string, string> = {}): Promise<void> {
+  public async setCerts(certs: Record<string, string> = {}): Promise<void> {
     const { hostname } = new URL(this.url);
-    const filePath = certs?.[hostname];
-    if (!filePath) {
-      logger.warn(`Warning: Certificate for ${hostname} not found.`);
+    const path = certs[hostname];
+
+    if (!path) {
+      logger.warn(`Warning: certificate for ${hostname} not found.`);
 
       return;
     }
 
-    await this.verifyCertificate(this.url, certs);
-    this._certs = {
-      [hostname]: certs[hostname]
-    };
-  }
-
-  public async getCerts(): Promise<{ ca?: Buffer; pfx?: Buffer } | undefined> {
-    const { hostname } = new URL(this.url);
-    const filePath = this.certs?.[hostname];
-    if (!filePath) {
-      logger.warn(`Warning: Certificate for ${hostname} not found.`);
-
-      return;
-    }
-
-    const extension = extname(filePath);
-    switch (extension) {
-      case '.pem':
-      case '.crt':
-      case '.ca':
-        return {
-          ca: await readFile(filePath)
-        };
-      case '.pfx':
-        return {
-          pfx: await readFile(filePath)
-        };
-      default:
-        return;
-    }
+    await this.loadCert(path);
   }
 
   public toJSON(): RequestOptions {
     return {
       url: this.url,
+      body: this.body,
       method: this._method,
       headers: this._headers,
-      certs: this._certs,
-      body: this.body,
+      ca: this._ca?.toString('utf8'),
+      pfx: this._pfx?.toString('utf8'),
       correlationIdRegex: this.correlationIdRegex
     };
   }
 
-  private async verifyCertificate(
-    url: string,
-    certs: Record<string, string> = {}
-  ): Promise<void> {
-    const { hostname } = new URL(url);
-    const filePath = certs?.[hostname];
-    if (!filePath) {
-      logger.warn(`Warning: Certificate for ${hostname} not found.`);
+  private async loadCert(path: string): Promise<void> {
+    let cert: Buffer | undefined;
 
-      return;
-    }
-
-    const AVAILABLE_CERTIFICATES = ['.pem', '.crt', '.ca', '.pfx'];
-    const extension = filePath ? extname(filePath) : '';
-    if (!AVAILABLE_CERTIFICATES.includes(extension)) {
-      logger.warn(
-        `Warning: Certificate of type ${extension} does not support.`
-      );
-    }
     try {
-      await fileExists(filePath);
-
-      return;
+      cert = await promisify(readFile)(path);
     } catch (e) {
-      logger.warn(`Warning: Certificate ${e.path} not found.`);
+      logger.warn(`Warning: certificate ${path} not found.`);
+    }
+
+    const ext = extname(path);
+
+    switch (ext) {
+      case '.pem':
+      case '.crt':
+      case '.ca':
+        this._ca = cert;
+        break;
+      case '.pfx':
+        this._pfx = cert;
+        break;
+      default:
+        logger.warn(`Warning: certificate of type "${ext}" does not support.`);
     }
   }
 }
