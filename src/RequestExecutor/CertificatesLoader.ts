@@ -16,8 +16,10 @@ export class CertificatesLoader implements Certificates {
   ];
 
   public async load(path?: string): Promise<void> {
+    const win = process.platform === 'win32';
+
     try {
-      if (process.platform === 'win32') {
+      if (win) {
         loadWinCertificates();
       } else if (typeof path === 'string') {
         await this.loadCertsFromFile(path);
@@ -27,7 +29,9 @@ export class CertificatesLoader implements Certificates {
     } catch {
       logger.warn(
         `Warning: cannot load certificates from ${
-          path ?? 'Trusted Root Certification Authorities Certificate Store'
+          win
+            ? 'Trusted Root Certification Authorities Certificate Store'
+            : path
         }.`
       );
     }
