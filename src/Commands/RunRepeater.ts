@@ -6,7 +6,7 @@ import {
   RepeaterStatusUpdated,
   SendRequestHandler
 } from '../Handlers';
-import { RequestExecutorOptions } from '../RequestExecutor';
+import { RequestExecutorOptions, Certificates } from '../RequestExecutor';
 import { Helpers, logger } from '../Utils';
 import { StartupManagerFactory } from '../StartupScripts';
 import { container } from '../Config';
@@ -79,6 +79,26 @@ export class RunRepeater implements CommandModule {
           return JSON.parse(arg);
         }
       })
+      .option('cacert', {
+        default: false,
+        requiresArg: true,
+        describe:
+          'The path to file which may contain multiple CA certificates. Example: /etc/ssl/certs/ca-certificates.crt',
+        coerce(arg: string): string | boolean {
+          return typeof arg === 'string' || typeof arg === 'boolean'
+            ? arg
+            : false;
+        }
+      })
+      .option('certs', {
+        requiresArg: true,
+        string: true,
+        describe:
+          'JSON string which contains pairs of hostname and client certificate. Example: {"google.com": "path/to/cert"}',
+        coerce(arg: string): Record<string, string> {
+          return JSON.parse(arg);
+        }
+      })
       .option('daemon', {
         requiresArg: false,
         alias: 'd',
@@ -102,7 +122,8 @@ export class RunRepeater implements CommandModule {
             useValue: {
               headers: (args.header ?? args.headers) as Record<string, string>,
               timeout: args.timeout as number,
-              proxyUrl: args.proxy as string
+              proxyUrl: args.proxy as string,
+              certs: args.certs as Record<string, string>
             }
           })
           .register(RabbitMQBusOptions, {
@@ -131,6 +152,13 @@ export class RunRepeater implements CommandModule {
     const startupManagerFactory: StartupManagerFactory = container.resolve(
       StartupManagerFactory
     );
+
+    if (args.cacert) {
+      const certificates: Certificates = container.resolve(Certificates);
+      await certificates.load(
+        typeof args.cacert === 'string' ? args.cacert : undefined
+      );
+    }
 
     const dispose: () => Promise<void> = async (): Promise<void> => {
       clearInterval(timer);

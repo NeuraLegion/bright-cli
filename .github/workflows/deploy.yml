@@ -109,7 +109,11 @@ jobs:
       - run: npm ci -q
       - run: npm run pack:win
       - run: npm rebuild os-service --target=v14.7.0 --arch=x64
-      - run: Copy-Item ".\node_modules\@neuralegion\os-service\build\Release\service.node" -Destination ".\bin\win\service.node"
+      - run: |
+          Copy-Item ".\node_modules\@neuralegion\os-service\build\Release\service.node" -Destination ".\bin\win\service.node"
+          Copy-Item ".\node_modules\win-ca\lib\crypt32-ia32.node" -Destination ".\bin\win\crypt32-ia32.node"
+          Copy-Item ".\node_modules\win-ca\lib\crypt32-x64.node" -Destination ".\bin\win\crypt32-x64.node"
+          Copy-Item ".\node_modules\win-ca\lib\roots.exe" -Destination ".\bin\win\roots.exe"
 
       - run: |
           curl -OLS https://github.com/wixtoolset/wix3/releases/download/wix3111rtm/wix311.exe
