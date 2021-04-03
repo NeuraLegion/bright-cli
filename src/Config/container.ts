@@ -41,6 +41,7 @@ import {
   RestArchives
 } from '../Archive';
 import { JiraIntegrationClient, IntegrationClient } from '../Integrations';
+import { Certificates, CertificatesLoader } from '../RequestExecutor';
 import { container, Lifecycle } from 'tsyringe';
 
 container
@@ -51,6 +52,13 @@ container
     RequestExecutor,
     {
       useClass: HttpRequestExecutor
+    },
+    { lifecycle: Lifecycle.Singleton }
+  )
+  .register(
+    Certificates,
+    {
+      useClass: CertificatesLoader
     },
     { lifecycle: Lifecycle.Singleton }
   )

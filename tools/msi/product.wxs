@@ -46,6 +46,9 @@
           <Component Id="Executable" Guid="8363278e-56cf-47c1-ba33-77eeaacb2baf" DiskId="1">
             <File Id="nexploitcli.exe" Name="nexploit-cli.exe" KeyPath="yes" Source="$(var.SourceDir)\nexploit-cli.exe" Checksum="yes" />
             <File Id="service.node" Name="service.node" Source="$(var.SourceDir)\service.node" Checksum="yes" />
+            <File Id="roots.exe" Name="roots.exe" Source="$(var.SourceDir)\roots.exe" Checksum="yes" />
+            <File Id="crypt32-x64.node" Name="crypt32-x64.node" Source="$(var.SourceDir)\crypt32-x64.node" Checksum="yes" />
+            <File Id="crypt32-ia32.node" Name="crypt32-ia32.node" Source="$(var.SourceDir)\crypt32-ia32.node" Checksum="yes" />
             <File Id="package.json" Hidden="yes" ReadOnly="yes" Name="package.json" Source="$(var.RepoDir)\package.json" />
           </Component>
           <Component Id="RegistryEntries" Guid="1980db82-a237-4df0-8f56-270ab87b18d7" DiskId="1">

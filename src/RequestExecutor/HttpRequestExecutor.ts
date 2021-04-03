@@ -19,6 +19,7 @@ export interface RequestExecutorOptions {
   timeout?: number;
   proxyUrl?: string;
   headers?: Record<string, string | string[]>;
+  certs?: Record<string, string>;
 }
 
 export const RequestExecutorOptions = Symbol('RequestExecutorOptions');
@@ -51,6 +52,10 @@ export class HttpRequestExecutor implements RequestExecutor {
       }
 
       options = await this.transformScript(options);
+
+      if (this.options.certs) {
+        await options.setCerts(this.options.certs);
+      }
 
       logger.debug('Executing HTTP request with following params: %j', options);
 
@@ -94,6 +99,10 @@ export class HttpRequestExecutor implements RequestExecutor {
 
   private async request(options: Request): Promise<IncomingResponse> {
     return request({
+      agentOptions: {
+        ca: options.ca,
+        pfx: options.pfx
+      },
       agent: this.agent,
       body: options.body,
       followRedirect: false,
