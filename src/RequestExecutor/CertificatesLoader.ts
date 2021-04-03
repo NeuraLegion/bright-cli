@@ -6,55 +6,62 @@ import { readFile } from 'fs';
 import { promisify } from 'util';
 
 export class CertificatesLoader implements Certificates {
-  async load(): Promise<void> {
-    switch (process.platform) {
-      case 'win32':
-        try {
-          loadWinCertificates();
-        } catch {
-          logger.warn(
-            `Warning: cannot load certificates from Trusted Root Certification Authorities Certificate Store.`
-          );
-        }
-        break;
+  private readonly CERT_FILES = [
+    '/etc/ssl/certs/ca-certificates.crt', // Debian/Ubuntu/Gentoo etc.
+    '/etc/pki/tls/certs/ca-bundle.crt', // Fedora/RHEL 6
+    '/etc/ssl/ca-bundle.pem', // OpenSUSE
+    '/etc/pki/tls/cacert.pem', // OpenELEC
+    '/etc/pki/ca-trust/extracted/pem/tls-ca-bundle.pem', // CentOS/RHEL 7
+    '/etc/ssl/cert.pem' // Alpine Linux
+  ];
 
-      case 'freebsd':
-        await this.loadCertsFromFile(
-          process.env.CERTIFICATE_PATH ??
-            '/etc/openssl/certs/ca-certificates.crt'
-        );
-        break;
-
-      case 'linux':
-        await this.loadCertsFromFile(
-          process.env.CERTIFICATE_PATH ?? '/etc/ssl/certs/ca-certificates.crt'
-        );
-        break;
-
-      case 'openbsd':
-        await this.loadCertsFromFile(
-          process.env.CERTIFICATE_PATH ?? '/etc/ssl/ca-certificates.crt'
-        );
-        break;
-
-      default:
-        break;
+  public async load(path?: string): Promise<void> {
+    try {
+      if (process.platform === 'win32') {
+        loadWinCertificates();
+      } else if (typeof path === 'string') {
+        await this.loadCertsFromFile(path);
+      } else {
+        await this.discoveryDefaultLocations();
+      }
+    } catch {
+      logger.warn(
+        `Warning: cannot load certificates from ${
+          path ?? 'Trusted Root Certification Authorities Certificate Store'
+        }.`
+      );
     }
   }
 
   /**
-   * workarounds about loading certs on linux https://github.com/nodejs/node/issues/4175
+   * Discovers possible certificate files; stop after finding one
+   */
+  private async discoveryDefaultLocations(): Promise<void> {
+    for (const path of this.CERT_FILES) {
+      try {
+        await this.loadCertsFromFile(path);
+
+        return;
+      } catch {
+        // noop
+      }
+    }
+
+    logger.warn(
+      `Warning: cannot load certificates from the system root. Please use "--cacert" option to specify the accurate path to the file.`
+    );
+  }
+
+  /**
+   * Workarounds about loading certs on linux https://github.com/nodejs/node/issues/4175
    * use update-ca-certificates to update '/etc/ssl/certs/ca-certificates.crt'
    */
   private async loadCertsFromFile(path: string): Promise<void> {
-    try {
-      const ca: string = await promisify(readFile)(path, 'utf8');
-      https.globalAgent.options.ca = ca
-        .split(/-----END CERTIFICATE-----\n?/)
-        .filter((cert) => !!cert)
-        .map((cert) => `${cert}-----END CERTIFICATE-----\n`);
-    } catch {
-      logger.warn(`Warning: cannot load certificates from ${path}.`);
-    }
+    const ca: string = await promisify(readFile)(path, 'utf8');
+
+    https.globalAgent.options.ca = ca
+      .split(/-----END CERTIFICATE-----\n?/)
+      .filter((cert) => !!cert)
+      .map((cert) => `${cert}-----END CERTIFICATE-----\n`);
   }
 }

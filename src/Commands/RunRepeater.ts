@@ -79,12 +79,22 @@ export class RunRepeater implements CommandModule {
           return JSON.parse(arg);
         }
       })
+      .option('cacert', {
+        default: false,
+        requiresArg: true,
+        describe:
+          'The path to file which may contain multiple CA certificates. Example: /etc/ssl/certs/ca-certificates.crt',
+        coerce(arg: string): string | boolean {
+          return typeof arg === 'string' || typeof arg === 'boolean'
+            ? arg
+            : false;
+        }
+      })
       .option('certs', {
-        alias: 'c',
         requiresArg: true,
         string: true,
         describe:
-          'JSON string which contains private CA used to sign the server cert. Example: {"google.com": "path/to/cert"}',
+          'JSON string which contains pairs of hostname and client certificate. Example: {"google.com": "path/to/cert"}',
         coerce(arg: string): Record<string, string> {
           return JSON.parse(arg);
         }
@@ -142,8 +152,13 @@ export class RunRepeater implements CommandModule {
     const startupManagerFactory: StartupManagerFactory = container.resolve(
       StartupManagerFactory
     );
-    const certificates: Certificates = container.resolve(Certificates);
-    await certificates.load();
+
+    if (args.cacert) {
+      const certificates: Certificates = container.resolve(Certificates);
+      await certificates.load(
+        typeof args.cacert === 'string' ? args.cacert : undefined
+      );
+    }
 
     const dispose: () => Promise<void> = async (): Promise<void> => {
       clearInterval(timer);

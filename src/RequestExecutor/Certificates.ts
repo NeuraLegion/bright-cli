@@ -1,5 +1,5 @@
 export interface Certificates {
-  load(): Promise<void>;
+  load(path?: string): Promise<void>;
 }
 
 export const Certificates: unique symbol = Symbol('Certificates');
