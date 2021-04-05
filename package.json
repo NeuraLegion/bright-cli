@@ -88,6 +88,7 @@
     "eslint-plugin-import": "^2.22.1",
     "eslint-plugin-prefer-arrow": "^1.2.3",
     "husky": "^6.0.0",
+    "is-ci": "^3.0.0",
     "lint-staged": "^10.5.4",
     "mocha": "^8.3.2",
     "nodemon": "^2.0.7",
@@ -138,7 +139,7 @@
     "pack:win": "pkg -o bin/win/nexploit-cli.exe -t node14-windows-x64 .",
     "pack:mac": "pkg -o bin/mac/nexploit-cli -t node14-mac-x64 .",
     "pack:linux": "pkg -o bin/linux/nexploit-cli -t node14-linux-x64 .",
-    "prepare": "husky install"
+    "prepare": "is-ci || husky install"
   },
   "pkg": {
     "assets": [

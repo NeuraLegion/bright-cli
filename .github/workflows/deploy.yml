@@ -21,9 +21,9 @@ jobs:
           node-version: 12
           registry-url: 'https://registry.npmjs.org'
 
-      - run: npm ci -q
+      - run: npm ci -q --ignore-scripts
       - run: npm run build
-      - run: npm --prefix public ci -q
+      - run: npm --prefix public ci -q --ignore-scripts
       - run: npm --prefix public run build -- --configuration production
       - run: npm version --no-git-tag-version $VERSION
 
@@ -58,6 +58,8 @@ jobs:
         with:
           node-version: 12
           registry-url: 'https://registry.npmjs.org'
+
+      - run: npm ci -q --ignore-scripts
 
       - run: npm publish --tag $TAG
         continue-on-error: true
@@ -106,7 +108,8 @@ jobs:
         with:
           node-version: 14
 
-      - run: npm ci -q
+      - run: npm ci -q --ignore-scripts
+      - run: npm rebuild
       - run: npm run pack:win
       - run: npm rebuild os-service --target=v14.7.0 --arch=x64
       - run: |
