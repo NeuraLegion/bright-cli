@@ -138,7 +138,7 @@
     "pack:win": "pkg -o bin/win/nexploit-cli.exe -t node14-windows-x64 .",
     "pack:mac": "pkg -o bin/mac/nexploit-cli -t node14-mac-x64 .",
     "pack:linux": "pkg -o bin/linux/nexploit-cli -t node14-linux-x64 .",
-    "prepare": "husky install"
+    "postinstall": "husky install"
   },
   "pkg": {
     "assets": [
