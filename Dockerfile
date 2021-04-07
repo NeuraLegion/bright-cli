@@ -1,4 +1,4 @@
-FROM node:10-alpine as base
+FROM node:12-alpine as base
 
 ARG VERSION
 
