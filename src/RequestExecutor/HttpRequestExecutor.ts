@@ -122,13 +122,17 @@ export class HttpRequestExecutor implements RequestExecutor {
    */
   private setHeaders(req: OutgoingMessage, options: Request): void {
     const symbols: symbol[] = Object.getOwnPropertySymbols(req);
-    const kOutHeaders: symbol = symbols.find(
-      (item) => item.toString() === 'Symbol(kOutHeaders)'
+    const headersSymbol: symbol = symbols.find(
+      // ADHOC: Node.js version < 12 uses "outHeadersKey" symbol to set headers
+      (item) =>
+        ['Symbol(kOutHeaders)', 'Symbol(outHeadersKey)'].includes(
+          item.toString()
+        )
     );
 
-    if (!req.headersSent && kOutHeaders && options.headers) {
-      const headers = (req[kOutHeaders] =
-        req[kOutHeaders] ?? Object.create(null));
+    if (!req.headersSent && headersSymbol && options.headers) {
+      const headers = (req[headersSymbol] =
+        req[headersSymbol] ?? Object.create(null));
 
       Object.entries(options.headers).forEach(
         ([key, value]: [string, string | string[]]) => {
