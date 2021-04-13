@@ -1,6 +1,6 @@
 import { RequestExecutor } from './RequestExecutor';
 import { Response } from './Response';
-import { Request, RequestOptions } from './Request';
+import { Cert, Request, RequestOptions } from './Request';
 import { logger } from '../Utils';
 import { VirtualScripts } from '../Scripts';
 import { Protocol } from './Protocol';
@@ -19,7 +19,7 @@ export interface RequestExecutorOptions {
   timeout?: number;
   proxyUrl?: string;
   headers?: Record<string, string | string[]>;
-  certs?: Record<string, string>;
+  certs?: Cert[];
 }
 
 export const RequestExecutorOptions = Symbol('RequestExecutorOptions');
@@ -80,7 +80,7 @@ export class HttpRequestExecutor implements RequestExecutor {
       }
 
       const message = err.cause?.message ?? err.message;
-      const errorCode = err.cause?.code ?? err.error?.syscall;
+      const errorCode = err.cause?.code ?? err.error?.syscall ?? err.name;
 
       logger.error(
         'Error executing request: "%s %s HTTP/1.1"',
@@ -101,7 +101,8 @@ export class HttpRequestExecutor implements RequestExecutor {
     return request({
       agentOptions: {
         ca: options.ca,
-        pfx: options.pfx
+        pfx: options.pfx,
+        passphrase: options.passphrase
       },
       agent: this.agent,
       body: options.body,
@@ -109,6 +110,7 @@ export class HttpRequestExecutor implements RequestExecutor {
       gzip: true,
       method: options.method,
       resolveWithFullResponse: true,
+      strictSSL: false,
       rejectUnauthorized: false,
       timeout: this.options.timeout,
       url: options.url
