@@ -96,17 +96,35 @@ export class RunRepeater implements CommandModule {
         array: true,
         string: true,
         describe:
-          'The certificate must be in PKCS, or PEM format. ' +
-          'Example: "hostname:path_to_file[:password]".' +
-          'If the passphrase contains ":", it needs to be preceded by "\\" so that it is not recognized as delimiter.',
+          'The certificate must be in PKCS, or PEM format. Example: {"hostname": "example.com", "path": "./example.pem", "passphrase": "pa$$word"}.',
         coerce(args: string[]): Cert[] {
           return args
-            .map((arg) => Helpers.splitByDelimiter(arg, ':'))
-            .map(([hostname, passphrase, path]: string[]) => ({
-              hostname,
-              passphrase,
-              path: normalize(path)
-            }));
+            .map((arg: string) => JSON.parse(arg))
+            .map(({ path, hostname, passphrase }: Cert) => {
+              if (!path) {
+                logger.error(
+                  'Error during "repeater": Specify the path to your client certificate file.'
+                );
+                process.exit(1);
+
+                return;
+              }
+
+              if (!hostname) {
+                logger.error(
+                  'Error during "repeater": Specify the hostname (without protocol and port) of the request URL for which you want to use the certificate.'
+                );
+                process.exit(1);
+
+                return;
+              }
+
+              return {
+                hostname,
+                passphrase,
+                path: normalize(path)
+              };
+            });
         }
       })
       .option('daemon', {
@@ -126,7 +144,7 @@ export class RunRepeater implements CommandModule {
       .conflicts('remove-daemon', 'daemon')
       .env('REPEATER')
       .exitProcess(false)
-      .middleware((args: Arguments) => {
+      .middleware((args: Arguments) =>
         container
           .register(RequestExecutorOptions, {
             useValue: {
@@ -153,8 +171,8 @@ export class RunRepeater implements CommandModule {
                 process.exit(1);
               }
             }
-          });
-      });
+          })
+      );
   }
 
   public async handler(args: Arguments): Promise<void> {
@@ -245,9 +263,9 @@ export class RunRepeater implements CommandModule {
 
       await bus.init();
 
+      await bus.subscribe(NetworkTestHandler);
       await bus.subscribe(RegisterScriptsHandler);
       await bus.subscribe(SendRequestHandler);
-      await bus.subscribe(NetworkTestHandler);
 
       timer = setInterval(() => notify('connected'), 10000);
 
