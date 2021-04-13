@@ -52,8 +52,9 @@ export class WsRequestExecutor implements RequestExecutor {
         rejectUnauthorized: true,
         timeout: this.options.timeout,
         headers: this.normalizeHeaders(options.headers),
-        ca: options?.ca,
-        pfx: options?.pfx
+        ca: options.ca,
+        pfx: options.pfx,
+        passphrase: options.passphrase
       });
 
       const res: IncomingMessage = await this.connect(client);

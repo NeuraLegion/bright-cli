@@ -136,7 +136,7 @@ export class Helpers {
       );
   }
 
-  public static toArray<T>(enumeration: any): T[] {
+  public static toArray<T>(enumeration: unknown): T[] {
     return [...Object.values(enumeration)] as T[];
   }
 
@@ -160,6 +160,19 @@ export class Helpers {
     }
 
     return encodeURI(decodedStr).replace(/%5B/g, '[').replace(/%5D/g, ']');
+  }
+
+  public static splitByDelimiter(val: string, delimiter: string): string[] {
+    const reMatch = new RegExp(
+      String.raw`[^${delimiter}]*?(?:\\${delimiter}[^${delimiter}]*?)*(?:${delimiter}|$)`,
+      'g'
+    );
+    const reReplace = new RegExp(String.raw`([^\\].|.[^\\]|^.?)${delimiter}$`);
+
+    return val
+      .match(reMatch)
+      .slice(0, -1)
+      .map((section) => section.replace(reReplace, '$1').replace(/\\/g, ''));
   }
 
   // It's based on https://qntm.org/cmd

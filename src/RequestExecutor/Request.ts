@@ -11,7 +11,14 @@ export interface RequestOptions {
   pfx?: Buffer | string;
   ca?: Buffer | string;
   body?: string;
+  passphrase?: string;
   correlationIdRegex?: string | RegExp;
+}
+
+export interface Cert {
+  path: string;
+  hostname: string;
+  passphrase?: string;
 }
 
 export class Request {
@@ -43,12 +50,19 @@ export class Request {
     return this._pfx;
   }
 
+  private _passphrase?: string;
+
+  get passphrase(): string {
+    return this._passphrase;
+  }
+
   constructor({
     method,
     url,
     body,
     ca,
     pfx,
+    passphrase,
     correlationIdRegex,
     headers = {}
   }: RequestOptions) {
@@ -89,13 +103,10 @@ export class Request {
     if (ca) {
       this._ca = Buffer.from(ca);
     }
+
+    this._passphrase = passphrase;
   }
 
-  /**
-   * Allows to attack headers. Node.js does not accept any other characters
-   * which violate [rfc7230](https://tools.ietf.org/html/rfc7230#section-3.2.6).
-   * To override default behavior bypassing {@link OutgoingMessage.setHeader} method we have to set headers via internal symbol.
-   */
   public setHeaders(headers: Record<string, string | string[]>): void {
     this._headers = {
       ...this._headers,
@@ -103,17 +114,18 @@ export class Request {
     };
   }
 
-  public async setCerts(certs: Record<string, string> = {}): Promise<void> {
+  public async setCerts(certs: Cert[]): Promise<void> {
     const { hostname } = new URL(this.url);
-    const path = certs[hostname];
 
-    if (!path) {
+    const cert: Cert | undefined = certs.find((x) => x.hostname === hostname);
+
+    if (!cert) {
       logger.warn(`Warning: certificate for ${hostname} not found.`);
 
       return;
     }
 
-    await this.loadCert(path);
+    await this.loadCert(cert);
   }
 
   public toJSON(): RequestOptions {
@@ -122,13 +134,14 @@ export class Request {
       body: this.body,
       method: this._method,
       headers: this._headers,
+      passphrase: this._passphrase,
       ca: this._ca?.toString('utf8'),
       pfx: this._pfx?.toString('utf8'),
       correlationIdRegex: this.correlationIdRegex
     };
   }
 
-  private async loadCert(path: string): Promise<void> {
+  private async loadCert({ path, passphrase }: Cert): Promise<void> {
     let cert: Buffer | undefined;
 
     try {
@@ -147,6 +160,7 @@ export class Request {
         break;
       case '.pfx':
         this._pfx = cert;
+        this._passphrase = passphrase;
         break;
       default:
         logger.warn(`Warning: certificate of type "${ext}" does not support.`);

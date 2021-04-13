@@ -6,11 +6,12 @@ import {
   RepeaterStatusUpdated,
   SendRequestHandler
 } from '../Handlers';
-import { RequestExecutorOptions, Certificates } from '../RequestExecutor';
+import { Cert, Certificates, RequestExecutorOptions } from '../RequestExecutor';
 import { Helpers, logger } from '../Utils';
 import { StartupManagerFactory } from '../StartupScripts';
 import { container } from '../Config';
 import { Arguments, Argv, CommandModule } from 'yargs';
+import { normalize } from 'path';
 import Timer = NodeJS.Timer;
 
 let timer: Timer;
@@ -90,13 +91,22 @@ export class RunRepeater implements CommandModule {
             : false;
         }
       })
-      .option('certs', {
+      .option('cert', {
         requiresArg: true,
+        array: true,
         string: true,
         describe:
-          'JSON string which contains pairs of hostname and client certificate. Example: {"google.com": "path/to/cert"}',
-        coerce(arg: string): Record<string, string> {
-          return JSON.parse(arg);
+          'The certificate must be in PKCS, or PEM format. ' +
+          'Example: "hostname:path_to_file[:password]".' +
+          'If the passphrase contains ":", it needs to be preceded by "\\" so that it is not recognized as delimiter.',
+        coerce(args: string[]): Cert[] {
+          return args
+            .map((arg) => Helpers.splitByDelimiter(arg, ':'))
+            .map(([hostname, passphrase, path]: string[]) => ({
+              hostname,
+              passphrase,
+              path: normalize(path)
+            }));
         }
       })
       .option('daemon', {
@@ -123,7 +133,7 @@ export class RunRepeater implements CommandModule {
               headers: (args.header ?? args.headers) as Record<string, string>,
               timeout: args.timeout as number,
               proxyUrl: args.proxy as string,
-              certs: args.certs as Record<string, string>
+              certs: args.cert as Cert[]
             }
           })
           .register(RabbitMQBusOptions, {
