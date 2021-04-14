@@ -68,10 +68,8 @@ export class RabbitBackoff {
     return Math.min(this.backoffTime, this.maximumBackoff);
   }
 
-  private isFatal(err: ErrnoException & { isOperational?: boolean }): boolean {
-    return !(
-      err.isOperational || [406, 405, 404, 313, 312, 311].includes(+err.code)
-    );
+  private isFatal(err: ErrnoException): boolean {
+    return ![406, 405, 404, 313, 312, 311].includes(+err.code);
   }
 
   private humanizeErrorMessage({ code, message }: ErrnoException): string {

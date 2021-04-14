@@ -1,12 +1,24 @@
-import { Helpers } from '../Utils';
+import { Helpers, logger } from '../Utils';
 import { URL } from 'url';
+import { readFile } from 'fs';
+import { extname } from 'path';
+import { promisify } from 'util';
 
 export interface RequestOptions {
   method?: string;
   url: string;
   headers: Record<string, string | string[]>;
+  pfx?: Buffer | string;
+  ca?: Buffer | string;
   body?: string;
+  passphrase?: string;
   correlationIdRegex?: string | RegExp;
+}
+
+export interface Cert {
+  path: string;
+  hostname: string;
+  passphrase?: string;
 }
 
 export class Request {
@@ -26,10 +38,31 @@ export class Request {
     return this._headers;
   }
 
+  private _ca?: Buffer;
+
+  get ca(): Buffer {
+    return this._ca;
+  }
+
+  private _pfx?: Buffer;
+
+  get pfx(): Buffer {
+    return this._pfx;
+  }
+
+  private _passphrase?: string;
+
+  get passphrase(): string {
+    return this._passphrase;
+  }
+
   constructor({
     method,
     url,
     body,
+    ca,
+    pfx,
+    passphrase,
     correlationIdRegex,
     headers = {}
   }: RequestOptions) {
@@ -62,13 +95,18 @@ export class Request {
     }
 
     this._headers = headers;
+
+    if (pfx) {
+      this._pfx = Buffer.from(pfx);
+    }
+
+    if (ca) {
+      this._ca = Buffer.from(ca);
+    }
+
+    this._passphrase = passphrase;
   }
 
-  /**
-   * Allows to attack headers. Node.js does not accept any other characters
-   * which violate [rfc7230](https://tools.ietf.org/html/rfc7230#section-3.2.6).
-   * To override default behavior bypassing {@link OutgoingMessage.setHeader} method we have to set headers via internal symbol.
-   */
   public setHeaders(headers: Record<string, string | string[]>): void {
     this._headers = {
       ...this._headers,
@@ -76,13 +114,56 @@ export class Request {
     };
   }
 
+  public async setCerts(certs: Cert[]): Promise<void> {
+    const { hostname } = new URL(this.url);
+
+    const cert: Cert | undefined = certs.find((x) => x.hostname === hostname);
+
+    if (!cert) {
+      logger.warn(`Warning: certificate for ${hostname} not found.`);
+
+      return;
+    }
+
+    await this.loadCert(cert);
+  }
+
   public toJSON(): RequestOptions {
     return {
       url: this.url,
+      body: this.body,
       method: this._method,
       headers: this._headers,
-      body: this.body,
+      passphrase: this._passphrase,
+      ca: this._ca?.toString('utf8'),
+      pfx: this._pfx?.toString('utf8'),
       correlationIdRegex: this.correlationIdRegex
     };
+  }
+
+  private async loadCert({ path, passphrase }: Cert): Promise<void> {
+    let cert: Buffer | undefined;
+
+    try {
+      cert = await promisify(readFile)(path);
+    } catch (e) {
+      logger.warn(`Warning: certificate ${path} not found.`);
+    }
+
+    const ext = extname(path);
+
+    switch (ext) {
+      case '.pem':
+      case '.crt':
+      case '.ca':
+        this._ca = cert;
+        break;
+      case '.pfx':
+        this._pfx = cert;
+        this._passphrase = passphrase;
+        break;
+      default:
+        logger.warn(`Warning: certificate of type "${ext}" does not support.`);
+    }
   }
 }

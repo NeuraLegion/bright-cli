@@ -6,11 +6,12 @@ import {
   RepeaterStatusUpdated,
   SendRequestHandler
 } from '../Handlers';
-import { RequestExecutorOptions } from '../RequestExecutor';
+import { Cert, Certificates, RequestExecutorOptions } from '../RequestExecutor';
 import { Helpers, logger } from '../Utils';
 import { StartupManagerFactory } from '../StartupScripts';
 import { container } from '../Config';
 import { Arguments, Argv, CommandModule } from 'yargs';
+import { normalize } from 'path';
 import Timer = NodeJS.Timer;
 
 let timer: Timer;
@@ -79,6 +80,53 @@ export class RunRepeater implements CommandModule {
           return JSON.parse(arg);
         }
       })
+      .option('cacert', {
+        default: false,
+        requiresArg: true,
+        describe:
+          'The path to file which may contain multiple CA certificates. Example: /etc/ssl/certs/ca-certificates.crt',
+        coerce(arg: string): string | boolean {
+          return typeof arg === 'string' || typeof arg === 'boolean'
+            ? arg
+            : false;
+        }
+      })
+      .option('cert', {
+        requiresArg: true,
+        array: true,
+        string: true,
+        describe:
+          'The certificate must be in PKCS, or PEM format. Example: {"hostname": "example.com", "path": "./example.pem", "passphrase": "pa$$word"}.',
+        coerce(args: string[]): Cert[] {
+          return args
+            .map((arg: string) => JSON.parse(arg))
+            .map(({ path, hostname, passphrase }: Cert) => {
+              if (!path) {
+                logger.error(
+                  'Error during "repeater": Specify the path to your client certificate file.'
+                );
+                process.exit(1);
+
+                return;
+              }
+
+              if (!hostname) {
+                logger.error(
+                  'Error during "repeater": Specify the hostname (without protocol and port) of the request URL for which you want to use the certificate.'
+                );
+                process.exit(1);
+
+                return;
+              }
+
+              return {
+                hostname,
+                passphrase,
+                path: normalize(path)
+              };
+            });
+        }
+      })
       .option('daemon', {
         requiresArg: false,
         alias: 'd',
@@ -96,13 +144,14 @@ export class RunRepeater implements CommandModule {
       .conflicts('remove-daemon', 'daemon')
       .env('REPEATER')
       .exitProcess(false)
-      .middleware((args: Arguments) => {
+      .middleware((args: Arguments) =>
         container
           .register(RequestExecutorOptions, {
             useValue: {
               headers: (args.header ?? args.headers) as Record<string, string>,
               timeout: args.timeout as number,
-              proxyUrl: args.proxy as string
+              proxyUrl: args.proxy as string,
+              certs: args.cert as Cert[]
             }
           })
           .register(RabbitMQBusOptions, {
@@ -122,8 +171,8 @@ export class RunRepeater implements CommandModule {
                 process.exit(1);
               }
             }
-          });
-      });
+          })
+      );
   }
 
   public async handler(args: Arguments): Promise<void> {
@@ -131,6 +180,13 @@ export class RunRepeater implements CommandModule {
     const startupManagerFactory: StartupManagerFactory = container.resolve(
       StartupManagerFactory
     );
+
+    if (args.cacert) {
+      const certificates: Certificates = container.resolve(Certificates);
+      await certificates.load(
+        typeof args.cacert === 'string' ? args.cacert : undefined
+      );
+    }
 
     const dispose: () => Promise<void> = async (): Promise<void> => {
       clearInterval(timer);
@@ -207,9 +263,9 @@ export class RunRepeater implements CommandModule {
 
       await bus.init();
 
+      await bus.subscribe(NetworkTestHandler);
       await bus.subscribe(RegisterScriptsHandler);
       await bus.subscribe(SendRequestHandler);
-      await bus.subscribe(NetworkTestHandler);
 
       timer = setInterval(() => notify('connected'), 10000);
 

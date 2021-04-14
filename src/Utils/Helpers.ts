@@ -136,7 +136,7 @@ export class Helpers {
       );
   }
 
-  public static toArray<T>(enumeration: any): T[] {
+  public static toArray<T>(enumeration: unknown): T[] {
     return [...Object.values(enumeration)] as T[];
   }
 

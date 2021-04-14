@@ -1,6 +1,6 @@
 import { RequestExecutor } from './RequestExecutor';
 import { Response } from './Response';
-import { Request, RequestOptions } from './Request';
+import { Cert, Request, RequestOptions } from './Request';
 import { logger } from '../Utils';
 import { VirtualScripts } from '../Scripts';
 import { Protocol } from './Protocol';
@@ -19,6 +19,7 @@ export interface RequestExecutorOptions {
   timeout?: number;
   proxyUrl?: string;
   headers?: Record<string, string | string[]>;
+  certs?: Cert[];
 }
 
 export const RequestExecutorOptions = Symbol('RequestExecutorOptions');
@@ -52,6 +53,10 @@ export class HttpRequestExecutor implements RequestExecutor {
 
       options = await this.transformScript(options);
 
+      if (this.options.certs) {
+        await options.setCerts(this.options.certs);
+      }
+
       logger.debug('Executing HTTP request with following params: %j', options);
 
       const response = await this.request(options);
@@ -75,7 +80,7 @@ export class HttpRequestExecutor implements RequestExecutor {
       }
 
       const message = err.cause?.message ?? err.message;
-      const errorCode = err.cause?.code ?? err.error?.syscall;
+      const errorCode = err.cause?.code ?? err.error?.syscall ?? err.name;
 
       logger.error(
         'Error executing request: "%s %s HTTP/1.1"',
@@ -94,12 +99,18 @@ export class HttpRequestExecutor implements RequestExecutor {
 
   private async request(options: Request): Promise<IncomingResponse> {
     return request({
+      agentOptions: {
+        ca: options.ca,
+        pfx: options.pfx,
+        passphrase: options.passphrase
+      },
       agent: this.agent,
       body: options.body,
       followRedirect: false,
       gzip: true,
       method: options.method,
       resolveWithFullResponse: true,
+      strictSSL: false,
       rejectUnauthorized: false,
       timeout: this.options.timeout,
       url: options.url

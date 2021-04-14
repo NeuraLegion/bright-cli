@@ -4,3 +4,5 @@ export * from './WsRequestExecutor';
 export * from './Response';
 export * from './Request';
 export * from './Protocol';
+export * from './Certificates';
+export * from './CertificatesLoader';
