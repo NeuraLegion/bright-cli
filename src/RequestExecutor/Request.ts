@@ -1,4 +1,4 @@
-import { Helpers, logger } from '../Utils';
+import { logger } from '../Utils';
 import { URL } from 'url';
 import { readFile } from 'fs';
 import { extname } from 'path';
@@ -73,12 +73,10 @@ export class Request {
     }
 
     try {
-      new URL(url);
+      this.url = new URL(url).toString();
     } catch {
       throw new Error('Invalid URL.');
     }
-
-    this.url = Helpers.encodeURL(url);
 
     if (body && typeof body !== 'string') {
       throw new Error('Body must be string.');
