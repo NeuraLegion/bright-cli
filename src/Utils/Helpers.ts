@@ -150,18 +150,6 @@ export class Helpers {
     }, {});
   }
 
-  public static encodeURL(str: string): string {
-    let decodedStr: string;
-
-    try {
-      decodedStr = decodeURI(str);
-    } catch {
-      decodedStr = str;
-    }
-
-    return encodeURI(decodedStr).replace(/%5B/g, '[').replace(/%5D/g, ']');
-  }
-
   // It's based on https://qntm.org/cmd
   private static escapeShellArgument(val: string): string {
     val = `${val}`;
