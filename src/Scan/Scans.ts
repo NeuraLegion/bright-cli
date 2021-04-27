@@ -97,8 +97,8 @@ export interface ScanConfig {
     project?: string;
     vcs?: 'github' | 'bitbucket';
   };
-  extraHosts?: { [p: string]: string };
-  headers?: { [p: string]: string };
+  extraHosts?: Record<string, string>;
+  headers?: Record<string, string>;
   crawlerUrls?: string[];
   hostsFilter?: string[];
   repeaters?: string[];

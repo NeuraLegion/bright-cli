@@ -31,7 +31,7 @@ export class RestScans implements Scans {
 
   public async create(body: ScanConfig): Promise<string> {
     const { id }: { id: string } = await this.client.post({
-      body: this.mergeDiscoveryTypes(body),
+      body: this.prepareScanConfig(body),
       uri: `/api/v1/scans`
     });
 
@@ -64,10 +64,25 @@ export class RestScans implements Scans {
     });
   }
 
-  private mergeDiscoveryTypes(config: ScanConfig): ScanConfig {
-    const discoveryTypes: Discovery[] = this.exploreDiscovery(config);
+  private prepareScanConfig({
+    headers,
+    ...rest
+  }: ScanConfig): Omit<ScanConfig, 'headers'> & {
+    headers: { name: string; value: string; mergeStrategy: 'replace' }[];
+  } {
+    const discoveryTypes: Discovery[] = this.exploreDiscovery(rest);
 
-    return { ...config, discoveryTypes } as ScanConfig;
+    return {
+      ...rest,
+      discoveryTypes,
+      headers: headers
+        ? Object.entries(headers).map(([name, value]: [string, string]) => ({
+            name,
+            value,
+            mergeStrategy: 'replace'
+          }))
+        : undefined
+    };
   }
 
   private exploreDiscovery(body: ScanConfig): Discovery[] {
