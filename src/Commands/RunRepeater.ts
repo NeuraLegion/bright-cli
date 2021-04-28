@@ -151,8 +151,21 @@ export class RunRepeater implements CommandModule {
               headers: (args.header ?? args.headers) as Record<string, string>,
               timeout: args.timeout as number,
               proxyUrl: args.proxy as string,
-              certs: args.cert as Cert[]
-            }
+              certs: args.cert as Cert[],
+              maxContentLength: 100,
+              whitelistMimes: [
+                'text/html',
+                'text/plain',
+                'text/css',
+                'text/javascript',
+                'text/markdown',
+                'text/xml',
+                'application/graphlq',
+                'application/javascript',
+                'application/json',
+                'application/xml'
+              ]
+            } as RequestExecutorOptions
           })
           .register(RabbitMQBusOptions, {
             useValue: {
