@@ -131,11 +131,11 @@ export class HttpRequestExecutor implements RequestExecutor {
 
     const maxBodySize = this.options.maxContentLength * 1024;
     const { type } = contentTypeParse(
-      res.headers['content-type'] ?? 'plain/text'
+      res.headers['content-type'] ?? 'text/plain'
     );
 
     const requiresTruncating =
-      !this.options.whitelistMimes?.every((mime: string) =>
+      !this.options.whitelistMimes?.some((mime: string) =>
         type.startsWith(mime)
       ) ?? false;
 
