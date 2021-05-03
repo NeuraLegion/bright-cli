@@ -8,6 +8,7 @@ import request from 'request-promise';
 import { Response as IncomingResponse } from 'request';
 import { SocksProxyAgent } from 'socks-proxy-agent';
 import { inject, injectable } from 'tsyringe';
+import { parse as contentTypeParse } from 'content-type';
 import { parse, URL } from 'url';
 import { OutgoingMessage } from 'http';
 
@@ -20,6 +21,8 @@ export interface RequestExecutorOptions {
   proxyUrl?: string;
   headers?: Record<string, string | string[]>;
   certs?: Cert[];
+  whitelistMimes?: string[];
+  maxContentLength?: number;
 }
 
 export const RequestExecutorOptions = Symbol('RequestExecutorOptions');
@@ -114,7 +117,59 @@ export class HttpRequestExecutor implements RequestExecutor {
       rejectUnauthorized: false,
       timeout: this.options.timeout,
       url: options.url
-    }).on('request', (req: OutgoingMessage) => this.setHeaders(req, options));
+    })
+      .on('request', (req: OutgoingMessage) => this.setHeaders(req, options))
+      .on('response', (response: IncomingResponse) =>
+        this.truncateResponse(response)
+      );
+  }
+
+  private async truncateResponse(res: IncomingResponse): Promise<void> {
+    if (res.statusCode === 204 || res.method === 'HEAD') {
+      return;
+    }
+
+    const maxBodySize = this.options.maxContentLength * 1024;
+    const { type } = contentTypeParse(
+      res.headers['content-type'] ?? 'text/plain'
+    );
+
+    const requiresTruncating =
+      !this.options.whitelistMimes?.some((mime: string) =>
+        type.startsWith(mime)
+      ) ?? false;
+
+    const body = await this.parseBody(res, { maxBodySize, requiresTruncating });
+
+    res.body = body.toString();
+    res.headers['content-length'] = String(body.byteLength);
+  }
+
+  private async parseBody(
+    res: IncomingResponse,
+    options: { maxBodySize: number; requiresTruncating: boolean }
+  ): Promise<Buffer> {
+    let truncated = false;
+
+    const chunks = [];
+
+    for await (const chunk of res) {
+      chunks.push(chunk);
+
+      truncated =
+        this.options.maxContentLength > -1 &&
+        Buffer.concat(chunks).byteLength > options.maxBodySize &&
+        options.requiresTruncating;
+
+      if (truncated) {
+        res.destroy();
+        break;
+      }
+    }
+
+    return truncated
+      ? Buffer.concat(chunks).slice(0, options.maxBodySize)
+      : Buffer.concat(chunks);
   }
 
   /**
