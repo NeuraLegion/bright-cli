@@ -129,10 +129,8 @@ export class HttpRequestExecutor implements RequestExecutor {
       return;
     }
 
+    const type = this.parseContentType(res);
     const maxBodySize = this.options.maxContentLength * 1024;
-    const { type } = contentTypeParse(
-      res.headers['content-type'] ?? 'text/plain'
-    );
 
     const requiresTruncating =
       !this.options.whitelistMimes?.some((mime: string) =>
@@ -143,6 +141,18 @@ export class HttpRequestExecutor implements RequestExecutor {
 
     res.body = body.toString();
     res.headers['content-length'] = String(body.byteLength);
+  }
+
+  private parseContentType(res: IncomingResponse) {
+    let type = res.headers['content-type'];
+
+    try {
+      ({ type } = contentTypeParse(type || 'text/plain'));
+    } catch {
+      // noop
+    }
+
+    return type;
   }
 
   private async parseBody(
@@ -194,7 +204,7 @@ export class HttpRequestExecutor implements RequestExecutor {
       Object.entries(options.headers).forEach(
         ([key, value]: [string, string | string[]]) => {
           if (key) {
-            headers[key.toLowerCase()] = [key, value ?? ''];
+            headers[key.toLowerCase()] = [key.toLowerCase(), value ?? ''];
           }
         }
       );
