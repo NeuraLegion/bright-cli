@@ -160,10 +160,13 @@ export class RunRepeater implements CommandModule {
                 'text/javascript',
                 'text/markdown',
                 'text/xml',
-                'application/graphlq',
                 'application/javascript',
                 'application/json',
-                'application/xml'
+                'application/xml',
+                'application/x-www-form-urlencoded',
+                'application/msgpack',
+                'application/ld+json',
+                'application/graphql'
               ]
             } as RequestExecutorOptions
           })
