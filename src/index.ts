@@ -14,25 +14,20 @@ import {
 } from './Commands';
 import { CliBuilder, DefaultConfigReader } from './Config';
 
-const cli: CliBuilder = new CliBuilder({
-  colors: true,
+new CliBuilder({
   cwd: process.cwd()
-});
-
-cli
-  .build({
-    configReader: new DefaultConfigReader(),
-    commands: [
-      new RunRepeater(),
-      new VersionCommand(),
-      new GenerateArchive(),
-      new PollingScanStatus(),
-      new RunScan(),
-      new RetestScan(),
-      new StopScan(),
-      new UploadArchive(),
-      new Configure(),
-      new Integration()
-    ]
-  })
-  .wrap(null).argv;
+}).build({
+  configReader: new DefaultConfigReader(),
+  commands: [
+    new RunRepeater(),
+    new VersionCommand(),
+    new GenerateArchive(),
+    new PollingScanStatus(),
+    new RunScan(),
+    new RetestScan(),
+    new StopScan(),
+    new UploadArchive(),
+    new Configure(),
+    new Integration()
+  ]
+}).argv;
