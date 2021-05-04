@@ -42,7 +42,6 @@
     "tsyringe": "~4.5.0",
     "win-ca": "^3.4.5",
     "ws": "~7.4.5",
-    "yargonaut": "~1.1.4",
     "yargs": "~16.2.0"
   },
   "description": "NexPloit CLI is a CLI tool that can initialize, stop, polling and maintain scans in NeuraLegions solutions (Such as NexPloit).",
