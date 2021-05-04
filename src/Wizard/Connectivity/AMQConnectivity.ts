@@ -1,6 +1,7 @@
-import { Credentials, TestType } from '../Models';
+import { TestType } from '../TestType';
 import { Connectivity } from './Connectivity';
 import { logger } from '../../Utils';
+import { Credentials } from '../Credentials';
 import { Tokens } from '../Tokens';
 import { post } from 'request-promise';
 import { inject, injectable } from 'tsyringe';

@@ -1,6 +1,6 @@
 import { Connectivity } from './Connectivity';
 import { logger } from '../../Utils';
-import { TestType } from '../Models';
+import { TestType } from '../TestType';
 import { injectable } from 'tsyringe';
 import { Socket } from 'net';
 import { URL } from 'url';
