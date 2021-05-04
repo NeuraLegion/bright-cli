@@ -1,4 +1,4 @@
-import { TestType } from '../Models';
+import { TestType } from '../TestType';
 import { URL } from 'url';
 
 export interface ConnectivityAnalyzer {

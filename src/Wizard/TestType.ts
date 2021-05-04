@@ -3,7 +3,3 @@ export enum TestType {
   TCP = 'tcp',
   AUTH = 'auth'
 }
-
-export interface ConnectivityTest {
-  readonly type: TestType;
-}

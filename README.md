@@ -59,6 +59,6 @@ You can follow the scan status here: https://nexploit.app/scans, or by using the
 **NexPloit CLI** can do so much more! A full documentation with usage examples is available on [NeuraLegion's knowledgebase](https://kb.neuralegion.com)
 
 ## 📝 License
-Copyright © 2020 [NeuraLegion](https://github.com/NeuraLegion).
+Copyright © 2021 [NeuraLegion](https://github.com/NeuraLegion).
 
 This project is licensed under the MIT License - see the [LICENSE file](LICENSE) for details.

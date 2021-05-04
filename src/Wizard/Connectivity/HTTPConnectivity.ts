@@ -1,6 +1,6 @@
 import { Connectivity } from './Connectivity';
 import { logger } from '../../Utils';
-import { TestType } from '../Models';
+import { TestType } from '../TestType';
 import { injectable } from 'tsyringe';
 import https, { RequestOptions } from 'https';
 import http, { ClientRequest } from 'http';

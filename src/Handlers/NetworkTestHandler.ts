@@ -21,7 +21,7 @@ export class NetworkTestHandler
 
   private async getOutput(urls: string[]): Promise<string> {
     return new Promise((resolve, reject) => {
-      const args = ['configure', '--nogui', '--network-only'];
+      const args = ['configure', '--network-only'];
 
       logger.debug('Launching "Network Diagnostic" process with cmd: %j', args);
 
