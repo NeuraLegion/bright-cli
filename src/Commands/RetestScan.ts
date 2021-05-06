@@ -16,12 +16,6 @@ export class RetestScan implements CommandModule {
         requiresArg: true,
         demandOption: true
       })
-      .option('insecure', {
-        type: 'boolean',
-        default: false,
-        description:
-          'Allows CLI to proceed and operate even for server connections otherwise considered insecure.'
-      })
       .positional('scan', {
         describe: 'ID of an existing scan which you want to re-run.',
         type: 'string',
