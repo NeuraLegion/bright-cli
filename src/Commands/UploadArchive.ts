@@ -24,6 +24,12 @@ export class UploadArchive implements CommandModule {
         requiresArg: true,
         demandOption: true
       })
+      .option('insecure', {
+        type: 'boolean',
+        default: false,
+        description:
+          'Allows CLI to proceed and operate even for server connections otherwise considered insecure.'
+      })
       .option('type', {
         alias: 'T',
         requiresArg: true,
@@ -93,6 +99,7 @@ export class UploadArchive implements CommandModule {
           })
           .register(RestArchivesOptions, {
             useValue: {
+              insecure: args.insecure as boolean,
               baseUrl: args.api as string,
               apiKey: args.token as string,
               proxyUrl: args.proxy as string

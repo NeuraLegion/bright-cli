@@ -5,6 +5,7 @@ import { inject, injectable } from 'tsyringe';
 import { ok } from 'assert';
 
 export interface RestArchivesOptions {
+  insecure?: boolean;
   timeout?: number;
   baseUrl: string;
   apiKey: string;
@@ -24,12 +25,19 @@ export class RestArchives implements Archives {
 
   constructor(
     @inject(RestArchivesOptions)
-    { baseUrl, apiKey, proxyUrl, timeout = 10000 }: RestArchivesOptions
+    {
+      baseUrl,
+      apiKey,
+      proxyUrl,
+      insecure,
+      timeout = 10000
+    }: RestArchivesOptions
   ) {
     this.client = request.defaults({
       baseUrl,
       timeout,
       json: true,
+      rejectUnauthorized: !insecure,
       agent: proxyUrl ? new SocksProxyAgent(proxyUrl) : undefined,
       headers: { authorization: `Api-Key ${apiKey}` }
     });
