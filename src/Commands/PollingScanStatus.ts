@@ -20,12 +20,6 @@ export class PollingScanStatus implements CommandModule {
         requiresArg: true,
         demandOption: true
       })
-      .option('insecure', {
-        type: 'boolean',
-        default: false,
-        description:
-          'Allows CLI to proceed and operate even for server connections otherwise considered insecure.'
-      })
       .option('interval', {
         requiresArg: true,
         describe:
@@ -56,10 +50,10 @@ export class PollingScanStatus implements CommandModule {
       .middleware((args: Arguments) =>
         container.register(RestScansOptions, {
           useValue: {
-            insecure: args.insecure as boolean,
-            baseUrl: args.api as string,
-            apiKey: args.token as string,
-            proxyUrl: args.proxy as string
+            insecure: args.insecure,
+            baseUrl: args.api,
+            apiKey: args.token,
+            proxyUrl: args.proxy
           }
         })
       );

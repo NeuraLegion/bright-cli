@@ -23,12 +23,6 @@ export class RunScan implements CommandModule {
         requiresArg: true,
         demandOption: true
       })
-      .option('insecure', {
-        type: 'boolean',
-        default: false,
-        description:
-          'Allows CLI to proceed and operate even for server connections otherwise considered insecure.'
-      })
       .option('name', {
         alias: 'n',
         describe: 'Name of the scan.',

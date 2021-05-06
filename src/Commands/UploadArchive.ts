@@ -24,12 +24,6 @@ export class UploadArchive implements CommandModule {
         requiresArg: true,
         demandOption: true
       })
-      .option('insecure', {
-        type: 'boolean',
-        default: false,
-        description:
-          'Allows CLI to proceed and operate even for server connections otherwise considered insecure.'
-      })
       .option('type', {
         alias: 'T',
         requiresArg: true,
