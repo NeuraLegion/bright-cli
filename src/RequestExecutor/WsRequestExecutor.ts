@@ -49,7 +49,7 @@ export class WsRequestExecutor implements RequestExecutor {
 
       client = new WebSocket(options.url, {
         agent: this.agent,
-        rejectUnauthorized: true,
+        rejectUnauthorized: false,
         timeout: this.options.timeout,
         headers: this.normalizeHeaders(options.headers),
         ca: options.ca,

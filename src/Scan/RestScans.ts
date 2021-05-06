@@ -5,6 +5,7 @@ import { inject, injectable } from 'tsyringe';
 
 export interface RestScansOptions {
   timeout?: number;
+  insecure?: boolean;
   baseUrl: string;
   apiKey: string;
   proxyUrl?: string;
@@ -18,12 +19,13 @@ export class RestScans implements Scans {
 
   constructor(
     @inject(RestScansOptions)
-    { baseUrl, apiKey, proxyUrl, timeout = 10000 }: RestScansOptions
+    { baseUrl, apiKey, insecure, proxyUrl, timeout = 10000 }: RestScansOptions
   ) {
     this.client = request.defaults({
       baseUrl,
       timeout,
       json: true,
+      rejectUnauthorized: !insecure,
       agent: proxyUrl ? new SocksProxyAgent(proxyUrl) : undefined,
       headers: { authorization: `Api-Key ${apiKey}` }
     });
