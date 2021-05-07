@@ -25,7 +25,7 @@ export class TCPConnectivity implements Connectivity {
       socket.setTimeout(this.CONNECTION_TIMEOUT, () =>
         socket.destroy(new Error(`Reached socket timeout.`))
       );
-      socket.connect(+port, hostname);
+      process.nextTick(() => socket.connect(+port, hostname));
       await once(socket, 'connect');
 
       logger.debug('TCP connectivity test. Connection succesfull.');
