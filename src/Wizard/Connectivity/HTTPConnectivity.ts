@@ -37,11 +37,11 @@ export class HTTPConnectivity implements Connectivity {
 
     try {
       req.once('timeout', () => req.destroy(new Error('Reached timeout.')));
-      req.end();
+      process.nextTick(() => req.end());
 
       await once(req, 'response');
 
-      logger.debug('Http connectivity test. The connection is succesfull.');
+      logger.debug('Http connectivity test. The connection is successful.');
 
       return true;
     } catch (err) {
