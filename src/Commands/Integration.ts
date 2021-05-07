@@ -83,6 +83,7 @@ export class Integration implements CommandModule {
         container
           .register(IntegrationOptions, {
             useValue: {
+              insecure: args.insecure,
               timeout: Number(args.timeout),
               baseUrl: args.baseUrl,
               user: args.user,

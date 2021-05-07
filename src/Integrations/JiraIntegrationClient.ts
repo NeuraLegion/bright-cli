@@ -19,8 +19,9 @@ export class JiraIntegrationClient implements IntegrationClient<JiraIssue> {
     @inject(IntegrationOptions) private readonly options: IntegrationOptions
   ) {
     this.client = request.defaults({
-      baseUrl: this.options.baseUrl,
       json: true,
+      rejectUnauthorized: !this.options.insecure,
+      baseUrl: this.options.baseUrl,
       timeout: this.options.timeout,
       headers: {
         authorization: `Basic ${this.createToken(

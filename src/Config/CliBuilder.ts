@@ -38,6 +38,12 @@ export class CliBuilder {
         demandOption: true,
         describe: 'NexPloit base URL'
       })
+      .option('insecure', {
+        boolean: true,
+        default: false,
+        description:
+          'Allows CLI to proceed and operate even for server connections otherwise considered insecure.'
+      })
       .option('proxy', {
         requiresArg: true,
         describe: 'SOCKS4 or SOCKS5 URL to proxy all traffic'

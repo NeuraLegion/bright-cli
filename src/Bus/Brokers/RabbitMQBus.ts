@@ -317,7 +317,6 @@ export class RabbitMQBus implements Bus {
       exclusive: false,
       autoDelete: true
     });
-    // await channel.prefetch(0);
     logger.debug(
       'Binds the queue %s to %s.',
       this.options.clientQueue,
