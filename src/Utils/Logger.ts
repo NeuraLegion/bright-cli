@@ -3,17 +3,27 @@ import debug, { Debugger } from 'debug';
 
 const log: Debugger = debug('nexploit-cli');
 
+export enum LogLevel {
+  SILENT,
+  ERROR,
+  WARN,
+  NOTICE,
+  VERBOSE
+}
+
 export class Logger {
-  get logLevel(): string {
-    return process.env.LOGLEVEL || 'notice';
-  }
+  constructor(private readonly logLevel: LogLevel = LogLevel.NOTICE) {}
 
   public error(message: string, ...args: any[]): void {
+    if (this.logLevel < LogLevel.ERROR) {
+      return;
+    }
+
     console.log(chalk.red(message), ...args);
   }
 
   public warn(message: string, ...args: any[]): void {
-    if (this.logLevel === 'silent') {
+    if (this.logLevel < LogLevel.WARN) {
       return;
     }
 
@@ -21,13 +31,18 @@ export class Logger {
   }
 
   public log(message: string, ...args: any[]): void {
-    if (this.logLevel === 'silent' || this.logLevel === 'warn') {
+    if (this.logLevel < LogLevel.NOTICE) {
       return;
     }
+
     console.log(message, ...args);
   }
 
   public debug(message: string, ...args: any[]): void {
+    if (this.logLevel < LogLevel.VERBOSE) {
+      return;
+    }
+
     log(message, ...args);
   }
 }
