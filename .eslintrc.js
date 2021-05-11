@@ -9,7 +9,7 @@ module.exports = {
     'prettier',
     'plugin:@typescript-eslint/recommended'
   ],
-  ignorePatterns: ['tests', 'node_modules', 'dist', 'public'],
+  ignorePatterns: ['tests', 'node_modules', 'dist'],
   parser: '@typescript-eslint/parser',
   parserOptions: {
     project: 'tsconfig.json',

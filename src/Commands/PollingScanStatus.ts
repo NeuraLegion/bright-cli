@@ -50,9 +50,10 @@ export class PollingScanStatus implements CommandModule {
       .middleware((args: Arguments) =>
         container.register(RestScansOptions, {
           useValue: {
-            baseUrl: args.api as string,
-            apiKey: args.token as string,
-            proxyUrl: args.proxy as string
+            insecure: args.insecure,
+            baseUrl: args.api,
+            apiKey: args.token,
+            proxyUrl: args.proxy
           }
         })
       );

@@ -140,6 +140,7 @@ export class RunScan implements CommandModule {
       .middleware((args: Arguments) =>
         container.register(RestScansOptions, {
           useValue: {
+            insecure: args.insecure as boolean,
             baseUrl: args.api as string,
             apiKey: args.token as string,
             proxyUrl: args.proxy as string

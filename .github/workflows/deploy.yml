@@ -23,8 +23,6 @@ jobs:
 
       - run: npm ci -q --ignore-scripts
       - run: npm run build
-      - run: npm --prefix public ci -q --ignore-scripts
-      - run: npm --prefix public run build -- --configuration production
       - run: npm version --no-git-tag-version $VERSION
 
       - uses: actions/upload-artifact@v2

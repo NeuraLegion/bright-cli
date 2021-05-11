@@ -23,7 +23,8 @@
     "noUnusedParameters": true,
     "forceConsistentCasingInFileNames": true,
     "suppressImplicitAnyIndexErrors": true,
-    "allowSyntheticDefaultImports": true
+    "allowSyntheticDefaultImports": true,
+    "typeRoots": ["node_modules/@types", "typings"]
   },
-  "exclude": ["**/node_modules", "**/.*/", "**/dist", "**/*.spec.ts", "**/public"]
+  "exclude": ["**/node_modules", "**/.*/", "**/dist", "**/*.spec.ts"]
 }

@@ -11,22 +11,8 @@ export class CliBuilder {
     return this._cwd;
   }
 
-  constructor({
-    cwd = process.cwd(),
-    colors = false
-  }: {
-    cwd: string;
-    colors: boolean;
-  }) {
+  constructor({ cwd = process.cwd() }: { cwd: string }) {
     this._cwd = this.guessCWD(cwd);
-    if (colors) {
-      // eslint-disable-next-line @typescript-eslint/no-var-requires
-      require('yargonaut')
-        .style('blue')
-        .style('yellow', 'required')
-        .helpStyle('green')
-        .errorsStyle('red');
-    }
   }
 
   public build({
@@ -52,6 +38,12 @@ export class CliBuilder {
         demandOption: true,
         describe: 'NexPloit base URL'
       })
+      .option('insecure', {
+        boolean: true,
+        default: false,
+        description:
+          'Allows CLI to proceed and operate even for server connections otherwise considered insecure.'
+      })
       .option('proxy', {
         requiresArg: true,
         describe: 'SOCKS4 or SOCKS5 URL to proxy all traffic'
@@ -70,7 +62,8 @@ export class CliBuilder {
       .strict(true)
       .alias('v', 'version')
       .help('help')
-      .alias('h', 'help');
+      .alias('h', 'help')
+      .wrap(null);
   }
 
   private guessCWD(cwd: string): string {

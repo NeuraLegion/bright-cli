@@ -1,8 +1,9 @@
 import { Platform, StartOptions } from '../Platform';
-import { AUTH_TOKEN_VALIDATION_REGEXP, TestType } from '../../Models';
-import { Tokens } from '../../Tokens';
-import { ConnectivityAnalyzer, ConnectivityUrls } from '../../Services';
-import { Helpers } from '../../../Utils';
+import { AUTH_TOKEN_VALIDATION_REGEXP } from '../Credentials';
+import { ConnectivityAnalyzer, ConnectivityUrls } from '../Connectivity';
+import { Helpers } from '../../Utils';
+import { TestType } from '../TestType';
+import { Tokens } from '../Tokens';
 import { inject, injectable } from 'tsyringe';
 import readline from 'readline';
 import { URL } from 'url';

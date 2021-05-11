@@ -1,4 +1,4 @@
-import { Credentials } from './Models';
+import { Credentials } from './Credentials';
 import { logger } from '../Utils';
 import { Tokens } from './Tokens';
 import { injectable } from 'tsyringe';

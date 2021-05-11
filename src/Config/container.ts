@@ -1,7 +1,12 @@
 import 'reflect-metadata';
 import { Bus, RabbitMQBus } from '../Bus';
-import { HttpRequestExecutor, RequestExecutor } from '../RequestExecutor';
-import { WsRequestExecutor } from '../RequestExecutor';
+import {
+  Certificates,
+  CertificatesLoader,
+  HttpRequestExecutor,
+  RequestExecutor,
+  WsRequestExecutor
+} from '../RequestExecutor';
 import {
   DefaultVirtualScripts,
   FSScriptLoader,
@@ -15,12 +20,14 @@ import {
 import {
   AMQConnectivity,
   Connectivity,
+  ConnectivityAnalyzer,
+  DefaultConnectivityAnalyzer,
   FSTokens,
   HTTPConnectivity,
+  Platform,
+  ReadlinePlatform,
   TCPConnectivity,
-  Tokens,
-  DefaultConnectivityAnalyzer,
-  ConnectivityAnalyzer
+  Tokens
 } from '../Wizard';
 import {
   BreakpointFactory,
@@ -40,8 +47,7 @@ import {
   ParserFactory,
   RestArchives
 } from '../Archive';
-import { JiraIntegrationClient, IntegrationClient } from '../Integrations';
-import { Certificates, CertificatesLoader } from '../RequestExecutor';
+import { IntegrationClient, JiraIntegrationClient } from '../Integrations';
 import { container, Lifecycle } from 'tsyringe';
 
 container
@@ -172,6 +178,11 @@ container
     {
       useClass: JiraIntegrationClient
     },
+    { lifecycle: Lifecycle.Singleton }
+  )
+  .register<ReadlinePlatform>(
+    Platform,
+    { useClass: ReadlinePlatform },
     { lifecycle: Lifecycle.Singleton }
   );
 

@@ -1,14 +1,7 @@
 import { logger } from '../Utils';
-import {
-  ReadlinePlatform,
-  ConnectivityUrls,
-  KoaPlatform,
-  Platform,
-  TestType
-} from '../Wizard';
+import { ConnectivityUrls, Platform, TestType } from '../Wizard';
 import { container } from '../Config';
 import { Arguments, Argv, CommandModule } from 'yargs';
-import { Lifecycle } from 'tsyringe';
 import { URL } from 'url';
 
 export class Configure implements CommandModule {
@@ -40,7 +33,8 @@ export class Configure implements CommandModule {
         describe: `NexPloit event message authentication endpoint`
       })
       .option('nogui', {
-        default: false,
+        default: true,
+        deprecated: true,
         boolean: true,
         describe: `Start a configuration wizard without GUI`
       })
@@ -62,12 +56,6 @@ export class Configure implements CommandModule {
             })
           )
         });
-
-        container.register<ReadlinePlatform | KoaPlatform>(
-          Platform,
-          { useClass: args.nogui ? ReadlinePlatform : KoaPlatform },
-          { lifecycle: Lifecycle.Singleton }
-        );
       });
   }
 
