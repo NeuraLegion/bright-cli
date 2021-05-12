@@ -176,7 +176,7 @@ export class RunScan implements CommandModule {
           : undefined
       } as ScanConfig);
 
-      logger.log(scanId);
+      console.log(scanId);
 
       process.exit(0);
     } catch (e) {

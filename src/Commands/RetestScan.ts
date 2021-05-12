@@ -38,7 +38,7 @@ export class RetestScan implements CommandModule {
       const scanManager: Scans = container.resolve(Scans);
       const scanId: string = await scanManager.retest(args.scan as string);
 
-      logger.log(scanId);
+      console.log(scanId);
 
       process.exit(0);
     } catch (e) {

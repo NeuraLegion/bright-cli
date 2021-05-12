@@ -1,7 +1,6 @@
-import container from './container';
 import { CliConfig } from './ConfigReader';
 import { DefaultConfigReader } from './DefaultConfigReader';
-import { Logger, LogLevel } from '../Utils';
+import { logger, LogLevel } from '../Utils';
 import { sync } from 'find-up';
 import { Arguments, Argv, CommandModule } from 'yargs';
 import path from 'path';
@@ -40,8 +39,10 @@ export class CliBuilder {
         default: LogLevel.NOTICE,
         describe:
           'What level of logs to report. Any logs of a higher level than the setting are shown.',
-        coerce(arg: string): LogLevel {
-          return (arg.toUpperCase() as unknown) as LogLevel;
+        coerce(arg: string | number): LogLevel {
+          return !isNaN(+arg)
+            ? ((+arg as unknown) as LogLevel)
+            : LogLevel[arg.toString().toUpperCase()];
         }
       })
       .option('api', {
@@ -60,10 +61,8 @@ export class CliBuilder {
         requiresArg: true,
         describe: 'SOCKS4 or SOCKS5 URL to proxy all traffic'
       })
-      .middleware((args: Arguments) =>
-        container.register(Logger, {
-          useValue: new Logger(args.verbose as LogLevel)
-        })
+      .middleware(
+        (args: Arguments) => (logger.logLevel = args.verbose as LogLevel)
       )
       .usage('Usage: $0 <command> [options] [<file | scan>]')
       .pkgConf('nexploit', this._cwd)
