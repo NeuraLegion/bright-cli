@@ -35,7 +35,9 @@ export class CliBuilder {
       })
       .option('verbose', {
         requiresArg: true,
-        enum: Object.keys(LogLevel).map((x) => x.toLowerCase()),
+        choices: Object.keys(LogLevel).map((x) =>
+          !isNaN(+x) ? +x : x.toLowerCase()
+        ),
         default: LogLevel.NOTICE,
         describe:
           'What level of logs to report. Any logs of a higher level than the setting are shown.',
