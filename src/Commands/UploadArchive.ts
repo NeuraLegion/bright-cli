@@ -14,7 +14,7 @@ import { Arguments, Argv, CommandModule } from 'yargs';
 
 export class UploadArchive implements CommandModule {
   public readonly command = 'archive:upload [options] <file>';
-  public readonly describe = 'Uploads a archive to nexploit.';
+  public readonly describe = 'Uploads a archive to NexPloit.';
 
   public builder(argv: Argv): Argv {
     return argv
@@ -34,7 +34,10 @@ export class UploadArchive implements CommandModule {
           SpecType.POSTMAN
         ].map((x: string) => x.toLowerCase()),
         default: SpecType.HAR.toLowerCase(),
-        demandOption: true
+        demandOption: true,
+        coerce(arg: string): SpecType {
+          return Helpers.selectEnumValue(SpecType, arg) as SpecType;
+        }
       })
       .option('discard', {
         alias: 'd',
@@ -107,22 +110,18 @@ export class UploadArchive implements CommandModule {
       const parserFactory: ParserFactory = container.resolve(ParserFactory);
       const archives: Archives = container.resolve(Archives);
 
-      const type = Helpers.selectEnumValue(
-        SpecType,
-        args.type as string
-      ) as SpecType;
-      const parser: Parser = parserFactory.create(type);
+      const parser: Parser = parserFactory.create(args.type as SpecType);
       const file = await parser.parse(args.file as string);
 
       const spec: Spec = {
         ...file,
-        type,
+        type: args.type as SpecType,
         discard: args.discard as boolean,
         headers: args.header as Record<string, string>,
         variables: args.variable as Record<string, string>
       };
 
-      logger.log(await archives.upload(spec));
+      console.log(await archives.upload(spec));
       process.exit(0);
     } catch (e) {
       logger.error(`Error during "archive:generate": ${e.message}`);

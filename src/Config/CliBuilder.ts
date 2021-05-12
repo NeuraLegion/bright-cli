@@ -1,7 +1,8 @@
 import { CliConfig } from './ConfigReader';
 import { DefaultConfigReader } from './DefaultConfigReader';
+import { logger, LogLevel } from '../Utils';
 import { sync } from 'find-up';
-import { Argv, CommandModule } from 'yargs';
+import { Arguments, Argv, CommandModule } from 'yargs';
 import path from 'path';
 
 export class CliBuilder {
@@ -32,6 +33,15 @@ export class CliBuilder {
         configParser: (configPath: string): CliConfig =>
           configReader.load(configPath).toJSON()
       })
+      .option('log-level', {
+        requiresArg: true,
+        choices: Object.keys(LogLevel).map((x) =>
+          !isNaN(+x) ? +x : x.toLowerCase()
+        ),
+        default: LogLevel.NOTICE,
+        describe:
+          'What level of logs to report. Any logs of a higher level than the setting are shown.'
+      })
       .option('api', {
         default: 'https://nexploit.app/',
         requiresArg: true,
@@ -48,6 +58,12 @@ export class CliBuilder {
         requiresArg: true,
         describe: 'SOCKS4 or SOCKS5 URL to proxy all traffic'
       })
+      .middleware(
+        (args: Arguments) =>
+          (logger.logLevel = !isNaN(+args.logLevel)
+            ? ((+args.logLevel as unknown) as LogLevel)
+            : LogLevel[args.logLevel.toString().toUpperCase()])
+      )
       .usage('Usage: $0 <command> [options] [<file | scan>]')
       .pkgConf('nexploit', this._cwd)
       .example(
