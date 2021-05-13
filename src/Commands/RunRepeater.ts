@@ -1,6 +1,7 @@
 import { Bus, RabbitMQBusOptions } from '../Bus';
 import { ScriptLoader } from '../Scripts';
 import {
+  LatestVersionPublishedHandler,
   NetworkTestHandler,
   RegisterScriptsHandler,
   RepeaterStatusUpdated,
@@ -195,6 +196,7 @@ export class RunRepeater implements CommandModule {
   public async handler(args: Arguments): Promise<void> {
     const bus: Bus = container.resolve(Bus);
     const info = container.resolve(CliInfo);
+
     const startupManagerFactory: StartupManagerFactory = container.resolve(
       StartupManagerFactory
     );
@@ -275,6 +277,8 @@ export class RunRepeater implements CommandModule {
       );
 
     try {
+      logger.log('Starting the Repeater (%s)...', info.version);
+
       if (args.scripts) {
         const loader: ScriptLoader = container.resolve(ScriptLoader);
 
@@ -283,13 +287,16 @@ export class RunRepeater implements CommandModule {
 
       await bus.init();
 
-      await bus.subscribe(NetworkTestHandler);
+      await bus.subscribe(LatestVersionPublishedHandler);
       await bus.subscribe(RegisterScriptsHandler);
+      await bus.subscribe(NetworkTestHandler);
       await bus.subscribe(SendRequestHandler);
 
       timer = setInterval(() => notify('connected'), 10000);
 
       await notify('connected');
+
+      logger.log(`The Repeater (%s) started`, info.version);
     } catch (e) {
       await notify('disconnected');
       onError(e);

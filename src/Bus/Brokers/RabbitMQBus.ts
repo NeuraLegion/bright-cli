@@ -60,7 +60,7 @@ export class RabbitMQBus implements Bus {
 
       this.clear();
 
-      logger.log('Event bus disconnected from %s', this.options.url);
+      logger.debug('Event bus disconnected from %s', this.options.url);
     } catch (err) {
       logger.error('Cannot terminate event bus gracefully');
       logger.debug('Event bus terminated.');
@@ -115,7 +115,11 @@ export class RabbitMQBus implements Bus {
 
     const eventName: string = this.getEventName(event);
 
-    logger.debug('Emits %s event with following payload: %j', eventName, event);
+    logger.debug(
+      'Emits "%s" event with following payload: %j',
+      eventName,
+      event
+    );
 
     try {
       this.channel.publish(
@@ -145,7 +149,7 @@ export class RabbitMQBus implements Bus {
 
   private async subscribeTo(eventName: string): Promise<void> {
     logger.debug(
-      'Binds the queue %s to %s by %s routing key.',
+      'Binds the queue "%s" to "%s" by "%s" routing key.',
       this.options.clientQueue,
       this.options.exchange,
       eventName
@@ -209,8 +213,7 @@ export class RabbitMQBus implements Bus {
 
     await this.createConsumerChannel();
 
-    logger.debug('Event bus connected to RabbitMQ: %j', this.options);
-    logger.log('Event bus connected to %s', this.options.url);
+    logger.debug('Event bus connected to %s', this.options.url);
   }
 
   private prepareUrl(): string {
@@ -250,7 +253,7 @@ export class RabbitMQBus implements Bus {
         const event: Event = JSON.parse(content.toString());
 
         logger.debug(
-          'Emits %s event with following payload: %j',
+          'Received "%s" event with following payload: %j',
           eventType,
           event
         );
@@ -284,7 +287,7 @@ export class RabbitMQBus implements Bus {
       logger.debug('Error processing message: %j. Details: %s', message, err);
       if (message.properties.correlationId) {
         logger.error(
-          'Cannot process message with correlation ID: %s.',
+          'Cannot process message with correlation ID: "%s".',
           message.properties.correlationId
         );
       }
@@ -324,7 +327,7 @@ export class RabbitMQBus implements Bus {
       autoDelete: true
     });
     logger.debug(
-      'Binds the queue %s to %s.',
+      'Binds the queue "%s" to "%s".',
       this.options.clientQueue,
       this.options.exchange
     );
