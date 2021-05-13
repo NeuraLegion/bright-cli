@@ -10,6 +10,7 @@ import { Cert, Certificates, RequestExecutorOptions } from '../RequestExecutor';
 import { Helpers, logger } from '../Utils';
 import { StartupManagerFactory } from '../StartupScripts';
 import { container } from '../Config';
+import { CliInfo } from '../Config';
 import { Arguments, Argv, CommandModule } from 'yargs';
 import { normalize } from 'path';
 import Timer = NodeJS.Timer;
@@ -193,6 +194,7 @@ export class RunRepeater implements CommandModule {
 
   public async handler(args: Arguments): Promise<void> {
     const bus: Bus = container.resolve(Bus);
+    const info = container.resolve(CliInfo);
     const startupManagerFactory: StartupManagerFactory = container.resolve(
       StartupManagerFactory
     );
@@ -268,7 +270,9 @@ export class RunRepeater implements CommandModule {
     process.on('SIGTERM', stop).on('SIGINT', stop).on('SIGHUP', stop);
 
     const notify = (status: 'connected' | 'disconnected') =>
-      bus?.publish(new RepeaterStatusUpdated(args.id as string, status));
+      bus?.publish(
+        new RepeaterStatusUpdated(args.id as string, status, info.version)
+      );
 
     try {
       if (args.scripts) {

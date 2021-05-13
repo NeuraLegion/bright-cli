@@ -8,7 +8,7 @@ export interface Bus {
 
   subscribe(handler: HandlerType): Promise<void>;
 
-  publish<T extends Event>(...events: T[]): Promise<void>;
+  publish<T extends Event>(event: T): Promise<void>;
 }
 
 export const Bus: unique symbol = Symbol('Bus');

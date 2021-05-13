@@ -104,8 +104,8 @@ export class RabbitMQBus implements Bus {
     await this.subscribeTo(eventType.name);
   }
 
-  public async publish<T extends Event>(...events: T[]): Promise<void> {
-    if (!Array.isArray(events) || !events.length) {
+  public async publish<T extends Event>(event: T): Promise<void> {
+    if (!event) {
       return;
     }
 
@@ -113,28 +113,34 @@ export class RabbitMQBus implements Bus {
       return;
     }
 
-    await Promise.all(
-      events.map((event: T) => {
-        const eventName: string = this.getEventName(event);
+    const eventName: string = this.getEventName(event);
 
-        logger.debug(
-          'Emits %s event with following payload: %j',
-          eventName,
-          event
-        );
+    logger.debug('Emits %s event with following payload: %j', eventName, event);
 
-        return this.channel.publish(
-          this.options.exchange,
-          eventName,
-          Buffer.from(JSON.stringify(event)),
-          {
-            contentType: 'application/json',
-            mandatory: true,
-            persistent: true
-          }
-        );
-      })
-    );
+    try {
+      this.channel.publish(
+        this.options.exchange,
+        eventName,
+        Buffer.from(JSON.stringify(event)),
+        {
+          contentType: 'application/json',
+          mandatory: true,
+          persistent: true
+        }
+      );
+    } catch (e) {
+      logger.debug(
+        'Cannot publish "%s" event: %j. An error occurred: %s',
+        eventName,
+        event,
+        e.message
+      );
+      logger.error(
+        'Cannot publish "%s" event. Please try again later.',
+        eventName,
+        e.message
+      );
+    }
   }
 
   private async subscribeTo(eventName: string): Promise<void> {
@@ -197,7 +203,7 @@ export class RabbitMQBus implements Bus {
       logger.debug(`Unexpected error: %s`, err.message)
     );
 
-    this.client.on('close', (reason: Error) =>
+    this.client.on('close', (reason?: Error) =>
       reason ? this.reconnect() : undefined
     );
 
@@ -289,8 +295,8 @@ export class RabbitMQBus implements Bus {
   private async createConsumerChannel(): Promise<void> {
     if (!this.channel) {
       this.channel = await this.client.createConfirmChannel();
-      this.channel.on('error', (reason: Error) =>
-        logger.error('Unexpected error: %s', reason)
+      this.channel.once('close', (reason?: Error) =>
+        reason ? this.reconnect() : undefined
       );
       await this.bindExchangesToQueue(this.channel);
       await this.startBasicConsume(this.channel);

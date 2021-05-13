@@ -1,8 +1,9 @@
-import { Event } from '../../Bus/Event';
+import { Event } from '../../Bus';
 
 export class RepeaterStatusUpdated implements Event {
   constructor(
     public readonly repeaterId: string,
-    public readonly status: 'connected' | 'disconnected'
+    public readonly status: 'connected' | 'disconnected',
+    public readonly version?: string
   ) {}
 }

@@ -48,6 +48,10 @@ import {
   RestArchives
 } from '../Archive';
 import { IntegrationClient, JiraIntegrationClient } from '../Integrations';
+import { ConfigReader } from './ConfigReader';
+import { DefaultConfigReader } from './DefaultConfigReader';
+import { CliInfo } from './CliInfo';
+import { CliBuilder } from './CliBuilder';
 import { container, Lifecycle } from 'tsyringe';
 
 container
@@ -184,6 +188,19 @@ container
     Platform,
     { useClass: ReadlinePlatform },
     { lifecycle: Lifecycle.Singleton }
-  );
+  )
+  .register<DefaultConfigReader>(
+    ConfigReader,
+    { useClass: DefaultConfigReader },
+    { lifecycle: Lifecycle.Singleton }
+  )
+  .register<CliInfo>(CliInfo, { useValue: new CliInfo(process.cwd()) })
+  .register<CliBuilder>(CliBuilder, {
+    useFactory: (deps) =>
+      new CliBuilder({
+        info: deps.resolve(CliInfo),
+        configReader: deps.resolve(ConfigReader)
+      })
+  });
 
 export default container;
