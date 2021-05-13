@@ -79,20 +79,16 @@ jobs:
 
       - name: Prepare Image Tags
         run: |
-          echo "TAG_REPEATER_GPR=docker.pkg.github.com/neuralegion/nexploit-cli/repeater" >> $GITHUB_ENV
           echo "TAG_REPEATER=neuralegion/repeater" >> $GITHUB_ENV
 
       - name: Build Images
         run: |
           docker build . --file Dockerfile --build-arg VERSION=$VERSION -t $TAG_REPEATER:$VERSION -t $TAG_REPEATER:$TAG
-          docker build . --file Dockerfile --build-arg VERSION=$VERSION -t $TAG_REPEATER_GPR:$VERSION -t $TAG_REPEATER_GPR:$TAG
 
       - name: Push Images
         run: |
           docker login --username=${{ secrets.DOCKER_USER }} --password=${{ secrets.DOCKER_TOKEN }}
           docker push $TAG_REPEATER --all-tags
-          docker login https://docker.pkg.github.com --username=rielas --password=${{ secrets.PACKAGES_TOKEN }}
-          docker push $TAG_REPEATER_GPR --all-tags
 
   publish:
     runs-on: windows-latest
