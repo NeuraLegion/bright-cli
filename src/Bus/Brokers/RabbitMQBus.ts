@@ -146,13 +146,13 @@ export class RabbitMQBus implements Bus {
     } catch (e) {
       logger.debug(
         'Cannot send "%s" message: %j. An error occurred: %s',
-        message.type,
+        type,
         message.payload,
         e.message
       );
       logger.error(
         'Cannot send "%s" message. Please try again later.',
-        message.type,
+        type,
         e.message
       );
 
