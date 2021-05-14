@@ -7,6 +7,10 @@ import { injectable } from 'tsyringe';
 export class DefaultVirtualScripts implements VirtualScripts {
   private readonly store = new Map<string, VirtualScript>();
 
+  get size(): number {
+    return this.store.size;
+  }
+
   public [Symbol.iterator](): IterableIterator<[string, VirtualScript]> {
     return this.store[Symbol.iterator]();
   }
