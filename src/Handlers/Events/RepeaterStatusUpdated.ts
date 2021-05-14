@@ -1,4 +1,4 @@
-import { Event } from '../../Bus/Event';
+import { Event } from '../../Bus';
 
 export class RepeaterStatusUpdated implements Event {
   constructor(

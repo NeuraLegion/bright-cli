@@ -12,12 +12,9 @@ import {
   Configure,
   Integration
 } from './Commands';
-import { CliBuilder, DefaultConfigReader } from './Config';
+import { CliBuilder, container } from './Config';
 
-new CliBuilder({
-  cwd: process.cwd()
-}).build({
-  configReader: new DefaultConfigReader(),
+container.resolve(CliBuilder).build({
   commands: [
     new RunRepeater(),
     new VersionCommand(),

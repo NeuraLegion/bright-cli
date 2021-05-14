@@ -4,16 +4,13 @@ import { Bus } from '../Bus';
 import { Proxy } from '../Proxy';
 import { logger } from '../../Utils';
 import { RabbitBackoff } from './RabbitBackoff';
-import {
-  Channel,
-  ConfirmChannel,
-  connect,
-  Connection,
-  ConsumeMessage
-} from 'amqplib';
+import { Message } from '../Message';
+import { ConfirmChannel, connect, Connection, ConsumeMessage } from 'amqplib';
 import { DependencyContainer, inject, injectable } from 'tsyringe';
 import { ok } from 'assert';
 import { format, parse, UrlWithParsedQuery } from 'url';
+import { EventEmitter, once } from 'events';
+import { randomBytes } from 'crypto';
 
 export interface RabbitMQBusOptions {
   url?: string;
@@ -21,11 +18,17 @@ export interface RabbitMQBusOptions {
   clientQueue?: string;
   connectTimeout?: number;
   proxyUrl?: string;
-  onError?: (err: Error) => unknown;
   credentials?: {
     username: string;
     password: string;
   };
+}
+
+interface ParsedConsumeMessage {
+  payload: Event;
+  name: string;
+  replyTo?: string;
+  correlationId?: string;
 }
 
 export const RabbitMQBusOptions: unique symbol = Symbol('RabbitMQBusOptions');
@@ -39,28 +42,40 @@ export class RabbitMQBus implements Bus {
     Handler<Event, ExecutionResult>
   >();
   private readonly DEFAULT_RECONNECT_TIMES = 20;
-  private readonly DEFAULT_RECONNECT_TIMEOUT = 10;
   private readonly DEFAULT_HEARTBEAT_INTERVAL = 30;
-  private consumerTag?: string;
+  private readonly REPLY_QUEUE_NAME = 'amq.rabbitmq.reply-to';
+  private readonly APP_QUEUE_NAME = 'app';
+  private readonly subject = new EventEmitter();
+  private readonly consumerTags: string[] = [];
 
   constructor(
     @inject(RabbitMQBusOptions) private readonly options: RabbitMQBusOptions,
     @inject('tsyringe') private readonly container: DependencyContainer
-  ) {}
+  ) {
+    this.subject.setMaxListeners(Infinity);
+  }
 
   public async destroy(): Promise<void> {
     try {
+      if (!this.client) {
+        return;
+      }
+
       if (this.channel) {
         await this.channel.waitForConfirms();
-        await this.channel.cancel(this.consumerTag);
+        await Promise.all(
+          this.consumerTags.map((consumerTag) =>
+            this.channel.cancel(consumerTag)
+          )
+        );
         await this.channel.close();
       }
 
-      await this.client?.close();
+      await this.client.close();
 
       this.clear();
 
-      logger.log('Event bus disconnected from %s', this.options.url);
+      logger.debug('Event bus disconnected from %s', this.options.url);
     } catch (err) {
       logger.error('Cannot terminate event bus gracefully');
       logger.debug('Event bus terminated.');
@@ -73,11 +88,7 @@ export class RabbitMQBus implements Bus {
       return;
     }
 
-    const backoff = new RabbitBackoff(
-      this.DEFAULT_RECONNECT_TIMES,
-      1000,
-      this.DEFAULT_RECONNECT_TIMEOUT * 1000
-    );
+    const backoff = new RabbitBackoff(this.DEFAULT_RECONNECT_TIMES);
 
     await backoff.execute(() => this.connect());
   }
@@ -104,8 +115,55 @@ export class RabbitMQBus implements Bus {
     await this.subscribeTo(eventType.name);
   }
 
-  public async publish<T extends Event>(...events: T[]): Promise<void> {
-    if (!Array.isArray(events) || !events.length) {
+  public async send<T extends Event, R>(message: Message<T>): Promise<R> {
+    const correlationId = randomBytes(32).toString('hex').slice(0, 32);
+    const type: string = message.type ?? this.getEventName(message.payload);
+    const routingKey: string = message.sendTo ?? this.APP_QUEUE_NAME;
+
+    process.nextTick(() =>
+      this.channel.sendToQueue(
+        routingKey,
+        Buffer.from(JSON.stringify(message.payload)),
+        {
+          correlationId,
+          type,
+          replyTo: this.REPLY_QUEUE_NAME
+        }
+      )
+    );
+
+    try {
+      const expiresIn = message.expiresIn ?? 5000;
+
+      const [response]: [R] = await Promise.race([
+        once(this.subject, correlationId) as Promise<[R]>,
+        new Promise<never>((_, reject) =>
+          setTimeout(reject, expiresIn, new Error('No response.')).unref()
+        )
+      ]);
+
+      return response;
+    } catch (e) {
+      logger.debug(
+        'Cannot send "%s" message: %j. An error occurred: %s',
+        message.type,
+        message.payload,
+        e.message
+      );
+      logger.error(
+        'Cannot send "%s" message. Please try again later.',
+        message.type,
+        e.message
+      );
+
+      throw e;
+    } finally {
+      this.subject.removeAllListeners(correlationId);
+    }
+  }
+
+  public async publish<T extends Event>(event: T): Promise<void> {
+    if (!event) {
       return;
     }
 
@@ -113,33 +171,44 @@ export class RabbitMQBus implements Bus {
       return;
     }
 
-    await Promise.all(
-      events.map((event: T) => {
-        const eventName: string = this.getEventName(event);
+    const eventName: string = this.getEventName(event);
 
-        logger.debug(
-          'Emits %s event with following payload: %j',
-          eventName,
-          event
-        );
-
-        return this.channel.publish(
-          this.options.exchange,
-          eventName,
-          Buffer.from(JSON.stringify(event)),
-          {
-            contentType: 'application/json',
-            mandatory: true,
-            persistent: true
-          }
-        );
-      })
+    logger.debug(
+      'Emits "%s" event with following payload: %j',
+      eventName,
+      event
     );
+
+    try {
+      this.channel.publish(
+        this.options.exchange,
+        eventName,
+        Buffer.from(JSON.stringify(event)),
+        {
+          contentType: 'application/json',
+          mandatory: true,
+          persistent: true,
+          replyTo: this.REPLY_QUEUE_NAME
+        }
+      );
+    } catch (e) {
+      logger.debug(
+        'Cannot publish "%s" event: %j. An error occurred: %s',
+        eventName,
+        event,
+        e.message
+      );
+      logger.error(
+        'Cannot publish "%s" event. Please try again later.',
+        eventName,
+        e.message
+      );
+    }
   }
 
   private async subscribeTo(eventName: string): Promise<void> {
     logger.debug(
-      'Binds the queue %s to %s by %s routing key.',
+      'Binds the queue "%s" to "%s" by "%s" routing key.',
       this.options.clientQueue,
       this.options.exchange,
       eventName
@@ -151,29 +220,36 @@ export class RabbitMQBus implements Bus {
     );
   }
 
-  private onError(err: Error): void {
-    logger.error(err.message);
-    process.exit(1);
-  }
-
   private async reconnect(): Promise<void> {
     try {
       this.clear();
 
-      const backoff = new RabbitBackoff(
-        this.DEFAULT_RECONNECT_TIMES,
-        1000,
-        this.DEFAULT_RECONNECT_TIMEOUT * 1000
-      );
+      const backoff = new RabbitBackoff(this.DEFAULT_RECONNECT_TIMES);
 
       await backoff.execute(() => this.connect());
     } catch (err) {
-      (this.options.onError ?? this.onError)(err);
+      logger.error(err.message);
+    }
+  }
+
+  private parseConsumeMessage(
+    message: ConsumeMessage
+  ): ParsedConsumeMessage | undefined {
+    if (!message.fields.redelivered) {
+      const { content, fields, properties } = message;
+      const { type, correlationId, replyTo } = properties;
+      const { routingKey } = fields;
+
+      const name = type ?? routingKey;
+
+      const payload: Event = JSON.parse(content.toString());
+
+      return { payload, name, correlationId, replyTo };
     }
   }
 
   private clear(): void {
-    delete this.consumerTag;
+    this.consumerTags.splice(0, this.consumerTags.length);
 
     this.channel?.removeAllListeners();
     delete this.channel;
@@ -197,14 +273,13 @@ export class RabbitMQBus implements Bus {
       logger.debug(`Unexpected error: %s`, err.message)
     );
 
-    this.client.on('close', (reason: Error) =>
+    this.client.on('close', (reason?: Error) =>
       reason ? this.reconnect() : undefined
     );
 
     await this.createConsumerChannel();
 
-    logger.debug('Event bus connected to RabbitMQ: %j', this.options);
-    logger.log('Event bus connected to %s', this.options.url);
+    logger.debug('Event bus connected to %s', this.options.url);
   }
 
   private prepareUrl(): string {
@@ -233,29 +308,24 @@ export class RabbitMQBus implements Bus {
 
   private async consumeReceived(message: ConsumeMessage): Promise<void> {
     try {
-      if (message) {
-        const { content, fields, properties } = message;
-        const { routingKey } = fields;
-        const { correlationId, replyTo, type } = properties;
+      const event: ParsedConsumeMessage | undefined = this.parseConsumeMessage(
+        message
+      );
 
-        const eventType =
-          routingKey === this.options.clientQueue ? type : routingKey;
-
-        const event: Event = JSON.parse(content.toString());
-
+      if (event) {
         logger.debug(
-          'Emits %s event with following payload: %j',
-          eventType,
-          event
+          'Received "%s" event with following payload: %j',
+          event.name,
+          event.payload
         );
 
         const handler:
           | Handler<Event, ExecutionResult>
-          | undefined = this.handlers.get(eventType);
+          | undefined = this.handlers.get(event.name);
 
-        ok(handler, `Cannot find a handler for ${eventType} event.`);
+        ok(handler, `Cannot find a handler for ${event.name} event.`);
 
-        const response: ExecutionResult = await handler.handle(event);
+        const response: ExecutionResult = await handler.handle(event.payload);
 
         // eslint-disable-next-line max-depth
         if (response) {
@@ -265,11 +335,11 @@ export class RabbitMQBus implements Bus {
           );
 
           this.channel?.sendToQueue(
-            replyTo,
+            event.replyTo,
             Buffer.from(JSON.stringify(response)),
             {
-              correlationId,
-              mandatory: true
+              mandatory: true,
+              correlationId: event.correlationId
             }
           );
         }
@@ -278,7 +348,7 @@ export class RabbitMQBus implements Bus {
       logger.debug('Error processing message: %j. Details: %s', message, err);
       if (message.properties.correlationId) {
         logger.error(
-          'Cannot process message with correlation ID: %s.',
+          'Cannot process message with correlation ID: "%s".',
           message.properties.correlationId
         );
       }
@@ -286,39 +356,68 @@ export class RabbitMQBus implements Bus {
     }
   }
 
-  private async createConsumerChannel(): Promise<void> {
-    if (!this.channel) {
-      this.channel = await this.client.createConfirmChannel();
-      this.channel.on('error', (reason: Error) =>
-        logger.error('Unexpected error: %s', reason)
+  private async processReply(message: ConsumeMessage): Promise<void> {
+    const event: ParsedConsumeMessage | undefined = this.parseConsumeMessage(
+      message
+    );
+
+    if (event) {
+      logger.debug(
+        'Received message with following payload: %j',
+        event.payload
       );
-      await this.bindExchangesToQueue(this.channel);
-      await this.startBasicConsume(this.channel);
+
+      if (event.correlationId) {
+        this.subject.emit(event.correlationId, event.payload);
+      }
     }
   }
 
-  private async startBasicConsume(channel: Channel): Promise<void> {
-    const { consumerTag } = await channel.consume(
+  private async createConsumerChannel(): Promise<void> {
+    if (!this.channel) {
+      this.channel = await this.client.createConfirmChannel();
+      this.channel.once('close', (reason?: Error) =>
+        reason ? this.reconnect() : undefined
+      );
+      await this.bindExchangesToQueue();
+      await this.startBasicConsume();
+      await this.startReplyQueueConsume();
+    }
+  }
+
+  private async startReplyQueueConsume(): Promise<void> {
+    const { consumerTag } = await this.channel.consume(
+      this.REPLY_QUEUE_NAME,
+      (msg: ConsumeMessage | null) => this.processReply(msg),
+      {
+        noAck: true
+      }
+    );
+    this.consumerTags.push(consumerTag);
+  }
+
+  private async startBasicConsume(): Promise<void> {
+    const { consumerTag } = await this.channel.consume(
       this.options.clientQueue,
       (msg: ConsumeMessage | null) => this.consumeReceived(msg),
       {
         noAck: true
       }
     );
-    this.consumerTag = consumerTag;
+    this.consumerTags.push(consumerTag);
   }
 
-  private async bindExchangesToQueue(channel: Channel): Promise<void> {
-    await channel.assertExchange(this.options.exchange, 'direct', {
+  private async bindExchangesToQueue(): Promise<void> {
+    await this.channel.assertExchange(this.options.exchange, 'direct', {
       durable: true
     });
-    await channel.assertQueue(this.options.clientQueue, {
+    await this.channel.assertQueue(this.options.clientQueue, {
       durable: true,
       exclusive: false,
       autoDelete: true
     });
     logger.debug(
-      'Binds the queue %s to %s.',
+      'Binds the queue "%s" to "%s".',
       this.options.clientQueue,
       this.options.exchange
     );
