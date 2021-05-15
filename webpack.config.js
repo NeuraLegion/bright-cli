@@ -1,5 +1,5 @@
 const { join } = require('path');
-const { BannerPlugin } = require('webpack');
+const { BannerPlugin, EnvironmentPlugin } = require('webpack');
 const nodeExternals = require('webpack-node-externals');
 const TsConfigPathsPlugin = require('tsconfig-paths-webpack-plugin');
 const { CleanWebpackPlugin } = require('clean-webpack-plugin');
@@ -7,7 +7,8 @@ const Terser = require('terser-webpack-plugin');
 
 module.exports = (env, argv) => ({
   entry: './src/index.ts',
-  devtool: argv.mode === 'development' ? 'eval-cheap-module-source-map' : 'source-map',
+  devtool:
+    argv.mode === 'development' ? 'eval-cheap-module-source-map' : 'source-map',
   context: process.cwd(),
   optimization: {
     emitOnErrors: true,
@@ -26,6 +27,9 @@ module.exports = (env, argv) => ({
     ]
   },
   plugins: [
+    new EnvironmentPlugin({
+      VERSION: env.version
+    }),
     new CleanWebpackPlugin(),
     new BannerPlugin({ banner: '#!/usr/bin/env node', raw: true })
   ],

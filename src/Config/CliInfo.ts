@@ -1,6 +1,6 @@
 import { sync } from 'find-up';
-import { readFileSync } from 'fs';
 import path from 'path';
+import { readFileSync } from 'fs';
 
 export class CliInfo {
   public readonly cwd: string;
@@ -10,7 +10,7 @@ export class CliInfo {
   constructor(cwd: string = process.cwd()) {
     this._pkgPath = this.getPkgPath(cwd);
     this.cwd = this._pkgPath ? path.dirname(this._pkgPath) : cwd;
-    this.version = this.getVersion();
+    this.version = process.env.VERSION ?? this.getVersion();
   }
 
   private getVersion(): string | undefined {
