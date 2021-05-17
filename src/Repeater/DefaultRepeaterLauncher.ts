@@ -23,6 +23,7 @@ export class DefaultRepeaterLauncher implements RepeaterLauncher {
   private static SERVICE_NAME = 'nexploit-repeater';
   private timer: Timer | undefined;
   private repeaterId: string | undefined;
+  private repeaterStarted: boolean = false;
 
   constructor(
     @inject(Bus) private readonly bus: Bus,
@@ -36,9 +37,12 @@ export class DefaultRepeaterLauncher implements RepeaterLauncher {
 
   public async close(): Promise<void> {
     clearInterval(this.timer);
-    await this.bus.publish(
-      new RepeaterStatusUpdated(this.repeaterId, 'disconnected')
-    );
+    if (this.repeaterStarted) {
+      await this.bus.publish(
+        new RepeaterStatusUpdated(this.repeaterId, 'disconnected')
+      );
+      this.repeaterStarted = false;
+    }
     await this.bus.destroy();
   }
 
@@ -164,6 +168,8 @@ export class DefaultRepeaterLauncher implements RepeaterLauncher {
     this.compileScripts(script);
 
     await this.subscribeToEvents();
+
+    this.repeaterStarted = true;
 
     logger.log(`The Repeater (%s) started`, this.info.version);
   }
