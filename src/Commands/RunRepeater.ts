@@ -187,6 +187,12 @@ export class RunRepeater implements CommandModule {
       );
     }
 
+    if (args.scripts) {
+      await repeaterLauncher.loadScripts(
+        args.scripts as Record<string, string>
+      );
+    }
+
     if (args.remove) {
       await repeaterLauncher.uninstall();
       process.exit(0);

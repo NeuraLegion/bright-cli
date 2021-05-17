@@ -132,7 +132,11 @@ export class DefaultRepeaterLauncher implements RepeaterLauncher {
       script,
       lastUsedVersion
     }: RepeaterRegistered = await this.bus.send({
-      payload: new RepeaterRegistering(repeaterId, this.info.version)
+      payload: new RepeaterRegistering(
+        repeaterId,
+        this.info.version,
+        !!this.virtualScripts.size
+      )
     });
 
     if (gt(version, this.info.version)) {
