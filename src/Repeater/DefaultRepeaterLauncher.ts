@@ -9,11 +9,12 @@ import {
   RegisterScriptsHandler,
   RepeaterRegistered,
   RepeaterRegistering,
+  RepeaterRegisteringError,
   RepeaterStatusUpdated,
   SendRequestHandler
 } from '../Handlers';
 import { CliInfo } from '../Config';
-import { eq, gt, major } from 'semver';
+import { gt } from 'semver';
 import chalk from 'chalk';
 import { delay, inject, injectable } from 'tsyringe';
 import Timer = NodeJS.Timer;
@@ -114,7 +115,7 @@ export class DefaultRepeaterLauncher implements RepeaterLauncher {
     repeaterId: string,
     asDaemon: boolean = false
   ): Promise<void> {
-    if (this.repeaterId) {
+    if (this.repeaterStarted) {
       return;
     }
 
@@ -131,11 +132,7 @@ export class DefaultRepeaterLauncher implements RepeaterLauncher {
 
     await this.bus.init();
 
-    const {
-      version,
-      script,
-      lastUsedVersion
-    }: RepeaterRegistered = await this.bus.send({
+    const { payload }: RepeaterRegistered = await this.bus.send({
       payload: new RepeaterRegistering(
         repeaterId,
         this.info.version,
@@ -143,33 +140,29 @@ export class DefaultRepeaterLauncher implements RepeaterLauncher {
       )
     });
 
-    if (gt(version, this.info.version)) {
-      logger.warn(
-        '%s: A new Repeater version (%s) is available, for update instruction visit https://kb.neuralegion.com/#/guide/np-cli/installation',
-        chalk.yellow('(!) IMPORTANT'),
-        version
-      );
-    }
+    if ('error' in payload) {
+      this.statusChangeException(payload.error);
+    } else {
+      if (gt(payload.version, this.info.version)) {
+        logger.warn(
+          '%s: A new Repeater version (%s) is available, for update instruction visit https://kb.neuralegion.com/#/guide/np-cli/installation',
+          chalk.yellow('(!) IMPORTANT'),
+          payload.version
+        );
+      }
 
-    if (major(version) > major(this.info.version)) {
-      throw new Error(
-        `${chalk.red(
-          '(!) CRITICAL'
-        )}: The current running version is no longer supported`
-      );
+      if (payload.script) {
+        this.compileScripts(payload.script);
+      }
     }
-
-    if (!eq(lastUsedVersion, this.info.version)) {
-      throw new Error(
-        `Access Refused: There is an already running Repeater with ID ${repeaterId}, but with a different version`
-      );
-    }
-
-    this.compileScripts(script);
 
     await this.subscribeToEvents();
 
     this.repeaterStarted = true;
+
+    await this.bus.publish(
+      new RepeaterStatusUpdated(this.repeaterId, 'connected')
+    );
 
     logger.log(`The Repeater (%s) started`, this.info.version);
   }
@@ -185,5 +178,22 @@ export class DefaultRepeaterLauncher implements RepeaterLauncher {
         ),
       10000
     );
+  }
+
+  private statusChangeException(error: RepeaterRegisteringError): never {
+    switch (error) {
+      case RepeaterRegisteringError.NOT_ACTIVE:
+        throw new Error(`Access Refused: The current Repeater is not active.`);
+      case RepeaterRegisteringError.BUSY:
+        throw new Error(
+          `Access Refused: There is an already running Repeater with ID ${this.repeaterId}`
+        );
+      case RepeaterRegisteringError.REQUIRES_TO_BE_UPDATED:
+        throw new Error(
+          `${chalk.red(
+            '(!) CRITICAL'
+          )}: The current running version is no longer supported`
+        );
+    }
   }
 }
