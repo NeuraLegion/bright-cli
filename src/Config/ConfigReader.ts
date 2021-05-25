@@ -7,6 +7,8 @@ export interface CliConfig {
 }
 
 export interface ConfigReader {
+  discovery(cwd: string): string | undefined;
+
   load(rcPath: string): this;
 
   get<T extends keyof CliConfig>(key: T): CliConfig[T];
@@ -15,3 +17,5 @@ export interface ConfigReader {
 
   toJSON(): CliConfig;
 }
+
+export const ConfigReader: unique symbol = Symbol('ConfigReader');

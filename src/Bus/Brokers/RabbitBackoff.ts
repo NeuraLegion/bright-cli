@@ -1,28 +1,12 @@
 import { logger } from '../../Utils';
-import Timeout = NodeJS.Timeout;
+import { promisify } from 'util';
 import ErrnoException = NodeJS.ErrnoException;
 
 export class RabbitBackoff {
-  private backoffTime: number;
-  private readonly maximumBackoff: number;
-  private readonly maxRetries: number;
+  private depth: number = 0;
+  private readonly delay = promisify(setTimeout);
 
-  private _times: number;
-
-  get times(): number {
-    return this._times;
-  }
-
-  constructor(
-    maxRetries: number,
-    initialBackoff: number,
-    maximumBackoff: number
-  ) {
-    this._times = 0;
-    this.maxRetries = maxRetries;
-    this.backoffTime = initialBackoff;
-    this.maximumBackoff = maximumBackoff;
-  }
+  constructor(private readonly maxDepth: number) {}
 
   // eslint-disable-next-line space-before-function-paren
   public async execute<T extends (...args: any[]) => any>(
@@ -31,45 +15,36 @@ export class RabbitBackoff {
     try {
       return await task();
     } catch (e) {
-      const timeout: number | null = this.next();
-
-      if (!this.isFatal(e) && timeout != null) {
-        logger.warn(
-          'Failed to connect to event bus, retrying in %d second (attempt %d/%d)',
-          timeout / 1000,
-          this.times,
-          this.maxRetries
-        );
-
-        await this.delay(timeout);
-
-        return this.execute(task);
+      if (!this.isFatal(e) && this.depth < this.maxDepth) {
+        return this.retry(task);
       }
 
       throw new Error(this.humanizeErrorMessage(e));
     }
   }
 
-  private delay(timeout: number): Promise<void> {
-    return new Promise<void>(
-      (resolve): Timeout => setTimeout(resolve, timeout)
+  /* eslint-disable-next-line space-before-function-paren */
+  private async retry<T extends (...args: any[]) => any>(
+    task: T
+  ): Promise<ReturnType<T>> {
+    const delay = Math.max(2 ** this.depth * 100, 1000);
+
+    logger.warn(
+      'Failed to connect to event bus, retrying in %d second (attempt %d/%d)',
+      delay / 1000,
+      this.depth + 1,
+      this.maxDepth
     );
-  }
 
-  private next(): number | undefined {
-    if (this._times < this.maxRetries) {
-      return this.increaseBackoffTime();
-    }
-  }
+    await this.delay(delay);
 
-  private increaseBackoffTime(): number {
-    this.backoffTime *= Math.pow(2, ++this._times - 1);
+    this.depth++;
 
-    return Math.min(this.backoffTime, this.maximumBackoff);
+    return this.execute(task);
   }
 
   private isFatal(err: ErrnoException): boolean {
-    return ![406, 405, 404, 313, 312, 311].includes(+err.code);
+    return ![405, 406, 404, 313, 312, 311, 320].includes(+err.code);
   }
 
   private humanizeErrorMessage({ code, message }: ErrnoException): string {

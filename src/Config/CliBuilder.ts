@@ -1,36 +1,44 @@
-import { CliConfig } from './ConfigReader';
-import { DefaultConfigReader } from './DefaultConfigReader';
-import { sync } from 'find-up';
-import { Argv, CommandModule } from 'yargs';
-import path from 'path';
+import { CliConfig, ConfigReader } from './ConfigReader';
+import { logger, LogLevel } from '../Utils';
+import { CliInfo } from './CliInfo';
+import { Arguments, Argv, CommandModule } from 'yargs';
+
+export interface CliBuilderOptions {
+  info: CliInfo;
+  configReader: ConfigReader;
+}
 
 export class CliBuilder {
-  private _cwd: string;
+  private _options: CliBuilderOptions;
 
-  get cwd(): string {
-    return this._cwd;
+  get options(): CliBuilderOptions {
+    return this._options;
   }
 
-  constructor({ cwd = process.cwd() }: { cwd: string }) {
-    this._cwd = this.guessCWD(cwd);
+  constructor(options: CliBuilderOptions) {
+    this._options = options;
   }
 
-  public build({
-    commands,
-    configReader
-  }: {
-    commands: CommandModule[];
-    configReader: DefaultConfigReader;
-  }): Argv {
+  public build({ commands }: { commands: CommandModule[] }): Argv {
+    const { configReader, info } = this.options;
     // eslint-disable-next-line @typescript-eslint/no-var-requires
     const cli: Argv = require('yargs')
       .option('config', {
         requiresArg: true,
         describe: 'Path to the file with configuration',
         config: true,
-        default: configReader.discovery(this.cwd),
+        default: configReader.discovery(info.cwd),
         configParser: (configPath: string): CliConfig =>
           configReader.load(configPath).toJSON()
+      })
+      .option('log-level', {
+        requiresArg: true,
+        choices: Object.keys(LogLevel).map((x) =>
+          !isNaN(+x) ? +x : x.toLowerCase()
+        ),
+        default: LogLevel.NOTICE,
+        describe:
+          'What level of logs to report. Any logs of a higher level than the setting are shown.'
       })
       .option('api', {
         default: 'https://nexploit.app/',
@@ -48,8 +56,14 @@ export class CliBuilder {
         requiresArg: true,
         describe: 'SOCKS4 or SOCKS5 URL to proxy all traffic'
       })
+      .middleware(
+        (args: Arguments) =>
+          (logger.logLevel = !isNaN(+args.logLevel)
+            ? ((+args.logLevel as unknown) as LogLevel)
+            : LogLevel[args.logLevel.toString().toUpperCase()])
+      )
       .usage('Usage: $0 <command> [options] [<file | scan>]')
-      .pkgConf('nexploit', this._cwd)
+      .pkgConf('nexploit', info.cwd)
       .example(
         '$0 archive:generate --mockfile=.mockfile --name=archive.har',
         'output har file on base your mock requests'
@@ -60,21 +74,10 @@ export class CliBuilder {
       .recommendCommands()
       .demandCommand(1)
       .strict(true)
+      .version(info.version)
       .alias('v', 'version')
       .help('help')
       .alias('h', 'help')
       .wrap(null);
-  }
-
-  private guessCWD(cwd: string): string {
-    cwd = cwd || process.env.NEXPLOIT_CWD || process.cwd();
-
-    const pkgPath: string | null = sync('package.json', { cwd });
-
-    if (pkgPath) {
-      cwd = path.dirname(pkgPath);
-    }
-
-    return cwd;
   }
 }

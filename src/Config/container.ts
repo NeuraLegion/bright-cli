@@ -48,12 +48,18 @@ import {
   RestArchives
 } from '../Archive';
 import { IntegrationClient, JiraIntegrationClient } from '../Integrations';
+import { ConfigReader } from './ConfigReader';
+import { DefaultConfigReader } from './DefaultConfigReader';
+import { CliInfo } from './CliInfo';
+import { CliBuilder } from './CliBuilder';
+import { DefaultRepeaterLauncher, RepeaterLauncher } from '../Repeater';
 import { container, Lifecycle } from 'tsyringe';
 
 container
   .register('tsyringe', {
     useValue: container
   })
+  .register<CliInfo>(CliInfo, { useValue: new CliInfo(process.cwd()) })
   .register(
     RequestExecutor,
     {
@@ -180,10 +186,27 @@ container
     },
     { lifecycle: Lifecycle.Singleton }
   )
-  .register<ReadlinePlatform>(
+  .register<Platform>(
     Platform,
     { useClass: ReadlinePlatform },
     { lifecycle: Lifecycle.Singleton }
-  );
+  )
+  .register<ConfigReader>(
+    ConfigReader,
+    { useClass: DefaultConfigReader },
+    { lifecycle: Lifecycle.Singleton }
+  )
+  .register<RepeaterLauncher>(
+    RepeaterLauncher,
+    { useClass: DefaultRepeaterLauncher },
+    { lifecycle: Lifecycle.Singleton }
+  )
+  .register<CliBuilder>(CliBuilder, {
+    useFactory: (deps) =>
+      new CliBuilder({
+        info: deps.resolve(CliInfo),
+        configReader: deps.resolve(ConfigReader)
+      })
+  });
 
 export default container;

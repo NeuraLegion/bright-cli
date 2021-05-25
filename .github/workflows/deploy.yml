@@ -22,7 +22,7 @@ jobs:
           registry-url: 'https://registry.npmjs.org'
 
       - run: npm ci -q --ignore-scripts
-      - run: npm run build
+      - run: npm run build -- --env version=$VERSION
       - run: npm version --no-git-tag-version $VERSION
 
       - uses: actions/upload-artifact@v2

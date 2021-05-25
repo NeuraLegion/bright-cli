@@ -1,23 +1,12 @@
-import { Bus, RabbitMQBusOptions } from '../Bus';
-import { ScriptLoader } from '../Scripts';
-import {
-  NetworkTestHandler,
-  RegisterScriptsHandler,
-  RepeaterStatusUpdated,
-  SendRequestHandler
-} from '../Handlers';
-import { Cert, Certificates, RequestExecutorOptions } from '../RequestExecutor';
+import { RabbitMQBusOptions } from '../Bus';
+import { Cert, RequestExecutorOptions } from '../RequestExecutor';
 import { Helpers, logger } from '../Utils';
-import { StartupManagerFactory } from '../StartupScripts';
 import { container } from '../Config';
+import { RepeaterLauncher } from '../Repeater';
 import { Arguments, Argv, CommandModule } from 'yargs';
 import { normalize } from 'path';
-import Timer = NodeJS.Timer;
-
-let timer: Timer;
 
 export class RunRepeater implements CommandModule {
-  private static SERVICE_NAME = 'nexploit-repeater';
   public readonly command = 'repeater [options]';
   public readonly describe = 'Starts an on-prem agent.';
 
@@ -180,115 +169,57 @@ export class RunRepeater implements CommandModule {
               credentials: {
                 username: 'bot',
                 password: args.token as string
-              },
-              onError(e: Error) {
-                clearInterval(timer);
-                logger.error(`Error during "repeater": ${e.message}`);
-                process.exit(1);
               }
             }
           })
       );
   }
 
+  // eslint-disable-next-line complexity
   public async handler(args: Arguments): Promise<void> {
-    const bus: Bus = container.resolve(Bus);
-    const startupManagerFactory: StartupManagerFactory = container.resolve(
-      StartupManagerFactory
+    const repeaterLauncher: RepeaterLauncher = container.resolve(
+      RepeaterLauncher
     );
 
     if (args.cacert) {
-      const certificates: Certificates = container.resolve(Certificates);
-      await certificates.load(
+      await repeaterLauncher.loadCerts(
         typeof args.cacert === 'string' ? args.cacert : undefined
       );
     }
 
-    const dispose: () => Promise<void> = async (): Promise<void> => {
-      clearInterval(timer);
-      await notify('disconnected');
-      await bus.destroy();
-    };
-
-    const removeAction = async () => {
-      const startupManager = startupManagerFactory.create({ dispose });
-      await startupManager.uninstall(RunRepeater.SERVICE_NAME);
-      logger.log(
-        'The Repeater daemon process (SERVICE: %s) was stopped and deleted successfully',
-        RunRepeater.SERVICE_NAME
+    if (args.scripts) {
+      await repeaterLauncher.loadScripts(
+        args.scripts as Record<string, string>
       );
-    };
+    }
 
     if (args.remove) {
-      await removeAction();
+      await repeaterLauncher.uninstall();
+      process.exit(0);
 
       return;
     }
 
     if (args.daemon) {
-      const { command, args: execArgs } = Helpers.getExecArgs({
-        exclude: ['--daemon', '-d'],
-        include: ['--run']
-      });
-
-      const startupManager = startupManagerFactory.create({ dispose });
-      await startupManager.install({
-        command,
-        args: execArgs,
-        name: RunRepeater.SERVICE_NAME,
-        displayName: 'NexPloit Repeater'
-      });
-
-      logger.log(
-        'A Repeater daemon process was initiated successfully (SERVICE: %s)',
-        RunRepeater.SERVICE_NAME
-      );
-
+      await repeaterLauncher.install();
       process.exit(0);
 
       return;
     }
 
-    if (args.run) {
-      const startupManager = startupManagerFactory.create({ dispose });
-      await startupManager.run();
-    }
-
-    const onError = (e: Error) => {
-      clearInterval(timer);
-      logger.error(`Error during "repeater": ${e.message}`);
-      process.exit(1);
-    };
-
-    const stop: () => Promise<void> = async (): Promise<void> => {
-      await dispose();
-      process.exit(0);
-    };
-
-    process.on('SIGTERM', stop).on('SIGINT', stop).on('SIGHUP', stop);
-
-    const notify = (status: 'connected' | 'disconnected') =>
-      bus?.publish(new RepeaterStatusUpdated(args.id as string, status));
-
     try {
-      if (args.scripts) {
-        const loader: ScriptLoader = container.resolve(ScriptLoader);
+      ['SIGTERM', 'SIGINT', 'SIGHUP'].forEach((event) =>
+        process.on(event, async () => {
+          await repeaterLauncher.close();
+          process.exit(0);
+        })
+      );
 
-        await loader.load(args.scripts as Record<string, string>);
-      }
-
-      await bus.init();
-
-      await bus.subscribe(NetworkTestHandler);
-      await bus.subscribe(RegisterScriptsHandler);
-      await bus.subscribe(SendRequestHandler);
-
-      timer = setInterval(() => notify('connected'), 10000);
-
-      await notify('connected');
+      await repeaterLauncher.run(args.id as string, args.run as boolean);
     } catch (e) {
-      await notify('disconnected');
-      onError(e);
+      logger.error(e.message);
+      await repeaterLauncher.close();
+      process.exit(1);
     }
   }
 }
