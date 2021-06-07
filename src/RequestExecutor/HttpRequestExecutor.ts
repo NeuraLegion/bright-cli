@@ -86,11 +86,11 @@ export class HttpRequestExecutor implements RequestExecutor {
       const errorCode = err.cause?.code ?? err.error?.syscall ?? err.name;
 
       logger.error(
-        'Error executing request: "%s %s HTTP/1.1"',
+        'Error executing request: "%s %s HTTP/1.1" \nCause: %s',
         options.method,
-        options.url
+        options.url,
+        message
       );
-      logger.error('Cause: %s', message);
 
       return new Response({
         protocol: this.protocol,
