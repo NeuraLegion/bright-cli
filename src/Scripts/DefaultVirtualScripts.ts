@@ -61,8 +61,8 @@ export class DefaultVirtualScripts implements VirtualScripts {
 
   public has(type: VirtualScriptType): boolean {
     let hasType = false;
-    this.store.forEach((x: VirtualScript)=>{
-      hasType = x.type===type
+    this.store.forEach((x: VirtualScript) => {
+      hasType = x.type === type;
     });
 
     return hasType;
