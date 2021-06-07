@@ -63,7 +63,7 @@ export class RabbitBackoff {
 
     switch (code) {
       case 'EAI_AGAIN':
-        return `Error Connecting to AMQ Server: Cannot connect to ${this.host}, DNS server cannot currently fulfill the request.t`;
+        return `Error Connecting to AMQ Server: Cannot connect to ${this.host}, DNS server cannot currently fulfill the request.`;
       case 'ENOTFOUND':
         return `Error Connecting to AMQ Server: Cannot connect to ${this.host}, no DNS record found.`;
       case 'ECONNREFUSED':
