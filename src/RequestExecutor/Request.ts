@@ -168,7 +168,11 @@ export class Request {
     }
   }
 
-  private assertPassphrase(name: string, pfx: Buffer, passphrase: string): void {
+  private assertPassphrase(
+    name: string,
+    pfx: Buffer,
+    passphrase: string
+  ): void {
     try {
       createSecureContext({ passphrase, pfx });
     } catch (e) {
