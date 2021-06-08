@@ -168,9 +168,9 @@ export class Request {
     }
   }
 
-  private assertPassphrase(name: string, cert: Buffer, passphrase: string) {
+  private assertPassphrase(name: string, pfx: Buffer, passphrase: string): void {
     try {
-      createSecureContext({ passphrase, pfx: cert });
+      createSecureContext({ passphrase, pfx });
     } catch (e) {
       logger.warn(
         `Error Loading Certificate: Wrong passphrase for certificate ${name}.`

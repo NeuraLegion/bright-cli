@@ -58,13 +58,4 @@ export class DefaultVirtualScripts implements VirtualScripts {
   public values(): IterableIterator<VirtualScript> {
     return this.store.values();
   }
-
-  public has(type: VirtualScriptType): boolean {
-    let hasType = false;
-    this.store.forEach((x: VirtualScript) => {
-      hasType = x.type === type;
-    });
-
-    return hasType;
-  }
 }

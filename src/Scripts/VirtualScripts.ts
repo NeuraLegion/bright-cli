@@ -18,8 +18,6 @@ export interface VirtualScripts {
   set(wildcard: string, type: VirtualScriptType, code: string): this;
 
   values(): IterableIterator<VirtualScript>;
-
-  has(type: VirtualScriptType): boolean;
 }
 
 export const VirtualScripts: unique symbol = Symbol('VirtualScripts');
