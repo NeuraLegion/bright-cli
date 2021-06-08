@@ -28,7 +28,7 @@ export class CertificatesLoader implements Certificates {
       }
     } catch {
       logger.warn(
-        `Warning: cannot load certificates from ${
+        `Error Loading Certificate: Cannot load certificates from ${
           win
             ? 'Trusted Root Certification Authorities Certificate Store'
             : path
@@ -52,7 +52,7 @@ export class CertificatesLoader implements Certificates {
     }
 
     logger.warn(
-      `Warning: cannot load certificates from the system root. Please use "--cacert" option to specify the accurate path to the file.`
+      `Error Loading Certificate: Cannot load certificates from the system root. Please use "--cacert" option to specify the accurate path to the file. (link to kb)`
     );
   }
 
