@@ -164,7 +164,7 @@ export class RunRepeater implements CommandModule {
               exchange: 'EventBus',
               clientQueue: `agent:${args.id as string}`,
               connectTimeout: 10000,
-              url: args.bus as string,
+              url: Helpers.getClusterUrls(args).bus as string,
               proxyUrl: args.proxy as string,
               credentials: {
                 username: 'bot',

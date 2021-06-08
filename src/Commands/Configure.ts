@@ -1,34 +1,24 @@
-import { logger } from '../Utils';
+import { Helpers, logger } from '../Utils';
 import { ConnectivityUrls, Platform, TestType } from '../Wizard';
 import { container } from '../Config';
 import { Arguments, Argv, CommandModule } from 'yargs';
 import { URL } from 'url';
 
 export class Configure implements CommandModule {
-  private static readonly DEFAULT_TCP_TEST_ENDPOINT: string =
-    'amqps://amq.nexploit.app:5672';
-  private static readonly DEFAULT_HTTP_TEST_ENDPOINT: string =
-    'https://nexploit.app:443';
-  private static readonly DEFAULT_AUTH_TEST_ENDPOINT: string =
-    'https://nexploit.app/api/v1/repeaters/user';
-
   public readonly command = 'configure [options]';
   public readonly describe = 'Start a configuration wizard';
 
   public builder(argv: Argv): Argv {
     return argv
       .option(TestType.TCP, {
-        default: Configure.DEFAULT_TCP_TEST_ENDPOINT,
         hidden: true,
         describe: `NexPloit Event Bus for connectivity test`
       })
       .option(TestType.HTTP, {
-        default: Configure.DEFAULT_HTTP_TEST_ENDPOINT,
         hidden: true,
         describe: `NexPloit application for connectivity test`
       })
       .option(TestType.AUTH, {
-        default: Configure.DEFAULT_AUTH_TEST_ENDPOINT,
         hidden: true,
         describe: `NexPloit event message authentication endpoint`
       })
@@ -45,11 +35,29 @@ export class Configure implements CommandModule {
         describe: `Enables network tests only`
       })
       .middleware((args: Arguments) => {
+        const { api, bus } = Helpers.getClusterUrls(args);
+
         container.register(ConnectivityUrls, {
           useValue: new Map(
             Object.values(TestType).map((type: TestType) => {
               try {
-                return [type, new URL(args[type] as string)];
+                switch (type) {
+                  case TestType.TCP:
+                    return [type, new URL((args[type] as string) ?? bus)];
+                  case TestType.AUTH:
+                    return [
+                      type,
+                      new URL(
+                        (args[type] as string) ?? `${api}/v1/repeaters/user`
+                      )
+                    ];
+                  case TestType.HTTP:
+                    return [type, new URL((args[type] as string) ?? api)];
+                  default:
+                    throw new Error(
+                      `Testing endpoint of type${type} not supported`
+                    );
+                }
               } catch (err) {
                 throw new Error(`Invalid value for ${type} testing endpoint`);
               }

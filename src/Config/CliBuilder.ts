@@ -46,6 +46,10 @@ export class CliBuilder {
         demandOption: true,
         describe: 'NexPloit base URL'
       })
+      .option('cluster', {
+        demandOption: false,
+        describe: 'NexPloit Cluster'
+      })
       .option('insecure', {
         boolean: true,
         default: false,
