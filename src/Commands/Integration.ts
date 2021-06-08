@@ -95,7 +95,7 @@ export class Integration implements CommandModule {
               exchange: 'EventBus',
               clientQueue: `integration:${args.accessKey}`,
               connectTimeout: 10000,
-              url: args.bus as string,
+              url: Helpers.getClusterUrls(args).bus,
               proxyUrl: args.proxy as string,
               credentials: {
                 username: 'bot',
