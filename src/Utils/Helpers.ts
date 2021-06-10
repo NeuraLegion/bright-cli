@@ -20,8 +20,8 @@ export interface CommandArgs {
 }
 
 export interface ClusterUrls {
-  api?: string;
-  bus?: string;
+  api: string;
+  bus: string;
 }
 
 export class Helpers {
