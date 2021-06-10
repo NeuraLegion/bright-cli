@@ -41,13 +41,9 @@ export class CliBuilder {
           'What level of logs to report. Any logs of a higher level than the setting are shown.'
       })
       .option('api', {
-        default: 'https://nexploit.app/',
-        requiresArg: true,
-        demandOption: true,
         describe: 'NexPloit base URL'
       })
       .option('cluster', {
-        demandOption: false,
         describe: 'NexPloit Cluster'
       })
       .option('insecure', {

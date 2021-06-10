@@ -27,8 +27,6 @@ export class Integration implements CommandModule {
   public builder(argv: Argv): Argv {
     return argv
       .option('bus', {
-        default: 'amqps://amq.nexploit.app:5672',
-        demandOption: true,
         describe: 'NexPloit Event Bus'
       })
       .option('token', {

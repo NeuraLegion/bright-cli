@@ -32,6 +32,11 @@ export class Helpers {
     let api: string;
 
     if (args.cluster) {
+      if (args.api || args.bus) {
+        throw new Error(
+          '--api and --bus options should not be used with --cluster option'
+        );
+      }
       let host = args.cluster;
 
       try {
@@ -48,8 +53,8 @@ export class Helpers {
         api = `https://${host}`;
       }
     } else {
-      api = args.api as string;
-      bus = args.bus as string;
+      api = (args.api as string) ?? `amqps://amq.nexploit.app:5672`;
+      bus = (args.bus as string) ?? `https://nexploit.app:5672`;
     }
 
     return { api, bus };
