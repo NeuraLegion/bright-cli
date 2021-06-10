@@ -40,7 +40,7 @@ export class Helpers {
       let host = args.cluster;
 
       try {
-        host = { host } = new URL(args.cluster as string);
+        ({ host } = new URL(args.cluster as string));
       } catch {
         // noop
       }
