@@ -141,7 +141,7 @@ export class RunScan implements CommandModule {
         container.register(RestScansOptions, {
           useValue: {
             insecure: args.insecure as boolean,
-            baseUrl: Helpers.getClusterUrls(args).api,
+            baseUrl: args.api as string,
             apiKey: args.token as string,
             proxyUrl: args.proxy as string
           }

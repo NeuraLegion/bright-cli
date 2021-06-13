@@ -1,4 +1,3 @@
-import { Arguments } from 'yargs';
 import { ok } from 'assert';
 import { ChildProcess, spawn } from 'child_process';
 import { URL } from 'url';
@@ -19,6 +18,12 @@ export interface CommandArgs {
   args: string[];
 }
 
+export interface ClusterArgs {
+  api?: string;
+  bus?: string;
+  cluster?: string;
+}
+
 export interface ClusterUrls {
   api: string;
   bus: string;
@@ -27,7 +32,7 @@ export interface ClusterUrls {
 export class Helpers {
   private static readonly META_CHARS_REGEXP = /([()\][%!^"`<>&|;, *?])/g;
 
-  public static getClusterUrls(args: Arguments): ClusterUrls {
+  public static getClusterUrls(args: ClusterArgs): ClusterUrls {
     let bus: string;
     let api: string;
 
@@ -53,8 +58,8 @@ export class Helpers {
         api = `https://${host}`;
       }
     } else {
-      api = (args.api as string) ?? `amqps://amq.nexploit.app:5672`;
-      bus = (args.bus as string) ?? `https://nexploit.app:5672`;
+      api = (args.api as string) ?? `https://nexploit.app`;
+      bus = (args.bus as string) ?? `amqps://amq.nexploit.app:5672`;
     }
 
     return { api, bus };

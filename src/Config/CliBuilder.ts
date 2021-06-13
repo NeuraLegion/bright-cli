@@ -1,6 +1,7 @@
 import { CliConfig, ConfigReader } from './ConfigReader';
-import { logger, LogLevel } from '../Utils';
+import { Helpers, logger, LogLevel } from '../Utils';
 import { CliInfo } from './CliInfo';
+import { TestType } from '../Wizard';
 import { Arguments, Argv, CommandModule } from 'yargs';
 
 export interface CliBuilderOptions {
@@ -55,6 +56,14 @@ export class CliBuilder {
       .option('proxy', {
         requiresArg: true,
         describe: 'SOCKS4 or SOCKS5 URL to proxy all traffic'
+      })
+      .middleware((args: Arguments) => {
+        const { bus, api } = Helpers.getClusterUrls(args);
+        args.bus = bus;
+        args.api = api;
+        args[TestType.TCP] = args[TestType.TCP] ?? bus;
+        args[TestType.HTTP] = args[TestType.HTTP] ?? api;
+        args[TestType.AUTH] = args[TestType.TCP] ?? `${api}/v1/repeaters/user`;
       })
       .middleware(
         (args: Arguments) =>

@@ -85,7 +85,7 @@ export class GenerateArchive implements CommandModule {
           })
           .register(RestArchivesOptions, {
             useValue: {
-              baseUrl: Helpers.getClusterUrls(args).api,
+              baseUrl: args.api as string,
               apiKey: args.token as string,
               proxyUrl: args.proxy as string
             }

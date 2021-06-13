@@ -1,4 +1,4 @@
-import { Helpers, logger } from '../Utils';
+import { logger } from '../Utils';
 import { ConnectivityUrls, Platform, TestType } from '../Wizard';
 import { container } from '../Config';
 import { Arguments, Argv, CommandModule } from 'yargs';
@@ -35,25 +35,11 @@ export class Configure implements CommandModule {
         describe: `Enables network tests only`
       })
       .middleware((args: Arguments) => {
-        const { api, bus } = Helpers.getClusterUrls(args);
-
         container.register(ConnectivityUrls, {
           useValue: new Map(
             Object.values(TestType).map((type: TestType) => {
               try {
-                switch (type) {
-                  case TestType.TCP:
-                    return [type, new URL((args[type] as string) ?? bus)];
-                  case TestType.AUTH:
-                    return [
-                      type,
-                      new URL(
-                        (args[type] as string) ?? `${api}/v1/repeaters/user`
-                      )
-                    ];
-                  case TestType.HTTP:
-                    return [type, new URL((args[type] as string) ?? api)];
-                }
+                return [type, new URL(args[type] as string)];
               } catch (err) {
                 throw new Error(`Invalid value for ${type} testing endpoint`);
               }

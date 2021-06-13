@@ -1,5 +1,5 @@
 import { RestScansOptions, Scans } from '../Scan';
-import { Helpers, logger } from '../Utils';
+import { logger } from '../Utils';
 import { Arguments, Argv, CommandModule } from 'yargs';
 import { container } from 'tsyringe';
 
@@ -25,7 +25,7 @@ export class StopScan implements CommandModule {
         container.register(RestScansOptions, {
           useValue: {
             insecure: args.insecure as boolean,
-            baseUrl: Helpers.getClusterUrls(args).api,
+            baseUrl: args.api as string,
             apiKey: args.token as string,
             proxyUrl: args.proxy as string
           }

@@ -51,7 +51,7 @@ export class PollingScanStatus implements CommandModule {
         container.register(RestScansOptions, {
           useValue: {
             insecure: args.insecure,
-            baseUrl: Helpers.getClusterUrls(args).api,
+            baseUrl: args.api,
             apiKey: args.token,
             proxyUrl: args.proxy
           }
