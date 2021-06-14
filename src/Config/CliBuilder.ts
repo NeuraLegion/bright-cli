@@ -65,9 +65,7 @@ export class CliBuilder {
         describe: 'SOCKS4 or SOCKS5 URL to proxy all traffic'
       })
       .middleware((args: Arguments) => {
-        const { bus, api } = Helpers.getClusterUrls(args as ClusterArgs);
-        args.bus = bus;
-        args.api = api;
+        ({ bus: args.bus, api: args.api } = Helpers.getClusterUrls(args as ClusterArgs));
       }, true)
       .middleware(
         (args: Arguments) =>
