@@ -20,12 +20,10 @@ describe('Helpers', () => {
       const act = () => Helpers.getClusterUrls(args);
       //assert
       act.should.to.throw(
-        '--api and --bus options should not be used with --cluster option'
+        'Arguments api/bus and cluster are mutually exclusive'
       );
     });
-  });
 
-  describe('getClusterUrls', () => {
     it('should throw error when --cluster and --api used', () => {
       // arrange
       const args = {
@@ -36,12 +34,10 @@ describe('Helpers', () => {
       const act = () => Helpers.getClusterUrls(args);
       //assert
       act.should.to.throw(
-        '--api and --bus options should not be used with --cluster option'
+        'Arguments api/bus and cluster are mutually exclusive'
       );
     });
-  });
 
-  describe('getClusterUrls', () => {
     it('should returns localhost api and bus if --cluster is localhost', () => {
       // arrange
       const args = {
@@ -53,9 +49,7 @@ describe('Helpers', () => {
       result.api.should.be.equal('http://localhost:8000');
       result.bus.should.be.equal('amqp://localhost:5672');
     });
-  });
 
-  describe('getClusterUrls', () => {
     it('should returns default values if --cluster, --bus and --api not used', () => {
       // arrange
       const args = {};
@@ -65,9 +59,7 @@ describe('Helpers', () => {
       result.api.should.be.equal('https://nexploit.app');
       result.bus.should.be.equal('amqps://amq.nexploit.app:5672');
     });
-  });
 
-  describe('getClusterUrls', () => {
     it('should returns values with --cluster option', () => {
       // arrange
       const args = {
@@ -79,9 +71,7 @@ describe('Helpers', () => {
       result.api.should.be.equal('https://test.com');
       result.bus.should.be.equal('amqps://amq.test.com:5672');
     });
-  });
 
-  describe('getClusterUrls', () => {
     it('should returns values with --api and --bus option', () => {
       // arrange
       const args = {
@@ -174,14 +164,24 @@ describe('Helpers', () => {
       expect(actual).to.be.undefined;
     });
   });
-  describe('should returns valid object', () => {
-    // arrange
-    const input = 'test';
-    // act
-    const actual = Helpers.omit(input);
-    // assert
-    actual.should.be.deep.equal({ 0: 't', 1: 'e', 2: 's', 3: 't' });
+
+  describe('omit', () => {
+    it('should returns valid object', () => {
+      // arrange
+      const input = {
+        a: 1,
+        b: 2,
+        c: null as number,
+        d: undefined as number,
+        e: 3
+      };
+      // act
+      const actual = Helpers.omit(input);
+      // assert
+      actual.should.be.deep.equal({ a: 1, b: 2, e: 3 });
+    });
   });
+
   describe('split', () => {
     it('should split even array', () => {
       // arrange
@@ -213,12 +213,11 @@ describe('Helpers', () => {
   describe('toArray', () => {
     it('should return array', () => {
       // arrange
-      const enumeration = 'abc';
       // act
-      const actual = Helpers.toArray(enumeration);
+      const actual = Helpers.toArray(TestEnum);
       // assert
       actual.should.to.be.an('array');
-      actual.should.to.be.deep.equal(['a', 'b', 'c']);
+      actual.should.to.be.deep.equal([TestEnum.TEST, TestEnum.PROD]);
     });
   });
   describe('parseHeaders', () => {

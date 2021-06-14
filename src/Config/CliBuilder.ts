@@ -1,5 +1,5 @@
 import { CliConfig, ConfigReader } from './ConfigReader';
-import { Helpers, logger, LogLevel } from '../Utils';
+import { ClusterArgs, Helpers, logger, LogLevel } from '../Utils';
 import { CliInfo } from './CliInfo';
 import { TestType } from '../Wizard';
 import { Arguments, Argv, CommandModule } from 'yargs';
@@ -58,13 +58,13 @@ export class CliBuilder {
         describe: 'SOCKS4 or SOCKS5 URL to proxy all traffic'
       })
       .middleware((args: Arguments) => {
-        const { bus, api } = Helpers.getClusterUrls(args);
+        const { bus, api } = Helpers.getClusterUrls(args as ClusterArgs);
         args.bus = bus;
         args.api = api;
-        args[TestType.TCP] = args[TestType.TCP] ?? bus;
-        args[TestType.HTTP] = args[TestType.HTTP] ?? api;
-        args[TestType.AUTH] = args[TestType.TCP] ?? `${api}/v1/repeaters/user`;
-      })
+        args[TestType.TCP] ??= bus;
+        args[TestType.HTTP] ??= api;
+        args[TestType.AUTH] ??= `${api}/v1/repeaters/user`;
+      }, true)
       .middleware(
         (args: Arguments) =>
           (logger.logLevel = !isNaN(+args.logLevel)

@@ -38,9 +38,7 @@ export class Helpers {
 
     if (args.cluster) {
       if (args.api || args.bus) {
-        throw new Error(
-          '--api and --bus options should not be used with --cluster option'
-        );
+        throw new Error('Arguments api/bus and cluster are mutually exclusive');
       }
       let host = args.cluster;
 
