@@ -1,7 +1,6 @@
 import { CliConfig, ConfigReader } from './ConfigReader';
 import { ClusterArgs, Helpers, logger, LogLevel } from '../Utils';
 import { CliInfo } from './CliInfo';
-import { TestType } from '../Wizard';
 import { Arguments, Argv, CommandModule } from 'yargs';
 
 export interface CliBuilderOptions {
@@ -42,9 +41,17 @@ export class CliBuilder {
           'What level of logs to report. Any logs of a higher level than the setting are shown.'
       })
       .option('api', {
+        requiresArg: true,
+        demandOption: true,
         describe: 'NexPloit base URL'
       })
+      .option('bus', {
+        requiresArg: true,
+        demandOption: true,
+        describe: 'NexPloit Event Bus'
+      })
       .option('cluster', {
+        requiresArg: true,
         describe: 'NexPloit Cluster'
       })
       .option('insecure', {
@@ -61,9 +68,6 @@ export class CliBuilder {
         const { bus, api } = Helpers.getClusterUrls(args as ClusterArgs);
         args.bus = bus;
         args.api = api;
-        args[TestType.TCP] ??= bus;
-        args[TestType.HTTP] ??= api;
-        args[TestType.AUTH] ??= `${api}/v1/repeaters/user`;
       }, true)
       .middleware(
         (args: Arguments) =>

@@ -36,15 +36,20 @@ export class Configure implements CommandModule {
       })
       .middleware((args: Arguments) => {
         container.register(ConnectivityUrls, {
-          useValue: new Map(
-            Object.values(TestType).map((type: TestType) => {
-              try {
-                return [type, new URL(args[type] as string)];
-              } catch (err) {
-                throw new Error(`Invalid value for ${type} testing endpoint`);
-              }
-            })
-          )
+          useValue: new Map([
+            this.getMapEntryOrThrow(
+              TestType.TCP,
+              (args[TestType.TCP] ?? args.bus) as string
+            ),
+            this.getMapEntryOrThrow(
+              TestType.HTTP,
+              (args[TestType.HTTP] ?? args.api) as string
+            ),
+            this.getMapEntryOrThrow(
+              TestType.AUTH,
+              (args[TestType.AUTH] ?? `${args.api}/v1/repeaters/user`) as string
+            )
+          ])
         });
       });
   }
@@ -63,6 +68,14 @@ export class Configure implements CommandModule {
     } catch (e) {
       logger.error(`Error during "configure": ${e.error || e.message}`);
       process.exit(1);
+    }
+  }
+
+  private getMapEntryOrThrow(type: TestType, input: string): [TestType, URL] {
+    try {
+      return [type, new URL(input)];
+    } catch (err) {
+      throw new Error(`Invalid value for ${type} testing endpoint`);
     }
   }
 }

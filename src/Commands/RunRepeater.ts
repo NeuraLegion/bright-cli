@@ -12,9 +12,6 @@ export class RunRepeater implements CommandModule {
 
   public builder(argv: Argv): Argv {
     return argv
-      .option('bus', {
-        describe: 'NexPloit Event Bus'
-      })
       .option('token', {
         alias: 't',
         describe: 'NexPloit API-key',
