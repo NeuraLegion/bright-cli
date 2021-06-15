@@ -43,16 +43,18 @@ export class CliBuilder {
       .option('api', {
         requiresArg: true,
         demandOption: true,
-        describe: 'NexPloit base URL'
+        deprecated: true,
+        describe: 'NexPloit base URL. [default: https://nexploit.app]'
       })
       .option('bus', {
         requiresArg: true,
         demandOption: true,
-        describe: 'NexPloit Event Bus'
+        deprecated: true,
+        describe: 'NexPloit Event Bus. [default: amqps://amq.nexploit.app:5672]'
       })
       .option('cluster', {
         requiresArg: true,
-        describe: 'NexPloit Cluster'
+        describe: 'NexPloit Cluster (domain name). [default: nexploit.app]'
       })
       .option('insecure', {
         boolean: true,
@@ -65,7 +67,9 @@ export class CliBuilder {
         describe: 'SOCKS4 or SOCKS5 URL to proxy all traffic'
       })
       .middleware((args: Arguments) => {
-        ({ bus: args.bus, api: args.api } = Helpers.getClusterUrls(args as ClusterArgs));
+        ({ bus: args.bus, api: args.api } = Helpers.getClusterUrls(
+          args as ClusterArgs
+        ));
       }, true)
       .middleware(
         (args: Arguments) =>

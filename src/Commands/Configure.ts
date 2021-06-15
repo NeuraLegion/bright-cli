@@ -8,6 +8,17 @@ export class Configure implements CommandModule {
   public readonly command = 'configure [options]';
   public readonly describe = 'Start a configuration wizard';
 
+  private static getMapEntryOrThrow(
+    type: TestType,
+    input: string
+  ): [TestType, URL] {
+    try {
+      return [type, new URL(input)];
+    } catch (err) {
+      throw new Error(`Invalid value for ${type} testing endpoint`);
+    }
+  }
+
   public builder(argv: Argv): Argv {
     return argv
       .option(TestType.TCP, {
@@ -37,15 +48,15 @@ export class Configure implements CommandModule {
       .middleware((args: Arguments) => {
         container.register(ConnectivityUrls, {
           useValue: new Map([
-            this.getMapEntryOrThrow(
+            Configure.getMapEntryOrThrow(
               TestType.TCP,
               (args[TestType.TCP] ?? args.bus) as string
             ),
-            this.getMapEntryOrThrow(
+            Configure.getMapEntryOrThrow(
               TestType.HTTP,
               (args[TestType.HTTP] ?? args.api) as string
             ),
-            this.getMapEntryOrThrow(
+            Configure.getMapEntryOrThrow(
               TestType.AUTH,
               (args[TestType.AUTH] ?? `${args.api}/v1/repeaters/user`) as string
             )
@@ -68,14 +79,6 @@ export class Configure implements CommandModule {
     } catch (e) {
       logger.error(`Error during "configure": ${e.error || e.message}`);
       process.exit(1);
-    }
-  }
-
-  private getMapEntryOrThrow(type: TestType, input: string): [TestType, URL] {
-    try {
-      return [type, new URL(input)];
-    } catch (err) {
-      throw new Error(`Invalid value for ${type} testing endpoint`);
     }
   }
 }
