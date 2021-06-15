@@ -5,31 +5,35 @@ import { Arguments, Argv, CommandModule } from 'yargs';
 import { URL } from 'url';
 
 export class Configure implements CommandModule {
-  private static readonly DEFAULT_TCP_TEST_ENDPOINT: string =
-    'amqps://amq.nexploit.app:5672';
-  private static readonly DEFAULT_HTTP_TEST_ENDPOINT: string =
-    'https://nexploit.app:443';
-  private static readonly DEFAULT_AUTH_TEST_ENDPOINT: string =
-    'https://nexploit.app/api/v1/repeaters/user';
-
   public readonly command = 'configure [options]';
   public readonly describe = 'Start a configuration wizard';
+
+  private static getMapEntryOrThrow(
+    type: TestType,
+    input: string
+  ): [TestType, URL] {
+    try {
+      return [type, new URL(input)];
+    } catch (err) {
+      throw new Error(`Invalid value for ${type} testing endpoint`);
+    }
+  }
 
   public builder(argv: Argv): Argv {
     return argv
       .option(TestType.TCP, {
-        default: Configure.DEFAULT_TCP_TEST_ENDPOINT,
         hidden: true,
+        requiresArg: true,
         describe: `NexPloit Event Bus for connectivity test`
       })
       .option(TestType.HTTP, {
-        default: Configure.DEFAULT_HTTP_TEST_ENDPOINT,
         hidden: true,
+        requiresArg: true,
         describe: `NexPloit application for connectivity test`
       })
       .option(TestType.AUTH, {
-        default: Configure.DEFAULT_AUTH_TEST_ENDPOINT,
         hidden: true,
+        requiresArg: true,
         describe: `NexPloit event message authentication endpoint`
       })
       .option('nogui', {
@@ -46,15 +50,20 @@ export class Configure implements CommandModule {
       })
       .middleware((args: Arguments) => {
         container.register(ConnectivityUrls, {
-          useValue: new Map(
-            Object.values(TestType).map((type: TestType) => {
-              try {
-                return [type, new URL(args[type] as string)];
-              } catch (err) {
-                throw new Error(`Invalid value for ${type} testing endpoint`);
-              }
-            })
-          )
+          useValue: new Map([
+            Configure.getMapEntryOrThrow(
+              TestType.TCP,
+              (args[TestType.TCP] ?? args.bus) as string
+            ),
+            Configure.getMapEntryOrThrow(
+              TestType.HTTP,
+              (args[TestType.HTTP] ?? args.api) as string
+            ),
+            Configure.getMapEntryOrThrow(
+              TestType.AUTH,
+              (args[TestType.AUTH] ?? `${args.api}/v1/repeaters/user`) as string
+            )
+          ])
         });
       });
   }

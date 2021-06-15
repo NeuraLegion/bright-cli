@@ -1,5 +1,5 @@
 import { CliConfig, ConfigReader } from './ConfigReader';
-import { logger, LogLevel } from '../Utils';
+import { ClusterArgs, Helpers, logger, LogLevel } from '../Utils';
 import { CliInfo } from './CliInfo';
 import { Arguments, Argv, CommandModule } from 'yargs';
 
@@ -41,10 +41,20 @@ export class CliBuilder {
           'What level of logs to report. Any logs of a higher level than the setting are shown.'
       })
       .option('api', {
-        default: 'https://nexploit.app/',
         requiresArg: true,
         demandOption: true,
-        describe: 'NexPloit base URL'
+        deprecated: true,
+        describe: 'NexPloit base URL. [default: https://nexploit.app]'
+      })
+      .option('bus', {
+        requiresArg: true,
+        demandOption: true,
+        deprecated: true,
+        describe: 'NexPloit Event Bus. [default: amqps://amq.nexploit.app:5672]'
+      })
+      .option('cluster', {
+        requiresArg: true,
+        describe: 'NexPloit Cluster (domain name). [default: nexploit.app]'
       })
       .option('insecure', {
         boolean: true,
@@ -56,6 +66,11 @@ export class CliBuilder {
         requiresArg: true,
         describe: 'SOCKS4 or SOCKS5 URL to proxy all traffic'
       })
+      .middleware((args: Arguments) => {
+        ({ bus: args.bus, api: args.api } = Helpers.getClusterUrls(
+          args as ClusterArgs
+        ));
+      }, true)
       .middleware(
         (args: Arguments) =>
           (logger.logLevel = !isNaN(+args.logLevel)

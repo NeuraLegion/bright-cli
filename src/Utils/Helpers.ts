@@ -1,5 +1,6 @@
 import { ok } from 'assert';
 import { ChildProcess, spawn } from 'child_process';
+import { URL } from 'url';
 
 declare global {
   // eslint-disable-next-line @typescript-eslint/no-namespace
@@ -17,8 +18,50 @@ export interface CommandArgs {
   args: string[];
 }
 
+export interface ClusterArgs {
+  api?: string;
+  bus?: string;
+  cluster?: string;
+}
+
+export interface ClusterUrls {
+  api: string;
+  bus: string;
+}
+
 export class Helpers {
   private static readonly META_CHARS_REGEXP = /([()\][%!^"`<>&|;, *?])/g;
+
+  public static getClusterUrls(args: ClusterArgs): ClusterUrls {
+    let bus: string;
+    let api: string;
+
+    if (args.cluster) {
+      if (args.api || args.bus) {
+        throw new Error('Arguments api/bus and cluster are mutually exclusive');
+      }
+      let host = args.cluster;
+
+      try {
+        ({ host } = new URL(args.cluster as string));
+      } catch {
+        // noop
+      }
+
+      if (host === 'localhost') {
+        bus = `amqp://${host}:5672`;
+        api = `http://${host}:8000`;
+      } else {
+        bus = `amqps://amq.${host}:5672`;
+        api = `https://${host}`;
+      }
+    } else {
+      api = (args.api as string) ?? `https://nexploit.app`;
+      bus = (args.bus as string) ?? `amqps://amq.nexploit.app:5672`;
+    }
+
+    return { api, bus };
+  }
 
   public static spawn(
     options: {
