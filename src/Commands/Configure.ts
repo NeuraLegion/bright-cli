@@ -23,14 +23,17 @@ export class Configure implements CommandModule {
     return argv
       .option(TestType.TCP, {
         hidden: true,
+        requiresArg: true,
         describe: `NexPloit Event Bus for connectivity test`
       })
       .option(TestType.HTTP, {
         hidden: true,
+        requiresArg: true,
         describe: `NexPloit application for connectivity test`
       })
       .option(TestType.AUTH, {
         hidden: true,
+        requiresArg: true,
         describe: `NexPloit event message authentication endpoint`
       })
       .option('nogui', {
