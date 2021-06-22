@@ -88,7 +88,10 @@ export class RabbitMQBus implements Bus {
       return;
     }
 
-    const backoff = new RabbitBackoff(this.DEFAULT_RECONNECT_TIMES);
+    const backoff = new RabbitBackoff(
+      this.options.url,
+      this.DEFAULT_RECONNECT_TIMES
+    );
 
     await backoff.execute(() => this.connect());
   }
@@ -224,7 +227,10 @@ export class RabbitMQBus implements Bus {
     try {
       this.clear();
 
-      const backoff = new RabbitBackoff(this.DEFAULT_RECONNECT_TIMES);
+      const backoff = new RabbitBackoff(
+        this.options.url,
+        this.DEFAULT_RECONNECT_TIMES
+      );
 
       await backoff.execute(() => this.connect());
     } catch (err) {

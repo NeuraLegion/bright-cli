@@ -6,7 +6,10 @@ export class RabbitBackoff {
   private depth: number = 0;
   private readonly delay = promisify(setTimeout);
 
-  constructor(private readonly maxDepth: number) {}
+  constructor(
+    private readonly host: string,
+    private readonly maxDepth: number
+  ) {}
 
   // eslint-disable-next-line space-before-function-paren
   public async execute<T extends (...args: any[]) => any>(
@@ -50,21 +53,21 @@ export class RabbitBackoff {
   private humanizeErrorMessage({ code, message }: ErrnoException): string {
     if (!code) {
       if (message.includes('ACCESS-REFUSED')) {
-        return 'Unauthorized access. Please check your credentials.';
+        return 'Access Refused: Unauthorized access. Please check your credentials.';
       }
 
       if (message.includes('CHANNEL-ERROR')) {
-        return 'Unexpected error. Channel has been closed.';
+        return 'Unexpected Error: Channel has been closed, please contact support at support@neuralegion.com (issue from out side).';
       }
     }
 
     switch (code) {
       case 'EAI_AGAIN':
-        return `DNS server cannot currently fulfill the request`;
+        return `Error Connecting to AMQ Server: Cannot connect to ${this.host}, DNS server cannot currently fulfill the request.`;
       case 'ENOTFOUND':
-        return `DNS lookup failed. Cannot resolve provided URL.`;
+        return `Error Connecting to AMQ Server: Cannot connect to ${this.host}, no DNS record found.`;
       case 'ECONNREFUSED':
-        return `Cannot connect to the event bus.`;
+        return `Cannot connect to ${this.host}`;
       case 'ECONNRESET':
         return `Connection was forcibly closed by a peer.`;
       default:
