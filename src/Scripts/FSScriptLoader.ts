@@ -27,7 +27,7 @@ export class FSScriptLoader implements ScriptLoader {
       code = await promisify(readFile)(path, { encoding: 'utf8' });
     } catch (e) {
       logger.debug(`Cannot load ${path}. Error: ${e.message}`);
-      throw new Error(`Cannot load ${path}`);
+      throw new Error(`Error Loading Script: Cannot load ${path}`);
     }
 
     this.virtualScripts.set(wildcard, VirtualScriptType.LOCAL, code);

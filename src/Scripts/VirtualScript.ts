@@ -76,7 +76,7 @@ export class VirtualScript {
 
     if (typeof func !== 'function') {
       throw new Error(
-        `Cannot find ${functionName} function in ${this.id} script.`
+        `Error Loading Script: Script ${this.id} does not match expected format, missing function ${functionName}.`
       );
     }
 

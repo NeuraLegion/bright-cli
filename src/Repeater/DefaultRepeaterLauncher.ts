@@ -86,6 +86,10 @@ export class DefaultRepeaterLauncher implements RepeaterLauncher {
     this.virtualScripts.clear(VirtualScriptType.REMOTE);
 
     if (this.virtualScripts.size) {
+      logger.warn(
+        'Error Loading Script: Cannot accept scripts from the cloud when a local script is already loaded'
+      );
+
       return;
     }
 
