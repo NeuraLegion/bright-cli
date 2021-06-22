@@ -34,10 +34,7 @@ export class UploadArchive implements CommandModule {
           SpecType.POSTMAN
         ].map((x: string) => x.toLowerCase()),
         default: SpecType.HAR.toLowerCase(),
-        demandOption: true,
-        coerce(arg: string): SpecType {
-          return Helpers.selectEnumValue(SpecType, arg) as SpecType;
-        }
+        demandOption: true
       })
       .option('discard', {
         alias: 'd',
@@ -110,7 +107,9 @@ export class UploadArchive implements CommandModule {
       const parserFactory: ParserFactory = container.resolve(ParserFactory);
       const archives: Archives = container.resolve(Archives);
 
-      const parser: Parser = parserFactory.create(args.type as SpecType);
+      const parser: Parser = parserFactory.create(
+        Helpers.selectEnumValue(SpecType, args.type as string) as SpecType
+      );
       const file = await parser.parse(args.file as string);
 
       const spec: Spec = {

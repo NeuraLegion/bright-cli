@@ -1,8 +1,9 @@
 import { logger } from '../Utils';
 import { URL } from 'url';
 import { readFile } from 'fs';
-import { extname } from 'path';
+import { basename, extname } from 'path';
 import { promisify } from 'util';
+import { createSecureContext } from 'tls';
 
 export interface RequestOptions {
   method?: string;
@@ -149,6 +150,7 @@ export class Request {
     }
 
     const ext = extname(path);
+    const name = basename(path);
 
     switch (ext) {
       case '.pem':
@@ -157,11 +159,26 @@ export class Request {
         this._ca = cert;
         break;
       case '.pfx':
+        this.assertPassphrase(name, cert, passphrase);
         this._pfx = cert;
         this._passphrase = passphrase;
         break;
       default:
         logger.warn(`Warning: certificate of type "${ext}" does not support.`);
+    }
+  }
+
+  private assertPassphrase(
+    name: string,
+    pfx: Buffer,
+    passphrase: string
+  ): void {
+    try {
+      createSecureContext({ passphrase, pfx });
+    } catch (e) {
+      logger.warn(
+        `Error Loading Certificate: Wrong passphrase for certificate ${name}.`
+      );
     }
   }
 }
