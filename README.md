@@ -15,7 +15,7 @@
 
 ## 🚀 Quick Start
 Before you can use **NexPloit CLI** make sure you have the following:
-- An active user on www.nexploit.app
+- An active user on [nexploit.app](https://nexploit.app/)
 - A valid `TOKEN`
   - For the quick start these scopes are required: `bot`, `scans:run` and `scans:read`
   - More info about [setting up an API key](https://kb.neuralegion.com/#/guide/np-web-ui/advanced-set-up/managing-org?id=managing-organization-apicli-authentication-tokens)
