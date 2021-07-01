@@ -132,7 +132,7 @@ export class RunRepeater implements CommandModule {
         const id = args.id as string;
         if (!Helpers.isShortUUID(id) && !Helpers.isUUID(id)) {
           throw new Error(
-            'Option --id has wrong value. Please ensure that --id value has valid id of existing repeater.'
+            'Option --id has wrong value. Please ensure that --id option has a valid ID.'
           );
         }
       })
