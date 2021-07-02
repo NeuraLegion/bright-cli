@@ -30,7 +30,21 @@ export interface ClusterUrls {
 }
 
 export class Helpers {
+  private static readonly UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+  private static readonly SHORT_UUID_PATTERN = /^[1-9a-z]{10,22}$/i;
   private static readonly META_CHARS_REGEXP = /([()\][%!^"`<>&|;, *?])/g;
+
+  public static isUUID(value: string): boolean {
+    ok(value, 'Value must be string');
+
+    return this.UUID_PATTERN.test(value);
+  }
+
+  public static isShortUUID(value: string): boolean {
+    ok(value, 'Value must be string');
+
+    return this.SHORT_UUID_PATTERN.test(value);
+  }
 
   public static getClusterUrls(args: ClusterArgs): ClusterUrls {
     let bus: string;
