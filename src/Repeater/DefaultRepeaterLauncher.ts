@@ -186,6 +186,8 @@ export class DefaultRepeaterLauncher implements RepeaterLauncher {
 
   private statusChangeException(error: RepeaterRegisteringError): never {
     switch (error) {
+      case RepeaterRegisteringError.NOT_FOUND:
+        throw new Error(`Access Refused: The Repeater is not found.`);
       case RepeaterRegisteringError.NOT_ACTIVE:
         throw new Error(`Access Refused: The current Repeater is not active.`);
       case RepeaterRegisteringError.NOT_FOUND:
