@@ -128,6 +128,14 @@ export class RunRepeater implements CommandModule {
       .conflicts('remove-daemon', 'daemon')
       .env('REPEATER')
       .exitProcess(false)
+      .middleware((args: Arguments) => {
+        const id = args.id as string;
+        if (!Helpers.isShortUUID(id) && !Helpers.isUUID(id)) {
+          throw new Error(
+            'Option --id has wrong value. Please ensure that --id option has a valid ID.'
+          );
+        }
+      })
       .middleware((args: Arguments) =>
         container
           .register(RequestExecutorOptions, {
