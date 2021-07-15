@@ -80,28 +80,55 @@ export enum AttackParamLocation {
   QUERY = 'query'
 }
 
+export enum IntegrationType {
+  SLACK = 'slack',
+  GITHUB = 'github',
+  GITLAB = 'gitlab',
+  JIRA = 'jira',
+  TRELLO = 'trello',
+  AZURE = 'azure',
+  MONDAY = 'monday'
+}
+
+export interface Header {
+  name: string;
+  value: string;
+  mergeStrategy: 'replace';
+}
+
+export interface Repository {
+  id: string;
+  service: IntegrationType;
+  name: string;
+  uri?: string;
+}
+
+export interface Board {
+  id: string;
+  externalId: string;
+  service: IntegrationType;
+  name: string;
+  uri?: string;
+}
+
 export interface ScanConfig {
   name: string;
   module: Module;
   authObjectId?: string;
+  projectId?: string;
   discoveryTypes?: Discovery[];
   tests: TestType[];
   poolSize?: number;
   fileId?: string;
   attackParamLocations?: AttackParamLocation[];
   smart?: boolean;
-  build?: {
-    service: string;
-    buildNumber?: number;
-    user?: string;
-    project?: string;
-    vcs?: 'github' | 'bitbucket';
-  };
   extraHosts?: Record<string, string>;
-  headers?: Record<string, string>;
+  headers?: Record<string, string> | Header[];
   crawlerUrls?: string[];
   hostsFilter?: string[];
   repeaters?: string[];
+  boards?: Map<IntegrationType, string[]>;
+  repositories?: Repository[];
 }
 
 export enum IssueCategory {
