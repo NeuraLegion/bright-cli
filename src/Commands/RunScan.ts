@@ -21,7 +21,7 @@ export class RunScan implements CommandModule {
     separator: string = ':'
   ): string[] {
     return val
-      .split(separator)
+      .split(new RegExp(`${separator}(.+)`), 2)
       .map((part: string) => part.toLowerCase().trim());
   }
 
