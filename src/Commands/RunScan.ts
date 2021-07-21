@@ -1,6 +1,7 @@
 import {
   AttackParamLocation,
   COMPREHENSIVE_SCAN_TESTS,
+  IntegrationType,
   Module,
   RestScansOptions,
   ScanConfig,
@@ -14,6 +15,59 @@ import { container } from 'tsyringe';
 export class RunScan implements CommandModule {
   public readonly command = 'scan:run [options]';
   public readonly describe = 'Start a new scan for the received configuration.';
+
+  private static splitCompositeStringBySeparator(
+    val: string,
+    separator: string = ':'
+  ): string[] {
+    return val
+      .split(new RegExp(`${separator}(.+)`), 2)
+      .map((part: string) => part.toLowerCase().trim());
+  }
+
+  private static verifyIntegration(
+    integration: IntegrationType,
+    board: string
+  ): void {
+    if (
+      !Object.values(IntegrationType).includes(integration as IntegrationType)
+    ) {
+      throw new Error(
+        `Selected type of integration is not supported: ${integration}.`
+      );
+    }
+
+    if (!board.length) {
+      throw new Error(
+        `You have to specify a board name after separator. For example: "github:NeuraLegion/nexploit-cli".`
+      );
+    }
+  }
+
+  private static mapIntegrationsToRegistry(
+    integrations: string[]
+  ): Map<IntegrationType, string[]> {
+    return integrations
+      .map((x: string) => this.splitCompositeStringBySeparator(x))
+      .reduce(
+        (
+          registry: Map<IntegrationType, string[]>,
+          [integration, board]: string[]
+        ) => {
+          const integrationBoards =
+            registry.get(integration as IntegrationType) ?? [];
+
+          integrationBoards.push(board);
+
+          registry.set(integration as IntegrationType, [
+            ...new Set(integrationBoards)
+          ]);
+
+          return registry;
+        },
+        new Map<IntegrationType, string[]>()
+      );
+  }
 
   public builder(argv: Argv): Argv {
     return argv
@@ -61,34 +115,20 @@ export class RunScan implements CommandModule {
         array: true,
         describe: 'A list of tests which you want to run during a scan.'
       })
-      .option('service', {
-        choices: ['jenkins', 'circleci', 'travisci'],
+      .option('integration', {
+        alias: 'i',
+        array: true,
         requiresArg: true,
-        describe: 'The CI tool name your project uses.'
-      })
-      .option('build-number', {
-        number: true,
-        requiresArg: true,
-        describe: 'The current build number.',
-        implies: ['service']
+        describe:
+          'The integration name your project uses. Name must contain an integration name and a name of board, ' +
+          'represented as "INTEGRATION_NAME:BOARD_NAME". A name component may not start or end with a separator. ' +
+          'Example: "github:NeuraLegion/nexploit-cli"'
       })
       .option('project', {
+        alias: 'p',
         requiresArg: true,
-        describe:
-          'Name of the project of this build. This is the name you gave your job or workflow when you first setup CI.',
-        implies: ['service']
-      })
-      .option('user', {
-        requiresArg: true,
-        describe: 'Name of the user that is currently signed in.',
-        implies: ['service']
-      })
-      .option('vcs', {
-        requiresArg: true,
-        choices: ['github', 'bitbucket'],
-        implies: ['service'],
-        describe:
-          'The version control system type your project uses. Current choices are github or bitbucket. CircleCI only.'
+        string: true,
+        describe: 'ID of the project'
       })
       .option('module', {
         default: Module.DAST,
@@ -130,13 +170,33 @@ export class RunScan implements CommandModule {
       })
       .group(['archive', 'crawler'], 'Discovery Options')
       .group(
-        ['service', 'build-number', 'vcs', 'project', 'user'],
-        'Build Options'
-      )
-      .group(
         ['host-filter', 'header', 'module', 'repeater', 'test', 'smart'],
         'Additional Options'
       )
+      .check((args: Arguments) => {
+        const integrations = (args.integration ?? []) as string[];
+
+        if (integrations?.length && !args.project) {
+          throw new Error('Argument integration requires project to be set.');
+        }
+
+        integrations.forEach((val: string) => {
+          const [
+            integration,
+            board
+          ]: string[] = RunScan.splitCompositeStringBySeparator(val);
+          RunScan.verifyIntegration(integration as IntegrationType, board);
+        });
+
+        return true;
+      })
+      .middleware((args: Arguments) => {
+        const integrations = args.integration as string[];
+
+        args.boards = integrations
+          ? RunScan.mapIntegrationsToRegistry(integrations)
+          : undefined;
+      })
       .middleware((args: Arguments) =>
         container.register(RestScansOptions, {
           useValue: {
@@ -157,6 +217,7 @@ export class RunScan implements CommandModule {
         name: args.name,
         module: args.module,
         authObjectId: args.auth,
+        projectId: args.project,
         tests: args.test,
         hostsFilter: args.hostFilter,
         headers: Helpers.parseHeaders(args.header as string[]),
@@ -165,15 +226,7 @@ export class RunScan implements CommandModule {
         repeaters: args.repeater,
         smart: args.smart,
         attackParamLocations: args.param,
-        build: args.service
-          ? {
-              service: args.service,
-              buildNumber: args.buildNumber,
-              project: args.project,
-              user: args.user,
-              vcs: args.vcs
-            }
-          : undefined
+        boards: args.boards
       } as ScanConfig);
 
       console.log(scanId);
