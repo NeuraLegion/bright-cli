@@ -10,7 +10,8 @@ import { SocksProxyAgent } from 'socks-proxy-agent';
 import { inject, injectable } from 'tsyringe';
 import { parse as contentTypeParse } from 'content-type';
 import { parse, URL } from 'url';
-import { OutgoingMessage } from 'http';
+import http, { OutgoingMessage } from 'http';
+import https, { AgentOptions } from 'https';
 
 type ScriptEntrypoint = (
   options: RequestOptions
@@ -23,6 +24,7 @@ export interface RequestExecutorOptions {
   certs?: Cert[];
   whitelistMimes?: string[];
   maxContentLength?: number;
+  reuseConnection?: number;
 }
 
 export const RequestExecutorOptions = Symbol('RequestExecutorOptions');
@@ -30,7 +32,9 @@ export const RequestExecutorOptions = Symbol('RequestExecutorOptions');
 @injectable()
 export class HttpRequestExecutor implements RequestExecutor {
   private readonly DEFAULT_SCRIPT_ENTRYPOINT = 'handle';
-  private readonly agent?: SocksProxyAgent;
+  private readonly proxy?: SocksProxyAgent;
+  private readonly httpAgent?: http.Agent;
+  private readonly httpsAgent?: https.Agent;
 
   get protocol(): Protocol {
     return Protocol.HTTP;
@@ -41,11 +45,22 @@ export class HttpRequestExecutor implements RequestExecutor {
     @inject(RequestExecutorOptions)
     private readonly options: RequestExecutorOptions
   ) {
-    this.agent = this.options.proxyUrl
-      ? new SocksProxyAgent({
-          ...parse(this.options.proxyUrl)
-        })
-      : undefined;
+    if (this.options.proxyUrl) {
+      this.proxy = new SocksProxyAgent({
+        ...parse(this.options.proxyUrl)
+      });
+    }
+
+    if (this.options.reuseConnection) {
+      const agentOptions: AgentOptions = {
+        keepAlive: true,
+        maxSockets: 100,
+        timeout: this.options.timeout
+      };
+
+      this.httpsAgent = new https.Agent(agentOptions);
+      this.httpAgent = new http.Agent(agentOptions);
+    }
   }
 
   public async execute(options: Request): Promise<Response> {
@@ -101,13 +116,17 @@ export class HttpRequestExecutor implements RequestExecutor {
   }
 
   private async request(options: Request): Promise<IncomingResponse> {
+    const agent =
+      this.proxy ??
+      (options.url.startsWith('https') ? this.httpsAgent : this.httpAgent);
+
     return request({
+      agent,
       agentOptions: {
         ca: options.ca,
         pfx: options.pfx,
         passphrase: options.passphrase
       },
-      agent: this.agent,
       body: options.body,
       followRedirect: false,
       gzip: true,
