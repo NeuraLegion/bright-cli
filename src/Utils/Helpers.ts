@@ -1,6 +1,7 @@
 import { ok } from 'assert';
 import { ChildProcess, spawn } from 'child_process';
 import { URL } from 'url';
+import { normalize } from 'path';
 
 declare global {
   // eslint-disable-next-line @typescript-eslint/no-namespace
@@ -16,6 +17,8 @@ declare global {
 export interface CommandArgs {
   command: string;
   args: string[];
+  shell: boolean;
+  windowsVerbatimArguments: boolean;
 }
 
 export interface ClusterArgs {
@@ -84,22 +87,23 @@ export class Helpers {
       detached?: boolean;
     } = { detached: false }
   ): ChildProcess {
-    let { command, args } = Helpers.getExecArgs({
+    const {
+      command,
+      args,
+      windowsVerbatimArguments,
+      shell
+    } = Helpers.getExecArgs({
+      spawn: true,
       excludeAll: true,
       include: options.include,
       exclude: options.exclude
     });
 
-    const shell = this.win();
-
-    if (shell) {
-      command = `"${command}"`;
-      args = args.map(this.escapeShellArgument, this);
-    }
-
     return spawn(command, args, {
       shell,
-      detached: options.detached
+      windowsVerbatimArguments,
+      detached: !shell && options.detached,
+      windowsHide: shell && options.detached
     });
   }
 
@@ -107,26 +111,51 @@ export class Helpers {
     exclude?: string[];
     include?: string[];
     excludeAll?: boolean;
+    escape?: boolean;
+    spawn?: boolean;
   }): CommandArgs {
+    options = {
+      escape: true,
+      excludeAll: false,
+      spawn: false,
+      ...(options ?? {})
+    };
+
     let args: string[] = process.argv.slice(1);
 
-    if (options?.excludeAll) {
+    if (options.excludeAll) {
       args = args.slice(0, 1);
     }
 
-    if (options?.include) {
+    if (options.include) {
       args = [...args, ...options.include];
     }
 
-    if (options?.exclude) {
+    if (options.exclude) {
       args = args.filter((x: string) => !options.exclude.includes(x));
     }
 
-    args = [...process.execArgv, ...args];
+    args = [...process.execArgv, ...args].filter((arg: string) =>
+      process.pkg && !options.spawn
+        ? !arg.startsWith(process.pkg.entrypoint)
+        : true
+    );
+
+    let command = normalize(process.execPath);
+
+    const shell = this.win();
+    const windowsVerbatimArguments = shell && options.escape;
+
+    if (windowsVerbatimArguments) {
+      command = `"${command}"`;
+      args = args.map(this.escapeShellArgument, this);
+    }
 
     return {
       args,
-      command: process.execPath
+      shell,
+      command,
+      windowsVerbatimArguments
     };
   }
 

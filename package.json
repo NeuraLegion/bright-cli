@@ -69,6 +69,7 @@
     "chalk": "^4.1.1",
     "clean-webpack-plugin": "^3.0.0",
     "concat-stream": "^2.0.0",
+    "cross-env": "^7.0.3",
     "eslint": "^7.25.0",
     "eslint-config-prettier": "^8.3.0",
     "eslint-plugin-import": "^2.22.1",
@@ -115,16 +116,29 @@
       "git add"
     ]
   },
+  "pkg": {
+    "scripts": "dist/**/*.js",
+    "assets": [
+      "./node_modules/@neuralegion/os-service/build/Release/service.node",
+      "./node_modules/win-ca/lib/crypt32-ia32.node",
+      "./node_modules/win-ca/lib/crypt32-x64.node"
+    ],
+    "targets": [
+      "node14-windows-x64"
+    ],
+    "outputPath": "bin",
+    "compress": "Brotli"
+  },
   "scripts": {
+    "semantic-release": "semantic-release",
+    "cross-env": "cross-env",
+    "husky": "husky",
     "lint": "eslint -c .eslintrc.js src",
     "format": "prettier --check src",
-    "test:unit": "mocha -r ts-node/register -r tsconfig-paths/register src/**/*.spec.ts",
-    "test:e2e": "mocha -r ts-node/register -r tsconfig-paths/register tests/**/*.spec.ts",
+    "test:unit": "cross-env TS_NODE_PROJECT=tsconfig.spec.json NODE_ENV=test mocha src/**/*.spec.ts",
+    "test:e2e": "cross-env TS_NODE_PROJECT=tests/tsconfig.json NODE_ENV=test mocha tests/**/*.spec.ts",
     "build": "webpack --config webpack.config.js --mode=production",
-    "semantic-release": "semantic-release",
-    "pack:win": "pkg -o bin/win/nexploit-cli.exe -t node14-windows-x64 .",
-    "pack:mac": "pkg -o bin/mac/nexploit-cli -t node14-mac-x64 .",
-    "pack:linux": "pkg -o bin/linux/nexploit-cli -t node14-linux-x64 .",
+    "build:pkg": "pkg .",
     "prepare": "is-ci || husky install"
   }
 }
