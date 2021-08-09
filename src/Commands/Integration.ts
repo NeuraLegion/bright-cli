@@ -129,8 +129,9 @@ export class Integration implements CommandModule {
 
     if (args.daemon) {
       const { command, args: execArgs } = Helpers.getExecArgs({
-        exclude: ['--daemon', '-d'],
-        include: ['--run']
+        escape: false,
+        include: ['--run'],
+        exclude: ['--daemon', '-d']
       });
 
       const startupManager = startupManagerFactory.create({ dispose });

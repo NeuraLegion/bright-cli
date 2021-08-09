@@ -4,8 +4,6 @@
   <?define ProductAuthor="NeuraLegion" ?>
   <?define ProductDescription="$(var.ProductName) is a CLI tool that can initialize, stop, polling and maintain scans in $(var.ProductAuthor)s solutions (Such as NexPloit)." ?>
   <?define RegistryKeyPath="SOFTWARE\$(var.ProductName)" ?>
-  <?define SourceDir="..\..\bin\win" ?>
-  <?define RepoDir="$(var.SourceDir)\..\.." ?>
   <Product Id="*" Name="$(var.ProductName)" UpgradeCode="74b15b74-a063-4524-ae83-69ad421be456" Language="1033" Codepage="1252" Version="$(var.ProductVersion)" Manufacturer="$(var.ProductAuthor)">
     <Package InstallerVersion="200" Compressed="yes" InstallScope="perMachine" />
     <Property Id="PREVIOUSVERSIONSINSTALLED" Secure="yes" />
