@@ -9,7 +9,8 @@ import { EOL } from 'os';
 @injectable()
 @bind(NetworkTest)
 export class NetworkTestHandler
-  implements Handler<NetworkTest, NetworkTestResult> {
+  implements Handler<NetworkTest, NetworkTestResult>
+{
   public async handle({
     repeaterId,
     urls

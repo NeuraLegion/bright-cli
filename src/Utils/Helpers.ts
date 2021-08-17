@@ -33,7 +33,8 @@ export interface ClusterUrls {
 }
 
 export class Helpers {
-  private static readonly UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+  private static readonly UUID_PATTERN =
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
   private static readonly SHORT_UUID_PATTERN = /^[1-9a-z]{10,22}$/i;
   private static readonly META_CHARS_REGEXP = /([()\][%!^"`<>&|;, *?])/g;
 
@@ -87,17 +88,13 @@ export class Helpers {
       detached?: boolean;
     } = { detached: false }
   ): ChildProcess {
-    const {
-      command,
-      args,
-      windowsVerbatimArguments,
-      shell
-    } = Helpers.getExecArgs({
-      spawn: true,
-      excludeAll: true,
-      include: options.include,
-      exclude: options.exclude
-    });
+    const { command, args, windowsVerbatimArguments, shell } =
+      Helpers.getExecArgs({
+        spawn: true,
+        excludeAll: true,
+        include: options.include,
+        exclude: options.exclude
+      });
 
     return spawn(command, args, {
       shell,

@@ -70,10 +70,8 @@ export class BasePolling implements Polling {
     while (this.active) {
       await this.delay();
 
-      const {
-        status,
-        issuesBySeverity
-      }: ScanState = await this.scanManager.status(this.options.scanId);
+      const { status, issuesBySeverity }: ScanState =
+        await this.scanManager.status(this.options.scanId);
 
       if (this.isRedundant(status)) {
         break;

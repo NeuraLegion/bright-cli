@@ -181,10 +181,8 @@ export class RunScan implements CommandModule {
         }
 
         integrations.forEach((val: string) => {
-          const [
-            integration,
-            board
-          ]: string[] = RunScan.splitCompositeStringBySeparator(val);
+          const [integration, board]: string[] =
+            RunScan.splitCompositeStringBySeparator(val);
           RunScan.verifyIntegration(integration as IntegrationType, board);
         });
 

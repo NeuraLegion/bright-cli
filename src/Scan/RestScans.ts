@@ -83,10 +83,10 @@ export class RestScans implements Scans {
     });
   }
 
-  private prepareScanConfig({
-    headers,
-    ...rest
-  }: ScanConfig): Omit<ScanConfig, 'headers'> & {
+  private prepareScanConfig({ headers, ...rest }: ScanConfig): Omit<
+    ScanConfig,
+    'headers'
+  > & {
     headers: Header[];
   } {
     const discoveryTypes: Discovery[] = this.exploreDiscovery(rest);

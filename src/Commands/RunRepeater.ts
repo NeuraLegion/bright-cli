@@ -189,9 +189,8 @@ export class RunRepeater implements CommandModule {
 
   // eslint-disable-next-line complexity
   public async handler(args: Arguments): Promise<void> {
-    const repeaterLauncher: RepeaterLauncher = container.resolve(
-      RepeaterLauncher
-    );
+    const repeaterLauncher: RepeaterLauncher =
+      container.resolve(RepeaterLauncher);
 
     if (args.cacert) {
       await repeaterLauncher.loadCerts(
