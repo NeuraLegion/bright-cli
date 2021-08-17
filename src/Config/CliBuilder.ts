@@ -74,7 +74,7 @@ export class CliBuilder {
       .middleware(
         (args: Arguments) =>
           (logger.logLevel = !isNaN(+args.logLevel)
-            ? ((+args.logLevel as unknown) as LogLevel)
+            ? (+args.logLevel as unknown as LogLevel)
             : LogLevel[args.logLevel.toString().toUpperCase()])
       )
       .usage('Usage: $0 <command> [options] [<file | scan>]')

@@ -6,7 +6,8 @@ import { injectable, injectAll } from 'tsyringe';
 @injectable()
 @bind(ExecuteScript)
 export class SendRequestHandler
-  implements Handler<ExecuteScript, ForwardResponse> {
+  implements Handler<ExecuteScript, ForwardResponse>
+{
   constructor(
     @injectAll(RequestExecutor)
     private readonly requestExecutors: RequestExecutor[]

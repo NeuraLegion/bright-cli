@@ -28,11 +28,9 @@ export class UploadArchive implements CommandModule {
         alias: 'T',
         requiresArg: true,
         describe: 'The specification type',
-        choices: [
-          SpecType.OPENAPI,
-          SpecType.HAR,
-          SpecType.POSTMAN
-        ].map((x: string) => x.toLowerCase()),
+        choices: [SpecType.OPENAPI, SpecType.HAR, SpecType.POSTMAN].map(
+          (x: string) => x.toLowerCase()
+        ),
         default: SpecType.HAR.toLowerCase(),
         demandOption: true
       })

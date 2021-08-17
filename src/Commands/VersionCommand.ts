@@ -36,9 +36,8 @@ export class VersionCommand implements CommandModule {
     const localMatches: RegExpMatchArray | null = localNpmList.match(
       / @nexploit\/cli@(.*)\n/
     );
-    const localNpmVersion: string = (localMatches && localMatches[1]
-      ? localMatches[1]
-      : ''
+    const localNpmVersion: string = (
+      localMatches && localMatches[1] ? localMatches[1] : ''
     )
       .replace(/"invalid"/gi, '')
       .trim();
@@ -49,9 +48,8 @@ export class VersionCommand implements CommandModule {
     const globalMatches: RegExpMatchArray | null = globalNpmList.match(
       / @nexploit\/cli@(.*)\n/
     );
-    const globalNpmVersion: string = (globalMatches && globalMatches[1]
-      ? globalMatches[1]
-      : ''
+    const globalNpmVersion: string = (
+      globalMatches && globalMatches[1] ? globalMatches[1] : ''
     )
       .replace(/"invalid"/gi, '')
       .trim();

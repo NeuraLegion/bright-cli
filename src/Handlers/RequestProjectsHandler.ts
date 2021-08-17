@@ -6,7 +6,8 @@ import { injectable, injectAll } from 'tsyringe';
 @injectable()
 @bind(RequestProjects)
 export class RequestProjectsHandler
-  implements Handler<RequestProjects, Project[]> {
+  implements Handler<RequestProjects, Project[]>
+{
   constructor(
     @injectAll(IntegrationClient)
     private readonly integrations: IntegrationClient<Ticket>[]
