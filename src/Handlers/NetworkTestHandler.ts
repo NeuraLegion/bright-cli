@@ -9,7 +9,8 @@ import { EOL } from 'os';
 @injectable()
 @bind(NetworkTest)
 export class NetworkTestHandler
-  implements Handler<NetworkTest, NetworkTestResult> {
+  implements Handler<NetworkTest, NetworkTestResult>
+{
   public async handle({
     repeaterId,
     urls
@@ -26,7 +27,8 @@ export class NetworkTestHandler
       logger.debug('Launching "Network Diagnostic" process with cmd: %j', args);
 
       const child = Helpers.spawn({
-        include: args
+        include: args,
+        exclude: ['repeater']
       });
 
       child.unref();

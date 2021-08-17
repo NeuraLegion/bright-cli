@@ -99,9 +99,8 @@ export class RabbitMQBus implements Bus {
   public async subscribe(handler: HandlerType): Promise<void> {
     ok(handler, 'Event handler is not defined.');
 
-    const instance:
-      | Handler<Event, ExecutionResult>
-      | undefined = this.container.resolve(handler);
+    const instance: Handler<Event, ExecutionResult> | undefined =
+      this.container.resolve(handler);
     ok(instance, `Cannot create instance of "${handler.name}" handler.`);
 
     const eventType: EventType | undefined = Reflect.getMetadata(
@@ -314,9 +313,8 @@ export class RabbitMQBus implements Bus {
 
   private async consumeReceived(message: ConsumeMessage): Promise<void> {
     try {
-      const event: ParsedConsumeMessage | undefined = this.parseConsumeMessage(
-        message
-      );
+      const event: ParsedConsumeMessage | undefined =
+        this.parseConsumeMessage(message);
 
       if (event) {
         logger.debug(
@@ -325,9 +323,8 @@ export class RabbitMQBus implements Bus {
           event.payload
         );
 
-        const handler:
-          | Handler<Event, ExecutionResult>
-          | undefined = this.handlers.get(event.name);
+        const handler: Handler<Event, ExecutionResult> | undefined =
+          this.handlers.get(event.name);
 
         ok(handler, `Cannot find a handler for ${event.name} event.`);
 
@@ -363,9 +360,8 @@ export class RabbitMQBus implements Bus {
   }
 
   private async processReply(message: ConsumeMessage): Promise<void> {
-    const event: ParsedConsumeMessage | undefined = this.parseConsumeMessage(
-      message
-    );
+    const event: ParsedConsumeMessage | undefined =
+      this.parseConsumeMessage(message);
 
     if (event) {
       logger.debug(

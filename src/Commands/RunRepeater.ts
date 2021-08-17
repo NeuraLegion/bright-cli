@@ -111,6 +111,11 @@ export class RunRepeater implements CommandModule {
             });
         }
       })
+      .option('experimental-connection-reuse', {
+        boolean: true,
+        default: false,
+        describe: 'Configure experimental support for TCP connections reuse'
+      })
       .option('daemon', {
         requiresArg: false,
         alias: 'd',
@@ -126,6 +131,7 @@ export class RunRepeater implements CommandModule {
         describe: 'Stop and remove repeater daemon'
       })
       .conflicts('remove-daemon', 'daemon')
+      .conflicts('experimental-connection-reuse', 'proxy')
       .env('REPEATER')
       .exitProcess(false)
       .check((args: Arguments) => {
@@ -147,6 +153,7 @@ export class RunRepeater implements CommandModule {
               proxyUrl: args.proxy as string,
               certs: args.cert as Cert[],
               maxContentLength: 100,
+              reuseConnection: args.experimentalConnectionReuse,
               whitelistMimes: [
                 'text/html',
                 'text/plain',
@@ -182,9 +189,8 @@ export class RunRepeater implements CommandModule {
 
   // eslint-disable-next-line complexity
   public async handler(args: Arguments): Promise<void> {
-    const repeaterLauncher: RepeaterLauncher = container.resolve(
-      RepeaterLauncher
-    );
+    const repeaterLauncher: RepeaterLauncher =
+      container.resolve(RepeaterLauncher);
 
     if (args.cacert) {
       await repeaterLauncher.loadCerts(

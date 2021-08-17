@@ -18,11 +18,8 @@ export class DefaultConnectivityAnalyzer implements ConnectivityAnalyzer {
   public async verifyAccess(type: TestType, url?: URL): Promise<boolean> {
     logger.debug('Calling connectivity status test with type %s', type);
 
-    const connectivity:
-      | Connectivity
-      | undefined = this.connectivityTestRegistry.find(
-      (x: Connectivity) => x.type === type
-    );
+    const connectivity: Connectivity | undefined =
+      this.connectivityTestRegistry.find((x: Connectivity) => x.type === type);
 
     if (!connectivity) {
       throw new Error('Selected test is not support.');

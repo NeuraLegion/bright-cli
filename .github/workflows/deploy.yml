@@ -104,13 +104,13 @@ jobs:
 
       - run: npm ci -q --ignore-scripts
       - run: npm rebuild
-      - run: npm run pack:win
+      - run: npm run build:pkg
       - run: npm rebuild os-service --target=v14.7.0 --arch=x64
       - run: |
-          Copy-Item ".\node_modules\@neuralegion\os-service\build\Release\service.node" -Destination ".\bin\win\service.node"
-          Copy-Item ".\node_modules\win-ca\lib\crypt32-ia32.node" -Destination ".\bin\win\crypt32-ia32.node"
-          Copy-Item ".\node_modules\win-ca\lib\crypt32-x64.node" -Destination ".\bin\win\crypt32-x64.node"
-          Copy-Item ".\node_modules\win-ca\lib\roots.exe" -Destination ".\bin\win\roots.exe"
+          Copy-Item ".\node_modules\@neuralegion\os-service\build\Release\service.node" -Destination ".\bin\service.node"
+          Copy-Item ".\node_modules\win-ca\lib\crypt32-ia32.node" -Destination ".\bin\crypt32-ia32.node"
+          Copy-Item ".\node_modules\win-ca\lib\crypt32-x64.node" -Destination ".\bin\crypt32-x64.node"
+          Copy-Item ".\node_modules\win-ca\lib\roots.exe" -Destination ".\bin\roots.exe"
 
       - run: |
           curl -OLS https://github.com/wixtoolset/wix3/releases/download/wix3111rtm/wix311.exe
@@ -123,6 +123,6 @@ jobs:
       - uses: svenstaro/upload-release-action@v2
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
-          file: .\bin\win\nexploit-cli.msi
+          file: .\bin\nexploit-cli.msi
           asset_name: nexploit-cli.msi
           tag: ${{ github.ref }}

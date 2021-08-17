@@ -49,8 +49,9 @@ export class DefaultRepeaterLauncher implements RepeaterLauncher {
 
   public async install(): Promise<void> {
     const { command, args: execArgs } = Helpers.getExecArgs({
-      exclude: ['--daemon', '-d'],
-      include: ['--run']
+      escape: false,
+      include: ['--run'],
+      exclude: ['--daemon', '-d']
     });
 
     const startupManager = this.startupManagerFactory.create({

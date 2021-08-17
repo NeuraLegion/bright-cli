@@ -63,7 +63,7 @@ export class DefaultHarRecorder implements HarRecorder {
 
   private executeRequest(opt: Options): Promise<void> {
     return new Promise<void>((resolve) =>
-      ((this.proxy.start(opt as OptionsWithUrl) as unknown) as Stream)
+      (this.proxy.start(opt as OptionsWithUrl) as unknown as Stream)
         .once('end', resolve)
         .once('error', () => resolve())
     );

@@ -111,9 +111,8 @@ export class Integration implements CommandModule {
     const startupManagerFactory: StartupManagerFactory = container.resolve(
       StartupManagerFactory
     );
-    const pingTracers: IntegrationPingTracer[] = container.resolveAll(
-      IntegrationClient
-    );
+    const pingTracers: IntegrationPingTracer[] =
+      container.resolveAll(IntegrationClient);
     const pingTracer = pingTracers.find((p) => p.type === args.type);
 
     if (!pingTracer) {
@@ -129,8 +128,9 @@ export class Integration implements CommandModule {
 
     if (args.daemon) {
       const { command, args: execArgs } = Helpers.getExecArgs({
-        exclude: ['--daemon', '-d'],
-        include: ['--run']
+        escape: false,
+        include: ['--run'],
+        exclude: ['--daemon', '-d']
       });
 
       const startupManager = startupManagerFactory.create({ dispose });

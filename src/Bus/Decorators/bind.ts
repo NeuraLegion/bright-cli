@@ -1,9 +1,9 @@
 import 'reflect-metadata';
 import { Event, EventType } from '../Event';
 
-export const bind = (
-  event: EventType
+export const bind =
+  (event: EventType): ClassDecorator =>
   // eslint-disable-next-line @typescript-eslint/ban-types
-): ClassDecorator => (target: Function): any => {
-  Reflect.defineMetadata(Event, event, target);
-};
+  (target: Function) => {
+    Reflect.defineMetadata(Event, event, target);
+  };
