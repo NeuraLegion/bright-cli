@@ -2,8 +2,7 @@ import { ExecutionResult, Handler, HandlerType } from '../Handler';
 import { Event, EventType } from '../Event';
 import { Bus } from '../Bus';
 import { Proxy } from '../Proxy';
-import { logger } from '../../Utils';
-import { RabbitBackoff } from './RabbitBackoff';
+import { Backoff, logger } from '../../Utils';
 import { Message } from '../Message';
 import { ConfirmChannel, connect, Connection, ConsumeMessage } from 'amqplib';
 import { DependencyContainer, inject, injectable } from 'tsyringe';
@@ -11,6 +10,7 @@ import { ok } from 'assert';
 import { format, parse, UrlWithParsedQuery } from 'url';
 import { EventEmitter, once } from 'events';
 import { randomBytes } from 'crypto';
+import ErrnoException = NodeJS.ErrnoException;
 
 export interface RabbitMQBusOptions {
   url?: string;
@@ -43,10 +43,14 @@ export class RabbitMQBus implements Bus {
   >();
   private readonly DEFAULT_RECONNECT_TIMES = 20;
   private readonly DEFAULT_HEARTBEAT_INTERVAL = 30;
+  private readonly DEFAULT_OPERATIONAL_ERRORS: ReadonlyArray<number> = [
+    405, 406, 404, 313, 312, 311, 320
+  ];
   private readonly REPLY_QUEUE_NAME = 'amq.rabbitmq.reply-to';
   private readonly APP_QUEUE_NAME = 'app';
   private readonly subject = new EventEmitter();
   private readonly consumerTags: string[] = [];
+  private _onReconnectionFailure?: (err: Error) => unknown;
 
   constructor(
     @inject(RabbitMQBusOptions) private readonly options: RabbitMQBusOptions,
@@ -88,12 +92,13 @@ export class RabbitMQBus implements Bus {
       return;
     }
 
-    const backoff = new RabbitBackoff(
-      this.options.url,
-      this.DEFAULT_RECONNECT_TIMES
-    );
+    try {
+      const backoff = this.createStartingStrategy();
 
-    await backoff.execute(() => this.connect());
+      await backoff.execute(() => this.connect());
+    } catch (e) {
+      throw new Error(this.humanizeErrorMessage(e));
+    }
   }
 
   public async subscribe(handler: HandlerType): Promise<void> {
@@ -164,6 +169,15 @@ export class RabbitMQBus implements Bus {
     }
   }
 
+  public onReconnectionFailure(handler: (err: Error) => unknown): void {
+    this._onReconnectionFailure =
+      handler ??
+      ((err: Error) => {
+        logger.error(err.message);
+        process.exit(1);
+      });
+  }
+
   public async publish<T extends Event>(event: T): Promise<void> {
     if (!event) {
       return;
@@ -226,15 +240,37 @@ export class RabbitMQBus implements Bus {
     try {
       this.clear();
 
-      const backoff = new RabbitBackoff(
-        this.options.url,
-        this.DEFAULT_RECONNECT_TIMES
-      );
+      const backoff = this.createRestartingStrategy();
 
       await backoff.execute(() => this.connect());
     } catch (err) {
-      logger.error(err.message);
+      this._onReconnectionFailure?.(err);
     }
+  }
+
+  private createStartingStrategy(): Backoff {
+    return new Backoff(
+      this.DEFAULT_RECONNECT_TIMES,
+      (err: ErrnoException): boolean =>
+        this.DEFAULT_OPERATIONAL_ERRORS.includes(+err.code)
+    );
+  }
+
+  private createRestartingStrategy(): Backoff {
+    return new Backoff(
+      this.DEFAULT_RECONNECT_TIMES,
+      (err: ErrnoException): boolean =>
+        this.DEFAULT_OPERATIONAL_ERRORS.includes(+err.code) ||
+        [
+          'ECONNRESET',
+          'ENETDOWN',
+          'ENETUNREACH',
+          'ETIMEDOUT',
+          'ECONNREFUSED',
+          'ENOTFOUND',
+          'EAI_AGAIN'
+        ].includes(err.code)
+    );
   }
 
   private parseConsumeMessage(
@@ -423,5 +459,34 @@ export class RabbitMQBus implements Bus {
       this.options.clientQueue,
       this.options.exchange
     );
+  }
+
+  // eslint-disable-next-line complexity
+  private humanizeErrorMessage({ code, message }: ErrnoException): string {
+    if (!code) {
+      if (message.includes('ACCESS-REFUSED')) {
+        return 'Access Refused: Unauthorized access. Please check your credentials.';
+      }
+
+      if (message.includes('CHANNEL-ERROR')) {
+        return 'Unexpected Error: Channel has been closed, please contact support at support@neuralegion.com (issue from out side).';
+      }
+    }
+
+    switch (code) {
+      case 'EAI_AGAIN':
+        return `Error Connecting to AMQ Server: Cannot connect to ${this.options.url}, DNS server cannot currently fulfill the request.`;
+      case 'ENOTFOUND':
+      case 'ETIMEDOUT':
+        return `Error Connecting to AMQ Server: Cannot connect to ${this.options.url}, no DNS record found.`;
+      case 'ECONNREFUSED':
+      case 'ENETDOWN':
+      case 'ENETUNREACH':
+        return `Cannot connect to ${this.options.url}`;
+      case 'ECONNRESET':
+        return `Connection was forcibly closed by a peer.`;
+      default:
+        return message;
+    }
   }
 }
