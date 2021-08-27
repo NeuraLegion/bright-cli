@@ -1,14 +1,16 @@
 import { CountIssuesBySeverity, Scans, ScanState, ScanStatus } from './Scans';
 import { Polling } from './Polling';
 import { Breakpoint } from './Breakpoint';
-import { logger } from '../Utils';
+import { Backoff, logger } from '../Utils';
 import { PollingConfig } from './PollingFactory';
 import ms from 'ms';
+import { RequestError, StatusCodeError } from 'request-promise/errors';
 import { ok } from 'assert';
 
 export class BasePolling implements Polling {
   private timeoutDescriptor?: NodeJS.Timeout;
   private defaultInterval: number = 10000;
+  private readonly DEFAULT_RECONNECT_TIMES = 20;
 
   private _active = true;
 
@@ -28,6 +30,15 @@ export class BasePolling implements Polling {
       logger.warn(
         `The recommended way to install polling with a minimal timeout: 10-20min.`
       );
+    }
+
+    if (this.options.interval) {
+      const interval = this.toMilliseconds(this.options.interval);
+
+      if (interval < this.defaultInterval) {
+        logger.warn(`Warning: polling interval is too small.`);
+        logger.warn(`The recommended way to set polling interval to 10s.`);
+      }
     }
 
     ok(breakpoint, 'You should choose a breakpoint for polling.');
@@ -70,8 +81,11 @@ export class BasePolling implements Polling {
     while (this.active) {
       await this.delay();
 
-      const { status, issuesBySeverity }: ScanState =
-        await this.scanManager.status(this.options.scanId);
+      const backoff = this.createBackoff();
+
+      const { status, issuesBySeverity }: ScanState = await backoff.execute(
+        () => this.scanManager.status(this.options.scanId)
+      );
 
       if (this.isRedundant(status)) {
         break;
@@ -106,11 +120,23 @@ export class BasePolling implements Polling {
     const interval =
       this.toMilliseconds(this.options.interval) ?? this.defaultInterval;
 
-    if (interval < this.defaultInterval) {
-      logger.warn(`Warning: polling interval is too small.`);
-      logger.warn(`The recommended way to set polling interval to 10s.`);
-    }
-
     return new Promise<void>((resolve) => setTimeout(resolve, interval));
+  }
+
+  private createBackoff(): Backoff {
+    return new Backoff(
+      this.DEFAULT_RECONNECT_TIMES,
+      (err: unknown) =>
+        (err as StatusCodeError).statusCode > 500 ||
+        [
+          'ECONNRESET',
+          'ENETDOWN',
+          'ENETUNREACH',
+          'ETIMEDOUT',
+          'ECONNREFUSED',
+          'ENOTFOUND',
+          'EAI_AGAIN'
+        ].includes((err as RequestError).cause?.code)
+    );
   }
 }
