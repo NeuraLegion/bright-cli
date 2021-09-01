@@ -34,7 +34,13 @@ export class DefaultRepeaterLauncher implements RepeaterLauncher {
     @inject(Certificates) private readonly certificates: Certificates,
     @inject(ScriptLoader) private readonly scriptLoader: ScriptLoader,
     @inject(delay(() => CliInfo)) private readonly info: CliInfo
-  ) {}
+  ) {
+    this.bus.onReconnectionFailure(async (e: Error) => {
+      logger.error(e.message);
+      await this.close();
+      process.exit(1);
+    });
+  }
 
   public async close(): Promise<void> {
     clearInterval(this.timer);
@@ -172,7 +178,7 @@ export class DefaultRepeaterLauncher implements RepeaterLauncher {
     logger.log(`The Repeater (%s) started`, this.info.version);
   }
 
-  private async subscribeToEvents() {
+  private async subscribeToEvents(): Promise<void> {
     await this.bus.subscribe(RegisterScriptsHandler);
     await this.bus.subscribe(NetworkTestHandler);
     await this.bus.subscribe(SendRequestHandler);
@@ -183,6 +189,7 @@ export class DefaultRepeaterLauncher implements RepeaterLauncher {
         ),
       10000
     );
+    this.timer.unref();
   }
 
   private statusChangeException(error: RepeaterRegisteringError): never {

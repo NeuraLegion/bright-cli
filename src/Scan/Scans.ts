@@ -48,6 +48,7 @@ export enum TestType {
   UNVALIDATED_REDIRECT = 'unvalidated_redirect',
   VERSION_CONTROL_SYSTEMS = 'version_control_systems',
   WORDPRESS = 'wordpress',
+  XPATHI = 'xpathi',
   XSS = 'xss',
   XXE = 'xxe'
 }

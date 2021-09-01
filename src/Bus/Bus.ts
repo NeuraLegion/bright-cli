@@ -12,6 +12,8 @@ export interface Bus {
   subscribe(handler: HandlerType): Promise<void>;
 
   publish<T extends Event>(event: T): Promise<void>;
+
+  onReconnectionFailure(handler: (err: Error) => unknown): void;
 }
 
 export const Bus: unique symbol = Symbol('Bus');
