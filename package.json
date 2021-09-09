@@ -124,6 +124,7 @@
       "./node_modules/win-ca/lib/crypt32-x64.node"
     ],
     "targets": [
+      "node14-linux-x64",
       "node14-windows-x64"
     ],
     "outputPath": "bin",

@@ -23,7 +23,23 @@ jobs:
 
       - run: npm ci -q --ignore-scripts
       - run: npm run build -- --env version=$VERSION
+      - run: npm run build:pkg -- -t node14-linux-x64
       - run: npm version --no-git-tag-version $VERSION
+      - run: npm pack
+
+      - uses: svenstaro/upload-release-action@v2
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file: ./neuralegion-nexploit-cli-*
+          tag: ${{ github.ref }}
+          file_glob: true
+
+      - uses: svenstaro/upload-release-action@v2
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file: ./bin/nexploit-cli
+          asset_name: nexploit-cli-linux-x64
+          tag: ${{ github.ref }}
 
       - uses: actions/upload-artifact@v2
         with:
@@ -104,7 +120,7 @@ jobs:
 
       - run: npm ci -q --ignore-scripts
       - run: npm rebuild
-      - run: npm run build:pkg
+      - run: npm run build:pkg -- -t node14-windows-x64
       - run: npm rebuild os-service --target=v14.7.0 --arch=x64
       - run: |
           Copy-Item ".\node_modules\@neuralegion\os-service\build\Release\service.node" -Destination ".\bin\service.node"
