@@ -48,12 +48,12 @@ export class PollingScanStatus implements CommandModule {
         demandOption: true
       })
       .middleware((args: Arguments) =>
-        container.register(RestScansOptions, {
+        container.register<RestScansOptions>(RestScansOptions, {
           useValue: {
-            insecure: args.insecure,
-            baseUrl: args.api,
-            apiKey: args.token,
-            proxyUrl: args.proxy
+            insecure: args.insecure as boolean,
+            baseUrl: args.api as string,
+            apiKey: args.token as string,
+            proxyUrl: (args.proxyExternal ?? args.proxy) as string
           }
         })
       );
@@ -77,11 +77,12 @@ export class PollingScanStatus implements CommandModule {
         logger.error(`The breakpoint has been hit during polling.`);
         logger.error(`Breakpoint: ${e.message}`);
         process.exit(50);
-
-        return;
       }
 
-      logger.error(`Error during "scan:polling": ${e.error || e.message}`);
+      const message = Helpers.hasErrorProperty(e)
+        ? e.error
+        : Helpers.getErrorMessage(e);
+      logger.error(`Error during "scan:polling": ${message}`);
       process.exit(1);
     }
   }

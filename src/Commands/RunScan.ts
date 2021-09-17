@@ -196,12 +196,12 @@ export class RunScan implements CommandModule {
           : undefined;
       })
       .middleware((args: Arguments) =>
-        container.register(RestScansOptions, {
+        container.register<RestScansOptions>(RestScansOptions, {
           useValue: {
             insecure: args.insecure as boolean,
             baseUrl: args.api as string,
             apiKey: args.token as string,
-            proxyUrl: args.proxy as string
+            proxyUrl: (args.proxyExternal ?? args.proxy) as string
           }
         })
       );
@@ -231,7 +231,10 @@ export class RunScan implements CommandModule {
 
       process.exit(0);
     } catch (e) {
-      logger.error(`Error during "scan:run": ${e.error || e.message}`);
+      const message = Helpers.hasErrorProperty(e)
+        ? e.error
+        : Helpers.getErrorMessage(e);
+      logger.error(`Error during "scan:run": ${message}`);
       process.exit(1);
     }
   }

@@ -2,7 +2,6 @@ import {
   HarRecorderOptions,
   HarSplitter,
   NexMockConverterOptions,
-  Parser,
   ParserFactory,
   RestArchivesOptions,
   SpecType
@@ -69,25 +68,25 @@ export class GenerateArchive implements CommandModule {
       })
       .middleware((args: Arguments) => {
         container
-          .register(HarRecorderOptions, {
+          .register<HarRecorderOptions>(HarRecorderOptions, {
             useValue: {
               timeout: args.timeout as number,
               maxRedirects: 20,
               pool: args.pool as number,
-              proxyUrl: args.proxy as string
+              proxyUrl: (args.proxyInternal ?? args.proxy) as string
             } as HarRecorderOptions
           })
-          .register(NexMockConverterOptions, {
+          .register<NexMockConverterOptions>(NexMockConverterOptions, {
             useValue: {
               headers: Helpers.parseHeaders(args.header as string[]),
               url: args.target as string
             } as NexMockConverterOptions
           })
-          .register(RestArchivesOptions, {
+          .register<RestArchivesOptions>(RestArchivesOptions, {
             useValue: {
               baseUrl: args.api as string,
               apiKey: args.token as string,
-              proxyUrl: args.proxy as string
+              proxyUrl: (args.proxyExternal ?? args.proxy) as string
             }
           });
       });
@@ -97,7 +96,10 @@ export class GenerateArchive implements CommandModule {
     try {
       const parserFactory: ParserFactory = container.resolve(ParserFactory);
 
-      const parser: Parser = parserFactory.create(SpecType.NEXMOCK);
+      const parser = parserFactory.create(SpecType.NEXMOCK);
+      if (!parser) {
+        throw new Error('Incorrect a specification type');
+      }
       const { content } = await parser.parse(args.mockfile as string);
 
       const { log } = JSON.parse(content) as Har;
@@ -125,7 +127,9 @@ export class GenerateArchive implements CommandModule {
       );
       process.exit(0);
     } catch (e) {
-      logger.error(`Error during "archive:generate": ${e.message}`);
+      logger.error(
+        `Error during "archive:generate": ${Helpers.getErrorMessage(e)}`
+      );
       process.exit(1);
     }
   }

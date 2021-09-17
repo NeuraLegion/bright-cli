@@ -1,5 +1,5 @@
 import { RestScansOptions, Scans } from '../Scan';
-import { logger } from '../Utils';
+import { Helpers, logger } from '../Utils';
 import { Arguments, Argv, CommandModule } from 'yargs';
 import { container } from 'tsyringe';
 
@@ -22,12 +22,12 @@ export class RetestScan implements CommandModule {
         demandOption: true
       })
       .middleware((args: Arguments) =>
-        container.register(RestScansOptions, {
+        container.register<RestScansOptions>(RestScansOptions, {
           useValue: {
             insecure: args.insecure as boolean,
             baseUrl: args.api as string,
             apiKey: args.token as string,
-            proxyUrl: args.proxy as string
+            proxyUrl: (args.proxyExternal ?? args.proxy) as string
           }
         })
       );
@@ -42,7 +42,10 @@ export class RetestScan implements CommandModule {
 
       process.exit(0);
     } catch (e) {
-      logger.error(`Error during "scan:retest": ${e.error || e.message}`);
+      const message = Helpers.hasErrorProperty(e)
+        ? e.error
+        : Helpers.getErrorMessage(e);
+      logger.error(`Error during "scan:retest": ${message}`);
       process.exit(1);
     }
   }

@@ -2,7 +2,6 @@ import {
   Archives,
   HarRecorderOptions,
   NexMockConverterOptions,
-  Parser,
   ParserFactory,
   RestArchivesOptions,
   Spec,
@@ -75,26 +74,26 @@ export class UploadArchive implements CommandModule {
       .group(['header', 'variable'], 'Postman Options')
       .middleware((args: Arguments) => {
         container
-          .register(HarRecorderOptions, {
+          .register<HarRecorderOptions>(HarRecorderOptions, {
             useValue: {
               timeout: 10000,
               maxRedirects: 20,
               pool: args.pool as number,
-              proxyUrl: args.proxy as string
+              proxyUrl: (args.proxyInternal ?? args.proxy) as string
             } as HarRecorderOptions
           })
-          .register(NexMockConverterOptions, {
+          .register<NexMockConverterOptions>(NexMockConverterOptions, {
             useValue: {
               headers: args.header as Record<string, string>,
               url: args.target as string
             } as NexMockConverterOptions
           })
-          .register(RestArchivesOptions, {
+          .register<RestArchivesOptions>(RestArchivesOptions, {
             useValue: {
               insecure: args.insecure as boolean,
               baseUrl: args.api as string,
               apiKey: args.token as string,
-              proxyUrl: args.proxy as string
+              proxyUrl: (args.proxyExternal ?? args.proxy) as string
             }
           });
       });
@@ -105,9 +104,12 @@ export class UploadArchive implements CommandModule {
       const parserFactory: ParserFactory = container.resolve(ParserFactory);
       const archives: Archives = container.resolve(Archives);
 
-      const parser: Parser = parserFactory.create(
+      const parser = parserFactory.create(
         Helpers.selectEnumValue(SpecType, args.type as string) as SpecType
       );
+      if (!parser) {
+        throw new Error('Incorrect a specification type');
+      }
       const file = await parser.parse(args.file as string);
 
       const spec: Spec = {
@@ -121,7 +123,9 @@ export class UploadArchive implements CommandModule {
       console.log(await archives.upload(spec));
       process.exit(0);
     } catch (e) {
-      logger.error(`Error during "archive:generate": ${e.message}`);
+      logger.error(
+        `Error during "archive:generate": ${Helpers.getErrorMessage(e)}`
+      );
       process.exit(1);
     }
   }
