@@ -64,7 +64,6 @@ export class CliBuilder {
       })
       .option('proxy', {
         requiresArg: true,
-        deprecated: true,
         describe: 'SOCKS4 or SOCKS5 URL to proxy all traffic'
       })
       .option('proxy-external', {
