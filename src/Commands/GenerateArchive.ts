@@ -97,9 +97,7 @@ export class GenerateArchive implements CommandModule {
       const parserFactory: ParserFactory = container.resolve(ParserFactory);
 
       const parser = parserFactory.create(SpecType.NEXMOCK);
-      if (!parser) {
-        throw new Error('Incorrect a specification type');
-      }
+
       const { content } = await parser.parse(args.mockfile as string);
 
       const { log } = JSON.parse(content) as Har;

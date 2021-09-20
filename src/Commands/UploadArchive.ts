@@ -107,9 +107,7 @@ export class UploadArchive implements CommandModule {
       const parser = parserFactory.create(
         Helpers.selectEnumValue(SpecType, args.type as string) as SpecType
       );
-      if (!parser) {
-        throw new Error('Incorrect a specification type');
-      }
+
       const file = await parser.parse(args.file as string);
 
       const spec: Spec = {
