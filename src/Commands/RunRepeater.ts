@@ -132,7 +132,6 @@ export class RunRepeater implements CommandModule {
       .conflicts('experimental-connection-reuse', 'proxy-internal')
       .conflicts('proxy-external', 'proxy')
       .conflicts('proxy-internal', 'proxy')
-      .conflicts('experimental-connection-reuse', 'proxy-internal')
       .env('REPEATER')
       .exitProcess(false)
       .check((args: Arguments) => {
