@@ -79,10 +79,7 @@ export class PollingScanStatus implements CommandModule {
         process.exit(50);
       }
 
-      const message = Helpers.hasErrorProperty(e)
-        ? e.error
-        : Helpers.getErrorMessage(e);
-      logger.error(`Error during "scan:polling": ${message}`);
+      logger.error(`Error during "scan:polling": ${e.error || e.message}`);
       process.exit(1);
     }
   }

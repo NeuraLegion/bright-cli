@@ -233,15 +233,6 @@ export class Helpers {
     }, {});
   }
 
-  // Error type checkers
-  public static getErrorMessage(e: unknown): string {
-    return e instanceof Error ? e.message : 'Unknown error';
-  }
-
-  public static hasErrorProperty(e: unknown): e is { error: string } {
-    return typeof e === 'object' && e != null && 'error' in e;
-  }
-
   // It's based on https://qntm.org/cmd
   private static escapeShellArgument(val: string): string {
     val = `${val}`;

@@ -180,7 +180,7 @@ export class Integration implements CommandModule {
       await updateConnectivity();
     } catch (e) {
       await notify(ConnectivityStatus.DISCONNECTED);
-      onError(new Error(Helpers.getErrorMessage(e)));
+      onError(e);
     }
   }
 }

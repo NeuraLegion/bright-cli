@@ -121,9 +121,7 @@ export class UploadArchive implements CommandModule {
       console.log(await archives.upload(spec));
       process.exit(0);
     } catch (e) {
-      logger.error(
-        `Error during "archive:generate": ${Helpers.getErrorMessage(e)}`
-      );
+      logger.error(`Error during "archive:generate": ${e.message}`);
       process.exit(1);
     }
   }

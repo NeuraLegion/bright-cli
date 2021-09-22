@@ -125,9 +125,7 @@ export class GenerateArchive implements CommandModule {
       );
       process.exit(0);
     } catch (e) {
-      logger.error(
-        `Error during "archive:generate": ${Helpers.getErrorMessage(e)}`
-      );
+      logger.error(`Error during "archive:generate": ${e.message}`);
       process.exit(1);
     }
   }

@@ -42,10 +42,7 @@ export class RetestScan implements CommandModule {
 
       process.exit(0);
     } catch (e) {
-      const message = Helpers.hasErrorProperty(e)
-        ? e.error
-        : Helpers.getErrorMessage(e);
-      logger.error(`Error during "scan:retest": ${message}`);
+      logger.error(`Error during "scan:retest": ${e.error || e.message}`);
       process.exit(1);
     }
   }
