@@ -109,7 +109,6 @@ export class RunRepeater implements CommandModule {
       })
       .option('experimental-connection-reuse', {
         boolean: true,
-        default: false,
         describe: 'Configure experimental support for TCP connections reuse'
       })
       .option('daemon', {
