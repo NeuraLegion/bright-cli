@@ -24,7 +24,7 @@ export interface RequestExecutorOptions {
   certs?: Cert[];
   whitelistMimes?: string[];
   maxContentLength?: number;
-  reuseConnection?: number;
+  reuseConnection?: boolean;
 }
 
 export const RequestExecutorOptions = Symbol('RequestExecutorOptions');
