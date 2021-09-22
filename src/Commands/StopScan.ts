@@ -1,5 +1,5 @@
 import { RestScansOptions, Scans } from '../Scan';
-import { Helpers, logger } from '../Utils';
+import { logger } from '../Utils';
 import { Arguments, Argv, CommandModule } from 'yargs';
 import { container } from 'tsyringe';
 
