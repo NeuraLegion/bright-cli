@@ -76,30 +76,26 @@ export class Integration implements CommandModule {
       })
       .middleware((args: Arguments) => {
         container
-          .register(IntegrationOptions, {
+          .register<IntegrationOptions>(IntegrationOptions, {
             useValue: {
-              insecure: args.insecure,
-              timeout: Number(args.timeout),
-              baseUrl: args.baseUrl,
-              user: args.user,
-              apiKey: args.password
+              // TODO: (victor.polyakov@neuralegion.con) Write correct type checking
+              timeout: +(args.timeout as number),
+              apiKey: args.password as string,
+              user: args.user as string,
+              baseUrl: args.baseUrl as string,
+              insecure: args.insecure as boolean
             }
           })
-          .register(RabbitMQBusOptions, {
+          .register<RabbitMQBusOptions>(RabbitMQBusOptions, {
             useValue: {
               exchange: 'EventBus',
               clientQueue: `integration:${args.accessKey}`,
               connectTimeout: 10000,
               url: args.bus as string,
-              proxyUrl: args.proxy as string,
+              proxyUrl: (args.proxyExternal ?? args.proxy) as string,
               credentials: {
                 username: 'bot',
                 password: args.token as string
-              },
-              onError(e: Error) {
-                clearInterval(timer);
-                logger.error(`Error during "integration": ${e.message}`);
-                process.exit(1);
               }
             }
           });

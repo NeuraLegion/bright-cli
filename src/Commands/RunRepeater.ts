@@ -90,8 +90,6 @@ export class RunRepeater implements CommandModule {
                   'Error during "repeater": Specify the path to your client certificate file.'
                 );
                 process.exit(1);
-
-                return;
               }
 
               if (!hostname) {
@@ -99,8 +97,6 @@ export class RunRepeater implements CommandModule {
                   'Error during "repeater": Specify the hostname (without protocol and port) of the request URL for which you want to use the certificate.'
                 );
                 process.exit(1);
-
-                return;
               }
 
               return {
@@ -132,6 +128,10 @@ export class RunRepeater implements CommandModule {
       })
       .conflicts('remove-daemon', 'daemon')
       .conflicts('experimental-connection-reuse', 'proxy')
+      .conflicts('experimental-connection-reuse', 'proxy-external')
+      .conflicts('experimental-connection-reuse', 'proxy-internal')
+      .conflicts('proxy-external', 'proxy')
+      .conflicts('proxy-internal', 'proxy')
       .env('REPEATER')
       .exitProcess(false)
       .check((args: Arguments) => {
@@ -146,11 +146,11 @@ export class RunRepeater implements CommandModule {
       })
       .middleware((args: Arguments) =>
         container
-          .register(RequestExecutorOptions, {
+          .register<RequestExecutorOptions>(RequestExecutorOptions, {
             useValue: {
               headers: (args.header ?? args.headers) as Record<string, string>,
               timeout: args.timeout as number,
-              proxyUrl: args.proxy as string,
+              proxyUrl: (args.proxyInternal ?? args.proxy) as string,
               certs: args.cert as Cert[],
               maxContentLength: 100,
               reuseConnection: args.experimentalConnectionReuse,
@@ -171,13 +171,13 @@ export class RunRepeater implements CommandModule {
               ]
             } as RequestExecutorOptions
           })
-          .register(RabbitMQBusOptions, {
+          .register<RabbitMQBusOptions>(RabbitMQBusOptions, {
             useValue: {
               exchange: 'EventBus',
               clientQueue: `agent:${args.id as string}`,
               connectTimeout: 10000,
               url: args.bus as string,
-              proxyUrl: args.proxy as string,
+              proxyUrl: (args.proxyExternal ?? args.proxy) as string,
               credentials: {
                 username: 'bot',
                 password: args.token as string
@@ -207,15 +207,11 @@ export class RunRepeater implements CommandModule {
     if (args.remove) {
       await repeaterLauncher.uninstall();
       process.exit(0);
-
-      return;
     }
 
     if (args.daemon) {
       await repeaterLauncher.install();
       process.exit(0);
-
-      return;
     }
 
     try {
