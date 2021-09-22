@@ -109,7 +109,6 @@ export class RunRepeater implements CommandModule {
       })
       .option('experimental-connection-reuse', {
         boolean: true,
-        default: false,
         describe: 'Configure experimental support for TCP connections reuse'
       })
       .option('daemon', {
@@ -153,7 +152,7 @@ export class RunRepeater implements CommandModule {
               proxyUrl: (args.proxyInternal ?? args.proxy) as string,
               certs: args.cert as Cert[],
               maxContentLength: 100,
-              reuseConnection: args.experimentalConnectionReuse,
+              reuseConnection: !!args.experimentalConnectionReuse,
               whitelistMimes: [
                 'text/html',
                 'text/plain',
