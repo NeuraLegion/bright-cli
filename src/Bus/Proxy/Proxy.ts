@@ -72,13 +72,13 @@ export class Proxy {
     };
 
     if (userId) {
-      Object.defineProperty(this._options, 'userId', {
+      Object.defineProperty(options, 'userId', {
         value: userId,
         enumerable: false
       });
     }
     if (password) {
-      Object.defineProperty(this._options, 'password', {
+      Object.defineProperty(options, 'password', {
         value: password,
         enumerable: false
       });
