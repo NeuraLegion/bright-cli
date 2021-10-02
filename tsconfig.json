@@ -3,7 +3,9 @@
     "baseUrl": ".",
     "outDir": "dist",
     "target": "es2015",
-    "lib": ["es2016"],
+    "lib": [
+      "es2016"
+    ],
     "newLine": "LF",
     "module": "commonjs",
     "moduleResolution": "node",
@@ -24,7 +26,14 @@
     "forceConsistentCasingInFileNames": true,
     "suppressImplicitAnyIndexErrors": true,
     "allowSyntheticDefaultImports": true,
-    "typeRoots": ["node_modules/@types", "typings"]
+    "typeRoots": [
+      "node_modules/@types",
+      "typings"
+    ]
   },
-  "exclude": ["**/node_modules", "**/.*/", "**/dist", "**/*.spec.ts"]
+  "exclude": [
+    "**/node_modules",
+    "**/.*/",
+    "**/dist"
+  ]
 }

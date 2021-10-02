@@ -25,7 +25,7 @@ export class DefaultParserFactory implements ParserFactory {
     @inject(HarRecorder) private readonly harRecorder: HarRecorder
   ) {}
 
-  public create(spec: SpecType): Parser {
+  public create(spec: SpecType): Parser | never {
     switch (spec) {
       case SpecType.NEXMOCK:
         return new NexMockParser(
@@ -40,7 +40,7 @@ export class DefaultParserFactory implements ParserFactory {
       case SpecType.POSTMAN:
         return new BaseParser(this.postmanValidator);
       default:
-        return null;
+        throw new Error('Incorrect a specification type');
     }
   }
 }

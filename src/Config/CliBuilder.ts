@@ -66,11 +66,20 @@ export class CliBuilder {
         requiresArg: true,
         describe: 'SOCKS4 or SOCKS5 URL to proxy all traffic'
       })
+      .option('proxy-external', {
+        requiresArg: true,
+        describe: 'SOCKS4 or SOCKS5 URL to proxy external traffic'
+      })
+      .option('proxy-internal', {
+        requiresArg: true,
+        describe: 'SOCKS4 or SOCKS5 URL to proxy internal traffic'
+      })
       .middleware((args: Arguments) => {
         ({ bus: args.bus, api: args.api } = Helpers.getClusterUrls(
           args as ClusterArgs
         ));
       }, true)
+      // TODO: (victor.polyakov@neuralegion.com) Write correct type checking
       .middleware(
         (args: Arguments) =>
           (logger.logLevel = !isNaN(+args.logLevel)
