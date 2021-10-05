@@ -1,7 +1,7 @@
 import { Platform, StartOptions } from '../Platform';
 import { AUTH_TOKEN_VALIDATION_REGEXP } from '../Credentials';
 import { ConnectivityAnalyzer, ConnectivityUrls } from '../Connectivity';
-import { Helpers } from '../../Utils';
+import { Helpers, logger } from '../../Utils';
 import { TestType } from '../TestType';
 import { Tokens } from '../Tokens';
 import { inject, injectable } from 'tsyringe';
@@ -11,8 +11,10 @@ import { EOL } from 'os';
 
 @injectable()
 export class ReadlinePlatform implements Platform {
-  public static URL_QUESTION =
+  public static URLS_QUESTION =
     'Please enter the target URLs to test (separated by commas)';
+  public static HOST_OR_IP_QUESTION =
+    'Please enter the target Hostname or IP to test';
   public static COMPELED_MESSAGE =
     'Communication diagnostics done, close the terminal to exit.';
 
@@ -31,7 +33,15 @@ export class ReadlinePlatform implements Platform {
       input: process.stdin,
       output: process.stdout
     });
-    await this.configure(options);
+    if (options?.traceroute) {
+      await this.processTraceroute();
+    } else {
+      await this.configure(options);
+    }
+
+    console.log(this.delimiter);
+
+    console.log(ReadlinePlatform.COMPELED_MESSAGE);
   }
 
   public async stop(): Promise<void> {
@@ -39,7 +49,7 @@ export class ReadlinePlatform implements Platform {
   }
 
   private async configure(options?: StartOptions): Promise<void> {
-    if (!options?.networkTestOnly) {
+    if (!options?.ping) {
       console.log(`Welcome to the NexPloit Network Testing wizard!${EOL}`);
 
       console.log(
@@ -61,11 +71,7 @@ export class ReadlinePlatform implements Platform {
       console.log(this.delimiter);
     }
 
-    await this.processInternalCommunication();
-
-    console.log(this.delimiter);
-
-    console.log(ReadlinePlatform.COMPELED_MESSAGE);
+    await this.processPing();
   }
 
   private async requestTokens(): Promise<void> {
@@ -116,12 +122,12 @@ export class ReadlinePlatform implements Platform {
     console.log('EXTERNAL communication diagnostics completed.');
   }
 
-  private async processInternalCommunication(): Promise<void> {
+  private async processPing(): Promise<void> {
     console.log(
       `Next step is to validate the connection to your INTERNAL (local) target application(s).${EOL}`
     );
     const urls = this.getDelimitedInput(
-      await this.question(ReadlinePlatform.URL_QUESTION),
+      await this.question(ReadlinePlatform.URLS_QUESTION),
       ','
     );
 
@@ -154,6 +160,27 @@ export class ReadlinePlatform implements Platform {
     );
   }
 
+  private async processTraceroute(): Promise<void> {
+    console.log(
+      `Traceroute to your INTERNAL (local) target application.${EOL}`
+    );
+    const url = await this.question(ReadlinePlatform.HOST_OR_IP_QUESTION);
+
+    console.log(this.delimiter);
+
+    console.log(`Starting INTERNAL communication diagnostics:${EOL}`);
+
+    await this.process(
+      `Trying to reach ${url}`,
+      async () =>
+        await this.connectivityService.verifyAccess(TestType.TRACEROUTE, url)
+    );
+
+    process.stdout.write(EOL);
+
+    console.log('Traceroute completed.');
+  }
+
   private async question(question: string): Promise<string> {
     return new Promise((resolve) => this.rl.question(`${question}: `, resolve));
   }
@@ -170,6 +197,7 @@ export class ReadlinePlatform implements Platform {
     try {
       result = await handler();
     } catch (err) {
+      logger.debug(err.message);
       result = false;
     }
 

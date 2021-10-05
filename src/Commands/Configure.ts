@@ -42,12 +42,15 @@ export class Configure implements CommandModule {
         boolean: true,
         describe: `Start a configuration wizard without GUI`
       })
-      .option('network-only', {
-        default: false,
+      .option('ping', {
         boolean: true,
-        hidden: true,
-        describe: `Enables network tests only`
+        describe: `Start network tests.`
       })
+      .option('traceroute', {
+        boolean: true,
+        describe: `Start treceroute to a local recourse.`
+      })
+      .conflicts('ping', 'traceroute')
       .middleware((args: Arguments) => {
         container.register(ConnectivityUrls, {
           useValue: new Map([
@@ -79,7 +82,7 @@ export class Configure implements CommandModule {
       };
 
       process.on('SIGTERM', stop).on('SIGINT', stop).on('SIGHUP', stop);
-      await app.start({ networkTestOnly: !!args.networkOnly });
+      await app.start({ ping: !!args.ping, traceroute: !!args.traceroute });
     } catch (e) {
       logger.error(`Error during "configure": ${e.error || e.message}`);
       process.exit(1);

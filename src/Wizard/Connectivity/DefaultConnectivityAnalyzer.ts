@@ -10,12 +10,16 @@ export const ConnectivityUrls = Symbol('ConnectivityUrls');
 @injectable()
 export class DefaultConnectivityAnalyzer implements ConnectivityAnalyzer {
   constructor(
-    @inject(ConnectivityUrls) private readonly urls: Map<TestType, URL>,
+    @inject(ConnectivityUrls)
+    private readonly urls: Map<TestType, string | URL>,
     @injectAll(Connectivity)
     private readonly connectivityTestRegistry: Connectivity[]
   ) {}
 
-  public async verifyAccess(type: TestType, url?: URL): Promise<boolean> {
+  public async verifyAccess(
+    type: TestType,
+    host?: string | URL
+  ): Promise<boolean> {
     logger.debug('Calling connectivity status test with type %s', type);
 
     const connectivity: Connectivity | undefined =
@@ -25,6 +29,6 @@ export class DefaultConnectivityAnalyzer implements ConnectivityAnalyzer {
       throw new Error('Selected test is not support.');
     }
 
-    return connectivity.test(url ?? this.urls.get(connectivity.type));
+    return connectivity.test(host ?? this.urls.get(connectivity.type));
   }
 }
