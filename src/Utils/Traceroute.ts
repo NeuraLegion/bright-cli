@@ -84,11 +84,6 @@ export class Traceroute {
 
     if (this.options.protocol === raw.Protocol.UDP) {
       this.udpSocket = dgram.createSocket('udp4');
-
-      this.udpSocket.on('error', () => {
-        this.udpSocket.close();
-      });
-
       this.udpSocket.bind(() => this.sendPacket());
     } else {
       setImmediate(() => this.sendPacket());
