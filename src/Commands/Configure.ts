@@ -47,9 +47,19 @@ export class Configure implements CommandModule {
         describe: `Start network tests.`
       })
       .option('traceroute', {
-        boolean: true,
+        string: true,
         describe: `Start treceroute to a local recourse.`
       })
+      .option('timeout', {
+        number: true,
+        describe: `Set the max time-to-live (max number of hops) used in outgoing probe packets. The default is net.inet.ip.ttl hops (the same default used for TCP connections).`
+      })
+      .option('probes', {
+        alias: 'p',
+        number: true,
+        describe: `Set the number of probes per 'ttl' to nqueries (default is one probe).`
+      })
+      .group(['timeout', 'probes'], 'Traceroute Options')
       .conflicts('ping', 'traceroute')
       .middleware((args: Arguments) => {
         container.register(ConnectivityUrls, {
@@ -82,7 +92,7 @@ export class Configure implements CommandModule {
       };
 
       process.on('SIGTERM', stop).on('SIGINT', stop).on('SIGHUP', stop);
-      await app.start({ ping: !!args.ping, traceroute: !!args.traceroute });
+      await app.start({ ping: !!args.ping, traceroute: `${args.traceroute}` });
     } catch (e) {
       logger.error(`Error during "configure": ${e.error || e.message}`);
       process.exit(1);

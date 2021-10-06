@@ -12,7 +12,7 @@ export class TracerouteConnectivity implements Connectivity {
     const trace = new Traceroute(host);
 
     try {
-      trace.start();
+      await trace.start();
 
       const res = await once(trace, 'done');
 

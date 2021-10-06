@@ -34,7 +34,7 @@ export class ReadlinePlatform implements Platform {
       output: process.stdout
     });
     if (options?.traceroute) {
-      await this.processTraceroute();
+      await this.processTraceroute(options);
     } else {
       await this.configure(options);
     }
@@ -160,20 +160,19 @@ export class ReadlinePlatform implements Platform {
     );
   }
 
-  private async processTraceroute(): Promise<void> {
+  private async processTraceroute(options?: StartOptions): Promise<void> {
     console.log(
       `Traceroute to your INTERNAL (local) target application.${EOL}`
     );
-    const url = await this.question(ReadlinePlatform.HOST_OR_IP_QUESTION);
-
-    console.log(this.delimiter);
-
     console.log(`Starting INTERNAL communication diagnostics:${EOL}`);
 
     await this.process(
-      `Trying to reach ${url}`,
+      `Trying to reach ${options.traceroute}`,
       async () =>
-        await this.connectivityService.verifyAccess(TestType.TRACEROUTE, url)
+        await this.connectivityService.verifyAccess(
+          TestType.TRACEROUTE,
+          options.traceroute
+        )
     );
 
     process.stdout.write(EOL);

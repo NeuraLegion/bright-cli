@@ -2,6 +2,7 @@ import * as raw from 'raw-socket';
 import * as dgram from 'dgram';
 import { promises as dns } from 'dns';
 import { EventEmitter } from 'events';
+import { isIP } from 'net';
 
 export { Protocol } from 'raw-socket';
 
@@ -11,15 +12,17 @@ type Options = {
   timeoutInMillis: number;
   reverseLookup: boolean;
   protocol: number;
+  packetSize: number;
   outStream: typeof process.stdout;
 };
 
 const defaultOptions: Options = {
-  amountProbes: 3,
+  amountProbes: 1,
   maximumHops: 64,
   timeoutInMillis: 3000,
   reverseLookup: true,
   protocol: raw.Protocol.UDP,
+  packetSize: 52,
   outStream: process.stdout
 };
 
@@ -27,6 +30,7 @@ export class Traceroute extends EventEmitter {
   private readonly icmpSocket = raw.createSocket({
     protocol: raw.Protocol.ICMP
   });
+  private readonly resolver = new dns.Resolver();
   private readonly options: Options;
   private port = 33433;
   private ttl = 1;
@@ -35,13 +39,15 @@ export class Traceroute extends EventEmitter {
   private timeout?: NodeJS.Timeout;
   private previousIP?: string;
   private udpSocket?: dgram.Socket;
+  private destinationHostname: string;
 
   constructor(
-    private readonly destinationIp: string,
+    private destinationIp: string,
     userOptions: Partial<Options> = {}
   ) {
     super();
     this.options = { ...defaultOptions, ...userOptions };
+    this.destinationHostname = this.destinationIp;
 
     this.icmpSocket.on('message', async (buffer: Buffer, ip: string) => {
       const port = this.udpSocket
@@ -54,7 +60,17 @@ export class Traceroute extends EventEmitter {
     });
   }
 
-  public start(): void {
+  public async start(): Promise<void> {
+    if (!isIP(this.destinationIp)) {
+      this.destinationIp = (
+        await this.resolver.resolve(this.destinationHostname, 'A')
+      )[0];
+    }
+
+    process.stdout.write(
+      `traceroute to ${this.destinationHostname} (${this.destinationIp}), ${this.options.maximumHops} hops max, ${this.options.packetSize} byte packets`
+    );
+
     if (this.options.protocol === raw.Protocol.UDP) {
       this.udpSocket = dgram.createSocket('udp4');
       this.udpSocket.bind(() => this.sendPacket());
@@ -75,9 +91,8 @@ export class Traceroute extends EventEmitter {
       return;
     }
 
-    const resolver = new dns.Resolver();
     try {
-      return (await resolver.reverse(ip))[0];
+      return (await this.resolver.reverse(ip))[0];
     } catch (_e) {
       return;
     }
@@ -91,23 +106,12 @@ export class Traceroute extends EventEmitter {
       this.ttl++;
     }
 
-    const beforeSend = () =>
-      this.icmpSocket.setOption(
-        raw.SocketLevel.IPPROTO_IP,
-        raw.SocketOption.IP_TTL,
-        this.ttl
-      );
-    const afterSend = (error: Error | null, _bytes: number) => {
-      if (error) {
-        throw error;
-      }
-      this.timeout = setTimeout(
-        this.handleReply.bind(this),
-        this.options.timeoutInMillis
-      );
-    };
-
-    const buffer = this.createPingRequest(0, 0, ++this.port);
+    const buffer = this.createPingRequest(
+      0,
+      0,
+      ++this.port,
+      this.options.packetSize
+    );
 
     if (this.udpSocket) {
       this.udpSocket.setTTL(this.ttl);
@@ -117,18 +121,32 @@ export class Traceroute extends EventEmitter {
         buffer.length,
         this.port,
         this.destinationIp,
-        afterSend.bind(this)
+        this.afterSend.bind(this)
       );
     } else {
+      this.icmpSocket.setOption(
+        raw.SocketLevel.IPPROTO_IP,
+        raw.SocketOption.IP_TTL,
+        this.ttl
+      );
       this.icmpSocket.send(
         buffer,
         0,
         buffer.length,
         this.destinationIp,
-        beforeSend.bind(this),
-        afterSend.bind(this)
+        this.afterSend.bind(this)
       );
     }
+  }
+
+  private afterSend(error: Error | null, _bytes: number) {
+    if (error) {
+      throw error;
+    }
+    this.timeout = setTimeout(
+      this.handleReply.bind(this),
+      this.options.timeoutInMillis
+    );
   }
 
   private handleReply(ip?: string, symbolicAddress?: string) {
@@ -159,7 +177,8 @@ export class Traceroute extends EventEmitter {
     }
 
     if (
-      (ip === this.destinationIp && this.probes === 3) ||
+      (ip === this.destinationIp &&
+        this.probes === this.options.amountProbes) ||
       this.ttl >= this.options.maximumHops
     ) {
       process.stdout.write('\n');
