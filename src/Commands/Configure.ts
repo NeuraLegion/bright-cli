@@ -1,5 +1,5 @@
 import { logger } from '../Utils';
-import { ConnectivityUrls, Platform, TestType } from '../Wizard';
+import { ConnectivityUrls, Platform, TestType, Options } from '../Wizard';
 import { container } from '../Config';
 import { Arguments, Argv, CommandModule } from 'yargs';
 import { URL } from 'url';
@@ -52,33 +52,44 @@ export class Configure implements CommandModule {
       })
       .option('timeout', {
         number: true,
+        requiresArg: true,
         describe: `Set the max time-to-live (max number of hops) used in outgoing probe packets. The default is net.inet.ip.ttl hops (the same default used for TCP connections).`
       })
       .option('probes', {
         alias: 'p',
         number: true,
+        requiresArg: true,
         describe: `Set the number of probes per 'ttl' to nqueries (default is one probe).`
       })
       .group(['timeout', 'probes'], 'Traceroute Options')
       .conflicts('ping', 'traceroute')
       .middleware((args: Arguments) => {
-        container.register(ConnectivityUrls, {
-          useValue: new Map([
-            Configure.getMapEntryOrThrow(
-              TestType.TCP,
-              (args[TestType.TCP] ?? args.bus) as string
-            ),
-            Configure.getMapEntryOrThrow(
-              TestType.HTTP,
-              (args[TestType.HTTP] ?? args.api) as string
-            ),
-            Configure.getMapEntryOrThrow(
-              TestType.AUTH,
-              (args[TestType.AUTH] ??
-                `${args.api}/api/v1/repeaters/user`) as string
-            )
-          ])
-        });
+        container
+          .register<Options>(Options, {
+            useValue: {
+              traceroute: {
+                maxTTL: !isNaN(+args.timeout) ? +args.timeout : undefined,
+                probes: !isNaN(+args.probes) ? +args.probes : undefined
+              }
+            }
+          })
+          .register(ConnectivityUrls, {
+            useValue: new Map([
+              Configure.getMapEntryOrThrow(
+                TestType.TCP,
+                (args[TestType.TCP] ?? args.bus) as string
+              ),
+              Configure.getMapEntryOrThrow(
+                TestType.HTTP,
+                (args[TestType.HTTP] ?? args.api) as string
+              ),
+              Configure.getMapEntryOrThrow(
+                TestType.AUTH,
+                (args[TestType.AUTH] ??
+                  `${args.api}/api/v1/repeaters/user`) as string
+              )
+            ])
+          });
       });
   }
 

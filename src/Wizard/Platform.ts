@@ -1,12 +1,6 @@
-export interface TracerouteOptions {
-  maxTTL?: number;
-  probes?: number;
-}
-
 export interface StartOptions {
   ping: boolean;
   traceroute?: string;
-  tracerouteOptions?: TracerouteOptions;
 }
 
 export interface Platform {

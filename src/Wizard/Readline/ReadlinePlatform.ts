@@ -166,18 +166,14 @@ export class ReadlinePlatform implements Platform {
     );
     console.log(`Starting INTERNAL communication diagnostics:${EOL}`);
 
-    await this.process(
-      `Trying to reach ${options.traceroute}`,
-      async () =>
-        await this.connectivityService.verifyAccess(
-          TestType.TRACEROUTE,
-          options.traceroute
-        )
+    const result = await this.connectivityService.verifyAccess(
+      TestType.TRACEROUTE,
+      options.traceroute
     );
 
     process.stdout.write(EOL);
 
-    console.log('Traceroute completed.');
+    console.log(`Traceroute ${result ? 'completed' : 'failed'}.`);
   }
 
   private async question(question: string): Promise<string> {

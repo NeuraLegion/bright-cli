@@ -1,12 +1,19 @@
-import * as raw from 'raw-socket';
-import * as dgram from 'dgram';
+import { Logger } from './Logger';
+import raw from 'raw-socket';
+import dgram from 'dgram';
 import { promises as dns } from 'dns';
-import { EventEmitter } from 'events';
+import { EventEmitter, once } from 'events';
 import { isIP } from 'net';
 
 export { Protocol } from 'raw-socket';
 
-type Options = {
+const logger: Logger = new Logger();
+
+interface ReturnType {
+  reached: boolean;
+}
+
+export interface Options {
   amountProbes: number;
   maximumHops: number;
   timeoutInMillis: number;
@@ -14,7 +21,7 @@ type Options = {
   protocol: number;
   packetSize: number;
   outStream: typeof process.stdout;
-};
+}
 
 const defaultOptions: Options = {
   amountProbes: 1,
@@ -26,12 +33,13 @@ const defaultOptions: Options = {
   outStream: process.stdout
 };
 
-export class Traceroute extends EventEmitter {
+export class Traceroute {
   private readonly icmpSocket = raw.createSocket({
     protocol: raw.Protocol.ICMP
   });
   private readonly resolver = new dns.Resolver();
   private readonly options: Options;
+  private readonly subject = new EventEmitter();
   private port = 33433;
   private ttl = 1;
   private startTime?: [number, number];
@@ -45,8 +53,11 @@ export class Traceroute extends EventEmitter {
     private destinationIp: string,
     userOptions: Partial<Options> = {}
   ) {
-    super();
+    Object.keys(userOptions).map(
+      (key) => !userOptions[key] && delete userOptions[key]
+    );
     this.options = { ...defaultOptions, ...userOptions };
+
     this.destinationHostname = this.destinationIp;
 
     this.icmpSocket.on('message', async (buffer: Buffer, ip: string) => {
@@ -60,7 +71,7 @@ export class Traceroute extends EventEmitter {
     });
   }
 
-  public async start(): Promise<void> {
+  public async execute(): Promise<boolean> {
     if (!isIP(this.destinationIp)) {
       this.destinationIp = (
         await this.resolver.resolve(this.destinationHostname, 'A')
@@ -73,10 +84,19 @@ export class Traceroute extends EventEmitter {
 
     if (this.options.protocol === raw.Protocol.UDP) {
       this.udpSocket = dgram.createSocket('udp4');
+
+      this.udpSocket.on('error', () => {
+        this.udpSocket.close();
+      });
+
       this.udpSocket.bind(() => this.sendPacket());
     } else {
-      setImmediate(this.sendPacket.bind(this));
+      setImmediate(() => this.sendPacket());
     }
+
+    const [{ reached }]: ReturnType[] = await once(this.subject, 'done');
+
+    return reached;
   }
 
   public close(): void {
@@ -92,9 +112,11 @@ export class Traceroute extends EventEmitter {
     }
 
     try {
-      return (await this.resolver.reverse(ip))[0];
-    } catch (_e) {
-      return;
+      const [hostname]: string[] = await this.resolver.reverse(ip);
+
+      return hostname;
+    } catch (e) {
+      logger.debug(e.message);
     }
   }
 
@@ -139,7 +161,7 @@ export class Traceroute extends EventEmitter {
     }
   }
 
-  private afterSend(error: Error | null, _bytes: number) {
+  private afterSend(error: Error | null) {
     if (error) {
       throw error;
     }
@@ -183,7 +205,9 @@ export class Traceroute extends EventEmitter {
     ) {
       process.stdout.write('\n');
       this.close();
-      this.emit('done', { reached: this.ttl < this.options.maximumHops });
+      this.subject.emit('done', {
+        reached: this.ttl < this.options.maximumHops
+      });
 
       return;
     }
@@ -209,10 +233,9 @@ export class Traceroute extends EventEmitter {
       this.secondByte(sequence),
       this.firstByte(sequence)
     ];
-    for (let i = 0; i <= packetSize; i++) {
-      header.push(0xff);
-    }
-    const buffer = Buffer.from(header);
+    const req = [...header, ...Array(packetSize).fill(0xff)];
+
+    const buffer = Buffer.from(req);
     raw.writeChecksum(buffer, 2, raw.createChecksum(buffer));
 
     return buffer;
