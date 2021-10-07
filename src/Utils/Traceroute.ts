@@ -10,7 +10,6 @@ const Stop: unique symbol = Symbol('Stop');
 
 interface ReturnType {
   reached: boolean;
-  error?: string;
 }
 
 export interface Options {
@@ -56,20 +55,18 @@ export class Traceroute {
     Object.keys(userOptions).forEach(
       (key) => !userOptions[key] && delete userOptions[key]
     );
-    const uh = userOptions.maximumHops || defaultOptions.maximumHops;
+    const maximumHops = userOptions.maximumHops || defaultOptions.maximumHops;
     this.options = {
       ...defaultOptions,
       ...userOptions,
-      ...(uh > 255 || uh < 1
+      ...(maximumHops > 255 || maximumHops < 1
         ? { maximumHops: defaultOptions.maximumHops }
-        : { maximumHops: uh })
+        : { maximumHops })
     };
 
     this.destinationHostname = this.destinationIp;
 
-    this.icmpSocket.on('error', (e) => {
-      this.emitError(e);
-    });
+    this.icmpSocket.on('error', (e) => this.emitError(e));
 
     this.icmpSocket.on('message', async (buffer: Buffer, ip: string) => {
       const port = this.udpSocket
@@ -99,15 +96,10 @@ export class Traceroute {
 
     if (this.options.protocol === raw.Protocol.UDP) {
       this.udpSocket = dgram.createSocket('udp4');
-      this.udpSocket.on('error', (e) => {
-        this.emitError(e);
-      });
 
-      try {
-        this.udpSocket.bind(() => this.sendPacket());
-      } catch (error: any) {
-        return { reached: false, error: error.stack };
-      }
+      this.udpSocket.on('error', (e) => this.emitError(e));
+
+      this.udpSocket.bind(() => this.sendPacket());
     } else {
       setImmediate(() => this.sendPacket());
     }
@@ -285,6 +277,6 @@ export class Traceroute {
   }
 
   private emitError(error: Error) {
-    this.subject.emit(Stop, { reached: false, error: error.stack });
+    this.subject.emit('error', error);
   }
 }
