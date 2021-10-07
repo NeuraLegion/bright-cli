@@ -1,3 +1,4 @@
+import { Helpers } from './Helpers';
 import raw from 'raw-socket';
 import dgram from 'dgram';
 import { promises as dns } from 'dns';
@@ -52,13 +53,11 @@ export class Traceroute {
     private destinationIp: string,
     userOptions: Partial<Options> = {}
   ) {
-    Object.keys(userOptions).forEach(
-      (key) => !userOptions[key] && delete userOptions[key]
-    );
     const maximumHops = userOptions.maximumHops || defaultOptions.maximumHops;
+
     this.options = {
       ...defaultOptions,
-      ...userOptions,
+      ...Helpers.omit(userOptions),
       ...(maximumHops > 255 || maximumHops < 1
         ? { maximumHops: defaultOptions.maximumHops }
         : { maximumHops })
@@ -233,7 +232,7 @@ export class Traceroute {
 
     this.previousIP = ip;
 
-    setImmediate(this.sendPacket.bind(this));
+    setImmediate(() => this.sendPacket());
   }
 
   private createPingRequest(
