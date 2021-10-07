@@ -1,7 +1,7 @@
 import { Connectivity } from './Connectivity';
 import { ConnectivityAnalyzer } from './ConnectivityAnalyzer';
 import { logger } from '../../Utils';
-import { TestType } from '../';
+import { TestType } from '../TestType';
 import { Options } from '../Options';
 import { inject, injectable, injectAll } from 'tsyringe';
 import { URL } from 'url';

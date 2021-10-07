@@ -53,7 +53,7 @@ export class Traceroute {
     private destinationIp: string,
     userOptions: Partial<Options> = {}
   ) {
-    Object.keys(userOptions).map(
+    Object.keys(userOptions).forEach(
       (key) => !userOptions[key] && delete userOptions[key]
     );
     const uh = userOptions.maximumHops || defaultOptions.maximumHops;
@@ -108,7 +108,6 @@ export class Traceroute {
       } catch (error: any) {
         return { reached: false, error: error.stack };
       }
-      // setImmediate(() => this.sendPacket());
     } else {
       setImmediate(() => this.sendPacket());
     }
@@ -193,7 +192,6 @@ export class Traceroute {
       this.emitError(error);
 
       return;
-      // throw error;
     }
     this.timeout = setTimeout(
       this.handleReply.bind(this),

@@ -14,7 +14,7 @@ export class ReadlinePlatform implements Platform {
   public static URLS_QUESTION =
     'Please enter the target URLs to test (separated by commas)';
   public static HOST_OR_IP_QUESTION =
-    'Please enter the target Hostname or IP to test';
+    'Please enter the target hostname or IP to test';
   public static COMPELED_MESSAGE =
     'Communication diagnostics done, close the terminal to exit.';
   public static INTERNAL_DIAGNOSTIC = `Starting INTERNAL communication diagnostics:${EOL}`;
