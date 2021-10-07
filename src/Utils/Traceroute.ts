@@ -24,7 +24,7 @@ export interface Options {
 }
 
 const defaultOptions: Options = {
-  amountProbes: 1,
+  amountProbes: 3,
   maximumHops: 64,
   timeoutInMillis: 3000,
   reverseLookup: true,
