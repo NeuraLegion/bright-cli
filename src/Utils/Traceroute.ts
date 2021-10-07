@@ -184,13 +184,14 @@ export class Traceroute {
 
       return;
     }
+
     this.timeout = setTimeout(
       this.handleReply.bind(this),
       this.options.timeoutInMillis
     );
   }
 
-  private handleReply(ip?: string, symbolicAddress?: string) {
+  private handleReply(ip?: string, symbolicAddress?: string): void {
     this.clearTimeout();
 
     const formattedTTL = this.ttl.toFixed().padStart(3, ' ');
@@ -277,7 +278,7 @@ export class Traceroute {
     }
   }
 
-  private emitError(error: Error) {
+  private emitError(error: Error): void {
     this.subject.emit('error', error);
   }
 }
