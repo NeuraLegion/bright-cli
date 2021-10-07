@@ -2,6 +2,7 @@ import { Connectivity } from './Connectivity';
 import { ConnectivityAnalyzer } from './ConnectivityAnalyzer';
 import { logger } from '../../Utils';
 import { TestType } from '../TestType';
+import { Options } from '../Options';
 import { inject, injectable, injectAll } from 'tsyringe';
 import { URL } from 'url';
 
@@ -10,12 +11,17 @@ export const ConnectivityUrls = Symbol('ConnectivityUrls');
 @injectable()
 export class DefaultConnectivityAnalyzer implements ConnectivityAnalyzer {
   constructor(
-    @inject(ConnectivityUrls) private readonly urls: Map<TestType, URL>,
+    @inject(ConnectivityUrls)
+    private readonly urls: Map<TestType, string | URL>,
+    @inject(Options) private readonly opt: Options,
     @injectAll(Connectivity)
     private readonly connectivityTestRegistry: Connectivity[]
   ) {}
 
-  public async verifyAccess(type: TestType, url?: URL): Promise<boolean> {
+  public async verifyAccess(
+    type: TestType,
+    target?: string | URL
+  ): Promise<boolean> {
     logger.debug('Calling connectivity status test with type %s', type);
 
     const connectivity: Connectivity | undefined =
@@ -25,6 +31,9 @@ export class DefaultConnectivityAnalyzer implements ConnectivityAnalyzer {
       throw new Error('Selected test is not support.');
     }
 
-    return connectivity.test(url ?? this.urls.get(connectivity.type));
+    return connectivity.test(
+      target ?? this.urls.get(connectivity.type),
+      this.opt
+    );
   }
 }

@@ -27,6 +27,7 @@ import {
   Platform,
   ReadlinePlatform,
   TCPConnectivity,
+  TracerouteConnectivity,
   Tokens
 } from '../Wizard';
 import {
@@ -125,6 +126,11 @@ container
   )
   .register(
     Connectivity,
+    { useClass: TracerouteConnectivity },
+    { lifecycle: Lifecycle.Singleton }
+  )
+  .register(
+    Connectivity,
     {
       useClass: AMQConnectivity
     },
@@ -181,9 +187,7 @@ container
   )
   .register(
     IntegrationClient,
-    {
-      useClass: JiraIntegrationClient
-    },
+    { useClass: JiraIntegrationClient },
     { lifecycle: Lifecycle.Singleton }
   )
   .register<Platform>(
