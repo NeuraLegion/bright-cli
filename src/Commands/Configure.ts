@@ -61,7 +61,8 @@ export class Configure implements CommandModule {
             ),
             Configure.getMapEntryOrThrow(
               TestType.AUTH,
-              (args[TestType.AUTH] ?? `${args.api}/v1/repeaters/user`) as string
+              (args[TestType.AUTH] ??
+                `${args.api}/api/v1/repeaters/user`) as string
             )
           ])
         });
