@@ -221,13 +221,12 @@ export class Traceroute {
     }
 
     if (
-      (ip === this.destinationIp &&
-        this.probes === this.options.amountProbes) ||
-      this.ttl >= this.options.maximumHops
+      this.probes === this.options.amountProbes &&
+      (ip === this.destinationIp || this.ttl >= this.options.maximumHops)
     ) {
       process.stdout.write('\n');
       this.subject.emit(Stop, {
-        reached: this.ttl < this.options.maximumHops
+        reached: ip === this.destinationIp
       });
 
       return;
