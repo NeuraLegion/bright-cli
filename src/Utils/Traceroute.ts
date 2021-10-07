@@ -132,12 +132,12 @@ export class Traceroute {
   }
 
   private sendPacket(): void {
-    this.probes++;
-
-    if (this.probes > this.options.amountProbes) {
-      this.probes = 1;
+    if (this.probes >= this.options.amountProbes) {
+      this.probes = 0;
       this.ttl++;
     }
+
+    this.probes++;
 
     const buffer = this.createPingRequest(
       0,
@@ -193,28 +193,30 @@ export class Traceroute {
   private handleReply(ip?: string, symbolicAddress?: string) {
     this.clearTimeout();
 
+    const formattedTTL = this.ttl.toFixed().padStart(3, ' ');
+
     if (ip) {
       const elapsedTime = `${(
         process.hrtime(this.startTime)[1] / 1000000
       ).toFixed(3)} ms`;
 
       if (ip === this.previousIP) {
-        process.stdout.write(`  ${elapsedTime}`);
+        process.stdout.write(` ${elapsedTime} `);
       } else if (this.probes === 1) {
         process.stdout.write(
-          `\n ${this.ttl}  ${
+          `\n${formattedTTL}  ${
             symbolicAddress ? symbolicAddress : ip
-          } (${ip}) ${elapsedTime}`
+          } (${ip})  ${elapsedTime} `
         );
       } else {
         process.stdout.write(
-          `\n    ${
+          `\n${Array(formattedTTL.length).fill(' ').join('')}  ${
             symbolicAddress ? symbolicAddress : ip
-          } (${ip}) ${elapsedTime}`
+          } (${ip})  ${elapsedTime} `
         );
       }
     } else {
-      process.stdout.write(this.probes === 1 ? `\n ${this.ttl}  * ` : `* `);
+      process.stdout.write(this.probes === 1 ? `\n${formattedTTL}  * ` : `* `);
     }
 
     if (
