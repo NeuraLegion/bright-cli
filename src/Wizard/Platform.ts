@@ -1,6 +1,6 @@
 export interface StartOptions {
   ping: boolean;
-  traceroute?: string;
+  traceroute: boolean;
 }
 
 export interface Platform {

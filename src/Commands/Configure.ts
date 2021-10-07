@@ -47,8 +47,8 @@ export class Configure implements CommandModule {
         describe: `Start network tests.`
       })
       .option('traceroute', {
-        string: true,
-        describe: `Start treceroute to a local recourse.`
+        boolean: true,
+        describe: `Start treceroute to a local recource.`
       })
       .option('timeout', {
         number: true,
@@ -103,7 +103,7 @@ export class Configure implements CommandModule {
       };
 
       process.on('SIGTERM', stop).on('SIGINT', stop).on('SIGHUP', stop);
-      await app.start({ ping: !!args.ping, traceroute: `${args.traceroute}` });
+      await app.start({ ping: !!args.ping, traceroute: !!args.traceroute });
     } catch (e) {
       logger.error(`Error during "configure": ${e.error || e.message}`);
       process.exit(1);

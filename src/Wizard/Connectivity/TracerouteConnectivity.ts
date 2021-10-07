@@ -20,8 +20,6 @@ export class TracerouteConnectivity implements Connectivity {
 
       return reached;
     } catch (err) {
-      trace.close();
-
       logger.debug('Traceroute test has been failed: %s', err.message);
 
       return false;

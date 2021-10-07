@@ -94,7 +94,7 @@ export class Traceroute {
     return reached;
   }
 
-  public close(): void {
+  private abort(): void {
     if (this.udpSocket) {
       this.udpSocket.close();
     }
@@ -199,7 +199,7 @@ export class Traceroute {
       this.ttl >= this.options.maximumHops
     ) {
       process.stdout.write('\n');
-      this.close();
+      this.abort();
       this.subject.emit('done', {
         reached: this.ttl < this.options.maximumHops
       });

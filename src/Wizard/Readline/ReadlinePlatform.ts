@@ -17,6 +17,7 @@ export class ReadlinePlatform implements Platform {
     'Please enter the target Hostname or IP to test';
   public static COMPELED_MESSAGE =
     'Communication diagnostics done, close the terminal to exit.';
+  public static INTERNAL_DIAGNOSTIC = `Starting INTERNAL communication diagnostics:${EOL}`;
 
   private rl: readline.Interface;
   private readonly delimiter = `${EOL}\r--${EOL}`;
@@ -34,7 +35,7 @@ export class ReadlinePlatform implements Platform {
       output: process.stdout
     });
     if (options?.traceroute) {
-      await this.processTraceroute(options);
+      await this.processTraceroute();
     } else {
       await this.configure(options);
     }
@@ -133,7 +134,7 @@ export class ReadlinePlatform implements Platform {
 
     console.log(this.delimiter);
 
-    console.log(`Starting INTERNAL communication diagnostics:${EOL}`);
+    console.log(ReadlinePlatform.INTERNAL_DIAGNOSTIC);
 
     let reachedCount = 0;
 
@@ -160,15 +161,19 @@ export class ReadlinePlatform implements Platform {
     );
   }
 
-  private async processTraceroute(options?: StartOptions): Promise<void> {
+  private async processTraceroute(): Promise<void> {
     console.log(
       `Traceroute to your INTERNAL (local) target application.${EOL}`
     );
-    console.log(`Starting INTERNAL communication diagnostics:${EOL}`);
+    const target = await this.question(ReadlinePlatform.HOST_OR_IP_QUESTION);
+
+    console.log(this.delimiter);
+
+    console.log(ReadlinePlatform.INTERNAL_DIAGNOSTIC);
 
     const result = await this.connectivityService.verifyAccess(
       TestType.TRACEROUTE,
-      options.traceroute
+      target
     );
 
     process.stdout.write(EOL);
