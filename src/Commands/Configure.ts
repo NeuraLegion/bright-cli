@@ -50,7 +50,7 @@ export class Configure implements CommandModule {
         boolean: true,
         describe: `Start treceroute to a local recource.`
       })
-      .option('timeout', {
+      .option('max-ttl', {
         number: true,
         requiresArg: true,
         describe: `Set the max time-to-live (max number of hops) used in outgoing probe packets. The default is net.inet.ip.ttl hops (the same default used for TCP connections).`
@@ -61,14 +61,14 @@ export class Configure implements CommandModule {
         requiresArg: true,
         describe: `Set the number of probes per 'ttl' to nqueries (default is one probe).`
       })
-      .group(['timeout', 'probes'], 'Traceroute Options')
+      .group(['max-ttl', 'probes'], 'Traceroute Options')
       .conflicts('ping', 'traceroute')
       .middleware((args: Arguments) => {
         container
           .register<Options>(Options, {
             useValue: {
               traceroute: {
-                maxTTL: !isNaN(+args.timeout) ? +args.timeout : undefined,
+                maxTTL: !isNaN(+args.maxTtl) ? +args.maxTtl : undefined,
                 probes: !isNaN(+args.probes) ? +args.probes : undefined
               }
             }
