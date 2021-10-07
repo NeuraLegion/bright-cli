@@ -1,4 +1,3 @@
-import { Logger } from './Logger';
 import raw from 'raw-socket';
 import dgram from 'dgram';
 import { promises as dns } from 'dns';
@@ -7,10 +6,11 @@ import { isIP } from 'net';
 
 export { Protocol } from 'raw-socket';
 
-const logger: Logger = new Logger();
+const Stop: unique symbol = Symbol('Stop');
 
 interface ReturnType {
   reached: boolean;
+  error?: string;
 }
 
 export interface Options {
@@ -56,9 +56,20 @@ export class Traceroute {
     Object.keys(userOptions).map(
       (key) => !userOptions[key] && delete userOptions[key]
     );
-    this.options = { ...defaultOptions, ...userOptions };
+    const uh = userOptions.maximumHops || defaultOptions.maximumHops;
+    this.options = {
+      ...defaultOptions,
+      ...userOptions,
+      ...(uh > 255 || uh < 1
+        ? { maximumHops: defaultOptions.maximumHops }
+        : { maximumHops: uh })
+    };
 
     this.destinationHostname = this.destinationIp;
+
+    this.icmpSocket.on('error', (e) => {
+      this.emitError(e);
+    });
 
     this.icmpSocket.on('message', async (buffer: Buffer, ip: string) => {
       const port = this.udpSocket
@@ -71,11 +82,15 @@ export class Traceroute {
     });
   }
 
-  public async execute(): Promise<boolean> {
+  public async execute(): Promise<ReturnType> {
     if (!isIP(this.destinationIp)) {
-      this.destinationIp = (
-        await this.resolver.resolve(this.destinationHostname, 'A')
-      )[0];
+      try {
+        this.destinationIp = (
+          await this.resolver.resolve(this.destinationHostname, 'A')
+        )[0];
+      } catch {
+        // noop
+      }
     }
 
     process.stdout.write(
@@ -84,12 +99,23 @@ export class Traceroute {
 
     if (this.options.protocol === raw.Protocol.UDP) {
       this.udpSocket = dgram.createSocket('udp4');
-      this.udpSocket.bind(() => this.sendPacket());
+      this.udpSocket.on('error', (e) => {
+        this.emitError(e);
+      });
+
+      try {
+        this.udpSocket.bind(() => this.sendPacket());
+      } catch (error: any) {
+        return { reached: false, error: error.stack };
+      }
+      // setImmediate(() => this.sendPacket());
     } else {
       setImmediate(() => this.sendPacket());
     }
 
-    const [{ reached }]: ReturnType[] = await once(this.subject, 'done');
+    const [reached]: ReturnType[] = await once(this.subject, Stop);
+
+    this.abort();
 
     return reached;
   }
@@ -110,8 +136,8 @@ export class Traceroute {
       const [hostname]: string[] = await this.resolver.reverse(ip);
 
       return hostname;
-    } catch (e) {
-      logger.debug(e.message);
+    } catch {
+      // noop
     }
   }
 
@@ -131,7 +157,13 @@ export class Traceroute {
     );
 
     if (this.udpSocket) {
-      this.udpSocket.setTTL(this.ttl);
+      try {
+        this.udpSocket.setTTL(this.ttl);
+      } catch (e) {
+        this.emitError(e as Error);
+
+        return;
+      }
       this.udpSocket.send(
         buffer,
         0,
@@ -158,7 +190,10 @@ export class Traceroute {
 
   private afterSend(error: Error | null) {
     if (error) {
-      throw error;
+      this.emitError(error);
+
+      return;
+      // throw error;
     }
     this.timeout = setTimeout(
       this.handleReply.bind(this),
@@ -199,8 +234,7 @@ export class Traceroute {
       this.ttl >= this.options.maximumHops
     ) {
       process.stdout.write('\n');
-      this.abort();
-      this.subject.emit('done', {
+      this.subject.emit(Stop, {
         reached: this.ttl < this.options.maximumHops
       });
 
@@ -250,5 +284,9 @@ export class Traceroute {
     if (this.timeout) {
       clearTimeout(this.timeout);
     }
+  }
+
+  private emitError(error: Error) {
+    this.subject.emit(Stop, { reached: false, error: error.stack });
   }
 }

@@ -14,9 +14,12 @@ export class TracerouteConnectivity implements Connectivity {
     });
 
     try {
-      const reached = await trace.execute();
+      const { reached, error } = await trace.execute();
 
-      logger.debug('Traceroute test has been finished.');
+      if (error) {
+        logger.debug('Traceroute test has been finished wit error');
+        logger.debug(error);
+      }
 
       return reached;
     } catch (err) {
