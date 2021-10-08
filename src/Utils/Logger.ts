@@ -87,3 +87,5 @@ export class Logger {
       .padEnd(this.MAX_FORMATTED_LEVEL_LENGTH, ' ');
   }
 }
+
+export const logger: Logger = new Logger();

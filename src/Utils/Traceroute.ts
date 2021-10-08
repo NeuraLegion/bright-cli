@@ -1,4 +1,5 @@
 import { Helpers } from './Helpers';
+import { logger } from './Logger';
 import raw from 'raw-socket';
 import dgram from 'dgram';
 import { promises as dns } from 'dns';
@@ -71,6 +72,15 @@ export class Traceroute {
       const port = this.udpSocket
         ? buffer.readUInt16BE(50)
         : buffer.readUInt16BE(buffer.length - 2);
+
+      logger.debug(
+        'Received ICMP %s bytes (message: %s) from %s:%s',
+        buffer.length,
+        buffer.toString('hex'),
+        ip,
+        port
+      );
+
       if (port === this.port) {
         const hostName = await this.getHostName(ip);
         this.handleReply(ip, hostName);
@@ -84,8 +94,12 @@ export class Traceroute {
         this.destinationIp = (
           await this.resolver.resolve(this.destinationHostname, 'A')
         )[0];
-      } catch {
-        // noop
+      } catch (err) {
+        logger.debug(
+          'Cannot resolve the following hostname: %s. Error: %s',
+          this.destinationHostname,
+          err
+        );
       }
     }
 
@@ -126,8 +140,12 @@ export class Traceroute {
       const [hostname]: string[] = await this.resolver.reverse(ip);
 
       return hostname;
-    } catch {
-      // noop
+    } catch (err) {
+      logger.debug(
+        'Cannot reverse the following IP address: %s. Error: %s',
+        ip,
+        err
+      );
     }
   }
 
@@ -186,7 +204,7 @@ export class Traceroute {
     }
 
     this.timeout = setTimeout(
-      this.handleReply.bind(this),
+      () => this.handleReply(),
       this.options.timeoutInMillis
     );
   }
