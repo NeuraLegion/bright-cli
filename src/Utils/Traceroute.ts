@@ -25,7 +25,7 @@ export interface Options {
 }
 
 const defaultOptions: Options = {
-  amountProbes: 1,
+  amountProbes: 3,
   maximumHops: 64,
   timeoutInMillis: 3000,
   reverseLookup: true,
@@ -75,8 +75,7 @@ export class Traceroute {
           : buffer.readUInt16BE(26);
 
       logger.debug(
-        'Received ICMP %s code %s bytes (message: %s) from %s:%s',
-        buffer.readUInt8(20),
+        'Received ICMP %s bytes (message: %s) from %s:%s',
         buffer.length,
         buffer.toString('hex'),
         ip,
