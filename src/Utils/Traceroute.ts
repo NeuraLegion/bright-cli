@@ -69,15 +69,7 @@ export class Traceroute {
     this.icmpSocket.on('error', (e) => this.emitError(e));
 
     this.icmpSocket.on('message', async (buffer: Buffer, ip: string) => {
-      // 20th byte is a echo status code.
-      // 0 - host was reached, got an echo replay and the port apart of replay
-      // Other value means there is a problem (ex. 11 - Timeout) and our source message with the port was attached to replay
-      // In detail look up in https://en.wikipedia.org/wiki/Ping_(networking_utility)
-      // and https://en.wikipedia.org/wiki/Internet_Control_Message_Protocol
-      const port =
-        buffer.readUInt8(20) !== 0
-          ? buffer.readUInt16BE(54)
-          : buffer.readUInt16BE(26);
+      const port = this.parseIdFromIcmpMessage(buffer);
 
       logger.debug(
         'Received ICMP %s bytes (message: %s) from %s:%s',
@@ -200,6 +192,44 @@ export class Traceroute {
         this.afterSend.bind(this)
       );
     }
+  }
+
+  /**
+   * For error type responses the sequence and ID cannot be
+   * extracted, the data part contains the IP header from our request,
+   * followed with at least 8 bytes from the echo request that generated the error.
+   * In detail look up in https://en.wikipedia.org/wiki/Ping_(networking_utility)
+   * and https://en.wikipedia.org/wiki/Internet_Control_Message_Protocol
+   */
+  private parseIdFromIcmpMessage(msg: Buffer): number | undefined {
+    let offset = 20;
+
+    const type = msg.readUInt8(offset);
+
+    if (type === 3 || type === 4 || type === 5 || type === 11) {
+      const icmpIPOffset = offset + 8;
+
+      // IPv4 takes no less 20 bytes in an IP header
+      if (
+        msg.length - icmpIPOffset < 20 ||
+        // eslint-disable-next-line no-bitwise
+        (msg.readUInt8(icmpIPOffset) & 0xf0) !== 0x40
+      ) {
+        return;
+      }
+
+      // eslint-disable-next-line no-bitwise
+      const icmpIPLength = (msg.readUInt8(icmpIPOffset) & 0x0f) * 4;
+
+      // ICMP message too short
+      if (msg.length - icmpIPOffset - icmpIPLength < 8) {
+        return;
+      }
+
+      offset = icmpIPOffset + icmpIPLength;
+    }
+
+    return msg.readUInt16BE(offset + 6);
   }
 
   private afterSend(error: Error | null) {
