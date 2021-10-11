@@ -69,12 +69,14 @@ export class Traceroute {
     this.icmpSocket.on('error', (e) => this.emitError(e));
 
     this.icmpSocket.on('message', async (buffer: Buffer, ip: string) => {
-      const port = this.udpSocket
-        ? buffer.readUInt16BE(50)
-        : buffer.readUInt16BE(26);
+      const port =
+        buffer.readUInt8(20) !== 0
+          ? buffer.readUInt16BE(54)
+          : buffer.readUInt16BE(26);
 
       logger.debug(
-        'Received ICMP %s bytes (message: %s) from %s:%s',
+        'Received ICMP %s code %s bytes (message: %s) from %s:%s',
+        buffer.readUInt8(20),
         buffer.length,
         buffer.toString('hex'),
         ip,
