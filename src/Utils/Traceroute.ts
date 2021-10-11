@@ -25,11 +25,11 @@ export interface Options {
 }
 
 const defaultOptions: Options = {
-  amountProbes: 3,
+  amountProbes: 1,
   maximumHops: 64,
   timeoutInMillis: 3000,
   reverseLookup: true,
-  protocol: raw.Protocol.UDP,
+  protocol: raw.Protocol.ICMP,
   packetSize: 52,
   outStream: process.stdout
 };
@@ -71,7 +71,7 @@ export class Traceroute {
     this.icmpSocket.on('message', async (buffer: Buffer, ip: string) => {
       const port = this.udpSocket
         ? buffer.readUInt16BE(50)
-        : buffer.readUInt16BE(buffer.length - 2);
+        : buffer.readUInt16BE(26);
 
       logger.debug(
         'Received ICMP %s bytes (message: %s) from %s:%s',
