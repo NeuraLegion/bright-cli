@@ -69,6 +69,9 @@ export class Traceroute {
     this.icmpSocket.on('error', (e) => this.emitError(e));
 
     this.icmpSocket.on('message', async (buffer: Buffer, ip: string) => {
+      // 20th byte is a echo status code.
+      // 0 - host was reached, got an echo replay and the port apart of replay
+      // Other value means there is a problem (ex. 11 - Timeout) and our source message with the port was attached to replay
       const port =
         buffer.readUInt8(20) !== 0
           ? buffer.readUInt16BE(54)
