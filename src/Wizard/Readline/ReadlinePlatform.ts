@@ -165,6 +165,14 @@ export class ReadlinePlatform implements Platform {
     console.log(
       `Traceroute to your INTERNAL (local) target application.${EOL}`
     );
+
+    if (process.platform === 'win32') {
+      console.log(
+        `\x1b[33mNote:\x1b[0m Some Windows users might need to allow the ICMP network traffic through a firewall to enable this functionality.
+      For more information, see: \x1b[4mhttps://docs.neuralegion.com/docs/testing-network-connectivity\x1b[0m${EOL}`
+      );
+    }
+
     const target = await this.question(ReadlinePlatform.HOST_OR_IP_QUESTION);
 
     console.log(this.delimiter);
