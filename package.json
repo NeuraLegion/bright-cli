@@ -78,7 +78,7 @@
     "husky": "^7.0.1",
     "is-ci": "^3.0.0",
     "lint-staged": "^11.1.2",
-    "mocha": "^9.0.3",
+    "mocha": "^9.1.2",
     "nodemon": "^2.0.12",
     "nyc": "^15.1.0",
     "pkg": "^5.3.1",
@@ -121,6 +121,7 @@
     "scripts": "dist/**/*.js",
     "assets": [
       "./node_modules/@neuralegion/os-service/build/Release/service.node",
+      "./node_modules/raw-socket/build/Release/raw.node",
       "./node_modules/win-ca/lib/crypt32-ia32.node",
       "./node_modules/win-ca/lib/crypt32-x64.node"
     ],
