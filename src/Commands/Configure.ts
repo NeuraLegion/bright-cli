@@ -53,13 +53,15 @@ export class Configure implements CommandModule {
       .option('max-ttl', {
         number: true,
         requiresArg: true,
-        describe: `Set the max time-to-live (max number of hops) used in outgoing probe packets. The default is net.inet.ip.ttl hops (the same default used for TCP connections).`
+        describe: `Set the max time-to-live (max number of hops) used in outgoing probe packets.`,
+        default: 64
       })
       .option('probes', {
         alias: 'p',
         number: true,
         requiresArg: true,
-        describe: `Set the number of probes per 'ttl' to nqueries (default is one probe).`
+        describe: `Set the number of probes per 'ttl'.`,
+        default: 3
       })
       .group(['max-ttl', 'probes'], 'Traceroute Options')
       .conflicts('ping', 'traceroute')
