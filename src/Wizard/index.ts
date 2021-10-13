@@ -5,3 +5,4 @@ export * from './FSTokens';
 export * from './Platform';
 export * from './TestType';
 export * from './Tokens';
+export * from './Options';

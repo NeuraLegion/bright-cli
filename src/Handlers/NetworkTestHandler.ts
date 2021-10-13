@@ -22,7 +22,7 @@ export class NetworkTestHandler
 
   private async getOutput(urls: string[]): Promise<string> {
     return new Promise((resolve, reject) => {
-      const args = ['configure', '--network-only'];
+      const args = ['configure', '--ping'];
 
       logger.debug('Launching "Network Diagnostic" process with cmd: %j', args);
 
@@ -43,7 +43,7 @@ export class NetworkTestHandler
 
         stdout.push(...lines);
 
-        if (chunk.indexOf(ReadlinePlatform.URL_QUESTION) > -1) {
+        if (chunk.indexOf(ReadlinePlatform.URLS_QUESTION) > -1) {
           child.stdin.write(`${urls.join(',')}${EOL}`);
         }
 
@@ -84,7 +84,7 @@ export class NetworkTestHandler
             (!!arr[index + 1] && arr[index + 1] === '\u001b[1G')
           )
       )
-      .filter((x) => !x.startsWith(ReadlinePlatform.URL_QUESTION))
+      .filter((x) => !x.startsWith(ReadlinePlatform.URLS_QUESTION))
       .join('\n');
   }
 }

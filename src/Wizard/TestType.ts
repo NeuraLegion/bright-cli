@@ -1,5 +1,6 @@
 export enum TestType {
   HTTP = 'http',
   TCP = 'tcp',
-  AUTH = 'auth'
+  AUTH = 'auth',
+  TRACEROUTE = 'traceroute'
 }

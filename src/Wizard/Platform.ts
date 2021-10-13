@@ -1,5 +1,6 @@
 export interface StartOptions {
-  networkTestOnly: boolean;
+  ping: boolean;
+  traceroute: boolean;
 }
 
 export interface Platform {
