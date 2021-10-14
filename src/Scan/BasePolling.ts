@@ -135,7 +135,8 @@ export class BasePolling implements Polling {
           'ETIMEDOUT',
           'ECONNREFUSED',
           'ENOTFOUND',
-          'EAI_AGAIN'
+          'EAI_AGAIN',
+          'ESOCKETTIMEDOUT'
         ].includes((err as RequestError).cause?.code)
     );
   }
