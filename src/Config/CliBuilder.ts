@@ -44,17 +44,19 @@ export class CliBuilder {
         requiresArg: true,
         demandOption: true,
         deprecated: true,
-        describe: 'NexPloit base URL. [default: https://nexploit.app]'
+        describe: 'NexPloit base URL. [default: https://app.neuralegion.com]'
       })
       .option('bus', {
         requiresArg: true,
         demandOption: true,
         deprecated: true,
-        describe: 'NexPloit Event Bus. [default: amqps://amq.nexploit.app:5672]'
+        describe:
+          'NexPloit Event Bus. [default: amqps://amq.app.neuralegion.com:5672]'
       })
       .option('cluster', {
         requiresArg: true,
-        describe: 'NexPloit Cluster (domain name). [default: nexploit.app]'
+        describe:
+          'NexPloit Cluster (domain name). [default: app.neuralegion.com]'
       })
       .option('insecure', {
         boolean: true,

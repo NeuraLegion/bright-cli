@@ -15,7 +15,7 @@
 
 ## 🚀 Quick Start
 Before you can use **NexPloit CLI** make sure you have the following:
-- An active user on [nexploit.app](https://nexploit.app/)
+- An active user on [app.neuralegion.com](https://app.neuralegion.com/)
 - A valid `TOKEN`
   - For the quick start these scopes are required: `bot`, `scans:run` and `scans:read`
   - More info about [setting up an API key](https://kb.neuralegion.com/#/guide/np-web-ui/advanced-set-up/managing-org?id=managing-organization-apicli-authentication-tokens)
@@ -38,7 +38,7 @@ This will show you a list of possible commands for NexPloit CLI, for a full list
 nexploit-cli repeater \
   --token {TOKEN} \
   --id {ID} \
-  --bus amqps://amq.nexploit.app:5672
+  --bus amqps://amq.app.neuralegion.com:5672
 ```
 
 #### 3. Start a new scan with a Crawler
@@ -53,7 +53,7 @@ nexploit-cli scan:run \
 This command will initialize a new scan engine in the cloud, which will start scanning the target via the local [Repeater](https://kb.neuralegion.com/#/guide/introduction/deployment-onprem).
 
 #### 4. Check out the scan results
-You can follow the scan status here: https://nexploit.app/scans, or by using the [NexPloit CLI polling](https://kb.neuralegion.com/#/guide/np-cli/commands/checking-scan-status) command.
+You can follow the scan status here: https://app.neuralegion.com/scans, or by using the [NexPloit CLI polling](https://kb.neuralegion.com/#/guide/np-cli/commands/checking-scan-status) command.
 
 ## 📚 Full Documentation
 **NexPloit CLI** can do so much more! A full documentation with usage examples is available on [NeuraLegion's knowledgebase](https://kb.neuralegion.com)
