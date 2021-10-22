@@ -66,7 +66,7 @@ export class Helpers {
         // noop
       }
 
-      if (host === 'localhost') {
+      if (['localhost', '127.0.0.1'].includes(host)) {
         bus = `amqp://${host}:5672`;
         api = `http://${host}:8000`;
       } else {
@@ -74,8 +74,8 @@ export class Helpers {
         api = `https://${host}`;
       }
     } else {
-      api = (args.api as string) ?? `https://nexploit.app`;
-      bus = (args.bus as string) ?? `amqps://amq.nexploit.app:5672`;
+      api = (args.api as string) ?? `https://app.neuralegion.com`;
+      bus = (args.bus as string) ?? `amqps://amq.app.neuralegion.com:5672`;
     }
 
     return { api, bus };

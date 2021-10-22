@@ -56,8 +56,8 @@ describe('Helpers', () => {
       // act
       const result = Helpers.getClusterUrls(args);
       //assert
-      result.api.should.be.equal('https://nexploit.app');
-      result.bus.should.be.equal('amqps://amq.nexploit.app:5672');
+      result.api.should.be.equal('https://app.neuralegion.com');
+      result.bus.should.be.equal('amqps://amq.app.neuralegion.com:5672');
     });
 
     it('should returns values with --cluster option', () => {
