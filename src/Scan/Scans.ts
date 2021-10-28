@@ -88,7 +88,8 @@ export enum IntegrationType {
   JIRA = 'jira',
   TRELLO = 'trello',
   AZURE = 'azure',
-  MONDAY = 'monday'
+  MONDAY = 'monday',
+  SERVICENOW = 'sevicenow'
 }
 
 export interface Header {
