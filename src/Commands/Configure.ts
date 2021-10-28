@@ -24,12 +24,12 @@ export class Configure implements CommandModule {
       .option(TestType.TCP, {
         hidden: true,
         requiresArg: true,
-        describe: `NeuraLegion Event Bus for connectivity test`
+        describe: `NeuraLegion Event Bus base URL`
       })
       .option(TestType.HTTP, {
         hidden: true,
         requiresArg: true,
-        describe: `NeuraLegion application for connectivity test`
+        describe: `NeuraLegion application base URL`
       })
       .option(TestType.AUTH, {
         hidden: true,
