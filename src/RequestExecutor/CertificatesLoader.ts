@@ -52,7 +52,7 @@ export class CertificatesLoader implements Certificates {
     }
 
     logger.warn(
-      `Error Loading Certificate: Cannot load certificates from the system root. Please use "--cacert" option to specify the accurate path to the file. https://kb.neuralegion.com/#/guide/np-cli/commands/initializing-repeater?id=additional-features`
+      `Error Loading Certificate: Cannot load certificates from the system root. Please use "--cacert" option to specify the accurate path to the file. https://docs.neuralegion.com/docs/initializing-a-repeater#options`
     );
   }
 

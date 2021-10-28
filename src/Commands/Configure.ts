@@ -24,17 +24,17 @@ export class Configure implements CommandModule {
       .option(TestType.TCP, {
         hidden: true,
         requiresArg: true,
-        describe: `NexPloit Event Bus for connectivity test`
+        describe: `NeuraLegion Event Bus for connectivity test`
       })
       .option(TestType.HTTP, {
         hidden: true,
         requiresArg: true,
-        describe: `NexPloit application for connectivity test`
+        describe: `NeuraLegion application for connectivity test`
       })
       .option(TestType.AUTH, {
         hidden: true,
         requiresArg: true,
-        describe: `NexPloit event message authentication endpoint`
+        describe: `NeuraLegion event message authentication endpoint`
       })
       .option('nogui', {
         default: true,
