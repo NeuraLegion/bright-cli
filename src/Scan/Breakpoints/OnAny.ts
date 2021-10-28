@@ -8,7 +8,7 @@ export class OnAny extends Breakpoint {
   }
 
   protected breakOn(): never {
-    throw new BreakpointException(`NexPloit found a first issue.`);
+    throw new BreakpointException(`NeuraLegion found a first issue.`);
   }
 
   protected selectCriterion(

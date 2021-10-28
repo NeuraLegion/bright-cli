@@ -9,7 +9,7 @@ export class OnSeverity extends Breakpoint {
 
   protected breakOn(): never {
     throw new BreakpointException(
-      `NexPloit found a first ${this.severity} issue.`
+      `NeuraLegion found a first ${this.severity} issue.`
     );
   }
 

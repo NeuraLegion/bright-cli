@@ -51,7 +51,7 @@ export class ReadlinePlatform implements Platform {
 
   private async configure(options?: StartOptions): Promise<void> {
     if (!options?.ping) {
-      console.log(`Welcome to the NexPloit Network Testing wizard!${EOL}`);
+      console.log(`Welcome to the NeuraLegion Network Testing wizard!${EOL}`);
 
       console.log(
         'Note: To run the test, you will require a `Repeater ID` and an `Repeater Token` with the correct scopes.'
