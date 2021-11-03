@@ -1,5 +1,5 @@
 import { SocksClient, SocksProxy } from 'socks';
-import { parse } from 'url';
+import { URL } from 'url';
 import { Socket } from 'net';
 import { promisify } from 'util';
 import dns from 'dns';
@@ -20,36 +20,39 @@ export class Proxy {
   }
 
   constructor(url: string) {
-    const { port = 1080, hostname, host, protocol, auth } = parse(url);
-
-    let userId: string | undefined;
-    let password: string | undefined;
-
-    if (auth) {
-      // eslint-disable-next-line @typescript-eslint/typedef
-      [userId, password] = auth.split(':');
-    }
+    const {
+      hostname,
+      protocol,
+      username,
+      password,
+      port = 1080
+    } = new URL(url);
 
     const type: 4 | 5 = this.discovery(protocol);
 
-    this.setOptions(type, userId, password, port, hostname || host);
+    this.setOptions(type, username, password, port, hostname);
   }
 
   public async open(url: string): Promise<Socket> {
-    const { host, hostname, port } = parse(url);
-
-    let address;
+    let { hostname, port }: { hostname: string; port: string | number } =
+      new URL(url);
 
     if (this._lookup) {
-      ({ address } = await lookup(hostname || host));
+      ({ address: hostname } = await lookup(hostname));
+    }
+
+    if (typeof port == 'string') {
+      port = parseInt(port, 10);
+    } else {
+      port = url.startsWith('https:') ? 443 : 80;
     }
 
     const socks = await SocksClient.createConnection({
       proxy: this._options,
       command: 'connect',
       destination: {
-        port: +(port ?? 80),
-        host: address
+        port,
+        host: hostname
       }
     });
 
