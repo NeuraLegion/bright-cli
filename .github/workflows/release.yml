@@ -15,7 +15,7 @@ jobs:
           token: ${{ secrets.GPR_TOKEN }}
       - uses: actions/setup-node@v1
         with:
-          node-version: 12
+          node-version: 14
 
       - run: npm ci -q
       - run: npm run semantic-release
