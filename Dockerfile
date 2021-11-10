@@ -22,7 +22,7 @@ RUN echo "whoami: $(whoami)"
 RUN npm config -g set user $(whoami)
 
 #  add libraries needed to build os-service
-RUN apk add --no-cache --virtual .build-deps make gcc g++ python \
+RUN apk add --no-cache --virtual .build-deps make gcc g++ python3 \
     && npm i -g -q @neuralegion/nexploit-cli@${VERSION} \
     && apk del .build-deps
 
