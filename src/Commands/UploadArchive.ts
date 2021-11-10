@@ -13,13 +13,13 @@ import { Arguments, Argv, CommandModule } from 'yargs';
 
 export class UploadArchive implements CommandModule {
   public readonly command = 'archive:upload [options] <file>';
-  public readonly describe = 'Uploads a archive to NexPloit.';
+  public readonly describe = 'Uploads a archive to NeuraLegion.';
 
   public builder(argv: Argv): Argv {
     return argv
       .option('token', {
         alias: 't',
-        describe: 'NexPloit API-key',
+        describe: 'NeuraLegion API-key',
         requiresArg: true,
         demandOption: true
       })
