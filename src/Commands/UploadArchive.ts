@@ -104,15 +104,18 @@ export class UploadArchive implements CommandModule {
       const parserFactory: ParserFactory = container.resolve(ParserFactory);
       const archives: Archives = container.resolve(Archives);
 
-      const parser = parserFactory.create(
-        Helpers.selectEnumValue(SpecType, args.type as string) as SpecType
-      );
+      const type = Helpers.selectEnumValue(
+        SpecType,
+        args.type as string
+      ) as SpecType;
+
+      const parser = parserFactory.create(type);
 
       const file = await parser.parse(args.file as string);
 
       const spec: Spec = {
         ...file,
-        type: args.type as SpecType,
+        type,
         discard: args.discard as boolean,
         headers: args.header as Record<string, string>,
         variables: args.variable as Record<string, string>
@@ -121,7 +124,7 @@ export class UploadArchive implements CommandModule {
       console.log(await archives.upload(spec));
       process.exit(0);
     } catch (e) {
-      logger.error(`Error during "archive:generate": ${e.message}`);
+      logger.error(`Error during "archive:upload": ${e.message}`);
       process.exit(1);
     }
   }
