@@ -2,8 +2,8 @@ import { RequestExecutor } from './RequestExecutor';
 import { Response } from './Response';
 import { Request } from './Request';
 import { Protocol } from './Protocol';
-import { RequestExecutorOptions } from './HttpRequestExecutor';
 import { logger } from '../Utils';
+import { RequestExecutorOptions } from './RequestExecutorOptions';
 import { inject, injectable } from 'tsyringe';
 import WebSocket from 'ws';
 import { SocksProxyAgent } from 'socks-proxy-agent';
@@ -59,8 +59,7 @@ export class WsRequestExecutor implements RequestExecutor {
 
       const res: IncomingMessage = await this.connect(client);
 
-      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-      // @ts-ignore
+      // @ts-expect-error TS infers a wrong type here
       await promisify(client.send.bind(client))(options.body);
 
       timeout = this.setTimeout(client);
@@ -90,7 +89,7 @@ export class WsRequestExecutor implements RequestExecutor {
         clearTimeout(timeout);
       }
 
-      if (client?.readyState === client.OPEN) {
+      if (client?.readyState === WebSocket.OPEN) {
         client.close(1000);
       }
     }

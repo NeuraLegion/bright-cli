@@ -1,9 +1,10 @@
 import { RequestExecutor } from './RequestExecutor';
 import { Response } from './Response';
-import { Cert, Request, RequestOptions } from './Request';
+import { Request, RequestOptions } from './Request';
 import { logger } from '../Utils';
 import { VirtualScripts } from '../Scripts';
 import { Protocol } from './Protocol';
+import { RequestExecutorOptions } from './RequestExecutorOptions';
 import request from 'request-promise';
 import { Response as IncomingResponse } from 'request';
 import { SocksProxyAgent } from 'socks-proxy-agent';
@@ -16,18 +17,6 @@ import https, { AgentOptions } from 'https';
 type ScriptEntrypoint = (
   options: RequestOptions
 ) => Promise<RequestOptions> | RequestOptions;
-
-export interface RequestExecutorOptions {
-  timeout?: number;
-  proxyUrl?: string;
-  headers?: Record<string, string | string[]>;
-  certs?: Cert[];
-  whitelistMimes?: string[];
-  maxContentLength?: number;
-  reuseConnection?: boolean;
-}
-
-export const RequestExecutorOptions = Symbol('RequestExecutorOptions');
 
 @injectable()
 export class HttpRequestExecutor implements RequestExecutor {
@@ -185,6 +174,8 @@ export class HttpRequestExecutor implements RequestExecutor {
     for await (const chunk of res) {
       chunks.push(chunk);
 
+      // TODO: use a separate variable for the total number of bytes
+      //  currently we concatenate all of the chunks every time which is O(n^2)
       truncated =
         this.options.maxContentLength > -1 &&
         Buffer.concat(chunks).byteLength > options.maxBodySize &&

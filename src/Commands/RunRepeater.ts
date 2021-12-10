@@ -168,7 +168,7 @@ export class RunRepeater implements CommandModule {
                 'application/ld+json',
                 'application/graphql'
               ]
-            } as RequestExecutorOptions
+            }
           })
           .register<RabbitMQBusOptions>(RabbitMQBusOptions, {
             useValue: {
