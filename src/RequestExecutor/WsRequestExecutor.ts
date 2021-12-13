@@ -19,6 +19,11 @@ interface WSMessage {
 
 @injectable()
 export class WsRequestExecutor implements RequestExecutor {
+  public static readonly FORBIDDEN_HEADERS: Set<string> = new Set([
+    'sec-websocket-version',
+    'sec-websocket-key'
+  ]);
+
   private readonly agent?: SocksProxyAgent;
 
   constructor(
@@ -164,18 +169,15 @@ export class WsRequestExecutor implements RequestExecutor {
   ): Record<string, string | string[]> {
     return Object.entries(headers).reduce(
       (
-        common: Record<string, string | string[]>,
+        result: Record<string, string | string[]>,
         [key, value]: [string, string | string[]]
       ) => {
-        if (
-          !['sec-websocket-version', 'sec-websocket-key'].includes(
-            key.trim().toLowerCase()
-          )
-        ) {
-          common[key] = value;
+        const headerName = key.trim().toLowerCase();
+        if (!WsRequestExecutor.FORBIDDEN_HEADERS.has(headerName)) {
+          result[key] = value;
         }
 
-        return common;
+        return result;
       },
       {}
     );
