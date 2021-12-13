@@ -147,8 +147,11 @@ export class WsRequestExecutor implements RequestExecutor {
     matcher: RegExp
   ): Promise<[string]> {
     return new Promise((resolve) => {
-      client.on('message', (data: string) => {
-        !matcher || matcher.test(data) ? resolve([data]) : undefined;
+      client.on('message', (data: WebSocket.Data) => {
+        const dataString = String(data);
+        !matcher || matcher.test(dataString)
+          ? resolve([dataString])
+          : undefined;
       });
     });
   }
