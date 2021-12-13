@@ -112,9 +112,10 @@
   "license": "MIT",
   "lint-staged": {
     "*.ts": [
-      "eslint --fix",
-      "prettier --write",
-      "git add"
+      "eslint --fix"
+    ],
+    "*.{ts,js,json,md}": [
+      "prettier --write"
     ]
   },
   "pkg": {
