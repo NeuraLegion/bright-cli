@@ -1,5 +1,4 @@
 import 'reflect-metadata';
-
 import { Protocol } from './Protocol';
 import { RequestExecutor } from './RequestExecutor';
 import { WsRequestExecutor } from './WsRequestExecutor';
@@ -13,22 +12,21 @@ import { Server } from 'ws';
 should();
 
 describe('WsRequestExecutor', () => {
-  const RequestExecutorOptionsMock = mock<RequestExecutorOptions>();
-  const RequestMock = mock<Request>(Request);
+  const requestMock = mock<Request>(Request);
+
+  let requestExecutorOptions: RequestExecutorOptions;
 
   beforeEach(() => {
     // default options
-    when(RequestExecutorOptionsMock.timeout).thenReturn(2000);
-    when(RequestExecutorOptionsMock.proxyUrl).thenReturn(undefined);
-    when(RequestExecutorOptionsMock.certs).thenReturn(undefined);
+    requestExecutorOptions = { timeout: 2000 };
 
-    when(RequestMock.ca).thenReturn(undefined);
-    when(RequestMock.pfx).thenReturn(undefined);
-    when(RequestMock.passphrase).thenReturn(undefined);
+    when(requestMock.ca).thenReturn(undefined);
+    when(requestMock.pfx).thenReturn(undefined);
+    when(requestMock.passphrase).thenReturn(undefined);
 
     container
       .register(RequestExecutorOptions, {
-        useFactory: () => instance(RequestExecutorOptionsMock)
+        useValue: requestExecutorOptions
       })
       .register(
         RequestExecutor,
@@ -40,8 +38,7 @@ describe('WsRequestExecutor', () => {
   afterEach(() => {
     container.reset();
 
-    reset(RequestExecutorOptionsMock);
-    reset(RequestMock);
+    reset(requestMock);
   });
 
   describe('protocol', () => {
@@ -76,26 +73,26 @@ describe('WsRequestExecutor', () => {
     });
 
     it('should call setCerts on the provided request if there were certificates configured globally', async () => {
-      when(RequestMock.url).thenReturn('wss://foo.bar');
-      when(RequestMock.headers).thenReturn({});
-      const request = instance(RequestMock);
-      when(RequestExecutorOptionsMock.certs).thenReturn([]);
+      when(requestMock.url).thenReturn('wss://foo.bar');
+      when(requestMock.headers).thenReturn({});
+      const request = instance(requestMock);
+      requestExecutorOptions.certs = [];
       const executor = container.resolve<RequestExecutor>(RequestExecutor);
 
       await executor.execute(request);
 
-      verify(RequestMock.setCerts(anything())).once();
+      verify(requestMock.setCerts(anything())).once();
     });
 
     it('should not call setCerts on the provided request if there were no globally configured certificates', async () => {
-      when(RequestMock.url).thenReturn('wss://foo.bar');
-      when(RequestMock.headers).thenReturn({});
-      const request = instance(RequestMock);
+      when(requestMock.url).thenReturn('wss://foo.bar');
+      when(requestMock.headers).thenReturn({});
+      const request = instance(requestMock);
       const executor = container.resolve<RequestExecutor>(RequestExecutor);
 
       await executor.execute(request);
 
-      verify(RequestMock.setCerts(anything())).never();
+      verify(requestMock.setCerts(anything())).never();
     });
 
     it('should send request body to a web-socket server', (done) => {
@@ -121,7 +118,7 @@ describe('WsRequestExecutor', () => {
     });
 
     it('should fail sending request by timeout', async () => {
-      when(RequestExecutorOptionsMock.timeout).thenReturn(1);
+      requestExecutorOptions.timeout = 1;
 
       const url = `ws://localhost:${wsPort}`;
       const request = new Request({ url, headers: {} });

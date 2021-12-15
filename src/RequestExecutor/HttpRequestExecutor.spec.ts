@@ -1,5 +1,4 @@
 import 'reflect-metadata';
-
 import { HttpRequestExecutor } from './HttpRequestExecutor';
 import {
   DefaultVirtualScripts,
@@ -26,29 +25,23 @@ import { container, Lifecycle } from 'tsyringe';
 should();
 
 describe('HttpRequestExecutor', () => {
-  const VirtualScriptsMock = mock<VirtualScripts>(DefaultVirtualScripts);
-  const VirtualScriptMock = mock<VirtualScript>(VirtualScript);
-  const RequestExecutorOptionsMock = mock<RequestExecutorOptions>();
-  const RequestMock = mock<Request>(Request);
+  const virtualScriptsMock = mock<VirtualScripts>(DefaultVirtualScripts);
+  const virtualScriptMock = mock<VirtualScript>(VirtualScript);
+  const requestMock = mock<Request>(Request);
+
+  let requestExecutorOptions: RequestExecutorOptions;
 
   beforeEach(() => {
-    when(VirtualScriptsMock.find(anything())).thenReturn(undefined);
+    when(virtualScriptsMock.find(anything())).thenReturn(undefined);
 
-    // default options
-    when(RequestExecutorOptionsMock.timeout).thenReturn(undefined);
-    when(RequestExecutorOptionsMock.proxyUrl).thenReturn(undefined);
-    when(RequestExecutorOptionsMock.headers).thenReturn(undefined);
-    when(RequestExecutorOptionsMock.certs).thenReturn(undefined);
-    when(RequestExecutorOptionsMock.whitelistMimes).thenReturn(undefined);
-    when(RequestExecutorOptionsMock.maxContentLength).thenReturn(undefined);
-    when(RequestExecutorOptionsMock.reuseConnection).thenReturn(undefined);
+    requestExecutorOptions = {};
 
     container
       .register<VirtualScripts>(VirtualScripts, {
-        useFactory: () => instance(VirtualScriptsMock)
+        useFactory: () => instance(virtualScriptsMock)
       })
       .register(RequestExecutorOptions, {
-        useFactory: () => instance(RequestExecutorOptionsMock)
+        useValue: requestExecutorOptions
       })
       .register(
         RequestExecutor,
@@ -60,10 +53,9 @@ describe('HttpRequestExecutor', () => {
   afterEach(() => {
     container.reset();
 
-    reset(VirtualScriptsMock);
-    reset(VirtualScriptMock);
-    reset(RequestExecutorOptionsMock);
-    reset(RequestMock);
+    reset(virtualScriptsMock);
+    reset(virtualScriptMock);
+    reset(requestMock);
   });
 
   describe('protocol', () => {
@@ -77,72 +69,72 @@ describe('HttpRequestExecutor', () => {
   describe('execute', () => {
     it('should call setHeaders on the provided request if additional headers were configured globally', async () => {
       const testHeaders = { testHeader: 'test-header-value' };
-      when(RequestExecutorOptionsMock.headers).thenReturn(testHeaders);
+      requestExecutorOptions.headers = testHeaders;
 
-      when(RequestMock.setHeaders(anything())).thenReturn(undefined);
-      const request = instance(RequestMock);
+      when(requestMock.setHeaders(anything())).thenReturn(undefined);
+      const request = instance(requestMock);
       const executor = container.resolve<RequestExecutor>(RequestExecutor);
 
       await executor.execute(request);
 
-      verify(RequestMock.setHeaders(testHeaders)).once();
+      verify(requestMock.setHeaders(testHeaders)).once();
     });
 
     it('should not call setHeaders on the provided request if there were no additional headers configured', async () => {
-      const request = instance(RequestMock);
+      const request = instance(requestMock);
       const executor = container.resolve<RequestExecutor>(RequestExecutor);
 
       await executor.execute(request);
 
-      verify(RequestMock.setHeaders(anything())).never();
+      verify(requestMock.setHeaders(anything())).never();
     });
 
     it('should transform the request if there is a suitable vm', async () => {
       const requestOptions = { url: 'https://foo.bar', headers: {} };
       const request = new Request(requestOptions);
-      when(VirtualScriptMock.exec(anyString(), anything())).thenResolve(
+      when(virtualScriptMock.exec(anyString(), anything())).thenResolve(
         requestOptions
       );
-      const vm = instance(VirtualScriptMock);
-      when(VirtualScriptsMock.find('foo.bar')).thenReturn(vm);
+      const vm = instance(virtualScriptMock);
+      when(virtualScriptsMock.find('foo.bar')).thenReturn(vm);
       const executor = container.resolve<RequestExecutor>(RequestExecutor);
 
       await executor.execute(request);
 
-      verify(VirtualScriptMock.exec(anyString(), anything())).once();
+      verify(virtualScriptMock.exec(anyString(), anything())).once();
     });
 
     it('should not transform the request if there is no suitable vm', async () => {
-      when(RequestMock.url).thenReturn('https://foo.bar');
-      when(RequestMock.headers).thenReturn({});
-      when(RequestMock.toJSON()).thenReturn(undefined);
-      const request = instance(RequestMock);
+      when(requestMock.url).thenReturn('https://foo.bar');
+      when(requestMock.headers).thenReturn({});
+      when(requestMock.toJSON()).thenReturn(undefined);
+      const request = instance(requestMock);
       const executor = container.resolve<RequestExecutor>(RequestExecutor);
 
       await executor.execute(request);
 
-      verify(RequestMock.toJSON()).never();
+      verify(requestMock.toJSON()).never();
     });
 
     it('should call setCerts on the provided request if there were certificates configured globally', async () => {
-      when(RequestMock.url).thenReturn('https://foo.bar');
-      const request = instance(RequestMock);
-      when(RequestExecutorOptionsMock.certs).thenReturn([]);
+      when(requestMock.url).thenReturn('https://foo.bar');
+      const request = instance(requestMock);
+      requestExecutorOptions.certs = [];
       const executor = container.resolve<RequestExecutor>(RequestExecutor);
 
       await executor.execute(request);
 
-      verify(RequestMock.setCerts(anything())).once();
+      verify(requestMock.setCerts(anything())).once();
     });
 
     it('should not call setCerts on the provided request if there were no certificates configured', async () => {
-      when(RequestMock.url).thenReturn('https://foo.bar');
-      const request = instance(RequestMock);
+      when(requestMock.url).thenReturn('https://foo.bar');
+      const request = instance(requestMock);
       const executor = container.resolve<RequestExecutor>(RequestExecutor);
 
       await executor.execute(request);
 
-      verify(RequestMock.setCerts(anything())).never();
+      verify(requestMock.setCerts(anything())).never();
     });
 
     it('should perform an external http request', async () => {
