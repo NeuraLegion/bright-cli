@@ -7,8 +7,10 @@ import { RequestExecutorOptions } from './RequestExecutorOptions';
 import { Request } from './Request';
 import { anything, instance, mock, reset, verify, when } from 'ts-mockito';
 import { container, Lifecycle } from 'tsyringe';
-import { expect } from 'chai';
+import { should } from 'chai';
 import { Server } from 'ws';
+
+should();
 
 describe('WsRequestExecutor', () => {
   const RequestExecutorOptionsMock = mock<RequestExecutorOptions>();
@@ -46,7 +48,7 @@ describe('WsRequestExecutor', () => {
     it('should use WS protocol', () => {
       const executor = container.resolve<RequestExecutor>(RequestExecutor);
 
-      expect(executor.protocol).to.equal(Protocol.WS);
+      executor.protocol.should.equal(Protocol.WS);
     });
   });
 
@@ -104,8 +106,8 @@ describe('WsRequestExecutor', () => {
 
       server.on('connection', async (socket) => {
         socket.on('message', (data) => {
-          expect(data).to.be.instanceOf(Buffer);
-          expect(data.toString()).to.equal(body);
+          data.should.be.instanceOf(Buffer);
+          data.toString().should.equal(body);
 
           socket.send('test reply');
 
@@ -127,8 +129,8 @@ describe('WsRequestExecutor', () => {
 
       const response = await executor.execute(request);
 
-      expect(response.message).to.equal('Waiting frame has timed out');
-      expect(response.errorCode).to.equal('ETIMEDOUT');
+      response.message.should.equal('Waiting frame has timed out');
+      response.errorCode.should.equal('ETIMEDOUT');
     });
 
     it('should not allow setting forbidden headers', (done) => {
@@ -141,14 +143,12 @@ describe('WsRequestExecutor', () => {
 
       server.on('connection', (socket, req) => {
         WsRequestExecutor.FORBIDDEN_HEADERS.forEach((headerName) => {
-          expect(req.headers).to.have.ownProperty(headerName);
-          expect(req.headers[headerName]).to.not.equal(
-            'forbidden-header-value'
-          );
+          req.headers.should.have.ownProperty(headerName);
+          req.headers[headerName].should.not.equal('forbidden-header-value');
         });
 
-        expect(req.headers).to.have.ownProperty('test-header');
-        expect(req.headers['test-header']).to.equal('test-header-value');
+        req.headers.should.have.ownProperty('test-header');
+        req.headers['test-header'].should.equal('test-header-value');
 
         socket.on('message', () => {
           socket.send('test reply');
@@ -176,7 +176,7 @@ describe('WsRequestExecutor', () => {
 
       const response = await executor.execute(request);
 
-      expect(response.body).to.equal('test reply');
+      response.body.should.equal('test reply');
     });
   });
 });

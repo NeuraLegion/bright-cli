@@ -66,11 +66,11 @@ describe('HttpRequestExecutor', () => {
     reset(RequestMock);
   });
 
-  describe('get protocol', () => {
+  describe('protocol', () => {
     it('should return HTTP', () => {
       const executor = container.resolve<RequestExecutor>(RequestExecutor);
 
-      expect(executor.protocol).to.eq(Protocol.HTTP);
+      executor.protocol.should.eq(Protocol.HTTP);
     });
   });
 
@@ -142,8 +142,8 @@ describe('HttpRequestExecutor', () => {
 
       const response = await executor.execute(request);
 
-      expect(response.statusCode).to.equal(200);
-      expect(response.body).to.be.a('string').and.to.equal('{}');
+      response.statusCode.should.equal(200);
+      response.body.should.be.a('string').and.to.equal('{}');
     });
 
     it('should handle HTTP errors', async () => {
@@ -155,8 +155,8 @@ describe('HttpRequestExecutor', () => {
 
       const response = await executor.execute(request);
 
-      expect(response.statusCode).to.equal(500);
-      expect(response.body).to.be.a('string').and.to.equal('{}');
+      response.statusCode.should.equal(500);
+      response.body.should.be.a('string').and.to.equal('{}');
     });
 
     it('should handle non-HTTP errors', async () => {
