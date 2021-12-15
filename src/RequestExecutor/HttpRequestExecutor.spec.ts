@@ -112,6 +112,18 @@ describe('HttpRequestExecutor', () => {
       verify(VirtualScriptMock.exec(anyString(), anything())).once();
     });
 
+    it('should not transform the request if there is no suitable vm', async () => {
+      when(RequestMock.url).thenReturn('https://foo.bar');
+      when(RequestMock.headers).thenReturn({});
+      when(RequestMock.toJSON()).thenReturn(undefined);
+      const request = instance(RequestMock);
+      const executor = container.resolve<RequestExecutor>(RequestExecutor);
+
+      await executor.execute(request);
+
+      verify(RequestMock.toJSON()).never();
+    });
+
     it('should call setCerts on the provided request if there were certificates configured globally', async () => {
       when(RequestMock.url).thenReturn('https://foo.bar');
       const request = instance(RequestMock);
