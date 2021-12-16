@@ -19,7 +19,7 @@ interface WSMessage {
 
 @injectable()
 export class WsRequestExecutor implements RequestExecutor {
-  public static readonly FORBIDDEN_HEADERS: Set<string> = new Set([
+  public static readonly FORBIDDEN_HEADERS: ReadonlySet<string> = new Set([
     'sec-websocket-version',
     'sec-websocket-key'
   ]);

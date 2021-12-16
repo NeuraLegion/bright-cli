@@ -1,4 +1,5 @@
 import 'reflect-metadata';
+import 'chai/register-should';
 import { HttpRequestExecutor } from './HttpRequestExecutor';
 import {
   DefaultVirtualScripts,
@@ -9,7 +10,7 @@ import { Protocol } from './Protocol';
 import { RequestExecutor } from './RequestExecutor';
 import { Request } from './Request';
 import { RequestExecutorOptions } from './RequestExecutorOptions';
-import { expect, should } from 'chai';
+import { expect } from 'chai';
 import nock from 'nock';
 import {
   anyString,
@@ -21,8 +22,6 @@ import {
   when
 } from 'ts-mockito';
 import { container, Lifecycle } from 'tsyringe';
-
-should();
 
 describe('HttpRequestExecutor', () => {
   const virtualScriptsMock = mock<VirtualScripts>(DefaultVirtualScripts);
@@ -53,9 +52,7 @@ describe('HttpRequestExecutor', () => {
   afterEach(() => {
     container.reset();
 
-    reset(virtualScriptsMock);
-    reset(virtualScriptMock);
-    reset(requestMock);
+    reset<unknown>(virtualScriptsMock, virtualScriptMock, requestMock);
   });
 
   describe('protocol', () => {

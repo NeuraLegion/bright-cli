@@ -1,4 +1,5 @@
 import 'reflect-metadata';
+import 'chai/register-should';
 import { Protocol } from './Protocol';
 import { RequestExecutor } from './RequestExecutor';
 import { WsRequestExecutor } from './WsRequestExecutor';
@@ -6,10 +7,8 @@ import { RequestExecutorOptions } from './RequestExecutorOptions';
 import { Request } from './Request';
 import { anything, instance, mock, reset, verify, when } from 'ts-mockito';
 import { container, Lifecycle } from 'tsyringe';
-import { should } from 'chai';
 import { Server } from 'ws';
-
-should();
+import { once } from 'events';
 
 describe('WsRequestExecutor', () => {
   const requestMock = mock<Request>(Request);
@@ -26,7 +25,7 @@ describe('WsRequestExecutor', () => {
 
     container
       .register(RequestExecutorOptions, {
-        useValue: requestExecutorOptions
+        useFactory: () => requestExecutorOptions
       })
       .register(
         RequestExecutor,
@@ -53,18 +52,16 @@ describe('WsRequestExecutor', () => {
     let server: Server;
     let wsPort: number;
 
-    beforeEach((done) => {
+    beforeEach(async () => {
       server = new Server({ port: 0 });
-      server.on('listening', () => {
-        const address = server.address();
-        if (typeof address === 'string') {
-          return done(new Error('Unsupported server address type'));
-        }
+      await once(server, 'listening');
 
-        wsPort = address.port;
+      const address = server.address();
+      if (typeof address === 'string') {
+        throw new Error('Unsupported server address type');
+      }
 
-        done();
-      });
+      wsPort = address.port;
     });
 
     afterEach((done) => {
@@ -76,7 +73,7 @@ describe('WsRequestExecutor', () => {
       when(requestMock.url).thenReturn('wss://foo.bar');
       when(requestMock.headers).thenReturn({});
       const request = instance(requestMock);
-      requestExecutorOptions.certs = [];
+      requestExecutorOptions = { timeout: 2000, certs: [] };
       const executor = container.resolve<RequestExecutor>(RequestExecutor);
 
       await executor.execute(request);
@@ -118,7 +115,7 @@ describe('WsRequestExecutor', () => {
     });
 
     it('should fail sending request by timeout', async () => {
-      requestExecutorOptions.timeout = 1;
+      requestExecutorOptions = { timeout: 1 };
 
       const url = `ws://localhost:${wsPort}`;
       const request = new Request({ url, headers: {} });
@@ -126,8 +123,14 @@ describe('WsRequestExecutor', () => {
 
       const response = await executor.execute(request);
 
-      response.message.should.equal('Waiting frame has timed out');
-      response.errorCode.should.equal('ETIMEDOUT');
+      response.should.deep.equal({
+        body: undefined,
+        errorCode: 'ETIMEDOUT',
+        headers: undefined,
+        message: 'Waiting frame has timed out',
+        protocol: 'ws',
+        statusCode: undefined
+      });
     });
 
     it('should not allow setting forbidden headers', (done) => {
