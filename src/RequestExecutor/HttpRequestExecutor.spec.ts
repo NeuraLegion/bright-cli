@@ -4,11 +4,12 @@ import { HttpRequestExecutor } from './HttpRequestExecutor';
 import {
   DefaultVirtualScripts,
   VirtualScript,
-  VirtualScripts
+  VirtualScripts,
+  VirtualScriptType
 } from '../Scripts';
 import { Protocol } from './Protocol';
 import { RequestExecutor } from './RequestExecutor';
-import { Request } from './Request';
+import { Request, RequestOptions } from './Request';
 import { RequestExecutorOptions } from './RequestExecutorOptions';
 import { expect } from 'chai';
 import nock from 'nock';
@@ -18,21 +19,28 @@ import {
   instance,
   mock,
   reset,
+  spy,
   verify,
   when
 } from 'ts-mockito';
 import { container, Lifecycle } from 'tsyringe';
+import { URL } from 'url';
 
 describe('HttpRequestExecutor', () => {
+  const createRequest = (options?: Partial<RequestOptions>) => {
+    const requestOptions = { url: 'https://foo.bar', headers: {}, ...options };
+    const request = new Request(requestOptions);
+    const spiedRequest = spy(request);
+    when(spiedRequest.method).thenReturn('GET');
+
+    return { requestOptions, request, spiedRequest };
+  };
+
   const virtualScriptsMock = mock<VirtualScripts>(DefaultVirtualScripts);
-  const virtualScriptMock = mock<VirtualScript>(VirtualScript);
-  const requestMock = mock<Request>(Request);
 
   let requestExecutorOptions: RequestExecutorOptions;
 
   beforeEach(() => {
-    when(virtualScriptsMock.find(anything())).thenReturn(undefined);
-
     requestExecutorOptions = {};
 
     container
@@ -40,7 +48,7 @@ describe('HttpRequestExecutor', () => {
         useFactory: () => instance(virtualScriptsMock)
       })
       .register(RequestExecutorOptions, {
-        useValue: requestExecutorOptions
+        useFactory: () => requestExecutorOptions
       })
       .register(
         RequestExecutor,
@@ -52,7 +60,7 @@ describe('HttpRequestExecutor', () => {
   afterEach(() => {
     container.reset();
 
-    reset<unknown>(virtualScriptsMock, virtualScriptMock, requestMock);
+    reset(virtualScriptsMock);
   });
 
   describe('protocol', () => {
@@ -65,80 +73,76 @@ describe('HttpRequestExecutor', () => {
 
   describe('execute', () => {
     it('should call setHeaders on the provided request if additional headers were configured globally', async () => {
-      const testHeaders = { testHeader: 'test-header-value' };
-      requestExecutorOptions.headers = testHeaders;
-
-      when(requestMock.setHeaders(anything())).thenReturn(undefined);
-      const request = instance(requestMock);
+      const headers = { testHeader: 'test-header-value' };
+      requestExecutorOptions = { headers };
       const executor = container.resolve<RequestExecutor>(RequestExecutor);
+      const { request, spiedRequest } = createRequest();
 
       await executor.execute(request);
 
-      verify(requestMock.setHeaders(testHeaders)).once();
+      verify(spiedRequest.setHeaders(headers)).once();
     });
 
     it('should not call setHeaders on the provided request if there were no additional headers configured', async () => {
-      const request = instance(requestMock);
       const executor = container.resolve<RequestExecutor>(RequestExecutor);
+      const { request, spiedRequest } = createRequest();
 
       await executor.execute(request);
 
-      verify(requestMock.setHeaders(anything())).never();
+      verify(spiedRequest.setHeaders(anything())).never();
     });
 
     it('should transform the request if there is a suitable vm', async () => {
-      const requestOptions = { url: 'https://foo.bar', headers: {} };
-      const request = new Request(requestOptions);
-      when(virtualScriptMock.exec(anyString(), anything())).thenResolve(
+      const { request, requestOptions } = createRequest();
+      const { hostname: virtualScriptId } = new URL(requestOptions.url);
+      const virtualScript = new VirtualScript(
+        virtualScriptId,
+        VirtualScriptType.LOCAL,
+        'console.log("test code");'
+      );
+      const spiedVirtualScript = spy(virtualScript);
+      when(spiedVirtualScript.exec(anyString(), anything())).thenResolve(
         requestOptions
       );
-      const vm = instance(virtualScriptMock);
-      when(virtualScriptsMock.find('foo.bar')).thenReturn(vm);
+      when(virtualScriptsMock.find(virtualScriptId)).thenReturn(virtualScript);
       const executor = container.resolve<RequestExecutor>(RequestExecutor);
 
       await executor.execute(request);
 
-      verify(virtualScriptMock.exec(anyString(), anything())).once();
+      verify(spiedVirtualScript.exec(anyString(), anything())).once();
     });
 
     it('should not transform the request if there is no suitable vm', async () => {
-      when(requestMock.url).thenReturn('https://foo.bar');
-      when(requestMock.headers).thenReturn({});
-      when(requestMock.toJSON()).thenReturn(undefined);
-      const request = instance(requestMock);
+      const { request, spiedRequest } = createRequest();
       const executor = container.resolve<RequestExecutor>(RequestExecutor);
 
       await executor.execute(request);
 
-      verify(requestMock.toJSON()).never();
+      verify(spiedRequest.toJSON()).never();
     });
 
     it('should call setCerts on the provided request if there were certificates configured globally', async () => {
-      when(requestMock.url).thenReturn('https://foo.bar');
-      const request = instance(requestMock);
-      requestExecutorOptions.certs = [];
+      requestExecutorOptions = { certs: [] };
       const executor = container.resolve<RequestExecutor>(RequestExecutor);
+      const { request, spiedRequest } = createRequest();
 
       await executor.execute(request);
 
-      verify(requestMock.setCerts(anything())).once();
+      verify(spiedRequest.setCerts(anything())).once();
     });
 
     it('should not call setCerts on the provided request if there were no certificates configured', async () => {
-      when(requestMock.url).thenReturn('https://foo.bar');
-      const request = instance(requestMock);
+      const { request, spiedRequest } = createRequest();
       const executor = container.resolve<RequestExecutor>(RequestExecutor);
 
       await executor.execute(request);
 
-      verify(requestMock.setCerts(anything())).never();
+      verify(spiedRequest.setCerts(anything())).never();
     });
 
     it('should perform an external http request', async () => {
-      const url = 'https://foo.bar';
-      nock(url).get('/').reply(200, {});
-
-      const request = new Request({ url, headers: {} });
+      const { request, requestOptions } = createRequest();
+      nock(requestOptions.url).get('/').reply(200, {});
       const executor = container.resolve<RequestExecutor>(RequestExecutor);
 
       const response = await executor.execute(request);
@@ -148,10 +152,8 @@ describe('HttpRequestExecutor', () => {
     });
 
     it('should handle HTTP errors', async () => {
-      const url = 'https://foo.bar';
-      nock(url).get('/').reply(500, {});
-
-      const request = new Request({ url, headers: {} });
+      const { request, requestOptions } = createRequest();
+      nock(requestOptions.url).get('/').reply(500, {});
       const executor = container.resolve<RequestExecutor>(RequestExecutor);
 
       const response = await executor.execute(request);
@@ -161,8 +163,7 @@ describe('HttpRequestExecutor', () => {
     });
 
     it('should handle non-HTTP errors', async () => {
-      const url = 'https://foo.bar';
-      const request = new Request({ url, headers: {} });
+      const { request } = createRequest();
       const executor = container.resolve<RequestExecutor>(RequestExecutor);
 
       const response = await executor.execute(request);

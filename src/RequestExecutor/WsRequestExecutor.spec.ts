@@ -5,23 +5,16 @@ import { RequestExecutor } from './RequestExecutor';
 import { WsRequestExecutor } from './WsRequestExecutor';
 import { RequestExecutorOptions } from './RequestExecutorOptions';
 import { Request } from './Request';
-import { anything, instance, mock, reset, verify, when } from 'ts-mockito';
+import { anything, spy, verify } from 'ts-mockito';
 import { container, Lifecycle } from 'tsyringe';
 import { Server } from 'ws';
 import { once } from 'events';
 
 describe('WsRequestExecutor', () => {
-  const requestMock = mock<Request>(Request);
-
   let requestExecutorOptions: RequestExecutorOptions;
 
   beforeEach(() => {
-    // default options
     requestExecutorOptions = { timeout: 2000 };
-
-    when(requestMock.ca).thenReturn(undefined);
-    when(requestMock.pfx).thenReturn(undefined);
-    when(requestMock.passphrase).thenReturn(undefined);
 
     container
       .register(RequestExecutorOptions, {
@@ -36,8 +29,6 @@ describe('WsRequestExecutor', () => {
 
   afterEach(() => {
     container.reset();
-
-    reset(requestMock);
   });
 
   describe('protocol', () => {
@@ -70,26 +61,24 @@ describe('WsRequestExecutor', () => {
     });
 
     it('should call setCerts on the provided request if there were certificates configured globally', async () => {
-      when(requestMock.url).thenReturn('wss://foo.bar');
-      when(requestMock.headers).thenReturn({});
-      const request = instance(requestMock);
+      const request = new Request({ url: 'wss://foo.bar', headers: {} });
+      const spiedRequest = spy(request);
       requestExecutorOptions = { timeout: 2000, certs: [] };
       const executor = container.resolve<RequestExecutor>(RequestExecutor);
 
       await executor.execute(request);
 
-      verify(requestMock.setCerts(anything())).once();
+      verify(spiedRequest.setCerts(anything())).once();
     });
 
     it('should not call setCerts on the provided request if there were no globally configured certificates', async () => {
-      when(requestMock.url).thenReturn('wss://foo.bar');
-      when(requestMock.headers).thenReturn({});
-      const request = instance(requestMock);
+      const request = new Request({ url: 'wss://foo.bar', headers: {} });
+      const spiedRequest = spy(request);
       const executor = container.resolve<RequestExecutor>(RequestExecutor);
 
       await executor.execute(request);
 
-      verify(requestMock.setCerts(anything())).never();
+      verify(spiedRequest.setCerts(anything())).never();
     });
 
     it('should send request body to a web-socket server', (done) => {
