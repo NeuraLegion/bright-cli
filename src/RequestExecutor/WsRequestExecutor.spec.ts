@@ -1,42 +1,27 @@
 import 'reflect-metadata';
 import 'chai/register-should';
 import { Protocol } from './Protocol';
-import { RequestExecutor } from './RequestExecutor';
 import { WsRequestExecutor } from './WsRequestExecutor';
 import { RequestExecutorOptions } from './RequestExecutorOptions';
 import { Request } from './Request';
-import { anything, spy, verify } from 'ts-mockito';
-import { container, Lifecycle } from 'tsyringe';
+import { anything, reset, spy, verify, when } from 'ts-mockito';
 import { Server } from 'ws';
 import { once } from 'events';
 
 describe('WsRequestExecutor', () => {
-  let requestExecutorOptions: RequestExecutorOptions;
+  const executorOptions: RequestExecutorOptions = { timeout: 2000 };
+  const spiedExecutorOptions = spy<RequestExecutorOptions>(executorOptions);
+
+  let sut!: WsRequestExecutor;
 
   beforeEach(() => {
-    requestExecutorOptions = { timeout: 2000 };
-
-    container
-      .register(RequestExecutorOptions, {
-        useFactory: () => requestExecutorOptions
-      })
-      .register(
-        RequestExecutor,
-        { useClass: WsRequestExecutor },
-        { lifecycle: Lifecycle.Singleton }
-      );
+    sut = new WsRequestExecutor(executorOptions);
   });
 
-  afterEach(() => {
-    container.reset();
-  });
+  afterEach(() => reset<RequestExecutorOptions>(spiedExecutorOptions));
 
   describe('protocol', () => {
-    it('should use WS protocol', () => {
-      const executor = container.resolve<RequestExecutor>(RequestExecutor);
-
-      executor.protocol.should.equal(Protocol.WS);
-    });
+    it('should use WS protocol', () => sut.protocol.should.equal(Protocol.WS));
   });
 
   describe('execute', () => {
@@ -63,10 +48,10 @@ describe('WsRequestExecutor', () => {
     it('should call setCerts on the provided request if there were certificates configured globally', async () => {
       const request = new Request({ url: 'wss://foo.bar', headers: {} });
       const spiedRequest = spy(request);
-      requestExecutorOptions = { timeout: 2000, certs: [] };
-      const executor = container.resolve<RequestExecutor>(RequestExecutor);
+      when(spiedExecutorOptions.timeout).thenReturn(2000);
+      when(spiedExecutorOptions.certs).thenReturn([]);
 
-      await executor.execute(request);
+      await sut.execute(request);
 
       verify(spiedRequest.setCerts(anything())).once();
     });
@@ -74,9 +59,8 @@ describe('WsRequestExecutor', () => {
     it('should not call setCerts on the provided request if there were no globally configured certificates', async () => {
       const request = new Request({ url: 'wss://foo.bar', headers: {} });
       const spiedRequest = spy(request);
-      const executor = container.resolve<RequestExecutor>(RequestExecutor);
 
-      await executor.execute(request);
+      await sut.execute(request);
 
       verify(spiedRequest.setCerts(anything())).never();
     });
@@ -98,19 +82,16 @@ describe('WsRequestExecutor', () => {
         });
       });
 
-      const executor = container.resolve<RequestExecutor>(RequestExecutor);
-
-      executor.execute(request);
+      sut.execute(request);
     });
 
     it('should fail sending request by timeout', async () => {
-      requestExecutorOptions = { timeout: 1 };
+      when(spiedExecutorOptions.timeout).thenReturn(1);
 
       const url = `ws://localhost:${wsPort}`;
       const request = new Request({ url, headers: {} });
-      const executor = container.resolve<RequestExecutor>(RequestExecutor);
 
-      const response = await executor.execute(request);
+      const response = await sut.execute(request);
 
       response.should.deep.equal({
         body: undefined,
@@ -146,9 +127,7 @@ describe('WsRequestExecutor', () => {
         done();
       });
 
-      const executor = container.resolve<RequestExecutor>(RequestExecutor);
-
-      executor.execute(request);
+      sut.execute(request);
     });
 
     it('should get the response from server', async () => {
@@ -161,9 +140,7 @@ describe('WsRequestExecutor', () => {
         });
       });
 
-      const executor = container.resolve<RequestExecutor>(RequestExecutor);
-
-      const response = await executor.execute(request);
+      const response = await sut.execute(request);
 
       response.body.should.equal('test reply');
     });
