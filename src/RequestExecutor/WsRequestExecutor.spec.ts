@@ -12,16 +12,18 @@ describe('WsRequestExecutor', () => {
   const executorOptions: RequestExecutorOptions = { timeout: 2000 };
   const spiedExecutorOptions = spy<RequestExecutorOptions>(executorOptions);
 
-  let sut!: WsRequestExecutor;
+  // TODO: discuss renaming such kind of variables to `SUT` or `UUT`
+  let executor!: WsRequestExecutor;
 
   beforeEach(() => {
-    sut = new WsRequestExecutor(executorOptions);
+    executor = new WsRequestExecutor(executorOptions);
   });
 
   afterEach(() => reset<RequestExecutorOptions>(spiedExecutorOptions));
 
   describe('protocol', () => {
-    it('should use WS protocol', () => sut.protocol.should.equal(Protocol.WS));
+    it('should use WS protocol', () =>
+      executor.protocol.should.equal(Protocol.WS));
   });
 
   describe('execute', () => {
@@ -51,7 +53,7 @@ describe('WsRequestExecutor', () => {
       when(spiedExecutorOptions.timeout).thenReturn(2000);
       when(spiedExecutorOptions.certs).thenReturn([]);
 
-      await sut.execute(request);
+      await executor.execute(request);
 
       verify(spiedRequest.setCerts(anything())).once();
     });
@@ -60,7 +62,7 @@ describe('WsRequestExecutor', () => {
       const request = new Request({ url: 'wss://foo.bar', headers: {} });
       const spiedRequest = spy(request);
 
-      await sut.execute(request);
+      await executor.execute(request);
 
       verify(spiedRequest.setCerts(anything())).never();
     });
@@ -82,7 +84,7 @@ describe('WsRequestExecutor', () => {
         });
       });
 
-      sut.execute(request);
+      executor.execute(request);
     });
 
     it('should fail sending request by timeout', async () => {
@@ -91,7 +93,7 @@ describe('WsRequestExecutor', () => {
       const url = `ws://localhost:${wsPort}`;
       const request = new Request({ url, headers: {} });
 
-      const response = await sut.execute(request);
+      const response = await executor.execute(request);
 
       response.should.deep.equal({
         body: undefined,
@@ -127,7 +129,7 @@ describe('WsRequestExecutor', () => {
         done();
       });
 
-      sut.execute(request);
+      executor.execute(request);
     });
 
     it('should get the response from server', async () => {
@@ -140,7 +142,7 @@ describe('WsRequestExecutor', () => {
         });
       });
 
-      const response = await sut.execute(request);
+      const response = await executor.execute(request);
 
       response.body.should.equal('test reply');
     });

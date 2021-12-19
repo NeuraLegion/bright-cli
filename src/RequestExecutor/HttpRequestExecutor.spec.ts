@@ -32,10 +32,10 @@ describe('HttpRequestExecutor', () => {
   const executorOptions: RequestExecutorOptions = {};
   const spiedExecutorOptions = spy(executorOptions);
 
-  let sut!: HttpRequestExecutor;
+  let executor!: HttpRequestExecutor;
 
   beforeEach(() => {
-    sut = new HttpRequestExecutor(
+    executor = new HttpRequestExecutor(
       instance(virtualScriptsMock),
       executorOptions
     );
@@ -49,7 +49,7 @@ describe('HttpRequestExecutor', () => {
   );
 
   describe('protocol', () => {
-    it('should return HTTP', () => sut.protocol.should.eq(Protocol.HTTP));
+    it('should return HTTP', () => executor.protocol.should.eq(Protocol.HTTP));
   });
 
   describe('execute', () => {
@@ -58,7 +58,7 @@ describe('HttpRequestExecutor', () => {
       when(spiedExecutorOptions.headers).thenReturn(headers);
       const { request, spiedRequest } = createRequest();
 
-      await sut.execute(request);
+      await executor.execute(request);
 
       verify(spiedRequest.setHeaders(headers)).once();
     });
@@ -66,7 +66,7 @@ describe('HttpRequestExecutor', () => {
     it('should not call setHeaders on the provided request if there were no additional headers configured', async () => {
       const { request, spiedRequest } = createRequest();
 
-      await sut.execute(request);
+      await executor.execute(request);
 
       verify(spiedRequest.setHeaders(anything())).never();
     });
@@ -85,7 +85,7 @@ describe('HttpRequestExecutor', () => {
       );
       when(virtualScriptsMock.find(virtualScriptId)).thenReturn(virtualScript);
 
-      await sut.execute(request);
+      await executor.execute(request);
 
       verify(spiedVirtualScript.exec(anyString(), anything())).once();
     });
@@ -93,7 +93,7 @@ describe('HttpRequestExecutor', () => {
     it('should not transform the request if there is no suitable vm', async () => {
       const { request, spiedRequest } = createRequest();
 
-      await sut.execute(request);
+      await executor.execute(request);
 
       verify(spiedRequest.toJSON()).never();
     });
@@ -102,7 +102,7 @@ describe('HttpRequestExecutor', () => {
       when(spiedExecutorOptions.certs).thenReturn([]);
       const { request, spiedRequest } = createRequest();
 
-      await sut.execute(request);
+      await executor.execute(request);
 
       verify(spiedRequest.setCerts(anything())).once();
     });
@@ -110,7 +110,7 @@ describe('HttpRequestExecutor', () => {
     it('should not call setCerts on the provided request if there were no certificates configured', async () => {
       const { request, spiedRequest } = createRequest();
 
-      await sut.execute(request);
+      await executor.execute(request);
 
       verify(spiedRequest.setCerts(anything())).never();
     });
@@ -119,7 +119,7 @@ describe('HttpRequestExecutor', () => {
       const { request, requestOptions } = createRequest();
       nock(requestOptions.url).get('/').reply(200, {});
 
-      const response = await sut.execute(request);
+      const response = await executor.execute(request);
 
       response.statusCode.should.equal(200);
       response.body.should.be.a('string').and.to.equal('{}');
@@ -129,7 +129,7 @@ describe('HttpRequestExecutor', () => {
       const { request, requestOptions } = createRequest();
       nock(requestOptions.url).get('/').reply(500, {});
 
-      const response = await sut.execute(request);
+      const response = await executor.execute(request);
 
       response.statusCode.should.equal(500);
       response.body.should.be.a('string').and.to.equal('{}');
@@ -138,7 +138,7 @@ describe('HttpRequestExecutor', () => {
     it('should handle non-HTTP errors', async () => {
       const { request } = createRequest();
 
-      const response = await sut.execute(request);
+      const response = await executor.execute(request);
 
       (typeof response.statusCode).should.equal('undefined');
     });
