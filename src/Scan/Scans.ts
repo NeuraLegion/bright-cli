@@ -47,7 +47,6 @@ export enum TestType {
   SSTI = 'ssti',
   UNVALIDATED_REDIRECT = 'unvalidated_redirect',
   VERSION_CONTROL_SYSTEMS = 'version_control_systems',
-  WEBDAV = 'webdav',
   WORDPRESS = 'wordpress',
   XPATHI = 'xpathi',
   XSS = 'xss',
