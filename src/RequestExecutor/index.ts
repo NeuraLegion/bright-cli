@@ -1,4 +1,5 @@
 export * from './RequestExecutor';
+export * from './RequestExecutorOptions';
 export * from './HttpRequestExecutor';
 export * from './WsRequestExecutor';
 export * from './Response';

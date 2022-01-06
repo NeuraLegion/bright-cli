@@ -2,8 +2,8 @@ import { RequestExecutor } from './RequestExecutor';
 import { Response } from './Response';
 import { Request } from './Request';
 import { Protocol } from './Protocol';
-import { RequestExecutorOptions } from './HttpRequestExecutor';
 import { logger } from '../Utils';
+import { RequestExecutorOptions } from './RequestExecutorOptions';
 import { inject, injectable } from 'tsyringe';
 import WebSocket from 'ws';
 import { SocksProxyAgent } from 'socks-proxy-agent';
@@ -19,6 +19,11 @@ interface WSMessage {
 
 @injectable()
 export class WsRequestExecutor implements RequestExecutor {
+  public static readonly FORBIDDEN_HEADERS: ReadonlySet<string> = new Set([
+    'sec-websocket-version',
+    'sec-websocket-key'
+  ]);
+
   private readonly agent?: SocksProxyAgent;
 
   constructor(
@@ -59,8 +64,7 @@ export class WsRequestExecutor implements RequestExecutor {
 
       const res: IncomingMessage = await this.connect(client);
 
-      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-      // @ts-ignore
+      // @ts-expect-error TS infers a wrong type here
       await promisify(client.send.bind(client))(options.body);
 
       timeout = this.setTimeout(client);
@@ -90,7 +94,7 @@ export class WsRequestExecutor implements RequestExecutor {
         clearTimeout(timeout);
       }
 
-      if (client?.readyState === client.OPEN) {
+      if (client?.readyState === WebSocket.OPEN) {
         client.close(1000);
       }
     }
@@ -143,8 +147,11 @@ export class WsRequestExecutor implements RequestExecutor {
     matcher: RegExp
   ): Promise<[string]> {
     return new Promise((resolve) => {
-      client.on('message', (data: string) => {
-        !matcher || matcher.test(data) ? resolve([data]) : undefined;
+      client.on('message', (data: WebSocket.Data) => {
+        const dataString = String(data);
+        !matcher || matcher.test(dataString)
+          ? resolve([dataString])
+          : undefined;
       });
     });
   }
@@ -165,18 +172,15 @@ export class WsRequestExecutor implements RequestExecutor {
   ): Record<string, string | string[]> {
     return Object.entries(headers).reduce(
       (
-        common: Record<string, string | string[]>,
+        result: Record<string, string | string[]>,
         [key, value]: [string, string | string[]]
       ) => {
-        if (
-          !['sec-websocket-version', 'sec-websocket-key'].includes(
-            key.trim().toLowerCase()
-          )
-        ) {
-          common[key] = value;
+        const headerName = key.trim().toLowerCase();
+        if (!WsRequestExecutor.FORBIDDEN_HEADERS.has(headerName)) {
+          result[key] = value;
         }
 
-        return common;
+        return result;
       },
       {}
     );
