@@ -189,7 +189,7 @@ export class HttpRequestExecutor implements RequestExecutor {
     options.requiresTruncating;
     if (truncated) {
       logger.debug(
-        'Truncate original response to : %j bytes',
+        'Truncate original response body to %i bytes',
         options.maxBodySize
       );
 
