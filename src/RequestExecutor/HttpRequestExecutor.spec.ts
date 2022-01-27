@@ -144,6 +144,7 @@ describe('HttpRequestExecutor', () => {
     });
 
     it('should not truncate response body if it is in whitelisted mime types', async () => {
+      when(spiedExecutorOptions.maxContentLength).thenReturn(100);
       const { request, requestOptions } = createRequest();
       const bigBody = 'Too big body'.repeat(10000);
       nock(requestOptions.url).get('/').reply(200, bigBody, {
