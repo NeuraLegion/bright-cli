@@ -143,7 +143,7 @@ describe('HttpRequestExecutor', () => {
       (typeof response.statusCode).should.equal('undefined');
     });
 
-    it('do not truncate whitelisted mime types', async () => {
+    it('should not truncate response body if it is whitelisted mime types', async () => {
       const { request, requestOptions } = createRequest();
       const big_body = 'I will always cover my code with unit tests'.repeat(
         10000
