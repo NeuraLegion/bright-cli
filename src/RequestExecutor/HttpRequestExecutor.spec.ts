@@ -143,17 +143,17 @@ describe('HttpRequestExecutor', () => {
       (typeof response.statusCode).should.equal('undefined');
     });
 
-    it('should not truncate response body if it is whitelisted mime types', async () => {
+    it('should not truncate response body if it is in whitelisted mime types', async () => {
       const { request, requestOptions } = createRequest();
       const bigBody = 'Too big body'.repeat(10000);
-      nock(requestOptions.url).get('/').reply(200, big_body, {
-        'content-type': 'applicatin/x-javascript'
+      nock(requestOptions.url).get('/').reply(200, bigBody, {
+        'content-type': 'application/x-javascript'
       });
 
       const response = await executor.execute(request);
 
       response.statusCode.should.equal(200);
-      response.body.should.be.a('string').and.to.equal(big_body);
+      response.body.should.be.a('string').and.to.equal(bigBody);
     });
   });
 });
