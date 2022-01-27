@@ -142,5 +142,20 @@ describe('HttpRequestExecutor', () => {
 
       (typeof response.statusCode).should.equal('undefined');
     });
+
+    it('do not truncate whitelisted mime types', async () => {
+      const { request, requestOptions } = createRequest();
+      const big_body = 'I will always cover my code with unit tests'.repeat(
+        10000
+      );
+      nock(requestOptions.url).get('/').reply(200, big_body, {
+        'content-type': 'applicatin/x-javascript'
+      });
+
+      const response = await executor.execute(request);
+
+      response.statusCode.should.equal(200);
+      response.body.should.be.a('string').and.to.equal(big_body);
+    });
   });
 });
