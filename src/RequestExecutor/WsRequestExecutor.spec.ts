@@ -16,6 +16,8 @@ describe('WsRequestExecutor', () => {
   let executor!: WsRequestExecutor;
 
   beforeEach(() => {
+    // ADHOC: ts-mockito resets object's property descriptor as well
+    Object.assign(executorOptions, { timeout: 2000 });
     executor = new WsRequestExecutor(executorOptions);
   });
 
@@ -50,7 +52,6 @@ describe('WsRequestExecutor', () => {
     it('should call setCerts on the provided request if there were certificates configured globally', async () => {
       const request = new Request({ url: 'wss://foo.bar', headers: {} });
       const spiedRequest = spy(request);
-      when(spiedExecutorOptions.timeout).thenReturn(2000);
       when(spiedExecutorOptions.certs).thenReturn([]);
 
       await executor.execute(request);
