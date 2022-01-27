@@ -186,6 +186,7 @@ export class HttpRequestExecutor implements RequestExecutor {
         break;
       }
     }
+    
     if (truncated) {
       logger.debug(
         'Truncate original response body to %i bytes',
