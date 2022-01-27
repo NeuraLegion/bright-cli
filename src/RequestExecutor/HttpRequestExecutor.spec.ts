@@ -145,9 +145,7 @@ describe('HttpRequestExecutor', () => {
 
     it('should not truncate response body if it is whitelisted mime types', async () => {
       const { request, requestOptions } = createRequest();
-      const bigBody = 'Too big body'.repeat(
-        10000
-      );
+      const bigBody = 'Too big body'.repeat(10000);
       nock(requestOptions.url).get('/').reply(200, big_body, {
         'content-type': 'applicatin/x-javascript'
       });
