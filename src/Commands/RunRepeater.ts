@@ -161,6 +161,7 @@ export class RunRepeater implements CommandModule {
                 'text/markdown',
                 'text/xml',
                 'application/javascript',
+                'application/x-javascript',
                 'application/json',
                 'application/xml',
                 'application/x-www-form-urlencoded',
