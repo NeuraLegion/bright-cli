@@ -187,9 +187,16 @@ export class HttpRequestExecutor implements RequestExecutor {
       }
     }
 
-    return truncated
-      ? Buffer.concat(chunks).slice(0, options.maxBodySize)
-      : Buffer.concat(chunks);
+    if (truncated) {
+      logger.debug(
+        'Truncate original response body to %i bytes',
+        options.maxBodySize
+      );
+
+      return Buffer.concat(chunks).slice(0, options.maxBodySize);
+    }
+
+    return Buffer.concat(chunks);
   }
 
   /**
