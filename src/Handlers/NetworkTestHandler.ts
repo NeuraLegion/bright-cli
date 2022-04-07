@@ -1,5 +1,5 @@
 import { bind, Handler } from '../Bus';
-import { NetworkTest } from './Events';
+import { NetworkTest, NetworkTestConfig, NetworkTestType } from './Events';
 import { NetworkTestResult } from '../Integrations';
 import { ReadlinePlatform } from '../Wizard';
 import { Helpers, logger } from '../Utils';
@@ -13,16 +13,16 @@ export class NetworkTestHandler
 {
   public async handle({
     repeaterId,
-    urls
+    config
   }: NetworkTest): Promise<NetworkTestResult> {
-    const output = await this.getOutput(urls);
+    const output = await this.getOutput(config);
 
     return { output, repeaterId };
   }
 
-  private async getOutput(urls: string[]): Promise<string> {
+  private async getOutput(config: NetworkTestConfig): Promise<string> {
     return new Promise((resolve, reject) => {
-      const args = ['configure', '--ping'];
+      const args = ['configure', `--${config.type}`];
 
       logger.debug('Launching "Network Diagnostic" process with cmd: %j', args);
 
@@ -43,8 +43,19 @@ export class NetworkTestHandler
 
         stdout.push(...lines);
 
-        if (chunk.indexOf(ReadlinePlatform.URLS_QUESTION) > -1) {
-          child.stdin.write(`${urls.join(',')}${EOL}`);
+        if (
+          chunk.indexOf(ReadlinePlatform.URLS_QUESTION) > -1 &&
+          config.type === NetworkTestType.PING
+        ) {
+          child.stdin.write(`${config.urls.join(',')}${EOL}`);
+        }
+
+        if (
+          chunk.indexOf(ReadlinePlatform.HOST_OR_IP_QUESTION) > -1 &&
+          config.type === NetworkTestType.TRACEROUTE
+        ) {
+          child.stdin.write(`${config.url}${EOL}`);
+          resolve(this.processOutput(stdout));
         }
 
         if (chunk.indexOf(ReadlinePlatform.COMPELED_MESSAGE) > -1) {

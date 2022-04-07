@@ -145,6 +145,7 @@
     "test:e2e": "cross-env TS_NODE_PROJECT=tests/tsconfig.json NODE_ENV=test mocha tests/**/*.spec.ts",
     "build": "webpack --config webpack.config.js --mode=production",
     "build:pkg": "pkg .",
-    "prepare": "is-ci || husky install"
+    "prepare": "is-ci || husky install",
+    "start": "node -r ts-node/register/transpile-only -r tsconfig-paths/register src/index.ts"
   }
 }
