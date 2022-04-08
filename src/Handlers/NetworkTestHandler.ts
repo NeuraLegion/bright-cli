@@ -55,7 +55,6 @@ export class NetworkTestHandler
           config.type === NetworkTestType.TRACEROUTE
         ) {
           child.stdin.write(`${config.url}${EOL}`);
-          resolve(this.processOutput(stdout));
         }
 
         if (chunk.indexOf(ReadlinePlatform.COMPELED_MESSAGE) > -1) {
