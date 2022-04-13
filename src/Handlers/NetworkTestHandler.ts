@@ -5,6 +5,7 @@ import { ReadlinePlatform } from '../Wizard';
 import { Helpers, logger } from '../Utils';
 import { injectable } from 'tsyringe';
 import { EOL } from 'os';
+import { URL } from 'url';
 
 @injectable()
 @bind(NetworkTest)
@@ -54,7 +55,14 @@ export class NetworkTestHandler
           chunk.indexOf(ReadlinePlatform.HOST_OR_IP_QUESTION) > -1 &&
           config.type === NetworkTestType.TRACEROUTE
         ) {
-          child.stdin.write(`${config.host}${EOL}`);
+          let hostOrIP = '';
+          try {
+            hostOrIP = new URL(config.host).host;
+          } catch (error) {
+            hostOrIP = config.host;
+          }
+
+          child.stdin.write(`${hostOrIP}${EOL}`);
         }
 
         if (chunk.indexOf(ReadlinePlatform.COMPELED_MESSAGE) > -1) {
