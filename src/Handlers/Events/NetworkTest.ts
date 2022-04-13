@@ -4,9 +4,10 @@ export enum NetworkTestType {
   PING = 'ping',
   TRACEROUTE = 'traceroute'
 }
+
 export interface TracerouteTestConfig {
   readonly type: NetworkTestType.TRACEROUTE;
-  readonly url: string;
+  readonly host: string;
 }
 
 export interface PingTestConfig {

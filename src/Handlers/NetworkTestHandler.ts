@@ -54,7 +54,7 @@ export class NetworkTestHandler
           chunk.indexOf(ReadlinePlatform.HOST_OR_IP_QUESTION) > -1 &&
           config.type === NetworkTestType.TRACEROUTE
         ) {
-          child.stdin.write(`${config.url}${EOL}`);
+          child.stdin.write(`${config.host}${EOL}`);
         }
 
         if (chunk.indexOf(ReadlinePlatform.COMPELED_MESSAGE) > -1) {
