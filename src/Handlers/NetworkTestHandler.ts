@@ -55,14 +55,14 @@ export class NetworkTestHandler
           chunk.indexOf(ReadlinePlatform.HOST_OR_IP_QUESTION) > -1 &&
           config.type === NetworkTestType.TRACEROUTE
         ) {
-          let hostOrIP = '';
+          let hostname = '';
           try {
-            hostOrIP = new URL(config.host).host;
-          } catch (error) {
-            hostOrIP = config.host;
+            ({ hostname } = new URL(config.url));
+          } catch {
+            hostname = config.url;
           }
 
-          child.stdin.write(`${hostOrIP}${EOL}`);
+          child.stdin.write(`${hostname}${EOL}`);
         }
 
         if (chunk.indexOf(ReadlinePlatform.COMPELED_MESSAGE) > -1) {

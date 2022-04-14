@@ -7,7 +7,7 @@ export enum NetworkTestType {
 
 export interface TracerouteTestConfig {
   readonly type: NetworkTestType.TRACEROUTE;
-  readonly host: string;
+  readonly url: string;
 }
 
 export interface PingTestConfig {
