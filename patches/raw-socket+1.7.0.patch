@@ -1,0 +1,13 @@
+diff --git a/node_modules/raw-socket/src/raw.cc b/node_modules/raw-socket/src/raw.cc
+index b8e4850..49e17f6 100644
+--- a/node_modules/raw-socket/src/raw.cc
++++ b/node_modules/raw-socket/src/raw.cc
+@@ -305,7 +305,7 @@ int SocketWrap::CreateSocket (void) {
+ 
+ 	this->poll_fd_ = socket (this->family_, SOCK_RAW, this->protocol_);
+ 
+-#ifdef __APPLE__
++#if defined(__APPLE__) || defined(__linux__)
+ 	/**
+ 	 ** On MAC OS X platforms for non-privileged users wishing to utilise ICMP
+ 	 ** a SOCK_DGRAM will be enough, so try to create this type of socket in

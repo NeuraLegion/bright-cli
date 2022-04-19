@@ -53,6 +53,7 @@ jobs:
             LICENSE
             tools
             schemas
+            patches
 
   deploy:
     runs-on: ubuntu-latest

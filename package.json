@@ -82,6 +82,7 @@
     "nock": "^13.2.1",
     "nodemon": "^2.0.12",
     "nyc": "^15.1.0",
+    "patch-package": "^6.4.7",
     "pkg": "^5.3.1",
     "prettier": "^2.3.2",
     "semantic-release": "^17.4.5",
@@ -96,7 +97,8 @@
     "webpack-node-externals": "^3.0.0"
   },
   "files": [
-    "dist"
+    "dist",
+    "patches"
   ],
   "homepage": "https://github.com/NeuraLegion/nexploit-cli#readme",
   "keywords": [
@@ -145,6 +147,7 @@
     "test:e2e": "cross-env TS_NODE_PROJECT=tests/tsconfig.json NODE_ENV=test mocha tests/**/*.spec.ts",
     "build": "webpack --config webpack.config.js --mode=production",
     "build:pkg": "pkg .",
-    "prepare": "is-ci || husky install"
+    "prepare": "is-ci || husky install",
+    "postinstall": "patch-package"
   }
 }
