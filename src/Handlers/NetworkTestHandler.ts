@@ -1,5 +1,5 @@
 import { bind, Handler } from '../Bus';
-import { NetworkTest, NetworkTestConfig, NetworkTestType } from './Events';
+import { NetworkTest, NetworkTestData } from './Events';
 import { NetworkTestResult } from '../Integrations';
 import { ReadlinePlatform } from '../Wizard';
 import { Helpers, logger } from '../Utils';
@@ -12,16 +12,13 @@ import { URL } from 'url';
 export class NetworkTestHandler
   implements Handler<NetworkTest, NetworkTestResult>
 {
-  public async handle({
-    repeaterId,
-    config
-  }: NetworkTest): Promise<NetworkTestResult> {
+  public async handle(config: NetworkTest): Promise<NetworkTestResult> {
     const output = await this.getOutput(config);
 
-    return { output, repeaterId };
+    return { output, repeaterId: config.repeaterId };
   }
 
-  private async getOutput(config: NetworkTestConfig): Promise<string> {
+  private async getOutput(config: NetworkTestData): Promise<string> {
     return new Promise((resolve, reject) => {
       const args = ['configure', `--${config.type}`];
 
@@ -46,20 +43,20 @@ export class NetworkTestHandler
 
         if (
           chunk.indexOf(ReadlinePlatform.URLS_QUESTION) > -1 &&
-          config.type === NetworkTestType.PING
+          Array.isArray(config.input)
         ) {
-          child.stdin.write(`${config.urls.join(',')}${EOL}`);
+          child.stdin.write(`${config.input.join(',')}${EOL}`);
         }
 
         if (
           chunk.indexOf(ReadlinePlatform.HOST_OR_IP_QUESTION) > -1 &&
-          config.type === NetworkTestType.TRACEROUTE
+          typeof config.input === 'string'
         ) {
           let hostname = '';
           try {
-            ({ hostname } = new URL(config.url));
+            ({ hostname } = new URL(config.input));
           } catch {
-            hostname = config.url;
+            hostname = config.input;
           }
 
           child.stdin.write(`${hostname}${EOL}`);
