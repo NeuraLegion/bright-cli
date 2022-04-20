@@ -1,5 +1,5 @@
 import { bind, Handler } from '../Bus';
-import { NetworkTest, NetworkTestData } from './Events';
+import { NetworkTest } from './Events';
 import { NetworkTestResult } from '../Integrations';
 import { ReadlinePlatform } from '../Wizard';
 import { Helpers, logger } from '../Utils';
@@ -18,7 +18,7 @@ export class NetworkTestHandler
     return { output, repeaterId: config.repeaterId };
   }
 
-  private async getOutput(config: NetworkTestData): Promise<string> {
+  private async getOutput(config: NetworkTest): Promise<string> {
     return new Promise((resolve, reject) => {
       const args = ['configure', `--${config.type}`];
 
