@@ -8,9 +8,10 @@ import {
   Scans,
   ScanState
 } from './Scans';
+import { CliInfo } from '../Config';
 import request, { RequestPromiseAPI } from 'request-promise';
 import { SocksProxyAgent } from 'socks-proxy-agent';
-import { inject, injectable } from 'tsyringe';
+import { delay, inject, injectable } from 'tsyringe';
 
 export interface RestScansOptions {
   timeout?: number;
@@ -27,6 +28,7 @@ export class RestScans implements Scans {
   private readonly client: RequestPromiseAPI;
 
   constructor(
+    @inject(delay(() => CliInfo)) private readonly info: CliInfo,
     @inject(RestScansOptions)
     { baseUrl, apiKey, insecure, proxyUrl, timeout = 10000 }: RestScansOptions
   ) {
@@ -88,12 +90,23 @@ export class RestScans implements Scans {
     'headers'
   > & {
     headers: Header[];
+    info: {
+      source: string;
+      client?: { name: string; version: string };
+    };
   } {
     const discoveryTypes: Discovery[] = this.exploreDiscovery(rest);
 
     return {
       ...rest,
       discoveryTypes,
+      info: {
+        source: 'cli',
+        client: {
+          name: 'bright-cli',
+          version: this.info.version
+        }
+      },
       headers: headers
         ? Object.entries(headers).map(([name, value]: [string, string]) => ({
             name,
