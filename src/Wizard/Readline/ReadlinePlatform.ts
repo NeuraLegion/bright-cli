@@ -51,7 +51,7 @@ export class ReadlinePlatform implements Platform {
 
   private async configure(options?: StartOptions): Promise<void> {
     if (!options?.ping) {
-      console.log(`Welcome to the NeuraLegion Network Testing wizard!${EOL}`);
+      console.log(`Welcome to the Bright Network Testing wizard!${EOL}`);
 
       console.log(
         'Note: To run the test, you will require a `Repeater ID` and an `Repeater Token` with the correct scopes.'
@@ -169,7 +169,7 @@ export class ReadlinePlatform implements Platform {
     if (process.platform === 'win32') {
       console.log(
         `Note: Some Windows users might need to allow the ICMP network traffic through a firewall to enable this functionality.
-      For more information, see: https://docs.neuralegion.com/docs/testing-network-connectivity${EOL}`
+      For more information, see: https://docs.brightsec.com/docs/testing-network-connectivity${EOL}`
       );
     }
 

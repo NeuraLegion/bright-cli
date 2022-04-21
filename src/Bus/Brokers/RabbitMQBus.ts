@@ -469,7 +469,7 @@ export class RabbitMQBus implements Bus {
       }
 
       if (message.includes('CHANNEL-ERROR')) {
-        return 'Unexpected Error: Channel has been closed, please contact support at support@neuralegion.com (issue from out side).';
+        return 'Unexpected Error: Channel has been closed, please contact support at support@brightsec.com (issue from out side).';
       }
     }
 
