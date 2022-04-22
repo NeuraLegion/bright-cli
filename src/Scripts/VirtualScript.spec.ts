@@ -51,25 +51,33 @@ describe('VirtualScript', () => {
 
   describe('compile', () => {
     it('should be chainable', () => {
+      // arrange
       const virtualScript = new VirtualScript(
         '123',
         VirtualScriptType.REMOTE,
         'let a = 1;'
       );
-      expect(virtualScript.compile()).to.equal(virtualScript);
+      // act
+      const compiledScript = virtualScript.compile();
+      // assert
+      expect(compiledScript).to.equal(virtualScript);
     });
   });
 
   describe('exec', () => {
     it('should pass arguments passed to it after first argument to the script', async () => {
+      // arrange
       const virtualScript = createAndCompileVirtualScript(identityScript);
       const args = ['a', 'b', 'c'];
-      await expect(
-        virtualScript.exec('handle', ...args)
-      ).to.eventually.have.members(args);
+
+      // act
+      const execPromise = virtualScript.exec('handle', ...args);
+      // assert
+      await expect(execPromise).to.eventually.have.members(args);
     });
 
     it('should execute the script with __dirname set to be current working directory', async () => {
+      // arrange
       const returnDirnnameScript = `
       const handle = () => {
         return __dirname;
@@ -78,13 +86,14 @@ describe('VirtualScript', () => {
       `;
 
       const virtualScript = createAndCompileVirtualScript(returnDirnnameScript);
-
-      await expect(virtualScript.exec('handle')).to.eventually.equal(
-        process.cwd()
-      );
+      // act
+      const execPromise = virtualScript.exec('handle');
+      // assert
+      await expect(execPromise).to.eventually.equal(process.cwd());
     });
 
     it('should execute the script with a valid __filename', async () => {
+      // arrange
       const returnFilenameScript = `
       const handle = () => {
         return __filename;
@@ -93,11 +102,14 @@ describe('VirtualScript', () => {
       `;
 
       const virtualScript = createAndCompileVirtualScript(returnFilenameScript);
-
-      await expect(virtualScript.exec('handle')).not.to.eventually.undefined;
+      // act
+      const execPromise = virtualScript.exec('handle');
+      // assert
+      await expect(execPromise).not.to.eventually.undefined;
     });
 
     it('should execute the script with a valid nodejs module', async () => {
+      // arrange
       const returnModuleScript = `
       const handle = () => {
         return module;
@@ -106,24 +118,32 @@ describe('VirtualScript', () => {
       `;
 
       const virtualScript = createAndCompileVirtualScript(returnModuleScript);
-
-      await expect(virtualScript.exec('handle')).to.eventually.instanceOf(
-        Module
-      );
+      // act
+      const execPromise = virtualScript.exec('handle');
+      // assert
+      await expect(execPromise).to.eventually.instanceOf(Module);
     });
 
     it('should throw when script does not have exported function with provided name', async () => {
+      // arrange
       const virtualScript = createAndCompileVirtualScript('let a = 1;');
-      await expect(virtualScript.exec('handle')).to.be.rejected;
+      // act
+      const execPromise = virtualScript.exec('handle');
+      // assert
+      await expect(execPromise).to.be.rejected;
     });
 
     it('should throw when script has not been compiled before exec', async () => {
+      // arrange
       const virtualScript = new VirtualScript(
         '123',
         VirtualScriptType.LOCAL,
         identityScript
       );
-      await expect(virtualScript.exec('handle')).to.be.rejected;
+      // act
+      const execPromise = virtualScript.exec('handle');
+      // assert
+      await expect(execPromise).to.be.rejected;
     });
   });
 });
