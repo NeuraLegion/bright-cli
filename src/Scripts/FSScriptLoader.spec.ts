@@ -31,6 +31,7 @@ describe('FSScriptLoader', () => {
   const spiedFs = spy(fs);
   describe('load', () => {
     it('should load scripts from paths with type local each one only once', async () => {
+      // arrange
       const { mockedVirtualScripts, scriptLoader } = createScriptLoader();
 
       const code = 'let a = 1;';
@@ -39,6 +40,7 @@ describe('FSScriptLoader', () => {
         (_path, _opts, callback) => callback(null, code)
       );
 
+      // act
       const path1 = 'test.js';
       const path2 = 'test1.js';
 
@@ -46,7 +48,7 @@ describe('FSScriptLoader', () => {
         [path1]: code,
         [path2]: code
       });
-
+      // assert
       verify(
         mockedVirtualScripts.set(path1, VirtualScriptType.LOCAL, code)
       ).once();
@@ -56,6 +58,7 @@ describe('FSScriptLoader', () => {
     });
 
     it('should log with debug level and throw if cannot read file', async () => {
+      // arrange
       const { scriptLoader } = createScriptLoader();
 
       when(spiedFs.readFile(anyString(), anything(), anyFunction())).thenCall(
@@ -63,12 +66,13 @@ describe('FSScriptLoader', () => {
       );
 
       const spiedLogger = spy(logger);
+      // act
+      const loadPromise = scriptLoader.load({
+        test: 'test'
+      });
 
-      await expect(
-        scriptLoader.load({
-          test: 'test'
-        })
-      ).to.be.rejected;
+      // assert
+      await expect(loadPromise).to.be.rejected;
 
       verify(spiedLogger.debug(anyString())).once();
     });
