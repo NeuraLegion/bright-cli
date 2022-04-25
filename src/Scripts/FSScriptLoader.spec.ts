@@ -19,15 +19,15 @@ import fs from 'fs';
 
 use(promisified);
 
-const createScriptLoader = () => {
-  const mockedVirtualScripts = mock(DefaultVirtualScripts);
-  const virtualScripts = instance(mockedVirtualScripts);
-  const scriptLoader = new FSScriptLoader(virtualScripts);
-
-  return { virtualScripts, mockedVirtualScripts, scriptLoader };
-};
-
 describe('FSScriptLoader', () => {
+  const createScriptLoader = () => {
+    const mockedVirtualScripts = mock(DefaultVirtualScripts);
+    const virtualScripts = instance(mockedVirtualScripts);
+    const scriptLoader = new FSScriptLoader(virtualScripts);
+
+    return { virtualScripts, mockedVirtualScripts, scriptLoader };
+  };
+
   const spiedFs = spy(fs);
   describe('load', () => {
     it('should load scripts from paths with type local each one only once', async () => {

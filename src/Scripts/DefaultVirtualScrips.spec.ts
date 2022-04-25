@@ -32,37 +32,51 @@ describe('DefaultVirtualScripts', () => {
       // act
       virtualScripts.clear();
       // assert
-      expect(virtualScripts).to.deep.equal(new DefaultVirtualScripts());
+      expect(virtualScripts).to.deep.include({
+        store: new Map()
+      });
     });
 
     it('should remove only VirtualScriptType.LOCAL scripts when VirtualScriptType.LOCAL type is passed', () => {
       // arrange
       virtualScripts.set('first', VirtualScriptType.LOCAL, 'let a = 1;');
       virtualScripts.set('second', VirtualScriptType.REMOTE, 'let a = 2;');
-      const expectedVirtualScripts = new DefaultVirtualScripts().set(
-        'second',
-        VirtualScriptType.REMOTE,
-        'let a = 2;'
-      );
       // act
       virtualScripts.clear(VirtualScriptType.LOCAL);
       // assert
-      expect(virtualScripts).to.deep.equal(expectedVirtualScripts);
+      expect(virtualScripts).to.deep.include({
+        store: new Map([
+          [
+            'second',
+            new VirtualScript(
+              'second',
+              VirtualScriptType.REMOTE,
+              'let a = 2;'
+            ).compile()
+          ]
+        ])
+      });
     });
 
     it('should remove only VirtualScriptType.REMOTE scripts when VirtualScriptType.REMOTE type is passed', () => {
       // arrange
       virtualScripts.set('first', VirtualScriptType.LOCAL, 'let a = 1;');
       virtualScripts.set('second', VirtualScriptType.REMOTE, 'let a = 2;');
-      const expectedVirtualScripts = new DefaultVirtualScripts().set(
-        'first',
-        VirtualScriptType.LOCAL,
-        'let a = 1;'
-      );
       // act
       virtualScripts.clear(VirtualScriptType.REMOTE);
       // assert
-      expect(virtualScripts).to.deep.equal(expectedVirtualScripts);
+      expect(virtualScripts).to.deep.include({
+        store: new Map([
+          [
+            'first',
+            new VirtualScript(
+              'first',
+              VirtualScriptType.LOCAL,
+              'let a = 1;'
+            ).compile()
+          ]
+        ])
+      });
     });
   });
 
@@ -73,15 +87,21 @@ describe('DefaultVirtualScripts', () => {
       const keyToPreserve = 'second';
       virtualScripts.set(keyToDelete, VirtualScriptType.LOCAL, 'let a = 1;');
       virtualScripts.set(keyToPreserve, VirtualScriptType.REMOTE, 'let a = 2;');
-      const expectedVirtualScripts = new DefaultVirtualScripts().set(
-        keyToPreserve,
-        VirtualScriptType.REMOTE,
-        'let a = 2;'
-      );
       // act
       virtualScripts.delete(keyToDelete);
       // assert
-      expect(expectedVirtualScripts).to.deep.equal(expectedVirtualScripts);
+      expect(virtualScripts).to.deep.include({
+        store: new Map([
+          [
+            keyToPreserve,
+            new VirtualScript(
+              keyToPreserve,
+              VirtualScriptType.REMOTE,
+              'let a = 2;'
+            ).compile()
+          ]
+        ])
+      });
     });
 
     it('should return true when successfully deleted key', () => {
@@ -119,9 +139,9 @@ describe('DefaultVirtualScripts', () => {
       // assert
       // expect(entries).to.deep.equal(expectedEntries) gives AssertionError: expected {} to deeply equal {}
       expect(firstKey).to.equal(key1);
-      expect(firstScript.id).to.equal(key1);
+      expect(firstScript).to.include({ id: key1 });
       expect(secondKey).to.equal(key2);
-      expect(secondScript.id).to.equal(key2);
+      expect(secondScript).to.include({ id: key2 });
     });
   });
 
@@ -130,7 +150,7 @@ describe('DefaultVirtualScripts', () => {
       // arrange
       const host = 'example.com';
       virtualScripts.set(host, VirtualScriptType.REMOTE, 'let a = 2;');
-      const expectedVirtualScript = new VirtualScript(
+      const expected = new VirtualScript(
         host,
         VirtualScriptType.REMOTE,
         'let a = 2;'
@@ -138,14 +158,14 @@ describe('DefaultVirtualScripts', () => {
       // act
       const foundScript = virtualScripts.find(host);
       // assert
-      expect(foundScript).to.deep.equal(expectedVirtualScript);
+      expect(foundScript).to.deep.equal(expected);
     });
 
     it('should find script when inserted host has matching wildcard', () => {
       // arrange
       const host = '*.example.com';
       virtualScripts.set(host, VirtualScriptType.REMOTE, 'let a = 2;');
-      const expectedVirtualScript = new VirtualScript(
+      const expected = new VirtualScript(
         host,
         VirtualScriptType.REMOTE,
         'let a = 2;'
@@ -153,7 +173,7 @@ describe('DefaultVirtualScripts', () => {
       //act
       const foundScript = virtualScripts.find('sub.example.com');
       // assert
-      expect(foundScript).to.deep.equal(expectedVirtualScript);
+      expect(foundScript).to.deep.equal(expected);
     });
 
     it('should find first script per insertion order when inserted wildcards collide', () => {
@@ -162,7 +182,7 @@ describe('DefaultVirtualScripts', () => {
       const host2 = '*.sub.example.com';
       virtualScripts.set(host1, VirtualScriptType.REMOTE, 'let a = 2;');
       virtualScripts.set(host2, VirtualScriptType.REMOTE, 'let a = 1;');
-      const expectedVirtualScript = new VirtualScript(
+      const expected = new VirtualScript(
         host1,
         VirtualScriptType.REMOTE,
         'let a = 2;'
@@ -170,7 +190,7 @@ describe('DefaultVirtualScripts', () => {
       // act
       const foundScript = virtualScripts.find('test.sub.example.com');
       // assert
-      expect(foundScript).to.deep.equal(expectedVirtualScript);
+      expect(foundScript).to.deep.equal(expected);
     });
   });
 
@@ -196,19 +216,25 @@ describe('DefaultVirtualScripts', () => {
         virtualScripts.set('first', VirtualScriptType.LOCAL, 'let a = 1;')
       ).to.equal(virtualScripts);
     });
-    it('should create VirtualScript and store it', () => {
+    it('should create and compile VirtualScript, and store it', () => {
       // arrange
       const id = 'first';
-      virtualScripts.set(id, VirtualScriptType.LOCAL, 'let a = 1;');
-      const expectedVirtualScript = new VirtualScript(
-        id,
-        VirtualScriptType.LOCAL,
-        'let a = 1;'
-      ).compile();
       // act
-      const foundScript = virtualScripts.find(id);
+      virtualScripts.set(id, VirtualScriptType.LOCAL, 'let a = 1;');
+
       // assert
-      expect(foundScript).to.deep.equal(expectedVirtualScript);
+      expect(virtualScripts).to.deep.include({
+        store: new Map([
+          [
+            id,
+            new VirtualScript(
+              id,
+              VirtualScriptType.LOCAL,
+              'let a = 1;'
+            ).compile()
+          ]
+        ])
+      });
     });
     it('should overwrite previously set script when called with the same wildcard', () => {
       // arrange
@@ -216,22 +242,19 @@ describe('DefaultVirtualScripts', () => {
       virtualScripts.set(wildcard, VirtualScriptType.LOCAL, 'let a = 2;');
       // act
       virtualScripts.set(wildcard, VirtualScriptType.REMOTE, 'let a = 1;');
-      const secondScript = virtualScripts.find(wildcard);
       // assert
-      expect(secondScript).not.to.deep.equal(
-        new VirtualScript(
-          wildcard,
-          VirtualScriptType.LOCAL,
-          'let a = 2;'
-        ).compile()
-      );
-      expect(secondScript).to.deep.equal(
-        new VirtualScript(
-          wildcard,
-          VirtualScriptType.REMOTE,
-          'let a = 1;'
-        ).compile()
-      );
+      expect(virtualScripts).to.deep.include({
+        store: new Map([
+          [
+            wildcard,
+            new VirtualScript(
+              wildcard,
+              VirtualScriptType.REMOTE,
+              'let a = 1;'
+            ).compile()
+          ]
+        ])
+      });
     });
   });
 
@@ -246,8 +269,8 @@ describe('DefaultVirtualScripts', () => {
       const values = virtualScripts.values();
       // assert
       // expect(entries).to.deep.equal(expectedEntries) gives AssertionError: expected {} to deeply equal {}
-      expect(values.next().value.id).to.equal(key1);
-      expect(values.next().value.id).to.equal(key2);
+      expect(values.next().value).to.include({ id: key1 });
+      expect(values.next().value).to.include({ id: key2 });
     });
   });
 });

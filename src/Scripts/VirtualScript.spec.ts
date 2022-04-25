@@ -5,21 +5,25 @@ import Module from 'module';
 
 use(promisified);
 
-const identityScript = `
-const handle = (...args) => {
-  return args;
-};
-exports.handle = handle;
-`;
-
-const createAndCompileVirtualScript = (code: string) => {
-  const virtualScript = new VirtualScript('123', VirtualScriptType.LOCAL, code);
-  virtualScript.compile();
-
-  return virtualScript;
-};
-
 describe('VirtualScript', () => {
+  const identityScript = `
+  const handle = (...args) => {
+    return args;
+  };
+  exports.handle = handle;
+  `;
+
+  const createAndCompileVirtualScript = (code: string) => {
+    const virtualScript = new VirtualScript(
+      '123',
+      VirtualScriptType.LOCAL,
+      code
+    );
+    virtualScript.compile();
+
+    return virtualScript;
+  };
+
   it('should throw when constructed with falsy id', () => {
     expect(
       () => new VirtualScript('', VirtualScriptType.REMOTE, 'let a = 1;')
