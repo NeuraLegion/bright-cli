@@ -9,6 +9,6 @@ export class NetworkTest implements Event {
   constructor(
     public readonly repeaterId: string,
     public readonly type: NetworkTestType,
-    public readonly input: string | readonly string[]
+    public readonly input: string | string[]
   ) {}
 }

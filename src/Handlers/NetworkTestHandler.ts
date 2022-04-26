@@ -41,25 +41,14 @@ export class NetworkTestHandler
 
         stdout.push(...lines);
 
-        if (
-          chunk.indexOf(ReadlinePlatform.URLS_QUESTION) > -1 &&
-          Array.isArray(config.input)
-        ) {
-          child.stdin.write(`${config.input.join(',')}${EOL}`);
+        const [first, ...rest]: string[] = [].concat(config.input);
+
+        if (chunk.indexOf(ReadlinePlatform.URLS_QUESTION) > -1) {
+          child.stdin.write(`${[first, ...rest].join(',')}${EOL}`);
         }
 
-        if (
-          chunk.indexOf(ReadlinePlatform.HOST_OR_IP_QUESTION) > -1 &&
-          typeof config.input === 'string'
-        ) {
-          let hostname = '';
-          try {
-            ({ hostname } = new URL(config.input));
-          } catch {
-            hostname = config.input;
-          }
-
-          child.stdin.write(`${hostname}${EOL}`);
+        if (chunk.indexOf(ReadlinePlatform.HOST_OR_IP_QUESTION) > -1) {
+          child.stdin.write(`${new URL(first).hostname}${EOL}`);
         }
 
         if (chunk.indexOf(ReadlinePlatform.COMPELED_MESSAGE) > -1) {
