@@ -25,7 +25,7 @@ describe('FSScriptLoader', () => {
     const virtualScripts = instance(mockedVirtualScripts);
     const scriptLoader = new FSScriptLoader(virtualScripts);
 
-    return { virtualScripts, mockedVirtualScripts, scriptLoader };
+    return { mockedVirtualScripts, scriptLoader };
   };
 
   const spiedFs = spy(fs);

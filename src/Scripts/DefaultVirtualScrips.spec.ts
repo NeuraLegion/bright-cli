@@ -14,7 +14,7 @@ const isValidIterable = (
 };
 
 describe('DefaultVirtualScripts', () => {
-  let virtualScripts: DefaultVirtualScripts;
+  let virtualScripts!: DefaultVirtualScripts;
 
   beforeEach(() => {
     virtualScripts = new DefaultVirtualScripts();
@@ -131,11 +131,10 @@ describe('DefaultVirtualScripts', () => {
       virtualScripts.set(key1, VirtualScriptType.REMOTE, 'let a = 1;');
       virtualScripts.set(key2, VirtualScriptType.REMOTE, 'let a = 2;');
       // act
-      const entries = virtualScripts.entries();
-      const [firstKey, firstScript]: [string, VirtualScript] =
-        entries.next().value;
-      const [secondKey, secondScript]: [string, VirtualScript] =
-        entries.next().value;
+      // eslint-disable-next-line @typescript-eslint/typedef
+      const [[firstKey, firstScript], [secondKey, secondScript]] = Array.from(
+        virtualScripts.entries()
+      );
       // assert
       // expect(entries).to.deep.equal(expectedEntries) gives AssertionError: expected {} to deeply equal {}
       expect(firstKey).to.equal(key1);
