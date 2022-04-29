@@ -20,8 +20,23 @@ describe('DefaultVirtualScripts', () => {
     virtualScripts = new DefaultVirtualScripts();
   });
 
-  it('should be iterable', () => {
+  it('should be valid iterable', () => {
+    // arrange
+    const key1 = '1';
+    const key2 = '2';
+    virtualScripts.set(key1, VirtualScriptType.REMOTE, 'let a = 1;');
+    virtualScripts.set(key2, VirtualScriptType.REMOTE, 'let a = 2;');
+    // act
+    // eslint-disable-next-line @typescript-eslint/typedef
+    const [[firstKey, firstScript], [secondKey, secondScript]] =
+      Array.from(virtualScripts);
+    // assert
+    // expect(entries).to.deep.equal(expectedEntries) gives AssertionError: expected {} to deeply equal {}
     expect(isValidIterable(virtualScripts)).to.equal(true);
+    expect(firstKey).to.equal(key1);
+    expect(firstScript).to.include({ id: key1 });
+    expect(secondKey).to.equal(key2);
+    expect(secondScript).to.include({ id: key2 });
   });
 
   describe('clear', () => {
@@ -32,9 +47,7 @@ describe('DefaultVirtualScripts', () => {
       // act
       virtualScripts.clear();
       // assert
-      expect(virtualScripts).to.deep.include({
-        store: new Map()
-      });
+      expect(Array.from(virtualScripts)).to.deep.equal([]);
     });
 
     it('should remove only VirtualScriptType.LOCAL scripts when VirtualScriptType.LOCAL type is passed', () => {
@@ -44,18 +57,16 @@ describe('DefaultVirtualScripts', () => {
       // act
       virtualScripts.clear(VirtualScriptType.LOCAL);
       // assert
-      expect(virtualScripts).to.deep.include({
-        store: new Map([
-          [
+      expect(Array.from(virtualScripts)).to.deep.equal([
+        [
+          'second',
+          new VirtualScript(
             'second',
-            new VirtualScript(
-              'second',
-              VirtualScriptType.REMOTE,
-              'let a = 2;'
-            ).compile()
-          ]
-        ])
-      });
+            VirtualScriptType.REMOTE,
+            'let a = 2;'
+          ).compile()
+        ]
+      ]);
     });
 
     it('should remove only VirtualScriptType.REMOTE scripts when VirtualScriptType.REMOTE type is passed', () => {
@@ -65,18 +76,16 @@ describe('DefaultVirtualScripts', () => {
       // act
       virtualScripts.clear(VirtualScriptType.REMOTE);
       // assert
-      expect(virtualScripts).to.deep.include({
-        store: new Map([
-          [
+      expect(Array.from(virtualScripts)).to.deep.equal([
+        [
+          'first',
+          new VirtualScript(
             'first',
-            new VirtualScript(
-              'first',
-              VirtualScriptType.LOCAL,
-              'let a = 1;'
-            ).compile()
-          ]
-        ])
-      });
+            VirtualScriptType.LOCAL,
+            'let a = 1;'
+          ).compile()
+        ]
+      ]);
     });
   });
 
@@ -90,18 +99,16 @@ describe('DefaultVirtualScripts', () => {
       // act
       virtualScripts.delete(keyToDelete);
       // assert
-      expect(virtualScripts).to.deep.include({
-        store: new Map([
-          [
+      expect(Array.from(virtualScripts)).to.deep.equal([
+        [
+          keyToPreserve,
+          new VirtualScript(
             keyToPreserve,
-            new VirtualScript(
-              keyToPreserve,
-              VirtualScriptType.REMOTE,
-              'let a = 2;'
-            ).compile()
-          ]
-        ])
-      });
+            VirtualScriptType.REMOTE,
+            'let a = 2;'
+          ).compile()
+        ]
+      ]);
     });
 
     it('should return true when successfully deleted key', () => {
@@ -222,18 +229,12 @@ describe('DefaultVirtualScripts', () => {
       virtualScripts.set(id, VirtualScriptType.LOCAL, 'let a = 1;');
 
       // assert
-      expect(virtualScripts).to.deep.include({
-        store: new Map([
-          [
-            id,
-            new VirtualScript(
-              id,
-              VirtualScriptType.LOCAL,
-              'let a = 1;'
-            ).compile()
-          ]
-        ])
-      });
+      expect(Array.from(virtualScripts)).to.deep.equal([
+        [
+          id,
+          new VirtualScript(id, VirtualScriptType.LOCAL, 'let a = 1;').compile()
+        ]
+      ]);
     });
     it('should overwrite previously set script when called with the same wildcard', () => {
       // arrange
@@ -242,18 +243,16 @@ describe('DefaultVirtualScripts', () => {
       // act
       virtualScripts.set(wildcard, VirtualScriptType.REMOTE, 'let a = 1;');
       // assert
-      expect(virtualScripts).to.deep.include({
-        store: new Map([
-          [
+      expect(Array.from(virtualScripts)).to.deep.equal([
+        [
+          wildcard,
+          new VirtualScript(
             wildcard,
-            new VirtualScript(
-              wildcard,
-              VirtualScriptType.REMOTE,
-              'let a = 1;'
-            ).compile()
-          ]
-        ])
-      });
+            VirtualScriptType.REMOTE,
+            'let a = 1;'
+          ).compile()
+        ]
+      ]);
     });
   });
 
