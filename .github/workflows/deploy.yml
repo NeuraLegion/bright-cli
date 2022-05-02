@@ -107,7 +107,11 @@ jobs:
           docker push $TAG_REPEATER --all-tags
 
   publish:
-    runs-on: windows-latest
+    # Using the `windows-2019` runner instead of latest(`windows-2022`)
+    # because the build was last known working on that version of runner and
+    # `raw-socket` fails to find the 2022 Visual Studio install because
+    # it's internally using an old version of `node-gyp`
+    runs-on: windows-2019
     needs: build
     steps:
       - uses: actions/download-artifact@v2
