@@ -111,7 +111,7 @@ describe('VirtualScript', () => {
       // act
       const execPromise = virtualScript.exec('handle');
       // assert
-      await execPromise.should.to.eventually.undefined;
+      await execPromise.should.not.eventually.undefined;
     });
 
     it('should execute the script with a valid nodejs module', async () => {
