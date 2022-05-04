@@ -2,7 +2,6 @@ import 'reflect-metadata';
 import 'chai/register-should';
 import { DefaultVirtualScripts } from './DefaultVirtualScripts';
 import { VirtualScript, VirtualScriptType } from './VirtualScript';
-import { expect } from 'chai';
 
 describe('DefaultVirtualScripts', () => {
   let virtualScripts!: DefaultVirtualScripts;
@@ -26,9 +25,9 @@ describe('DefaultVirtualScripts', () => {
       ][] = [...virtualScripts];
       // assert
       firstKey.should.equal(key1);
-      expect(firstScript).to.include({ id: key1 });
+      firstScript.should.include({ id: key1 });
       secondKey.should.equal(key2);
-      expect(secondScript).to.include({ id: key2 });
+      secondScript.should.include({ id: key2 });
     });
   });
 
@@ -40,7 +39,7 @@ describe('DefaultVirtualScripts', () => {
       // act
       virtualScripts.clear();
       // assert
-      expect([...virtualScripts]).to.deep.equal([]);
+      [...virtualScripts].should.deep.equal([]);
     });
 
     it('should remove only VirtualScriptType.LOCAL scripts when VirtualScriptType.LOCAL type is passed', () => {
@@ -50,7 +49,7 @@ describe('DefaultVirtualScripts', () => {
       // act
       virtualScripts.clear(VirtualScriptType.LOCAL);
       // assert
-      expect([...virtualScripts]).to.deep.equal([
+      [...virtualScripts].should.deep.equal([
         [
           'second',
           new VirtualScript(
@@ -69,7 +68,7 @@ describe('DefaultVirtualScripts', () => {
       // act
       virtualScripts.clear(VirtualScriptType.REMOTE);
       // assert
-      expect([...virtualScripts]).to.deep.equal([
+      [...virtualScripts].should.deep.equal([
         [
           'first',
           new VirtualScript(
@@ -92,7 +91,7 @@ describe('DefaultVirtualScripts', () => {
       // act
       virtualScripts.delete(keyToDelete);
       // assert
-      expect([...virtualScripts]).to.deep.equal([
+      [...virtualScripts].should.deep.equal([
         [
           keyToPreserve,
           new VirtualScript(
@@ -138,9 +137,9 @@ describe('DefaultVirtualScripts', () => {
       ][] = [...virtualScripts.entries()];
       // assert
       firstKey.should.equal(key1);
-      expect(firstScript).to.include({ id: key1 });
+      firstScript.should.include({ id: key1 });
       secondKey.should.equal(key2);
-      expect(secondScript).to.include({ id: key2 });
+      secondScript.should.include({ id: key2 });
     });
   });
 
@@ -157,7 +156,7 @@ describe('DefaultVirtualScripts', () => {
       // act
       const foundScript = virtualScripts.find(host);
       // assert
-      expect(foundScript).to.deep.equal(expected);
+      foundScript.should.deep.equal(expected);
     });
 
     it('should find script when inserted host has matching wildcard', () => {
@@ -172,7 +171,7 @@ describe('DefaultVirtualScripts', () => {
       //act
       const foundScript = virtualScripts.find('sub.example.com');
       // assert
-      expect(foundScript).to.deep.equal(expected);
+      foundScript.should.deep.equal(expected);
     });
 
     it('should find first script per insertion order when inserted wildcards collide', () => {
@@ -189,7 +188,7 @@ describe('DefaultVirtualScripts', () => {
       // act
       const foundScript = virtualScripts.find('test.sub.example.com');
       // assert
-      expect(foundScript).to.deep.equal(expected);
+      foundScript.should.deep.equal(expected);
     });
   });
 
@@ -210,9 +209,9 @@ describe('DefaultVirtualScripts', () => {
 
   describe('set', () => {
     it('should be chainable', () => {
-      expect(
-        virtualScripts.set('first', VirtualScriptType.LOCAL, 'let a = 1;')
-      ).to.equal(virtualScripts);
+      virtualScripts
+        .set('first', VirtualScriptType.LOCAL, 'let a = 1;')
+        .should.equal(virtualScripts);
     });
     it('should create and compile VirtualScript, and store it', () => {
       // arrange
@@ -221,7 +220,7 @@ describe('DefaultVirtualScripts', () => {
       virtualScripts.set(id, VirtualScriptType.LOCAL, 'let a = 1;');
 
       // assert
-      expect([...virtualScripts]).to.deep.equal([
+      [...virtualScripts].should.deep.equal([
         [
           id,
           new VirtualScript(id, VirtualScriptType.LOCAL, 'let a = 1;').compile()
@@ -235,7 +234,7 @@ describe('DefaultVirtualScripts', () => {
       // act
       virtualScripts.set(wildcard, VirtualScriptType.REMOTE, 'let a = 1;');
       // assert
-      expect([...virtualScripts]).to.deep.equal([
+      [...virtualScripts].should.deep.equal([
         [
           wildcard,
           new VirtualScript(
@@ -258,8 +257,8 @@ describe('DefaultVirtualScripts', () => {
       // act
       const values = virtualScripts.values();
       // assert
-      expect(values.next().value).to.include({ id: key1 });
-      expect(values.next().value).to.include({ id: key2 });
+      values.next().value.should.include({ id: key1 });
+      values.next().value.should.include({ id: key2 });
     });
   });
 });
