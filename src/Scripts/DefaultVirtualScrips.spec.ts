@@ -3,16 +3,6 @@ import { DefaultVirtualScripts } from './DefaultVirtualScripts';
 import { VirtualScript, VirtualScriptType } from './VirtualScript';
 import { expect } from 'chai';
 
-const isValidIterable = (
-  instance: unknown
-): instance is IterableIterator<unknown> => {
-  if (instance === null || instance === undefined) {
-    return false;
-  }
-
-  return typeof instance[Symbol.iterator] === 'function';
-};
-
 describe('DefaultVirtualScripts', () => {
   let virtualScripts!: DefaultVirtualScripts;
 
@@ -20,23 +10,25 @@ describe('DefaultVirtualScripts', () => {
     virtualScripts = new DefaultVirtualScripts();
   });
 
-  it('should be valid iterable', () => {
-    // arrange
-    const key1 = '1';
-    const key2 = '2';
-    virtualScripts.set(key1, VirtualScriptType.REMOTE, 'let a = 1;');
-    virtualScripts.set(key2, VirtualScriptType.REMOTE, 'let a = 2;');
-    // act
-    // eslint-disable-next-line @typescript-eslint/typedef
-    const [[firstKey, firstScript], [secondKey, secondScript]] =
-      Array.from(virtualScripts);
-    // assert
-    // expect(entries).to.deep.equal(expectedEntries) gives AssertionError: expected {} to deeply equal {}
-    expect(isValidIterable(virtualScripts)).to.equal(true);
-    expect(firstKey).to.equal(key1);
-    expect(firstScript).to.include({ id: key1 });
-    expect(secondKey).to.equal(key2);
-    expect(secondScript).to.include({ id: key2 });
+  describe('Symbol.iterator', () => {
+    it('should be valid iterable', () => {
+      // arrange
+      const key1 = '1';
+      const key2 = '2';
+      virtualScripts.set(key1, VirtualScriptType.REMOTE, 'let a = 1;');
+      virtualScripts.set(key2, VirtualScriptType.REMOTE, 'let a = 2;');
+      // act
+      // eslint-disable-next-line @typescript-eslint/typedef
+      const [[firstKey, firstScript], [secondKey, secondScript]]: [
+        string,
+        VirtualScript
+      ][] = [...virtualScripts];
+      // assert
+      expect(firstKey).to.equal(key1);
+      expect(firstScript).to.include({ id: key1 });
+      expect(secondKey).to.equal(key2);
+      expect(secondScript).to.include({ id: key2 });
+    });
   });
 
   describe('clear', () => {
@@ -143,7 +135,6 @@ describe('DefaultVirtualScripts', () => {
         virtualScripts.entries()
       );
       // assert
-      // expect(entries).to.deep.equal(expectedEntries) gives AssertionError: expected {} to deeply equal {}
       expect(firstKey).to.equal(key1);
       expect(firstScript).to.include({ id: key1 });
       expect(secondKey).to.equal(key2);
@@ -210,7 +201,6 @@ describe('DefaultVirtualScripts', () => {
       // act
       const keys = virtualScripts.keys();
       // assert
-      // expect(entries).to.deep.equal(expectedEntries) gives AssertionError: expected {} to deeply equal {}
       expect(keys.next().value).to.equal(key1);
       expect(keys.next().value).to.equal(key2);
     });
@@ -266,7 +256,6 @@ describe('DefaultVirtualScripts', () => {
       // act
       const values = virtualScripts.values();
       // assert
-      // expect(entries).to.deep.equal(expectedEntries) gives AssertionError: expected {} to deeply equal {}
       expect(values.next().value).to.include({ id: key1 });
       expect(values.next().value).to.include({ id: key2 });
     });

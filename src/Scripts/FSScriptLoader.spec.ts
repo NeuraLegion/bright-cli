@@ -1,14 +1,15 @@
 import 'reflect-metadata';
-import { DefaultVirtualScripts } from './DefaultVirtualScripts';
 import { FSScriptLoader } from './FSScriptLoader';
 import { VirtualScriptType } from './VirtualScript';
-import { logger } from '../Utils';
+import { Logger, logger } from '../Utils';
+import { VirtualScripts } from './VirtualScripts';
 import {
   anyFunction,
   anyString,
   anything,
   instance,
   mock,
+  reset,
   spy,
   verify,
   when
@@ -20,19 +21,22 @@ import fs from 'fs';
 use(promisified);
 
 describe('FSScriptLoader', () => {
-  const createScriptLoader = () => {
-    const mockedVirtualScripts = mock(DefaultVirtualScripts);
-    const virtualScripts = instance(mockedVirtualScripts);
-    const scriptLoader = new FSScriptLoader(virtualScripts);
-
-    return { mockedVirtualScripts, scriptLoader };
-  };
-
+  const mockedVirtualScripts = mock<VirtualScripts>();
   const spiedFs = spy(fs);
+
+  let spiedLogger!: Logger;
+  let scriptLoader!: FSScriptLoader;
+
+  beforeEach(() => {
+    spiedLogger = spy(logger);
+    scriptLoader = new FSScriptLoader(instance(mockedVirtualScripts));
+  });
+
+  afterEach(() => reset<unknown>(mockedVirtualScripts, spiedFs, spiedLogger));
+
   describe('load', () => {
     it('should load scripts from paths with type local each one only once', async () => {
       // arrange
-      const { mockedVirtualScripts, scriptLoader } = createScriptLoader();
 
       const code = 'let a = 1;';
 
@@ -40,9 +44,10 @@ describe('FSScriptLoader', () => {
         (_path, _opts, callback) => callback(null, code)
       );
 
-      // act
       const path1 = 'test.js';
       const path2 = 'test1.js';
+
+      // act
 
       await scriptLoader.load({
         [path1]: code,
@@ -59,13 +64,11 @@ describe('FSScriptLoader', () => {
 
     it('should log with debug level and throw if cannot read file', async () => {
       // arrange
-      const { scriptLoader } = createScriptLoader();
 
       when(spiedFs.readFile(anyString(), anything(), anyFunction())).thenCall(
         (_path, _opts, callback) => callback(new Error('msg'), null)
       );
 
-      const spiedLogger = spy(logger);
       // act
       const loadPromise = scriptLoader.load({
         test: 'test'

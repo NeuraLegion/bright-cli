@@ -24,33 +24,28 @@ describe('VirtualScript', () => {
     return virtualScript;
   };
 
-  it('should throw when constructed with falsy id', () => {
-    expect(
-      () => new VirtualScript('', VirtualScriptType.REMOTE, 'let a = 1;')
-    ).to.throw();
-    expect(
-      () => new VirtualScript(null, VirtualScriptType.REMOTE, 'let a = 1;')
-    ).to.throw();
-    expect(
-      () => new VirtualScript(undefined, VirtualScriptType.REMOTE, 'let a = 1;')
-    ).to.throw();
-  });
+  describe('constructor', () => {
+    ['', undefined, null].forEach((input) =>
+      it(`should throw an error if "${input}" is supplied as ID`, () => {
+        expect(
+          () => new VirtualScript(input, VirtualScriptType.REMOTE, 'let a = 1;')
+        ).to.throw();
+      })
+    );
 
-  it('should throw when constructed with falsy type', () => {
-    expect(() => new VirtualScript('123', null, 'let a = 1;')).to.throw();
-    expect(() => new VirtualScript('123', undefined, 'let a = 1;')).to.throw();
-  });
+    [undefined, null].forEach((input) =>
+      it(`should throw an error if "${input}" is supplied as type`, () => {
+        expect(() => new VirtualScript('123', input, 'let a = 1;')).to.throw();
+      })
+    );
 
-  it('should throw when constructed with falsy code', () => {
-    expect(
-      () => new VirtualScript('123', VirtualScriptType.REMOTE, '')
-    ).to.throw();
-    expect(
-      () => new VirtualScript('123', VirtualScriptType.REMOTE, null)
-    ).to.throw();
-    expect(
-      () => new VirtualScript('123', VirtualScriptType.REMOTE, undefined)
-    ).to.throw();
+    ['', undefined, null].forEach((input) =>
+      it(`should throw an error if "${input}" is supplied as code`, () => {
+        expect(
+          () => new VirtualScript('123', VirtualScriptType.REMOTE, input)
+        ).to.throw();
+      })
+    );
   });
 
   describe('compile', () => {
