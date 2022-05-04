@@ -1,4 +1,5 @@
 import 'reflect-metadata';
+import 'chai/register-should';
 import { DefaultVirtualScripts } from './DefaultVirtualScripts';
 import { VirtualScript, VirtualScriptType } from './VirtualScript';
 import { expect } from 'chai';
@@ -24,9 +25,9 @@ describe('DefaultVirtualScripts', () => {
         VirtualScript
       ][] = [...virtualScripts];
       // assert
-      expect(firstKey).to.equal(key1);
+      firstKey.should.equal(key1);
       expect(firstScript).to.include({ id: key1 });
-      expect(secondKey).to.equal(key2);
+      secondKey.should.equal(key2);
       expect(secondScript).to.include({ id: key2 });
     });
   });
@@ -39,7 +40,7 @@ describe('DefaultVirtualScripts', () => {
       // act
       virtualScripts.clear();
       // assert
-      expect(Array.from(virtualScripts)).to.deep.equal([]);
+      expect([...virtualScripts]).to.deep.equal([]);
     });
 
     it('should remove only VirtualScriptType.LOCAL scripts when VirtualScriptType.LOCAL type is passed', () => {
@@ -49,7 +50,7 @@ describe('DefaultVirtualScripts', () => {
       // act
       virtualScripts.clear(VirtualScriptType.LOCAL);
       // assert
-      expect(Array.from(virtualScripts)).to.deep.equal([
+      expect([...virtualScripts]).to.deep.equal([
         [
           'second',
           new VirtualScript(
@@ -68,7 +69,7 @@ describe('DefaultVirtualScripts', () => {
       // act
       virtualScripts.clear(VirtualScriptType.REMOTE);
       // assert
-      expect(Array.from(virtualScripts)).to.deep.equal([
+      expect([...virtualScripts]).to.deep.equal([
         [
           'first',
           new VirtualScript(
@@ -91,7 +92,7 @@ describe('DefaultVirtualScripts', () => {
       // act
       virtualScripts.delete(keyToDelete);
       // assert
-      expect(Array.from(virtualScripts)).to.deep.equal([
+      expect([...virtualScripts]).to.deep.equal([
         [
           keyToPreserve,
           new VirtualScript(
@@ -110,7 +111,7 @@ describe('DefaultVirtualScripts', () => {
       // act
       const deleteRes = virtualScripts.delete(keyToDelete);
       // assert
-      expect(deleteRes).to.equal(true);
+      deleteRes.should.equal(true);
     });
 
     it('should return false when not found key', () => {
@@ -118,7 +119,7 @@ describe('DefaultVirtualScripts', () => {
       // act
       const deleteRes = virtualScripts.delete('anything');
       // assert
-      expect(deleteRes).to.equal(false);
+      deleteRes.should.equal(false);
     });
   });
 
@@ -131,13 +132,14 @@ describe('DefaultVirtualScripts', () => {
       virtualScripts.set(key2, VirtualScriptType.REMOTE, 'let a = 2;');
       // act
       // eslint-disable-next-line @typescript-eslint/typedef
-      const [[firstKey, firstScript], [secondKey, secondScript]] = Array.from(
-        virtualScripts.entries()
-      );
+      const [[firstKey, firstScript], [secondKey, secondScript]]: [
+        string,
+        VirtualScript
+      ][] = [...virtualScripts.entries()];
       // assert
-      expect(firstKey).to.equal(key1);
+      firstKey.should.equal(key1);
       expect(firstScript).to.include({ id: key1 });
-      expect(secondKey).to.equal(key2);
+      secondKey.should.equal(key2);
       expect(secondScript).to.include({ id: key2 });
     });
   });
@@ -201,8 +203,8 @@ describe('DefaultVirtualScripts', () => {
       // act
       const keys = virtualScripts.keys();
       // assert
-      expect(keys.next().value).to.equal(key1);
-      expect(keys.next().value).to.equal(key2);
+      keys.next().value.should.equal(key1);
+      keys.next().value.should.equal(key2);
     });
   });
 
@@ -219,7 +221,7 @@ describe('DefaultVirtualScripts', () => {
       virtualScripts.set(id, VirtualScriptType.LOCAL, 'let a = 1;');
 
       // assert
-      expect(Array.from(virtualScripts)).to.deep.equal([
+      expect([...virtualScripts]).to.deep.equal([
         [
           id,
           new VirtualScript(id, VirtualScriptType.LOCAL, 'let a = 1;').compile()
@@ -233,7 +235,7 @@ describe('DefaultVirtualScripts', () => {
       // act
       virtualScripts.set(wildcard, VirtualScriptType.REMOTE, 'let a = 1;');
       // assert
-      expect(Array.from(virtualScripts)).to.deep.equal([
+      expect([...virtualScripts]).to.deep.equal([
         [
           wildcard,
           new VirtualScript(
