@@ -5,24 +5,22 @@ import { ReadlinePlatform } from '../Wizard';
 import { Helpers, logger } from '../Utils';
 import { injectable } from 'tsyringe';
 import { EOL } from 'os';
+import { URL } from 'url';
 
 @injectable()
 @bind(NetworkTest)
 export class NetworkTestHandler
   implements Handler<NetworkTest, NetworkTestResult>
 {
-  public async handle({
-    repeaterId,
-    urls
-  }: NetworkTest): Promise<NetworkTestResult> {
-    const output = await this.getOutput(urls);
+  public async handle(config: NetworkTest): Promise<NetworkTestResult> {
+    const output = await this.getOutput(config);
 
-    return { output, repeaterId };
+    return { output, repeaterId: config.repeaterId };
   }
 
-  private async getOutput(urls: string[]): Promise<string> {
+  private async getOutput(config: NetworkTest): Promise<string> {
     return new Promise((resolve, reject) => {
-      const args = ['configure', '--ping'];
+      const args = ['configure', `--${config.type}`];
 
       logger.debug('Launching "Network Diagnostic" process with cmd: %j', args);
 
@@ -43,8 +41,14 @@ export class NetworkTestHandler
 
         stdout.push(...lines);
 
+        const [first, ...rest]: string[] = [].concat(config.input);
+
         if (chunk.indexOf(ReadlinePlatform.URLS_QUESTION) > -1) {
-          child.stdin.write(`${urls.join(',')}${EOL}`);
+          child.stdin.write(`${[first, ...rest].join(',')}${EOL}`);
+        }
+
+        if (chunk.indexOf(ReadlinePlatform.HOST_OR_IP_QUESTION) > -1) {
+          child.stdin.write(`${new URL(first).hostname}${EOL}`);
         }
 
         if (chunk.indexOf(ReadlinePlatform.COMPELED_MESSAGE) > -1) {
