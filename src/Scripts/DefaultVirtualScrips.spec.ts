@@ -23,9 +23,9 @@ describe('DefaultVirtualScripts', () => {
         VirtualScript
       ][] = [...virtualScripts];
       // assert
-      expect(firstKey).toEqual(key1);
+      expect(firstKey).toBe(key1);
       expect(firstScript).toMatchObject({ id: key1 });
-      expect(secondKey).toEqual(key2);
+      expect(secondKey).toBe(key2);
       expect(secondScript).toMatchObject({ id: key2 });
     });
   });
@@ -109,7 +109,7 @@ describe('DefaultVirtualScripts', () => {
       // act
       const deleteRes = virtualScripts.delete(keyToDelete);
       // assert
-      expect(deleteRes).toEqual(true);
+      expect(deleteRes).toBe(true);
     });
 
     it('should return false when not found key', () => {
@@ -117,7 +117,7 @@ describe('DefaultVirtualScripts', () => {
       // act
       const deleteRes = virtualScripts.delete('anything');
       // assert
-      expect(deleteRes).toEqual(false);
+      expect(deleteRes).toBe(false);
     });
   });
 
@@ -135,9 +135,9 @@ describe('DefaultVirtualScripts', () => {
         VirtualScript
       ][] = [...virtualScripts.entries()];
       // assert
-      expect(firstKey).toEqual(key1);
+      expect(firstKey).toBe(key1);
       expect(firstScript).toMatchObject({ id: key1 });
-      expect(secondKey).toEqual(key2);
+      expect(secondKey).toBe(key2);
       expect(secondScript).toMatchObject({ id: key2 });
     });
   });
@@ -201,8 +201,8 @@ describe('DefaultVirtualScripts', () => {
       // act
       const keys = virtualScripts.keys();
       // assert
-      expect(keys.next().value).toEqual(key1);
-      expect(keys.next().value).toEqual(key2);
+      expect(keys.next().value).toBe(key1);
+      expect(keys.next().value).toBe(key2);
     });
   });
 

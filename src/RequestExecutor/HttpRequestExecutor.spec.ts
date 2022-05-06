@@ -49,7 +49,7 @@ describe('HttpRequestExecutor', () => {
 
   describe('protocol', () => {
     it('should return HTTP', () =>
-      expect(executor.protocol).toEqual(Protocol.HTTP));
+      expect(executor.protocol).toBe(Protocol.HTTP));
   });
 
   describe('execute', () => {
@@ -121,8 +121,10 @@ describe('HttpRequestExecutor', () => {
 
       const response = await executor.execute(request);
 
-      expect(response.statusCode).toEqual(200);
-      expect(response.body).toBe('{}');
+      expect(response).toMatchObject({
+        statusCode: 200,
+        body: '{}'
+      });
     });
 
     it('should handle HTTP errors', async () => {
@@ -131,8 +133,10 @@ describe('HttpRequestExecutor', () => {
 
       const response = await executor.execute(request);
 
-      expect(response.statusCode).toEqual(500);
-      expect(response.body).toBe('{}');
+      expect(response).toMatchObject({
+        statusCode: 500,
+        body: '{}'
+      });
     });
 
     it('should handle non-HTTP errors', async () => {
@@ -140,7 +144,9 @@ describe('HttpRequestExecutor', () => {
 
       const response = await executor.execute(request);
 
-      expect(typeof response.statusCode).toEqual('undefined');
+      expect(response).toMatchObject({
+        statusCode: undefined
+      });
     });
 
     it('should not truncate response body if it is in whitelisted mime types', async () => {
@@ -152,9 +158,10 @@ describe('HttpRequestExecutor', () => {
       });
 
       const response = await executor.execute(request);
-
-      expect(response.statusCode).toBe(200);
-      expect(response.body).toBe(bigBody);
+      expect(response).toMatchObject({
+        statusCode: 200,
+        body: bigBody
+      });
     });
   });
 });

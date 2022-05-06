@@ -86,7 +86,7 @@ describe('VirtualScript', () => {
       // act
       const execPromise = virtualScript.exec('handle');
       // assert
-      await expect(execPromise).resolves.toEqual(process.cwd());
+      await expect(execPromise).resolves.toBe(process.cwd());
     });
 
     it('should execute the script with a valid __filename', async () => {
