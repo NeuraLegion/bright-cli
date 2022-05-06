@@ -77,7 +77,6 @@
     "lint-staged": "^11.1.2",
     "nock": "^13.2.1",
     "nodemon": "^2.0.12",
-    "nyc": "^15.1.0",
     "pkg": "^5.3.1",
     "prettier": "^2.3.2",
     "semantic-release": "^17.4.5",
