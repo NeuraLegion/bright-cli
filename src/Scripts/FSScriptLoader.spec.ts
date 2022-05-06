@@ -1,5 +1,4 @@
 import 'reflect-metadata';
-import 'chai/register-should';
 import { FSScriptLoader } from './FSScriptLoader';
 import { VirtualScriptType } from './VirtualScript';
 import { Logger, logger } from '../Utils';
@@ -15,11 +14,7 @@ import {
   verify,
   when
 } from 'ts-mockito';
-import { use } from 'chai';
-import promisified from 'chai-as-promised';
 import fs from 'fs';
-
-use(promisified);
 
 describe('FSScriptLoader', () => {
   const mockedVirtualScripts = mock<VirtualScripts>();
@@ -76,7 +71,7 @@ describe('FSScriptLoader', () => {
       });
 
       // assert
-      await loadPromise.should.be.rejected;
+      await expect(loadPromise).rejects.toThrowError();
 
       verify(spiedLogger.debug(anyString())).once();
     });

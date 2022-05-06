@@ -1,5 +1,4 @@
 import 'reflect-metadata';
-import 'chai/register-should';
 import { HttpRequestExecutor } from './HttpRequestExecutor';
 import { VirtualScript, VirtualScripts, VirtualScriptType } from '../Scripts';
 import { Protocol } from './Protocol';
@@ -49,7 +48,8 @@ describe('HttpRequestExecutor', () => {
   );
 
   describe('protocol', () => {
-    it('should return HTTP', () => executor.protocol.should.eq(Protocol.HTTP));
+    it('should return HTTP', () =>
+      expect(executor.protocol).toEqual(Protocol.HTTP));
   });
 
   describe('execute', () => {
@@ -121,8 +121,8 @@ describe('HttpRequestExecutor', () => {
 
       const response = await executor.execute(request);
 
-      response.statusCode.should.equal(200);
-      response.body.should.be.a('string').and.to.equal('{}');
+      expect(response.statusCode).toEqual(200);
+      expect(response.body).toBe('{}');
     });
 
     it('should handle HTTP errors', async () => {
@@ -131,8 +131,8 @@ describe('HttpRequestExecutor', () => {
 
       const response = await executor.execute(request);
 
-      response.statusCode.should.equal(500);
-      response.body.should.be.a('string').and.to.equal('{}');
+      expect(response.statusCode).toEqual(500);
+      expect(response.body).toBe('{}');
     });
 
     it('should handle non-HTTP errors', async () => {
@@ -140,7 +140,7 @@ describe('HttpRequestExecutor', () => {
 
       const response = await executor.execute(request);
 
-      (typeof response.statusCode).should.equal('undefined');
+      expect(typeof response.statusCode).toEqual('undefined');
     });
 
     it('should not truncate response body if it is in whitelisted mime types', async () => {
@@ -153,8 +153,8 @@ describe('HttpRequestExecutor', () => {
 
       const response = await executor.execute(request);
 
-      response.statusCode.should.equal(200);
-      response.body.should.be.a('string').and.to.equal(bigBody);
+      expect(response.statusCode).toBe(200);
+      expect(response.body).toBe(bigBody);
     });
   });
 });

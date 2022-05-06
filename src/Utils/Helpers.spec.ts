@@ -1,12 +1,9 @@
 import { Helpers } from './Helpers';
-import { should, expect } from 'chai';
 
 enum TestEnum {
   TEST = 'test',
   PROD = 'prod'
 }
-
-should();
 
 describe('Helpers', () => {
   describe('getClusterUrls', () => {
@@ -19,7 +16,7 @@ describe('Helpers', () => {
       // act
       const act = () => Helpers.getClusterUrls(args);
       //assert
-      act.should.to.throw(
+      expect(act).toThrow(
         'Arguments api/bus and cluster are mutually exclusive'
       );
     });
@@ -33,7 +30,7 @@ describe('Helpers', () => {
       // act
       const act = () => Helpers.getClusterUrls(args);
       //assert
-      act.should.to.throw(
+      expect(act).toThrow(
         'Arguments api/bus and cluster are mutually exclusive'
       );
     });
@@ -46,8 +43,11 @@ describe('Helpers', () => {
       // act
       const result = Helpers.getClusterUrls(args);
       //assert
-      result.api.should.be.equal('http://localhost:8000');
-      result.bus.should.be.equal('amqp://localhost:5672');
+
+      expect(result).toEqual({
+        api: 'http://localhost:8000',
+        bus: 'amqp://localhost:5672'
+      });
     });
 
     it('should returns default values if --cluster, --bus and --api not used', () => {
@@ -56,8 +56,10 @@ describe('Helpers', () => {
       // act
       const result = Helpers.getClusterUrls(args);
       //assert
-      result.api.should.be.equal('https://app.neuralegion.com');
-      result.bus.should.be.equal('amqps://amq.app.neuralegion.com:5672');
+      expect(result).toEqual({
+        api: 'https://app.neuralegion.com',
+        bus: 'amqps://amq.app.neuralegion.com:5672'
+      });
     });
 
     it('should returns values with --cluster option', () => {
@@ -68,8 +70,10 @@ describe('Helpers', () => {
       // act
       const result = Helpers.getClusterUrls(args);
       //assert
-      result.api.should.be.equal('https://test.com');
-      result.bus.should.be.equal('amqps://amq.test.com:5672');
+      expect(result).toEqual({
+        api: 'https://test.com',
+        bus: 'amqps://amq.test.com:5672'
+      });
     });
 
     it('should returns values with --api and --bus option', () => {
@@ -81,29 +85,31 @@ describe('Helpers', () => {
       // act
       const result = Helpers.getClusterUrls(args);
       //assert
-      result.api.should.be.equal('https://test.com');
-      result.bus.should.be.equal('amqps://rabbit.test.com');
+      expect(result).toEqual({
+        api: 'https://test.com',
+        bus: 'amqps://rabbit.test.com'
+      });
     });
   });
 
   describe('getExecArgs', () => {
     it('should return current exec args', () => {
       const { args, command } = Helpers.getExecArgs();
-      command.should.eq(process.execPath);
-      args.should.have.members([...process.execArgv, ...process.argv.slice(1)]);
+      expect(command).toBe(process.execPath);
+      expect(args).toEqual([...process.execArgv, ...process.argv.slice(1)]);
     });
 
     it('should return exec args excluding all app args', () => {
       const { args, command } = Helpers.getExecArgs({ excludeAll: true });
-      command.should.eq(process.execPath);
-      args.should.have.members([process.argv[1]]);
+      expect(command).toBe(process.execPath);
+      expect(args).toEqual(expect.arrayContaining([process.argv[1]]));
     });
 
     it('should return exec args including extra args', () => {
       const extraArgs = ['--run'];
       const { args, command } = Helpers.getExecArgs({ include: extraArgs });
-      command.should.eq(process.execPath);
-      args.should.have.members([
+      expect(command).toBe(process.execPath);
+      expect(args).toEqual([
         ...process.execArgv,
         ...process.argv.slice(1),
         ...extraArgs
@@ -113,8 +119,8 @@ describe('Helpers', () => {
     it('should return exec args excluding specific args', () => {
       const excessArgs = [...process.argv].slice(-2);
       const { args, command } = Helpers.getExecArgs({ exclude: excessArgs });
-      command.should.eq(process.execPath);
-      args.should.have.members([
+      expect(command).toBe(process.execPath);
+      expect(args).toEqual([
         ...process.execArgv,
         ...process.argv.slice(1, process.argv.length - 2)
       ]);
@@ -143,7 +149,7 @@ describe('Helpers', () => {
         // act
         const test = regex.test(input);
         // assert
-        test.should.be.equal(expected);
+        expect(test).toBe(expected);
       });
     });
   });
@@ -154,14 +160,14 @@ describe('Helpers', () => {
       //act
       const actual = Helpers.selectEnumValue(TestEnum, 'TesT');
       //assert
-      actual.should.be.equal(TestEnum.TEST);
+      expect(actual).toBe(TestEnum.TEST);
     });
     it('should returns undefined', () => {
       //arrange
       //act
       const actual = Helpers.selectEnumValue(TestEnum, 'Staging');
       //assert
-      expect(actual).to.be.undefined;
+      expect(actual).toBeUndefined();
     });
   });
 
@@ -178,7 +184,7 @@ describe('Helpers', () => {
       // act
       const actual = Helpers.omit(input);
       // assert
-      actual.should.be.deep.equal({ a: 1, b: 2, e: 3 });
+      expect(actual).toEqual({ a: 1, b: 2, e: 3 });
     });
   });
 
@@ -189,7 +195,7 @@ describe('Helpers', () => {
       // act
       const actual = Helpers.split(items, 2);
       // assert
-      actual.should.be.deep.equal([
+      expect(actual).toEqual([
         [1, 2],
         [3, 4]
       ]);
@@ -200,14 +206,14 @@ describe('Helpers', () => {
       // act
       const actual = Helpers.split(items, 2);
       // assert
-      actual.should.be.deep.equal([[1, 2], [3, 4], [5]]);
+      expect(actual).toEqual([[1, 2], [3, 4], [5]]);
     });
     it('should split empty array', () => {
       const items: string[] = [];
 
       const actual = Helpers.split(items, 3);
 
-      actual.should.be.deep.equal([]);
+      expect(actual).toEqual([]);
     });
   });
   describe('toArray', () => {
@@ -216,8 +222,8 @@ describe('Helpers', () => {
       // act
       const actual = Helpers.toArray(TestEnum);
       // assert
-      actual.should.to.be.an('array');
-      actual.should.to.be.deep.equal([TestEnum.TEST, TestEnum.PROD]);
+      expect(Array.isArray(actual)).toBe(true);
+      expect(actual).toEqual([TestEnum.TEST, TestEnum.PROD]);
     });
   });
   describe('parseHeaders', () => {
@@ -229,7 +235,7 @@ describe('Helpers', () => {
       const actual = Helpers.parseHeaders(input);
 
       // assert
-      actual.should.be.empty;
+      expect(actual).toEqual({});
     });
 
     it('should returns pairs of key/value even if value omitted', () => {
@@ -240,16 +246,17 @@ describe('Helpers', () => {
       const actual = Helpers.parseHeaders(input);
 
       // assert
-      actual['header1'].should.be.empty;
-      actual['header2'].should.be.equal('value2');
-      actual.should.have.keys(['header1', 'header2']);
+      expect(actual).toEqual({
+        header1: '',
+        header2: 'value2'
+      });
     });
 
     it('should throw error', () => {
       const act = () => Helpers.parseHeaders({} as string[]);
 
       //assert
-      act.should.to.throw('First argument must be an instance of Array.');
+      expect(act).toThrow('First argument must be an instance of Array.');
     });
   });
 });
