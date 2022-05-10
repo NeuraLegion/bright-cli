@@ -33,7 +33,6 @@ describe('FSScriptLoader', () => {
   describe('load', () => {
     it('should load scripts from paths with type local each one only once', async () => {
       // arrange
-
       const code = 'let a = 1;';
 
       when(spiedFs.readFile(anyString(), anything(), anyFunction())).thenCall(
@@ -44,7 +43,6 @@ describe('FSScriptLoader', () => {
       const path2 = 'test1.js';
 
       // act
-
       await scriptLoader.load({
         [path1]: code,
         [path2]: code
@@ -60,7 +58,6 @@ describe('FSScriptLoader', () => {
 
     it('should log with debug level and throw if cannot read file', async () => {
       // arrange
-
       when(spiedFs.readFile(anyString(), anything(), anyFunction())).thenCall(
         (_path, _opts, callback) => callback(new Error('msg'), null)
       );

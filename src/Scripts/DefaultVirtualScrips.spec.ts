@@ -16,12 +16,14 @@ describe('DefaultVirtualScripts', () => {
       const key2 = '2';
       virtualScripts.set(key1, VirtualScriptType.REMOTE, 'let a = 1;');
       virtualScripts.set(key2, VirtualScriptType.REMOTE, 'let a = 2;');
+
       // act
       // eslint-disable-next-line @typescript-eslint/typedef
       const [[firstKey, firstScript], [secondKey, secondScript]]: [
         string,
         VirtualScript
       ][] = [...virtualScripts];
+
       // assert
       expect(firstKey).toBe(key1);
       expect(firstScript).toMatchObject({ id: key1 });
@@ -35,8 +37,10 @@ describe('DefaultVirtualScripts', () => {
       // arrange
       virtualScripts.set('first', VirtualScriptType.LOCAL, 'let a = 1;');
       virtualScripts.set('second', VirtualScriptType.REMOTE, 'let a = 2;');
+
       // act
       virtualScripts.clear();
+
       // assert
       expect([...virtualScripts]).toEqual([]);
     });
@@ -45,8 +49,10 @@ describe('DefaultVirtualScripts', () => {
       // arrange
       virtualScripts.set('first', VirtualScriptType.LOCAL, 'let a = 1;');
       virtualScripts.set('second', VirtualScriptType.REMOTE, 'let a = 2;');
+
       // act
       virtualScripts.clear(VirtualScriptType.LOCAL);
+
       // assert
       expect([...virtualScripts]).toEqual([
         [
@@ -64,8 +70,10 @@ describe('DefaultVirtualScripts', () => {
       // arrange
       virtualScripts.set('first', VirtualScriptType.LOCAL, 'let a = 1;');
       virtualScripts.set('second', VirtualScriptType.REMOTE, 'let a = 2;');
+
       // act
       virtualScripts.clear(VirtualScriptType.REMOTE);
+
       // assert
       expect([...virtualScripts]).toEqual([
         [
@@ -87,8 +95,10 @@ describe('DefaultVirtualScripts', () => {
       const keyToPreserve = 'second';
       virtualScripts.set(keyToDelete, VirtualScriptType.LOCAL, 'let a = 1;');
       virtualScripts.set(keyToPreserve, VirtualScriptType.REMOTE, 'let a = 2;');
+
       // act
       virtualScripts.delete(keyToDelete);
+
       // assert
       expect([...virtualScripts]).toEqual([
         [
@@ -106,8 +116,10 @@ describe('DefaultVirtualScripts', () => {
       // arrange
       const keyToDelete = 'first';
       virtualScripts.set(keyToDelete, VirtualScriptType.LOCAL, 'let a = 1;');
+
       // act
       const deleteRes = virtualScripts.delete(keyToDelete);
+
       // assert
       expect(deleteRes).toBe(true);
     });
@@ -116,6 +128,7 @@ describe('DefaultVirtualScripts', () => {
       // arrange
       // act
       const deleteRes = virtualScripts.delete('anything');
+
       // assert
       expect(deleteRes).toBe(false);
     });
@@ -128,12 +141,14 @@ describe('DefaultVirtualScripts', () => {
       const key2 = '2';
       virtualScripts.set(key1, VirtualScriptType.REMOTE, 'let a = 1;');
       virtualScripts.set(key2, VirtualScriptType.REMOTE, 'let a = 2;');
+
       // act
       // eslint-disable-next-line @typescript-eslint/typedef
       const [[firstKey, firstScript], [secondKey, secondScript]]: [
         string,
         VirtualScript
       ][] = [...virtualScripts.entries()];
+
       // assert
       expect(firstKey).toBe(key1);
       expect(firstScript).toMatchObject({ id: key1 });
@@ -152,8 +167,10 @@ describe('DefaultVirtualScripts', () => {
         VirtualScriptType.REMOTE,
         'let a = 2;'
       ).compile();
+
       // act
       const foundScript = virtualScripts.find(host);
+
       // assert
       expect(foundScript).toEqual(expected);
     });
@@ -167,8 +184,10 @@ describe('DefaultVirtualScripts', () => {
         VirtualScriptType.REMOTE,
         'let a = 2;'
       ).compile();
+
       //act
       const foundScript = virtualScripts.find('sub.example.com');
+
       // assert
       expect(foundScript).toEqual(expected);
     });
@@ -184,8 +203,10 @@ describe('DefaultVirtualScripts', () => {
         VirtualScriptType.REMOTE,
         'let a = 2;'
       ).compile();
+
       // act
       const foundScript = virtualScripts.find('test.sub.example.com');
+
       // assert
       expect(foundScript).toEqual(expected);
     });
@@ -198,8 +219,10 @@ describe('DefaultVirtualScripts', () => {
       const key2 = '2';
       virtualScripts.set(key1, VirtualScriptType.REMOTE, 'let a = 1;');
       virtualScripts.set(key2, VirtualScriptType.REMOTE, 'let a = 2;');
+
       // act
       const keys = virtualScripts.keys();
+
       // assert
       expect(keys.next().value).toBe(key1);
       expect(keys.next().value).toBe(key2);
@@ -215,6 +238,7 @@ describe('DefaultVirtualScripts', () => {
     it('should create and compile VirtualScript, and store it', () => {
       // arrange
       const id = 'first';
+
       // act
       virtualScripts.set(id, VirtualScriptType.LOCAL, 'let a = 1;');
 
@@ -230,8 +254,10 @@ describe('DefaultVirtualScripts', () => {
       // arrange
       const wildcard = '*.example.com';
       virtualScripts.set(wildcard, VirtualScriptType.LOCAL, 'let a = 2;');
+
       // act
       virtualScripts.set(wildcard, VirtualScriptType.REMOTE, 'let a = 1;');
+
       // assert
       expect([...virtualScripts]).toEqual([
         [
@@ -253,8 +279,10 @@ describe('DefaultVirtualScripts', () => {
       const key2 = '2';
       virtualScripts.set(key1, VirtualScriptType.REMOTE, 'let a = 1;');
       virtualScripts.set(key2, VirtualScriptType.REMOTE, 'let a = 2;');
+
       // act
       const values = virtualScripts.values();
+
       // assert
       expect(values.next().value).toMatchObject({ id: key1 });
       expect(values.next().value).toMatchObject({ id: key2 });

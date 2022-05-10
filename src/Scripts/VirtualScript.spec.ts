@@ -54,8 +54,10 @@ describe('VirtualScript', () => {
         VirtualScriptType.REMOTE,
         'let a = 1;'
       );
+
       // act
       const compiledScript = virtualScript.compile();
+
       // assert
       expect(compiledScript).toBe(virtualScript);
     });
@@ -69,6 +71,7 @@ describe('VirtualScript', () => {
 
       // act
       const execPromise = virtualScript.exec('handle', ...args);
+
       // assert
       await expect(execPromise).resolves.toEqual(args);
     });
@@ -83,8 +86,10 @@ describe('VirtualScript', () => {
       `;
 
       const virtualScript = createAndCompileVirtualScript(returnDirnnameScript);
+
       // act
       const execPromise = virtualScript.exec('handle');
+
       // assert
       await expect(execPromise).resolves.toBe(process.cwd());
     });
@@ -99,8 +104,10 @@ describe('VirtualScript', () => {
       `;
 
       const virtualScript = createAndCompileVirtualScript(returnFilenameScript);
+
       // act
       const execPromise = virtualScript.exec('handle');
+
       // assert
       await expect(execPromise).resolves.toBeDefined();
     });
@@ -115,8 +122,10 @@ describe('VirtualScript', () => {
       `;
 
       const virtualScript = createAndCompileVirtualScript(returnModuleScript);
+
       // act
       const execPromise = virtualScript.exec('handle');
+
       // assert
       await expect(execPromise).resolves.toBeInstanceOf(Module);
     });
@@ -124,8 +133,10 @@ describe('VirtualScript', () => {
     it('should throw when script does not have exported function with provided name', async () => {
       // arrange
       const virtualScript = createAndCompileVirtualScript('let a = 1;');
+
       // act
       const execPromise = virtualScript.exec('handle');
+
       // assert
       await expect(execPromise).rejects.toThrowError();
     });
@@ -137,8 +148,10 @@ describe('VirtualScript', () => {
         VirtualScriptType.LOCAL,
         identityScript
       );
+
       // act
       const execPromise = virtualScript.exec('handle');
+
       // assert
       await expect(execPromise).rejects.toThrowError();
     });
