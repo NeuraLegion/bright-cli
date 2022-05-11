@@ -48,8 +48,10 @@ describe('HttpRequestExecutor', () => {
   );
 
   describe('protocol', () => {
-    it('should return HTTP', () =>
-      expect(executor.protocol).toBe(Protocol.HTTP));
+    it('should return HTTP', () => {
+      const protocol = executor.protocol;
+      expect(protocol).toBe(Protocol.HTTP);
+    });
   });
 
   describe('execute', () => {

@@ -23,8 +23,10 @@ describe('WsRequestExecutor', () => {
   afterEach(() => reset<RequestExecutorOptions>(spiedExecutorOptions));
 
   describe('protocol', () => {
-    it('should use WS protocol', () =>
-      expect(executor.protocol).toBe(Protocol.WS));
+    it('should use WS protocol', () => {
+      const protocol = executor.protocol;
+      expect(protocol).toBe(Protocol.WS);
+    });
   });
 
   describe('execute', () => {
@@ -113,13 +115,14 @@ describe('WsRequestExecutor', () => {
       const request = new Request({ url, headers });
 
       server.on('connection', (socket, req) => {
+        const test = req.headers;
         WsRequestExecutor.FORBIDDEN_HEADERS.forEach((headerName) => {
-          expect(req.headers).toMatchObject({
+          expect(test).toMatchObject({
             [headerName]: expect.not.stringContaining('forbidden-header-value')
           });
         });
 
-        expect(req.headers).toMatchObject({
+        expect(test).toMatchObject({
           'test-header': 'test-header-value'
         });
 

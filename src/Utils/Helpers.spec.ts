@@ -94,36 +94,41 @@ describe('Helpers', () => {
 
   describe('getExecArgs', () => {
     it('should return current exec args', () => {
-      const { args, command } = Helpers.getExecArgs();
-      expect(command).toBe(process.execPath);
-      expect(args).toEqual([...process.execArgv, ...process.argv.slice(1)]);
+      const result = Helpers.getExecArgs();
+
+      expect(result).toMatchObject({
+        command: process.execPath,
+        args: [...process.execArgv, ...process.argv.slice(1)]
+      });
     });
 
     it('should return exec args excluding all app args', () => {
-      const { args, command } = Helpers.getExecArgs({ excludeAll: true });
-      expect(command).toBe(process.execPath);
-      expect(args).toEqual(expect.arrayContaining([process.argv[1]]));
+      const result = Helpers.getExecArgs({ excludeAll: true });
+      expect(result).toMatchObject({
+        command: process.execPath,
+        args: expect.arrayContaining([process.argv[1]])
+      });
     });
 
     it('should return exec args including extra args', () => {
       const extraArgs = ['--run'];
-      const { args, command } = Helpers.getExecArgs({ include: extraArgs });
-      expect(command).toBe(process.execPath);
-      expect(args).toEqual([
-        ...process.execArgv,
-        ...process.argv.slice(1),
-        ...extraArgs
-      ]);
+      const result = Helpers.getExecArgs({ include: extraArgs });
+      expect(result).toMatchObject({
+        command: process.execPath,
+        args: [...process.execArgv, ...process.argv.slice(1), ...extraArgs]
+      });
     });
 
     it('should return exec args excluding specific args', () => {
       const excessArgs = [...process.argv].slice(-2);
-      const { args, command } = Helpers.getExecArgs({ exclude: excessArgs });
-      expect(command).toBe(process.execPath);
-      expect(args).toEqual([
-        ...process.execArgv,
-        ...process.argv.slice(1, process.argv.length - 2)
-      ]);
+      const result = Helpers.getExecArgs({ exclude: excessArgs });
+      expect(result).toMatchObject({
+        command: process.execPath,
+        args: [
+          ...process.execArgv,
+          ...process.argv.slice(1, process.argv.length - 2)
+        ]
+      });
     });
   });
 
@@ -222,7 +227,6 @@ describe('Helpers', () => {
       // act
       const actual = Helpers.toArray(TestEnum);
       // assert
-      expect(Array.isArray(actual)).toBe(true);
       expect(actual).toEqual([TestEnum.TEST, TestEnum.PROD]);
     });
   });
