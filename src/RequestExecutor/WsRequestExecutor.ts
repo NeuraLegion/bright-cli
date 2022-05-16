@@ -157,12 +157,13 @@ export class WsRequestExecutor implements RequestExecutor {
   }
 
   private async connect(client: WebSocket): Promise<IncomingMessage> {
-    const opening = once(client, 'open');
-    const upgrading = once(client, 'upgrade') as Promise<[IncomingMessage]>;
+    // eslint-disable-next-line @typescript-eslint/typedef
+    const [, upgrading] = await Promise.all([
+      once(client, 'open'),
+      once(client, 'upgrade') as Promise<[IncomingMessage]>
+    ]);
 
-    await opening;
-
-    const [res]: [IncomingMessage] = await upgrading;
+    const [res]: [IncomingMessage] = upgrading;
 
     return res;
   }
