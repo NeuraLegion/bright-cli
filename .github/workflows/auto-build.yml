@@ -18,5 +18,5 @@ jobs:
       - run: npm run format
       - run: npm run test:unit
         continue-on-error: false
-      - run: npm run test:e2e -- --timeout 4000
+      - run: npm run test:e2e -- --testTimeout 4000
         continue-on-error: false
