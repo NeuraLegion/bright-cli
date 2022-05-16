@@ -3,6 +3,7 @@ module.exports = {
   preset: 'ts-jest',
   testEnvironment: 'node',
   testPathIgnorePatterns: ['<rootDir>/node_modules/'],
+  testMatch: ['<rootDir>/src/**/?(*.)+(spec|test).[jt]s?(x)'],
   globals: {
     'ts-jest': {
       tsconfig: '<rootDir>/tsconfig.spec.json'
