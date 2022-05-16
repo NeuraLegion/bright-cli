@@ -2,13 +2,7 @@
   "extends": "../tsconfig.json",
   "compilerOptions": {
     "outDir": "./dist/e2e",
-    "types": [
-      "mocha",
-      "node"
-    ]
+    "types": ["node", "jest"]
   },
-  "include": [
-    "**/*",
-    "../src/**/*"
-  ]
+  "include": ["**/*.spec.ts"]
 }
