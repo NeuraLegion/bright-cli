@@ -1,10 +1,5 @@
 import { VirtualScript, VirtualScriptType } from './VirtualScript';
-import { use } from 'chai';
-import promisified from 'chai-as-promised';
-import 'chai/register-should';
 import Module from 'module';
-
-use(promisified);
 
 describe('VirtualScript', () => {
   const identityScript = `
@@ -28,29 +23,25 @@ describe('VirtualScript', () => {
   describe('constructor', () => {
     ['', undefined, null].forEach((input) =>
       it(`should throw an error if "${input}" is supplied as ID`, () => {
-        (() =>
-          new VirtualScript(
-            input,
-            VirtualScriptType.REMOTE,
-            'let a = 1;'
-          )).should.throw();
+        expect(
+          () => new VirtualScript(input, VirtualScriptType.REMOTE, 'let a = 1;')
+        ).toThrowError();
       })
     );
 
     [undefined, null].forEach((input) =>
       it(`should throw an error if "${input}" is supplied as type`, () => {
-        (() => new VirtualScript('123', input, 'let a = 1;')).should.throw();
+        expect(
+          () => new VirtualScript('123', input, 'let a = 1;')
+        ).toThrowError();
       })
     );
 
     ['', undefined, null].forEach((input) =>
       it(`should throw an error if "${input}" is supplied as code`, () => {
-        (() =>
-          new VirtualScript(
-            '123',
-            VirtualScriptType.REMOTE,
-            input
-          )).should.throw();
+        expect(
+          () => new VirtualScript('123', VirtualScriptType.REMOTE, input)
+        ).toThrowError();
       })
     );
   });
@@ -63,10 +54,12 @@ describe('VirtualScript', () => {
         VirtualScriptType.REMOTE,
         'let a = 1;'
       );
+
       // act
       const compiledScript = virtualScript.compile();
+
       // assert
-      compiledScript.should.equal(virtualScript);
+      expect(compiledScript).toBe(virtualScript);
     });
   });
 
@@ -78,8 +71,9 @@ describe('VirtualScript', () => {
 
       // act
       const execPromise = virtualScript.exec('handle', ...args);
+
       // assert
-      await execPromise.should.eventually.have.members(args);
+      await expect(execPromise).resolves.toEqual(args);
     });
 
     it('should execute the script with __dirname set to be current working directory', async () => {
@@ -92,10 +86,12 @@ describe('VirtualScript', () => {
       `;
 
       const virtualScript = createAndCompileVirtualScript(returnDirnnameScript);
+
       // act
       const execPromise = virtualScript.exec('handle');
+
       // assert
-      await execPromise.should.eventually.equal(process.cwd());
+      await expect(execPromise).resolves.toBe(process.cwd());
     });
 
     it('should execute the script with a valid __filename', async () => {
@@ -108,10 +104,12 @@ describe('VirtualScript', () => {
       `;
 
       const virtualScript = createAndCompileVirtualScript(returnFilenameScript);
+
       // act
       const execPromise = virtualScript.exec('handle');
+
       // assert
-      await execPromise.should.not.eventually.undefined;
+      await expect(execPromise).resolves.toBeDefined();
     });
 
     it('should execute the script with a valid nodejs module', async () => {
@@ -124,19 +122,23 @@ describe('VirtualScript', () => {
       `;
 
       const virtualScript = createAndCompileVirtualScript(returnModuleScript);
+
       // act
       const execPromise = virtualScript.exec('handle');
+
       // assert
-      await execPromise.should.eventually.instanceOf(Module);
+      await expect(execPromise).resolves.toBeInstanceOf(Module);
     });
 
     it('should throw when script does not have exported function with provided name', async () => {
       // arrange
       const virtualScript = createAndCompileVirtualScript('let a = 1;');
+
       // act
       const execPromise = virtualScript.exec('handle');
+
       // assert
-      await execPromise.should.be.rejected;
+      await expect(execPromise).rejects.toThrowError();
     });
 
     it('should throw when script has not been compiled before exec', async () => {
@@ -146,10 +148,12 @@ describe('VirtualScript', () => {
         VirtualScriptType.LOCAL,
         identityScript
       );
+
       // act
       const execPromise = virtualScript.exec('handle');
+
       // assert
-      await execPromise.should.be.rejected;
+      await expect(execPromise).rejects.toThrowError();
     });
   });
 });
