@@ -1,5 +1,4 @@
 import 'reflect-metadata';
-import 'chai/register-should';
 import { HttpRequestExecutor } from './HttpRequestExecutor';
 import { VirtualScript, VirtualScripts, VirtualScriptType } from '../Scripts';
 import { Protocol } from './Protocol';
@@ -49,7 +48,10 @@ describe('HttpRequestExecutor', () => {
   );
 
   describe('protocol', () => {
-    it('should return HTTP', () => executor.protocol.should.eq(Protocol.HTTP));
+    it('should return HTTP', () => {
+      const protocol = executor.protocol;
+      expect(protocol).toBe(Protocol.HTTP);
+    });
   });
 
   describe('execute', () => {
@@ -121,8 +123,10 @@ describe('HttpRequestExecutor', () => {
 
       const response = await executor.execute(request);
 
-      response.statusCode.should.equal(200);
-      response.body.should.be.a('string').and.to.equal('{}');
+      expect(response).toMatchObject({
+        statusCode: 200,
+        body: '{}'
+      });
     });
 
     it('should handle HTTP errors', async () => {
@@ -131,8 +135,10 @@ describe('HttpRequestExecutor', () => {
 
       const response = await executor.execute(request);
 
-      response.statusCode.should.equal(500);
-      response.body.should.be.a('string').and.to.equal('{}');
+      expect(response).toMatchObject({
+        statusCode: 500,
+        body: '{}'
+      });
     });
 
     it('should handle non-HTTP errors', async () => {
@@ -140,7 +146,9 @@ describe('HttpRequestExecutor', () => {
 
       const response = await executor.execute(request);
 
-      (typeof response.statusCode).should.equal('undefined');
+      expect(response).toMatchObject({
+        statusCode: undefined
+      });
     });
 
     it('should not truncate response body if it is in whitelisted mime types', async () => {
@@ -152,9 +160,10 @@ describe('HttpRequestExecutor', () => {
       });
 
       const response = await executor.execute(request);
-
-      response.statusCode.should.equal(200);
-      response.body.should.be.a('string').and.to.equal(bigBody);
+      expect(response).toMatchObject({
+        statusCode: 200,
+        body: bigBody
+      });
     });
   });
 });

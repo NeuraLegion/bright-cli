@@ -28,7 +28,7 @@ export class Integration implements CommandModule {
     return argv
       .option('token', {
         alias: 't',
-        describe: 'NeuraLegion API-key',
+        describe: 'Bright API-key',
         requiresArg: true,
         demandOption: true
       })
@@ -78,7 +78,7 @@ export class Integration implements CommandModule {
         container
           .register<IntegrationOptions>(IntegrationOptions, {
             useValue: {
-              // TODO: (victor.polyakov@neuralegion.con) Write correct type checking
+              // TODO: (victor.polyakov@brightsec.com) Write correct type checking
               timeout: +(args.timeout as number),
               apiKey: args.password as string,
               user: args.user as string,

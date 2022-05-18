@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Wix xmlns="http://schemas.microsoft.com/wix/2006/wi" xmlns:util="http://schemas.microsoft.com/wix/UtilExtension">
   <?define ProductName="NexPloit CLI" ?>
-  <?define ProductAuthor="NeuraLegion" ?>
+  <?define ProductAuthor="Bright Security Inc." ?>
   <?define ProductDescription="$(var.ProductName) is a CLI tool that can initialize, stop, polling and maintain scans in $(var.ProductAuthor)s solutions (Such as NexPloit)." ?>
   <?define RegistryKeyPath="SOFTWARE\$(var.ProductName)" ?>
   <Product Id="*" Name="$(var.ProductName)" UpgradeCode="74b15b74-a063-4524-ae83-69ad421be456" Language="1033" Codepage="1252" Version="$(var.ProductVersion)" Manufacturer="$(var.ProductAuthor)">
@@ -32,7 +32,7 @@
                                             Because of ICE43, the Root must be HKCU. -->
             <RegistryValue Root="HKCU" Key="$(var.RegistryKeyPath)\Components" Type="integer" Value="1" KeyPath="yes" />
             <util:InternetShortcut Id="OnlineWebsiteShortcut" Name="$(var.ProductName) repository" Target="https://github.com/NeuraLegion/nexploit-cli" Type="url" />
-            <util:InternetShortcut Id="OnlineDocumentationShortcut" Name="$(var.ProductName) documentation" Target="https://docs.neuralegion.com/docs/about-nexploit-cli" Type="url" />
+            <util:InternetShortcut Id="OnlineDocumentationShortcut" Name="$(var.ProductName) documentation" Target="https://docs.brightsec.com/docs/about-nexploit-cli" Type="url" />
             <Shortcut Id="UninstallProduct" Name="Uninstall $(var.ProductName)" Target="[System64Folder]msiexec.exe" Arguments="/x [ProductCode]" />
             <Shortcut Id="ExeShortcut" Name="$(var.ProductName)" Icon="NexPloitIcon" Target="[INSTALLDIR]nexploit-cli.exe" WorkingDirectory="INSTALLDIR" IconIndex="0" />
             <RemoveFolder Id="ProgramMenuDir" On="uninstall" />

@@ -156,7 +156,7 @@ export class DefaultRepeaterLauncher implements RepeaterLauncher {
     } else {
       if (gt(payload.version, this.info.version)) {
         logger.warn(
-          '%s: A new Repeater version (%s) is available, for update instruction visit https://docs.neuralegion.com/docs/installation-options',
+          '%s: A new Repeater version (%s) is available, for update instruction visit https://docs.brightsec.com/docs/installation-options',
           chalk.yellow('(!) IMPORTANT'),
           payload.version
         );

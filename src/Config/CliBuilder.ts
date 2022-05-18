@@ -45,19 +45,19 @@ export class CliBuilder {
         demandOption: true,
         deprecated: true,
         describe:
-          'NeuraLegion application base URL. [default: https://app.neuralegion.com]'
+          'Bright application base URL. [default: https://app.neuralegion.com]'
       })
       .option('bus', {
         requiresArg: true,
         demandOption: true,
         deprecated: true,
         describe:
-          'NeuraLegion Event Bus base URL. [default: amqps://amq.app.neuralegion.com:5672]'
+          'Bright Event Bus base URL. [default: amqps://amq.app.neuralegion.com:5672]'
       })
       .option('cluster', {
         requiresArg: true,
         describe:
-          'NeuraLegion application name (domain name). [default: app.neuralegion.com]'
+          'Bright application name (domain name). [default: app.neuralegion.com]'
       })
       .option('insecure', {
         boolean: true,
@@ -82,7 +82,7 @@ export class CliBuilder {
           args as ClusterArgs
         ));
       }, true)
-      // TODO: (victor.polyakov@neuralegion.com) Write correct type checking
+      // TODO: (victor.polyakov@brightsec.com) Write correct type checking
       .middleware(
         (args: Arguments) =>
           (logger.logLevel = !isNaN(+args.logLevel)

@@ -73,7 +73,7 @@ export class RunScan implements CommandModule {
     return argv
       .option('token', {
         alias: 't',
-        describe: 'NeuraLegion API-key',
+        describe: 'Bright API-key',
         requiresArg: true,
         demandOption: true
       })

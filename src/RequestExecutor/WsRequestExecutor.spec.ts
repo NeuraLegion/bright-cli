@@ -1,5 +1,4 @@
 import 'reflect-metadata';
-import 'chai/register-should';
 import { Protocol } from './Protocol';
 import { WsRequestExecutor } from './WsRequestExecutor';
 import { RequestExecutorOptions } from './RequestExecutorOptions';
@@ -24,8 +23,10 @@ describe('WsRequestExecutor', () => {
   afterEach(() => reset<RequestExecutorOptions>(spiedExecutorOptions));
 
   describe('protocol', () => {
-    it('should use WS protocol', () =>
-      executor.protocol.should.equal(Protocol.WS));
+    it('should use WS protocol', () => {
+      const protocol = executor.protocol;
+      expect(protocol).toBe(Protocol.WS);
+    });
   });
 
   describe('execute', () => {
@@ -53,7 +54,6 @@ describe('WsRequestExecutor', () => {
       const request = new Request({ url: 'wss://foo.bar', headers: {} });
       const spiedRequest = spy(request);
       when(spiedExecutorOptions.certs).thenReturn([]);
-
       await executor.execute(request);
 
       verify(spiedRequest.setCerts(anything())).once();
@@ -76,8 +76,8 @@ describe('WsRequestExecutor', () => {
 
       server.on('connection', async (socket) => {
         socket.on('message', (data) => {
-          data.should.be.instanceOf(Buffer);
-          data.toString().should.equal(body);
+          expect(data).toBeInstanceOf(Buffer);
+          expect(data.toString()).toBe(body);
 
           socket.send('test reply');
 
@@ -96,7 +96,7 @@ describe('WsRequestExecutor', () => {
 
       const response = await executor.execute(request);
 
-      response.should.deep.equal({
+      expect(response).toEqual({
         body: undefined,
         errorCode: 'ETIMEDOUT',
         headers: undefined,
@@ -115,13 +115,16 @@ describe('WsRequestExecutor', () => {
       const request = new Request({ url, headers });
 
       server.on('connection', (socket, req) => {
+        const test = req.headers;
         WsRequestExecutor.FORBIDDEN_HEADERS.forEach((headerName) => {
-          req.headers.should.have.ownProperty(headerName);
-          req.headers[headerName].should.not.equal('forbidden-header-value');
+          expect(test).toMatchObject({
+            [headerName]: expect.not.stringContaining('forbidden-header-value')
+          });
         });
 
-        req.headers.should.have.ownProperty('test-header');
-        req.headers['test-header'].should.equal('test-header-value');
+        expect(test).toMatchObject({
+          'test-header': 'test-header-value'
+        });
 
         socket.on('message', () => {
           socket.send('test reply');
@@ -145,7 +148,7 @@ describe('WsRequestExecutor', () => {
 
       const response = await executor.execute(request);
 
-      response.body.should.equal('test reply');
+      expect(response.body).toBe('test reply');
     });
   });
 });
