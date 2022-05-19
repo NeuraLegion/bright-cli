@@ -1,5 +1,8 @@
 import { Helpers } from './Helpers';
 
+// for mocking private static function Helpers.win() later
+const actualHelpersModule = jest.requireActual('./Helpers');
+
 enum TestEnum {
   TEST = 'test',
   PROD = 'prod'
@@ -15,7 +18,7 @@ describe('Helpers', () => {
       };
       // act
       const act = () => Helpers.getClusterUrls(args);
-      //assert
+      // assert
       expect(act).toThrow(
         'Arguments api/bus and cluster are mutually exclusive'
       );
@@ -29,7 +32,7 @@ describe('Helpers', () => {
       };
       // act
       const act = () => Helpers.getClusterUrls(args);
-      //assert
+      // assert
       expect(act).toThrow(
         'Arguments api/bus and cluster are mutually exclusive'
       );
@@ -42,7 +45,7 @@ describe('Helpers', () => {
       };
       // act
       const result = Helpers.getClusterUrls(args);
-      //assert
+      // assert
 
       expect(result).toEqual({
         api: 'http://localhost:8000',
@@ -55,7 +58,7 @@ describe('Helpers', () => {
       const args = {};
       // act
       const result = Helpers.getClusterUrls(args);
-      //assert
+      // assert
       expect(result).toEqual({
         api: 'https://app.neuralegion.com',
         bus: 'amqps://amq.app.neuralegion.com:5672'
@@ -69,7 +72,7 @@ describe('Helpers', () => {
       };
       // act
       const result = Helpers.getClusterUrls(args);
-      //assert
+      // assert
       expect(result).toEqual({
         api: 'https://test.com',
         bus: 'amqps://amq.test.com:5672'
@@ -84,7 +87,7 @@ describe('Helpers', () => {
       };
       // act
       const result = Helpers.getClusterUrls(args);
-      //assert
+      // assert
       expect(result).toEqual({
         api: 'https://test.com',
         bus: 'amqps://rabbit.test.com'
@@ -93,41 +96,105 @@ describe('Helpers', () => {
   });
 
   describe('getExecArgs', () => {
-    it('should return current exec args', () => {
-      const result = Helpers.getExecArgs();
+    describe('unescaped', () => {
+      it('should return current exec args', () => {
+        // arrange & act
+        const result = Helpers.getExecArgs({
+          escape: false
+        });
+        // assert
+        expect(result).toMatchObject({
+          windowsVerbatimArguments: false,
+          command: process.execPath,
+          args: [...process.execArgv, ...process.argv.slice(1)]
+        });
+      });
 
-      expect(result).toMatchObject({
-        command: process.execPath,
-        args: [...process.execArgv, ...process.argv.slice(1)]
+      it('should return exec args excluding all app args', () => {
+        // arrange & act
+        const result = Helpers.getExecArgs({ excludeAll: true, escape: false });
+        // assert
+        expect(result).toMatchObject({
+          windowsVerbatimArguments: false,
+          command: process.execPath,
+          args: expect.arrayContaining([process.argv[1]])
+        });
+      });
+
+      it('should return exec args including extra args', () => {
+        // arrange
+        const extraArgs = ['--run'];
+        // act
+        const result = Helpers.getExecArgs({
+          include: extraArgs,
+          escape: false
+        });
+        // assert
+        expect(result).toMatchObject({
+          windowsVerbatimArguments: false,
+          command: process.execPath,
+          args: [...process.execArgv, ...process.argv.slice(1), ...extraArgs]
+        });
+      });
+
+      it('should return exec args excluding specific args', () => {
+        // arrange
+        const excessArgs = [...process.argv].slice(-2);
+        // act
+        const result = Helpers.getExecArgs({
+          exclude: excessArgs,
+          escape: false
+        });
+        // assert
+        expect(result).toMatchObject({
+          windowsVerbatimArguments: false,
+          command: process.execPath,
+          args: [
+            ...process.execArgv,
+            ...process.argv.slice(1, process.argv.length - 2)
+          ]
+        });
       });
     });
 
-    it('should return exec args excluding all app args', () => {
-      const result = Helpers.getExecArgs({ excludeAll: true });
-      expect(result).toMatchObject({
-        command: process.execPath,
-        args: expect.arrayContaining([process.argv[1]])
-      });
-    });
+    describe('escaped', () => {
+      // META_CHARS_REGEXP and escapeShellArgument
+      // are borrowed from Helpers class implementation
+      const META_CHARS_REGEXP = /([()\][%!^"`<>&|;, *?])/g;
 
-    it('should return exec args including extra args', () => {
-      const extraArgs = ['--run'];
-      const result = Helpers.getExecArgs({ include: extraArgs });
-      expect(result).toMatchObject({
-        command: process.execPath,
-        args: [...process.execArgv, ...process.argv.slice(1), ...extraArgs]
-      });
-    });
+      const escapeShellArgument = (val: string): string => {
+        val = `${val}`;
+        val = val.replace(/(\\*)"/g, '$1$1\\"');
+        val = val.replace(/(\\*)$/, '$1$1');
+        val = `"${val}"`;
 
-    it('should return exec args excluding specific args', () => {
-      const excessArgs = [...process.argv].slice(-2);
-      const result = Helpers.getExecArgs({ exclude: excessArgs });
-      expect(result).toMatchObject({
-        command: process.execPath,
-        args: [
-          ...process.execArgv,
-          ...process.argv.slice(1, process.argv.length - 2)
-        ]
+        return val.replace(META_CHARS_REGEXP, '^$1');
+      };
+
+      beforeAll(() => {
+        jest
+          .spyOn(actualHelpersModule.Helpers, 'win')
+          .mockImplementation(() => true);
+      });
+
+      afterAll(() => {
+        jest.resetModules();
+      });
+
+      it('should escape windows verbatim arguments', () => {
+        // arrange & act
+        const result = Helpers.getExecArgs({
+          escape: true
+        });
+        // assert
+        expect(result).toMatchObject({
+          windowsVerbatimArguments: true,
+          command: `"${process.execPath}"`,
+          args: [
+            ...process.execArgv.map(escapeShellArgument),
+            ...process.argv.slice(1).map(escapeShellArgument)
+          ]
+        });
       });
     });
   });
@@ -161,17 +228,17 @@ describe('Helpers', () => {
 
   describe('selectEnumValue', () => {
     it('should found with case agnostic', () => {
-      //arrange
-      //act
+      // arrange
+      // act
       const actual = Helpers.selectEnumValue(TestEnum, 'TesT');
-      //assert
+      // assert
       expect(actual).toBe(TestEnum.TEST);
     });
     it('should returns undefined', () => {
-      //arrange
-      //act
+      // arrange
+      // act
       const actual = Helpers.selectEnumValue(TestEnum, 'Staging');
-      //assert
+      // assert
       expect(actual).toBeUndefined();
     });
   });
@@ -259,7 +326,7 @@ describe('Helpers', () => {
     it('should throw error', () => {
       const act = () => Helpers.parseHeaders({} as string[]);
 
-      //assert
+      // assert
       expect(act).toThrow('First argument must be an instance of Array.');
     });
   });
