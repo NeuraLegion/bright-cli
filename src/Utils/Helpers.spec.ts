@@ -1,7 +1,5 @@
 import { Helpers } from './Helpers';
-
-// for mocking private static function Helpers.win() later
-const actualHelpersModule = jest.requireActual('./Helpers');
+import { reset, spy, when } from 'ts-mockito';
 
 enum TestEnum {
   TEST = 'test',
@@ -171,14 +169,15 @@ describe('Helpers', () => {
         return val.replace(META_CHARS_REGEXP, '^$1');
       };
 
+      let spiedProcess!: NodeJS.Process;
+
       beforeAll(() => {
-        jest
-          .spyOn(actualHelpersModule.Helpers, 'win')
-          .mockImplementation(() => true);
+        spiedProcess = spy(process);
+        when(spiedProcess.platform).thenReturn('win32');
       });
 
       afterAll(() => {
-        jest.resetModules();
+        reset(spiedProcess);
       });
 
       it('should escape windows verbatim arguments', () => {
