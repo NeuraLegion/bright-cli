@@ -1,4 +1,5 @@
 import { Helpers } from './Helpers';
+import { reset, spy, when } from 'ts-mockito';
 
 enum TestEnum {
   TEST = 'test',
@@ -15,7 +16,7 @@ describe('Helpers', () => {
       };
       // act
       const act = () => Helpers.getClusterUrls(args);
-      //assert
+      // assert
       expect(act).toThrow(
         'Arguments api/bus and cluster are mutually exclusive'
       );
@@ -29,7 +30,7 @@ describe('Helpers', () => {
       };
       // act
       const act = () => Helpers.getClusterUrls(args);
-      //assert
+      // assert
       expect(act).toThrow(
         'Arguments api/bus and cluster are mutually exclusive'
       );
@@ -42,7 +43,7 @@ describe('Helpers', () => {
       };
       // act
       const result = Helpers.getClusterUrls(args);
-      //assert
+      // assert
 
       expect(result).toEqual({
         api: 'http://localhost:8000',
@@ -55,7 +56,7 @@ describe('Helpers', () => {
       const args = {};
       // act
       const result = Helpers.getClusterUrls(args);
-      //assert
+      // assert
       expect(result).toEqual({
         api: 'https://app.neuralegion.com',
         bus: 'amqps://amq.app.neuralegion.com:5672'
@@ -69,7 +70,7 @@ describe('Helpers', () => {
       };
       // act
       const result = Helpers.getClusterUrls(args);
-      //assert
+      // assert
       expect(result).toEqual({
         api: 'https://test.com',
         bus: 'amqps://amq.test.com:5672'
@@ -84,7 +85,7 @@ describe('Helpers', () => {
       };
       // act
       const result = Helpers.getClusterUrls(args);
-      //assert
+      // assert
       expect(result).toEqual({
         api: 'https://test.com',
         bus: 'amqps://rabbit.test.com'
@@ -93,40 +94,95 @@ describe('Helpers', () => {
   });
 
   describe('getExecArgs', () => {
-    it('should return current exec args', () => {
-      const result = Helpers.getExecArgs();
+    let spiedProcess!: NodeJS.Process;
 
+    beforeAll(() => (spiedProcess = spy(process)));
+
+    afterAll(() => reset(spiedProcess));
+
+    it('should return current exec args', () => {
+      // arrange
+      const options = { escape: false };
+      // act
+      const result = Helpers.getExecArgs(options);
+      // assert
       expect(result).toMatchObject({
+        windowsVerbatimArguments: false,
         command: process.execPath,
         args: [...process.execArgv, ...process.argv.slice(1)]
       });
     });
 
     it('should return exec args excluding all app args', () => {
-      const result = Helpers.getExecArgs({ excludeAll: true });
+      // arrange
+      const options = { excludeAll: true, escape: false };
+      // act
+      const result = Helpers.getExecArgs(options);
+      // assert
       expect(result).toMatchObject({
+        windowsVerbatimArguments: false,
         command: process.execPath,
         args: expect.arrayContaining([process.argv[1]])
       });
     });
 
     it('should return exec args including extra args', () => {
+      // arrange
       const extraArgs = ['--run'];
-      const result = Helpers.getExecArgs({ include: extraArgs });
+      const options = { include: extraArgs, escape: false };
+      // act
+      const result = Helpers.getExecArgs(options);
+      // assert
       expect(result).toMatchObject({
+        windowsVerbatimArguments: false,
         command: process.execPath,
         args: [...process.execArgv, ...process.argv.slice(1), ...extraArgs]
       });
     });
 
     it('should return exec args excluding specific args', () => {
+      // arrange
       const excessArgs = [...process.argv].slice(-2);
-      const result = Helpers.getExecArgs({ exclude: excessArgs });
+      const options = { exclude: excessArgs, escape: false };
+      // act
+      const result = Helpers.getExecArgs(options);
+      // assert
       expect(result).toMatchObject({
+        windowsVerbatimArguments: false,
         command: process.execPath,
         args: [
           ...process.execArgv,
           ...process.argv.slice(1, process.argv.length - 2)
+        ]
+      });
+    });
+
+    it('should escape windows verbatim arguments', () => {
+      // arrange
+      const META_CHARS_REGEXP = /([()\][%!^"`<>&|;, *?])/g;
+
+      const escapeShellArgument = (val: string): string => {
+        val = `${val}`;
+        val = val.replace(/(\\*)"/g, '$1$1\\"');
+        val = val.replace(/(\\*)$/, '$1$1');
+        val = `"${val}"`;
+
+        return val.replace(META_CHARS_REGEXP, '^$1');
+      };
+
+      const options = { escape: true };
+
+      when(spiedProcess.platform).thenReturn('win32');
+
+      // act
+      const result = Helpers.getExecArgs(options);
+      // assert
+      expect(result).toMatchObject({
+        windowsVerbatimArguments: true,
+        command: `"${process.execPath}"`,
+        args: [
+          ...process.execArgv.map(escapeShellArgument),
+          ...process.argv.slice(1).map(escapeShellArgument)
         ]
       });
     });
@@ -161,17 +217,17 @@ describe('Helpers', () => {
 
   describe('selectEnumValue', () => {
     it('should found with case agnostic', () => {
-      //arrange
-      //act
+      // arrange
+      // act
       const actual = Helpers.selectEnumValue(TestEnum, 'TesT');
-      //assert
+      // assert
       expect(actual).toBe(TestEnum.TEST);
     });
     it('should returns undefined', () => {
-      //arrange
-      //act
+      // arrange
+      // act
       const actual = Helpers.selectEnumValue(TestEnum, 'Staging');
-      //assert
+      // assert
       expect(actual).toBeUndefined();
     });
   });
@@ -259,7 +315,7 @@ describe('Helpers', () => {
     it('should throw error', () => {
       const act = () => Helpers.parseHeaders({} as string[]);
 
-      //assert
+      // assert
       expect(act).toThrow('First argument must be an instance of Array.');
     });
   });
