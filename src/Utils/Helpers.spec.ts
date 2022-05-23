@@ -94,70 +94,71 @@ describe('Helpers', () => {
   });
 
   describe('getExecArgs', () => {
-    describe('unescaped', () => {
-      it('should return current exec args', () => {
-        // arrange & act
-        const result = Helpers.getExecArgs({
-          escape: false
-        });
-        // assert
-        expect(result).toMatchObject({
-          windowsVerbatimArguments: false,
-          command: process.execPath,
-          args: [...process.execArgv, ...process.argv.slice(1)]
-        });
-      });
+    let spiedProcess!: NodeJS.Process;
 
-      it('should return exec args excluding all app args', () => {
-        // arrange & act
-        const result = Helpers.getExecArgs({ excludeAll: true, escape: false });
-        // assert
-        expect(result).toMatchObject({
-          windowsVerbatimArguments: false,
-          command: process.execPath,
-          args: expect.arrayContaining([process.argv[1]])
-        });
-      });
+    beforeAll(() => (spiedProcess = spy(process)));
 
-      it('should return exec args including extra args', () => {
-        // arrange
-        const extraArgs = ['--run'];
-        // act
-        const result = Helpers.getExecArgs({
-          include: extraArgs,
-          escape: false
-        });
-        // assert
-        expect(result).toMatchObject({
-          windowsVerbatimArguments: false,
-          command: process.execPath,
-          args: [...process.execArgv, ...process.argv.slice(1), ...extraArgs]
-        });
-      });
+    afterAll(() => reset(spiedProcess));
 
-      it('should return exec args excluding specific args', () => {
-        // arrange
-        const excessArgs = [...process.argv].slice(-2);
-        // act
-        const result = Helpers.getExecArgs({
-          exclude: excessArgs,
-          escape: false
-        });
-        // assert
-        expect(result).toMatchObject({
-          windowsVerbatimArguments: false,
-          command: process.execPath,
-          args: [
-            ...process.execArgv,
-            ...process.argv.slice(1, process.argv.length - 2)
-          ]
-        });
+    it('should return current exec args', () => {
+      // arrange
+      const options = { escape: false };
+      // act
+      const result = Helpers.getExecArgs(options);
+      // assert
+      expect(result).toMatchObject({
+        windowsVerbatimArguments: false,
+        command: process.execPath,
+        args: [...process.execArgv, ...process.argv.slice(1)]
       });
     });
 
-    describe('escaped', () => {
-      // META_CHARS_REGEXP and escapeShellArgument
-      // are borrowed from Helpers class implementation
+    it('should return exec args excluding all app args', () => {
+      // arrange
+      const options = { excludeAll: true, escape: false };
+      // act
+      const result = Helpers.getExecArgs(options);
+      // assert
+      expect(result).toMatchObject({
+        windowsVerbatimArguments: false,
+        command: process.execPath,
+        args: expect.arrayContaining([process.argv[1]])
+      });
+    });
+
+    it('should return exec args including extra args', () => {
+      // arrange
+      const extraArgs = ['--run'];
+      const options = { include: extraArgs, escape: false };
+      // act
+      const result = Helpers.getExecArgs(options);
+      // assert
+      expect(result).toMatchObject({
+        windowsVerbatimArguments: false,
+        command: process.execPath,
+        args: [...process.execArgv, ...process.argv.slice(1), ...extraArgs]
+      });
+    });
+
+    it('should return exec args excluding specific args', () => {
+      // arrange
+      const excessArgs = [...process.argv].slice(-2);
+      const options = { exclude: excessArgs, escape: false };
+      // act
+      const result = Helpers.getExecArgs(options);
+      // assert
+      expect(result).toMatchObject({
+        windowsVerbatimArguments: false,
+        command: process.execPath,
+        args: [
+          ...process.execArgv,
+          ...process.argv.slice(1, process.argv.length - 2)
+        ]
+      });
+    });
+
+    it('should escape windows verbatim arguments', () => {
+      // arrange
       const META_CHARS_REGEXP = /([()\][%!^"`<>&|;, *?])/g;
 
       const escapeShellArgument = (val: string): string => {
@@ -169,31 +170,20 @@ describe('Helpers', () => {
         return val.replace(META_CHARS_REGEXP, '^$1');
       };
 
-      let spiedProcess!: NodeJS.Process;
+      const options = { escape: true };
 
-      beforeAll(() => {
-        spiedProcess = spy(process);
-        when(spiedProcess.platform).thenReturn('win32');
-      });
+      when(spiedProcess.platform).thenReturn('win32');
 
-      afterAll(() => {
-        reset(spiedProcess);
-      });
-
-      it('should escape windows verbatim arguments', () => {
-        // arrange & act
-        const result = Helpers.getExecArgs({
-          escape: true
-        });
-        // assert
-        expect(result).toMatchObject({
-          windowsVerbatimArguments: true,
-          command: `"${process.execPath}"`,
-          args: [
-            ...process.execArgv.map(escapeShellArgument),
-            ...process.argv.slice(1).map(escapeShellArgument)
-          ]
-        });
+      // act
+      const result = Helpers.getExecArgs(options);
+      // assert
+      expect(result).toMatchObject({
+        windowsVerbatimArguments: true,
+        command: `"${process.execPath}"`,
+        args: [
+          ...process.execArgv.map(escapeShellArgument),
+          ...process.argv.slice(1).map(escapeShellArgument)
+        ]
       });
     });
   });
