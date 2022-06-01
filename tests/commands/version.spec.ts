@@ -14,13 +14,17 @@ describe('"version" command', () => {
     ]);
   });
 
-  it('should not find any installed version', async () => {
-    const actual = await cli.spawn('version');
-    expect(actual).toEqual(
-      expect.stringContaining('No local installed NexPloit CLI was found.')
-    );
-    expect(actual).toEqual(
-      expect.stringContaining('No global installed was found.')
-    );
-  });
+  it(
+    'should not find any installed version',
+    async () => {
+      const actual = await cli.spawn('version');
+      expect(actual).toEqual(
+        expect.stringContaining('No local installed NexPloit CLI was found.')
+      );
+      expect(actual).toEqual(
+        expect.stringContaining('No global installed was found.')
+      );
+    },
+    60 * 1000
+  );
 });
