@@ -178,8 +178,23 @@ export enum SourceType {
 }
 
 export interface StorageFile {
+<<<<<<< HEAD
   id: string;
   type: SourceType;
+=======
+  storageId: string;
+  name: string;
+  size: number;
+  mimeType: string;
+  path: string;
+  type: SourceType;
+  revision?: number;
+  lastModified?: Date;
+  id?: string;
+  url?: string;
+  harPath?: string;
+  readyToBeUsed?: boolean;
+>>>>>>> fix(oas): add missing oas discovery type check
 }
 
 export interface Scans {
