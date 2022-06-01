@@ -170,6 +170,28 @@ export interface ScanState {
   issuesBySeverity: CountIssuesBySeverity[];
 }
 
+export enum SourceType {
+  OPEN_API = 'openapi',
+  RAML = 'raml',
+  POSTMAN = 'postman',
+  HAR = 'har'
+}
+
+export interface StorageFile {
+  storageId: string;
+  name: string;
+  size: number;
+  mimeType: string;
+  path: string;
+  type: SourceType;
+  revision?: number;
+  lastModified?: Date;
+  id?: string;
+  url?: string;
+  harPath?: string;
+  readyToBeUsed?: boolean;
+}
+
 export interface Scans {
   create(body: ScanConfig): Promise<string>;
 

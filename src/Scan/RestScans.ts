@@ -6,7 +6,8 @@ import {
   Repository,
   ScanConfig,
   Scans,
-  ScanState
+  ScanState,
+  StorageFile
 } from './Scans';
 import { CliInfo } from '../Config';
 import request, { RequestPromiseAPI } from 'request-promise';
@@ -52,7 +53,7 @@ export class RestScans implements Scans {
         : undefined;
 
     const { id }: { id: string } = await this.client.post({
-      body: this.prepareScanConfig({ ...body, repositories }),
+      body: await this.prepareScanConfig({ ...body, repositories }),
       uri: `/api/v1/scans`
     });
 
@@ -85,17 +86,16 @@ export class RestScans implements Scans {
     });
   }
 
-  private prepareScanConfig({ headers, ...rest }: ScanConfig): Omit<
-    ScanConfig,
-    'headers'
-  > & {
-    headers: Header[];
-    info: {
-      source: string;
-      client?: { name: string; version: string };
-    };
-  } {
-    const discoveryTypes: Discovery[] = this.exploreDiscovery(rest);
+  private async prepareScanConfig({ headers, ...rest }: ScanConfig): Promise<
+    Omit<ScanConfig, 'headers'> & {
+      headers: Header[];
+      info: {
+        source: string;
+        client?: { name: string; version: string };
+      };
+    }
+  > {
+    const discoveryTypes: Discovery[] = await this.exploreDiscovery(rest);
 
     return {
       ...rest,
@@ -117,7 +117,7 @@ export class RestScans implements Scans {
     };
   }
 
-  private exploreDiscovery(body: ScanConfig): Discovery[] {
+  private async exploreDiscovery(body: ScanConfig): Promise<Discovery[]> {
     const discoveryTypes: Discovery[] = [];
 
     if (Array.isArray(body.crawlerUrls)) {
@@ -125,7 +125,13 @@ export class RestScans implements Scans {
     }
 
     if (body.fileId) {
-      discoveryTypes.push(Discovery.ARCHIVE);
+      const file: StorageFile = await this.client.get({
+        uri: `/api/v1/files/${body.fileId}`
+      });
+
+      file.type !== 'har'
+        ? discoveryTypes.push(Discovery.OAS)
+        : discoveryTypes.push(Discovery.ARCHIVE);
     }
 
     return discoveryTypes;
