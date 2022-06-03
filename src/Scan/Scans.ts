@@ -113,6 +113,16 @@ export interface Board {
   uri?: string;
 }
 
+export interface RequestExclusion {
+  patterns: string[];
+  methods: string[];
+}
+
+export interface Exclusions {
+  params: string[];
+  requests: RequestExclusion[];
+}
+
 export interface ScanConfig {
   name: string;
   module: Module;
@@ -125,6 +135,7 @@ export interface ScanConfig {
   attackParamLocations?: AttackParamLocation[];
   smart?: boolean;
   extraHosts?: Record<string, string>;
+  exclusions?: Exclusions;
   headers?: Record<string, string> | Header[];
   crawlerUrls?: string[];
   hostsFilter?: string[];
