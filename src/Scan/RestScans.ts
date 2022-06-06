@@ -7,6 +7,7 @@ import {
   ScanConfig,
   Scans,
   ScanState,
+  SourceType,
   StorageFile
 } from './Scans';
 import { CliInfo } from '../Config';
@@ -52,8 +53,10 @@ export class RestScans implements Scans {
           })
         : undefined;
 
+    const scanConfig = await this.prepareScanConfig({ ...body, repositories });
+
     const { id }: { id: string } = await this.client.post({
-      body: await this.prepareScanConfig({ ...body, repositories }),
+      body: scanConfig,
       uri: `/api/v1/scans`
     });
 
@@ -119,19 +122,26 @@ export class RestScans implements Scans {
 
   private async exploreDiscovery(body: ScanConfig): Promise<Discovery[]> {
     const discoveryTypes: Discovery[] = [];
+    const fileId = body.fileId;
 
     if (Array.isArray(body.crawlerUrls)) {
       discoveryTypes.push(Discovery.CRAWLER);
     }
 
-    if (body.fileId) {
-      const file: StorageFile = await this.client.get({
-        uri: `/api/v1/files/${body.fileId}`
-      });
+    if (fileId) {
+      try {
+        const file: StorageFile = await this.client.get({
+          uri: `/api/v1/files/${fileId}`
+        });
 
-      file.type !== 'har'
-        ? discoveryTypes.push(Discovery.OAS)
-        : discoveryTypes.push(Discovery.ARCHIVE);
+        discoveryTypes.push(
+          file.type === SourceType.HAR ? Discovery.ARCHIVE : Discovery.OAS
+        );
+      } catch (error) {
+        throw new Error(
+          `Error loading file with id "${fileId}": No such file or you do not have permissions.`
+        );
+      }
     }
 
     return discoveryTypes;
