@@ -29,10 +29,11 @@ describe('RestScans', () => {
   });
 
   afterEach(() => {
-    reset<CliInfo | TestType | RequestPromiseAPI>(
+    reset<CliInfo | TestType | RequestPromiseAPI | Module>(
       cliInfoMock,
       testTypeMock,
-      requestPromiseAPIMock
+      requestPromiseAPIMock,
+      moduleMock
     );
     nock.cleanAll();
     nock.restore();
