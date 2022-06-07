@@ -54,18 +54,17 @@ describe('RestScans', () => {
       };
       const file: StorageFile = { id: scanConfig.fileId, type: SourceType.HAR };
 
-      nock('https://development.playground.neuralegion.com')
+      const filesScope = nock('https://development.playground.neuralegion.com')
         .replyContentLength()
         .get(`/api/v1/files/${scanConfig.fileId}`)
         .reply(200, file, {
           'content-type': 'application/json'
         });
 
-      nock('https://development.playground.neuralegion.com')
+      const scansScope = nock('https://development.playground.neuralegion.com')
         .replyContentLength()
         .post('/api/v1/scans', (body) => {
           parsedBody = body;
-          console.log(parsedBody);
 
           return body;
         })
@@ -81,6 +80,8 @@ describe('RestScans', () => {
       expect(parsedBody).toMatchObject({
         discoveryTypes: expect.arrayContaining<SourceType>([file.type])
       });
+      expect(filesScope.isDone()).toBeTruthy();
+      expect(scansScope.isDone()).toBeTruthy();
     });
 
     it('should create a new scan if the OAS file passed by id exists', async () => {
@@ -98,18 +99,17 @@ describe('RestScans', () => {
         type: SourceType.OPEN_API
       };
 
-      nock('https://development.playground.neuralegion.com')
+      const filesScope = nock('https://development.playground.neuralegion.com')
         .replyContentLength()
         .get(`/api/v1/files/${scanConfig.fileId}`)
         .reply(200, file, {
           'content-type': 'application/json'
         });
 
-      nock('https://development.playground.neuralegion.com')
+      const scansScope = nock('https://development.playground.neuralegion.com')
         .replyContentLength()
         .post('/api/v1/scans', (body) => {
           parsedBody = body;
-          console.log(parsedBody);
 
           return body;
         })
@@ -125,6 +125,8 @@ describe('RestScans', () => {
       expect(parsedBody).toMatchObject({
         discoveryTypes: expect.arrayContaining<SourceType>([file.type])
       });
+      expect(filesScope.isDone()).toBeTruthy();
+      expect(scansScope.isDone()).toBeTruthy();
     });
 
     it('should throw an error if the file passed by id does not exist or the user does not have permissions', async () => {
