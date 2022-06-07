@@ -44,7 +44,8 @@ describe('RestScans', () => {
   describe('create', () => {
     it('should create a new scan if the HAR file passed by id exists', async () => {
       // arrange
-      const postResponce = { id: 'string' };
+      let parsedBody;
+      const postResponse = { id: 'string' };
       const scanConfig: ScanConfig = {
         name: 'scan',
         module: instance(moduleMock),
@@ -62,8 +63,13 @@ describe('RestScans', () => {
 
       nock('https://development.playground.neuralegion.com')
         .replyContentLength()
-        .post('/api/v1/scans')
-        .reply(200, postResponce, {
+        .post('/api/v1/scans', (body) => {
+          parsedBody = body;
+          console.log(parsedBody);
+
+          return body;
+        })
+        .reply(200, postResponse, {
           'content-type': 'application/json'
         });
 
@@ -71,12 +77,16 @@ describe('RestScans', () => {
       const result = await restScans.create(scanConfig);
 
       // assert
-      expect(result).toEqual(postResponce.id);
+      expect(result).toEqual(postResponse.id);
+      expect(parsedBody).toMatchObject({
+        discoveryTypes: expect.arrayContaining<SourceType>([file.type])
+      });
     });
 
     it('should create a new scan if the OAS file passed by id exists', async () => {
       // arrange
-      const postResponce = { id: 'string' };
+      let parsedBody;
+      const postResponse = { id: 'string' };
       const scanConfig: ScanConfig = {
         name: 'scan',
         module: instance(moduleMock),
@@ -97,8 +107,13 @@ describe('RestScans', () => {
 
       nock('https://development.playground.neuralegion.com')
         .replyContentLength()
-        .post('/api/v1/scans')
-        .reply(200, postResponce, {
+        .post('/api/v1/scans', (body) => {
+          parsedBody = body;
+          console.log(parsedBody);
+
+          return body;
+        })
+        .reply(200, postResponse, {
           'content-type': 'application/json'
         });
 
@@ -106,10 +121,13 @@ describe('RestScans', () => {
       const result = await restScans.create(scanConfig);
 
       // assert
-      expect(result).toEqual(postResponce.id);
+      expect(result).toEqual(postResponse.id);
+      expect(parsedBody).toMatchObject({
+        discoveryTypes: expect.arrayContaining<SourceType>([file.type])
+      });
     });
 
-    it('should return an error if the file passed by id does not exist or the user does not have permissions', async () => {
+    it('should throw an error if the file passed by id does not exist or the user does not have permissions', async () => {
       // arrange
       const scanConfig: ScanConfig = {
         name: 'scan',
