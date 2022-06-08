@@ -6,7 +6,9 @@ import {
   Repository,
   ScanConfig,
   Scans,
-  ScanState
+  ScanState,
+  SourceType,
+  StorageFile
 } from './Scans';
 import { CliInfo } from '../Config';
 import request, { RequestPromiseAPI } from 'request-promise';
@@ -51,8 +53,10 @@ export class RestScans implements Scans {
           })
         : undefined;
 
+    const scanConfig = await this.prepareScanConfig({ ...body, repositories });
+
     const { id }: { id: string } = await this.client.post({
-      body: this.prepareScanConfig({ ...body, repositories }),
+      body: scanConfig,
       uri: `/api/v1/scans`
     });
 
@@ -85,17 +89,16 @@ export class RestScans implements Scans {
     });
   }
 
-  private prepareScanConfig({ headers, ...rest }: ScanConfig): Omit<
-    ScanConfig,
-    'headers'
-  > & {
-    headers: Header[];
-    info: {
-      source: string;
-      client?: { name: string; version: string };
-    };
-  } {
-    const discoveryTypes: Discovery[] = this.exploreDiscovery(rest);
+  private async prepareScanConfig({ headers, ...rest }: ScanConfig): Promise<
+    Omit<ScanConfig, 'headers'> & {
+      headers: Header[];
+      info: {
+        source: string;
+        client?: { name: string; version: string };
+      };
+    }
+  > {
+    const discoveryTypes: Discovery[] = await this.exploreDiscovery(rest);
 
     return {
       ...rest,
@@ -117,15 +120,28 @@ export class RestScans implements Scans {
     };
   }
 
-  private exploreDiscovery(body: ScanConfig): Discovery[] {
+  private async exploreDiscovery(body: ScanConfig): Promise<Discovery[]> {
     const discoveryTypes: Discovery[] = [];
+    const { fileId, crawlerUrls } = body;
 
-    if (Array.isArray(body.crawlerUrls)) {
+    if (Array.isArray(crawlerUrls)) {
       discoveryTypes.push(Discovery.CRAWLER);
     }
 
-    if (body.fileId) {
-      discoveryTypes.push(Discovery.ARCHIVE);
+    if (fileId) {
+      try {
+        const file: StorageFile = await this.client.get({
+          uri: `/api/v1/files/${fileId}`
+        });
+
+        discoveryTypes.push(
+          file.type === SourceType.HAR ? Discovery.ARCHIVE : Discovery.OAS
+        );
+      } catch (error) {
+        throw new Error(
+          `Error loading file with id "${fileId}": No such file or you do not have permissions.`
+        );
+      }
     }
 
     return discoveryTypes;
