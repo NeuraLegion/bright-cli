@@ -10,18 +10,8 @@ import { RestScans } from './RestScans';
 import { instance, mock, reset } from 'ts-mockito';
 import nock from 'nock';
 
-interface ResponseBody {
-  name: string;
-  module: unknown;
-  tests: Array<unknown>;
-  fileId: string;
-  discoveryTypes: Array<Discovery>;
-  info: { source: string; client: { name: string } };
-}
-
 describe('RestScans', () => {
   let restScans!: RestScans;
-  const moduleMock = mock<Module>();
   const cliInfoMock = mock<CliInfo>();
 
   beforeAll(() => {
@@ -41,7 +31,7 @@ describe('RestScans', () => {
   });
 
   afterEach(() => {
-    reset<CliInfo | Module>(cliInfoMock, moduleMock);
+    reset(cliInfoMock);
     nock.cleanAll();
     nock.restore();
   });
@@ -70,11 +60,11 @@ describe('RestScans', () => {
       'should create a $expected scan if a file is $input spec',
       async ({ input, expected }) => {
         // arrange
-        let parsedBody: ResponseBody;
+        let parsedBody: ScanConfig;
         const postResponse = { id: 'string' };
         const scanConfig: ScanConfig = {
           name: 'scan',
-          module: instance(moduleMock),
+          module: Module.DAST,
           tests: [],
           fileId: 'id'
         };
@@ -89,11 +79,7 @@ describe('RestScans', () => {
 
         nock('https://example.com/')
           .replyContentLength()
-          .post('/api/v1/scans', (body) => {
-            parsedBody = body;
-
-            return body;
-          })
+          .post('/api/v1/scans', (body) => (parsedBody = body))
           .reply(200, postResponse, {
             'content-type': 'application/json'
           });
@@ -113,7 +99,7 @@ describe('RestScans', () => {
       // arrange
       const scanConfig: ScanConfig = {
         name: 'scan',
-        module: instance(moduleMock),
+        module: Module.DAST,
         tests: [],
         fileId: 'id'
       };
