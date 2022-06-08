@@ -1,16 +1,28 @@
 import { CliInfo } from '../Config';
-import { Module, ScanConfig, SourceType, StorageFile, TestType } from './Scans';
+import {
+  Discovery,
+  Module,
+  ScanConfig,
+  SourceType,
+  StorageFile
+} from './Scans';
 import { RestScans } from './RestScans';
 import { instance, mock, reset } from 'ts-mockito';
-import { RequestPromiseAPI } from 'request-promise';
 import nock from 'nock';
+
+interface ResponseBody {
+  name: string;
+  module: unknown;
+  tests: Array<unknown>;
+  fileId: string;
+  discoveryTypes: Array<Discovery>;
+  info: { source: string; client: { name: string } };
+}
 
 describe('RestScans', () => {
   let restScans!: RestScans;
   const moduleMock = mock<Module>();
   const cliInfoMock = mock<CliInfo>();
-  const testTypeMock = mock<TestType>();
-  const requestPromiseAPIMock = mock<RequestPromiseAPI>();
 
   beforeAll(() => {
     nock.disableNetConnect();
@@ -23,18 +35,13 @@ describe('RestScans', () => {
     }
 
     restScans = new RestScans(instance(cliInfoMock), {
-      baseUrl: 'https://development.playground.neuralegion.com',
+      baseUrl: 'https://example.com/',
       apiKey: 'key'
     });
   });
 
   afterEach(() => {
-    reset<CliInfo | TestType | RequestPromiseAPI | Module>(
-      cliInfoMock,
-      testTypeMock,
-      requestPromiseAPIMock,
-      moduleMock
-    );
+    reset<CliInfo | Module>(cliInfoMock, moduleMock);
     nock.cleanAll();
     nock.restore();
   });
@@ -42,99 +49,72 @@ describe('RestScans', () => {
   afterAll(() => nock.enableNetConnect());
 
   describe('create', () => {
-    it('should create a new scan if the HAR file passed by id exists', async () => {
-      // arrange
-      let parsedBody;
-      const postResponse = { id: 'string' };
-      const scanConfig: ScanConfig = {
-        name: 'scan',
-        module: instance(moduleMock),
-        tests: [instance(testTypeMock)],
-        fileId: 'id'
-      };
-      const file: StorageFile = { id: scanConfig.fileId, type: SourceType.HAR };
+    it.each([
+      {
+        input: SourceType.HAR,
+        expected: Discovery.ARCHIVE
+      },
+      {
+        input: SourceType.OPEN_API,
+        expected: Discovery.OAS
+      },
+      {
+        input: SourceType.POSTMAN,
+        expected: Discovery.OAS
+      },
+      {
+        input: SourceType.RAML,
+        expected: Discovery.OAS
+      }
+    ])(
+      'should create a $expected scan if a file is $input spec',
+      async ({ input, expected }) => {
+        // arrange
+        let parsedBody: ResponseBody;
+        const postResponse = { id: 'string' };
+        const scanConfig: ScanConfig = {
+          name: 'scan',
+          module: instance(moduleMock),
+          tests: [],
+          fileId: 'id'
+        };
+        const file: StorageFile = { id: scanConfig.fileId, type: input };
 
-      const filesScope = nock('https://development.playground.neuralegion.com')
-        .replyContentLength()
-        .get(`/api/v1/files/${scanConfig.fileId}`)
-        .reply(200, file, {
-          'content-type': 'application/json'
+        nock('https://example.com/')
+          .replyContentLength()
+          .get(`/api/v1/files/${scanConfig.fileId}`)
+          .reply(200, file, {
+            'content-type': 'application/json'
+          });
+
+        nock('https://example.com/')
+          .replyContentLength()
+          .post('/api/v1/scans', (body) => {
+            parsedBody = body;
+
+            return body;
+          })
+          .reply(200, postResponse, {
+            'content-type': 'application/json'
+          });
+
+        // act
+        const result = await restScans.create(scanConfig);
+
+        // assert
+        expect(result).toEqual(postResponse.id);
+        expect(parsedBody).toMatchObject({
+          discoveryTypes: expect.arrayContaining<Discovery>([expected])
         });
+      }
+    );
 
-      const scansScope = nock('https://development.playground.neuralegion.com')
-        .replyContentLength()
-        .post('/api/v1/scans', (body) => {
-          parsedBody = body;
-
-          return body;
-        })
-        .reply(200, postResponse, {
-          'content-type': 'application/json'
-        });
-
-      // act
-      const result = await restScans.create(scanConfig);
-
-      // assert
-      expect(result).toEqual(postResponse.id);
-      expect(parsedBody).toMatchObject({
-        discoveryTypes: expect.arrayContaining<SourceType>([file.type])
-      });
-      expect(filesScope.isDone()).toBeTruthy();
-      expect(scansScope.isDone()).toBeTruthy();
-    });
-
-    it('should create a new scan if the OAS file passed by id exists', async () => {
-      // arrange
-      let parsedBody;
-      const postResponse = { id: 'string' };
-      const scanConfig: ScanConfig = {
-        name: 'scan',
-        module: instance(moduleMock),
-        tests: [instance(testTypeMock)],
-        fileId: 'id'
-      };
-      const file: StorageFile = {
-        id: scanConfig.fileId,
-        type: SourceType.OPEN_API
-      };
-
-      const filesScope = nock('https://development.playground.neuralegion.com')
-        .replyContentLength()
-        .get(`/api/v1/files/${scanConfig.fileId}`)
-        .reply(200, file, {
-          'content-type': 'application/json'
-        });
-
-      const scansScope = nock('https://development.playground.neuralegion.com')
-        .replyContentLength()
-        .post('/api/v1/scans', (body) => {
-          parsedBody = body;
-
-          return body;
-        })
-        .reply(200, postResponse, {
-          'content-type': 'application/json'
-        });
-
-      // act
-      const result = await restScans.create(scanConfig);
-
-      // assert
-      expect(result).toEqual(postResponse.id);
-      expect(parsedBody).toMatchObject({
-        discoveryTypes: expect.arrayContaining<SourceType>([file.type])
-      });
-      expect(filesScope.isDone()).toBeTruthy();
-      expect(scansScope.isDone()).toBeTruthy();
-    });
-
-    it('should throw an error if the file passed by id does not exist or the user does not have permissions', async () => {
+    it('should throw an error if the file does not exist or the user does not have permissions', async () => {
       // arrange
       const scanConfig: ScanConfig = {
         name: 'scan',
         module: instance(moduleMock),
-        tests: [instance(testTypeMock)],
+        tests: [],
         fileId: 'id'
       };
 
