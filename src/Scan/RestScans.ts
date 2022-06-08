@@ -122,7 +122,7 @@ export class RestScans implements Scans {
 
   private async exploreDiscovery(body: ScanConfig): Promise<Discovery[]> {
     const discoveryTypes: Discovery[] = [];
-    const fileId = body.fileId;
+    const { fileId } = body;
 
     if (Array.isArray(body.crawlerUrls)) {
       discoveryTypes.push(Discovery.CRAWLER);

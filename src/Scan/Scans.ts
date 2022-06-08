@@ -171,8 +171,10 @@ export interface ScanState {
 }
 
 export enum SourceType {
-  OPEN_API = 'oas',
-  HAR = 'archive'
+  OPEN_API = 'openapi',
+  RAML = 'raml',
+  POSTMAN = 'postman',
+  HAR = 'har'
 }
 
 export interface StorageFile {
