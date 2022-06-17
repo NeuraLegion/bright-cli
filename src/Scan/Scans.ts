@@ -113,6 +113,16 @@ export interface Board {
   uri?: string;
 }
 
+export interface RequestExclusion {
+  patterns: string[];
+  methods: string[];
+}
+
+export interface Exclusions {
+  params: string[];
+  requests: RequestExclusion[];
+}
+
 export interface ScanConfig {
   name: string;
   module: Module;
@@ -125,6 +135,7 @@ export interface ScanConfig {
   attackParamLocations?: AttackParamLocation[];
   smart?: boolean;
   extraHosts?: Record<string, string>;
+  exclusions?: Exclusions;
   headers?: Record<string, string> | Header[];
   crawlerUrls?: string[];
   hostsFilter?: string[];
@@ -157,6 +168,18 @@ export enum ScanStatus {
 export interface ScanState {
   status: ScanStatus;
   issuesBySeverity: CountIssuesBySeverity[];
+}
+
+export enum SourceType {
+  OPEN_API = 'openapi',
+  RAML = 'raml',
+  POSTMAN = 'postman',
+  HAR = 'har'
+}
+
+export interface StorageFile {
+  id: string;
+  type: SourceType;
 }
 
 export interface Scans {

@@ -3,6 +3,7 @@ import {
   COMPREHENSIVE_SCAN_TESTS,
   IntegrationType,
   Module,
+  RequestExclusion,
   RestScansOptions,
   ScanConfig,
   Scans,
@@ -152,6 +153,40 @@ export class RunScan implements CommandModule {
         describe:
           'A list of specific headers that should be included into request.'
       })
+      .option('exclude-param', {
+        requiresArg: true,
+        array: true,
+        string: true,
+        describe:
+          'A list of regex patterns for parameter names you would like to ignore during the tests. Example: "Id$"'
+      })
+      .option('exclude-entry-point', {
+        array: true,
+        describe:
+          'A list of JSON strings that contain patterns for entry points you would like to ignore during the tests. ' +
+          'Pass an empty string to remove default exclusions. ' +
+          'To apply patterns for all HTTP methods, you can set an empty array to "methods". ' +
+          'Example: "{ "methods": [], "patterns": "users\\/?$" }"',
+        coerce(args: string[]): RequestExclusion[] {
+          return args
+            .map((arg: string) => JSON.parse(arg))
+            .map(
+              ({ methods = [], patterns = [] }: Partial<RequestExclusion>) => {
+                if (!patterns.length) {
+                  logger.error(
+                    'Error during "scan:run": please make sure that patterns contain at least one regexp.'
+                  );
+                  process.exit(1);
+                }
+
+                return {
+                  methods: [...new Set(methods)],
+                  patterns: [...new Set(patterns)]
+                };
+              }
+            );
+        }
+      })
       .option('smart', {
         boolean: true,
         describe:
@@ -224,7 +259,11 @@ export class RunScan implements CommandModule {
         repeaters: args.repeater,
         smart: args.smart,
         attackParamLocations: args.param,
-        boards: args.boards
+        boards: args.boards,
+        exclusions: {
+          requests: args.excludeEntryPoint,
+          params: args.excludeParam
+        }
       } as ScanConfig);
 
       console.log(scanId);

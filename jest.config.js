@@ -14,5 +14,6 @@ module.exports = {
   transform: {
     '^.+\\.[tj]s$': 'ts-jest'
   },
-  moduleFileExtensions: ['ts', 'js', 'json']
+  moduleFileExtensions: ['ts', 'js', 'json'],
+  modulePaths: ['<rootDir>']
 };
