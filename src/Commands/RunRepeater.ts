@@ -132,6 +132,15 @@ export class RunRepeater implements CommandModule {
       .conflicts('proxy-external', 'proxy')
       .conflicts('proxy-internal', 'proxy')
       .env('REPEATER')
+      .middleware((args: Arguments) => {
+        if (args['']) {
+          // handling the case of having REPEATER environment variable w/o suffix,
+          // that results in yargs option with empty name
+          delete args[''];
+        }
+
+        return true;
+      }, true)
       .exitProcess(false)
       .check((args: Arguments) => {
         const id = args.id as string;
