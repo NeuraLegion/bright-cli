@@ -138,8 +138,6 @@ export class RunRepeater implements CommandModule {
           // that results in yargs option with empty name
           delete args[''];
         }
-
-        return true;
       }, true)
       .exitProcess(false)
       .check((args: Arguments) => {
