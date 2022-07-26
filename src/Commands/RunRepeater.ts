@@ -133,7 +133,7 @@ export class RunRepeater implements CommandModule {
       .conflicts('proxy-internal', 'proxy')
       .env('REPEATER')
       .middleware((args: Arguments) => {
-        if (args['']) {
+        if (Object.hasOwnProperty.call(args, '')) {
           // handling the case of having REPEATER environment variable w/o suffix,
           // that results in yargs option with empty name
           delete args[''];
