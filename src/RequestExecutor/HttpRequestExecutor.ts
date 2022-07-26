@@ -109,7 +109,7 @@ export class HttpRequestExecutor implements RequestExecutor {
       this.proxy ??
       (options.url.startsWith('https') ? this.httpsAgent : this.httpAgent);
 
-    return request({
+    const res = await request({
       agent,
       agentOptions: {
         ca: options.ca,
@@ -125,27 +125,25 @@ export class HttpRequestExecutor implements RequestExecutor {
       rejectUnauthorized: false,
       timeout: this.options.timeout,
       url: options.url
-    })
-      .on('request', (req: OutgoingMessage) => this.setHeaders(req, options))
-      .on('response', (response: IncomingResponse) =>
-        this.truncateResponse(response)
-      );
+    }).on('request', (req: OutgoingMessage) => this.setHeaders(req, options));
+
+    this.truncateResponse(res);
+
+    return res;
   }
 
-  private async truncateResponse(res: IncomingResponse): Promise<void> {
+  private truncateResponse(res: IncomingResponse): void {
     if (res.statusCode === 204 || res.method === 'HEAD') {
       return;
     }
 
     const type = this.parseContentType(res);
     const maxBodySize = this.options.maxContentLength * 1024;
+    const requiresTruncating = !this.options.whitelistMimes?.some(
+      (mime: string) => type.startsWith(mime)
+    );
 
-    const requiresTruncating =
-      !this.options.whitelistMimes?.some((mime: string) =>
-        type.startsWith(mime)
-      ) ?? false;
-
-    const body = await this.parseBody(res, { maxBodySize, requiresTruncating });
+    const body = this.parseBody(res, { maxBodySize, requiresTruncating });
 
     res.body = body.toString();
     res.headers['content-length'] = String(body.byteLength);
@@ -163,29 +161,16 @@ export class HttpRequestExecutor implements RequestExecutor {
     return type;
   }
 
-  private async parseBody(
+  private parseBody(
     res: IncomingResponse,
     options: { maxBodySize: number; requiresTruncating: boolean }
-  ): Promise<Buffer> {
-    let truncated = false;
+  ): Buffer {
+    let body = Buffer.from(res.body);
 
-    const chunks = [];
-
-    for await (const chunk of res) {
-      chunks.push(chunk);
-
-      // TODO: use a separate variable for the total number of bytes
-      //  currently we concatenate all of the chunks every time which is O(n^2)
-      truncated =
-        this.options.maxContentLength > -1 &&
-        Buffer.concat(chunks).byteLength > options.maxBodySize &&
-        options.requiresTruncating;
-
-      if (truncated) {
-        res.destroy();
-        break;
-      }
-    }
+    const truncated =
+      this.options.maxContentLength !== -1 &&
+      body.byteLength > options.maxBodySize &&
+      options.requiresTruncating;
 
     if (truncated) {
       logger.debug(
@@ -193,10 +178,10 @@ export class HttpRequestExecutor implements RequestExecutor {
         options.maxBodySize
       );
 
-      return Buffer.concat(chunks).slice(0, options.maxBodySize);
+      body = body.slice(0, options.maxBodySize);
     }
 
-    return Buffer.concat(chunks);
+    return body;
   }
 
   /**
