@@ -16,6 +16,8 @@ import {
   when
 } from 'ts-mockito';
 import { URL } from 'url';
+import { promisify } from 'util';
+import { constants, gzip } from 'zlib';
 
 const createRequest = (options?: Partial<RequestOptions>) => {
   const requestOptions = { url: 'https://foo.bar', headers: {}, ...options };
@@ -28,12 +30,14 @@ const createRequest = (options?: Partial<RequestOptions>) => {
 
 describe('HttpRequestExecutor', () => {
   const virtualScriptsMock = mock<VirtualScripts>();
-  const executorOptions: RequestExecutorOptions = {};
-  const spiedExecutorOptions = spy(executorOptions);
+  let spiedExecutorOptions!: RequestExecutorOptions;
 
   let executor!: HttpRequestExecutor;
 
   beforeEach(() => {
+    const executorOptions: RequestExecutorOptions = {};
+    spiedExecutorOptions = spy(executorOptions);
+
     executor = new HttpRequestExecutor(
       instance(virtualScriptsMock),
       executorOptions
@@ -151,19 +155,98 @@ describe('HttpRequestExecutor', () => {
       });
     });
 
-    it('should not truncate response body if it is in whitelisted mime types', async () => {
-      when(spiedExecutorOptions.maxContentLength).thenReturn(100);
+    it('should truncate response body with not white-listed mime type', async () => {
+      when(spiedExecutorOptions.maxContentLength).thenReturn(1);
       const { request, requestOptions } = createRequest();
-      const bigBody = 'Too big body'.repeat(10000);
+      const bigBody = 'x'.repeat(1025);
+      nock(requestOptions.url)
+        .get('/')
+        .reply(200, bigBody, { 'content-type': 'application/x-custom' });
+
+      const response = await executor.execute(request);
+
+      expect(response.body?.length).toEqual(1024);
+      expect(response.body).toEqual(bigBody.slice(0, 1024));
+    });
+
+    it('should not truncate response body if it is in allowed mime types', async () => {
+      when(spiedExecutorOptions.maxContentLength).thenReturn(1);
+      when(spiedExecutorOptions.whitelistMimes).thenReturn([
+        'application/x-custom'
+      ]);
+      const { request, requestOptions } = createRequest();
+      const bigBody = 'x'.repeat(1025);
       nock(requestOptions.url).get('/').reply(200, bigBody, {
-        'content-type': 'application/x-javascript'
+        'content-type': 'application/x-custom'
       });
 
       const response = await executor.execute(request);
-      expect(response).toMatchObject({
-        statusCode: 200,
-        body: bigBody
+
+      expect(response.body).toEqual(bigBody);
+    });
+
+    it('should decode response body if content-encoding is gzip', async () => {
+      when(spiedExecutorOptions.maxContentLength).thenReturn(1);
+      when(spiedExecutorOptions.whitelistMimes).thenReturn(['text/plain']);
+      const { request, requestOptions } = createRequest();
+      const expected = 'x'.repeat(1025);
+      const bigBody = await promisify(gzip)(expected, {
+        flush: constants.Z_SYNC_FLUSH,
+        finishFlush: constants.Z_SYNC_FLUSH
       });
+      nock(requestOptions.url).get('/').reply(200, bigBody, {
+        'content-type': 'text/plain',
+        'content-encoding': 'gzip'
+      });
+
+      const response = await executor.execute(request);
+
+      expect(response.body).toEqual(expected);
+    });
+
+    it('should decode and truncate gzipped response body if content-type is not in allowed list', async () => {
+      when(spiedExecutorOptions.maxContentLength).thenReturn(1);
+      when(spiedExecutorOptions.whitelistMimes).thenReturn(['text/plain']);
+      const { request, requestOptions } = createRequest();
+      const bigBody = 'x'.repeat(1025);
+      const expected = bigBody.slice(0, 1024);
+      const gzippedBody = await promisify(gzip)(bigBody, {
+        flush: constants.Z_SYNC_FLUSH,
+        finishFlush: constants.Z_SYNC_FLUSH
+      });
+      nock(requestOptions.url).get('/').reply(200, gzippedBody, {
+        'content-type': 'text/html',
+        'content-encoding': 'gzip'
+      });
+
+      const response = await executor.execute(request);
+
+      expect(response.body).toEqual(expected);
+    });
+
+    it('should not truncate response body if allowed mime type starts with actual one', async () => {
+      when(spiedExecutorOptions.maxContentLength).thenReturn(1);
+      when(spiedExecutorOptions.whitelistMimes).thenReturn([
+        'application/x-custom'
+      ]);
+      const { request, requestOptions } = createRequest();
+      const bigBody = 'x'.repeat(1025);
+      nock(requestOptions.url).get('/').reply(200, bigBody, {
+        'content-type': 'application/x-custom-with-suffix'
+      });
+
+      const response = await executor.execute(request);
+
+      expect(response.body).toEqual(bigBody);
+    });
+
+    it('should skip truncate on 204 response status', async () => {
+      when(spiedExecutorOptions.maxContentLength).thenReturn(1);
+      const { request, requestOptions } = createRequest();
+      nock(requestOptions.url).get('/').reply(204);
+      const response = await executor.execute(request);
+
+      expect(response.body).toEqual('');
     });
   });
 });
