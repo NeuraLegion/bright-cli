@@ -266,6 +266,7 @@ export class RunScan implements CommandModule {
         }
       } as ScanConfig);
 
+      // eslint-disable-next-line no-console
       console.log(scanId);
 
       process.exit(0);

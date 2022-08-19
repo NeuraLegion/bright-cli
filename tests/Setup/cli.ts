@@ -4,7 +4,7 @@ import { ChildProcess, spawn } from 'child_process';
 export class Cli {
   constructor(
     public readonly execPath = process.execPath,
-    public readonly execArgs: ReadonlyArray<string> = process.execArgv
+    public readonly execArgs: readonly string[] = process.execArgv
   ) {}
 
   public spawn(

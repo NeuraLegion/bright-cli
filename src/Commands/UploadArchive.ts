@@ -121,6 +121,7 @@ export class UploadArchive implements CommandModule {
         variables: args.variable as Record<string, string>
       };
 
+      // eslint-disable-next-line no-console
       console.log(await archives.upload(spec));
       process.exit(0);
     } catch (e) {

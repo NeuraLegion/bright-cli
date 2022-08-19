@@ -40,17 +40,21 @@ export class ReadlinePlatform implements Platform {
       await this.configure(options);
     }
 
+    // eslint-disable-next-line no-console
     console.log(this.delimiter);
 
+    // eslint-disable-next-line no-console
     console.log(ReadlinePlatform.COMPELED_MESSAGE);
   }
 
+  // eslint-disable-next-line @typescript-eslint/require-await
   public async stop(): Promise<void> {
     this.rl.close();
   }
 
   private async configure(options?: StartOptions): Promise<void> {
     if (!options?.ping) {
+      /* eslint-disable no-console */
       console.log(`Welcome to the Bright Network Testing wizard!${EOL}`);
 
       console.log(
@@ -70,6 +74,7 @@ export class ReadlinePlatform implements Platform {
       await this.processExternalCommunication();
 
       console.log(this.delimiter);
+      /* eslint-enable no-console */
     }
 
     await this.processPing();
@@ -84,12 +89,14 @@ export class ReadlinePlatform implements Platform {
     process.stdout.write(EOL);
 
     if (!authToken || !AUTH_TOKEN_VALIDATION_REGEXP.test(authToken)) {
+      // eslint-disable-next-line no-console
       console.error('Invalid value for authentication token');
 
       return;
     }
 
     if (!repeaterId) {
+      // eslint-disable-next-line no-console
       console.error('Invalid value for repeater id');
 
       return;
@@ -108,6 +115,7 @@ export class ReadlinePlatform implements Platform {
   }
 
   private async processExternalCommunication(): Promise<void> {
+    // eslint-disable-next-line no-console
     console.log(`Starting EXTERNAL communication diagnostics:${EOL}`);
 
     await this.processConnectivity(TestType.TCP);
@@ -120,10 +128,12 @@ export class ReadlinePlatform implements Platform {
 
     process.stdout.write(EOL);
 
+    // eslint-disable-next-line no-console
     console.log('EXTERNAL communication diagnostics completed.');
   }
 
   private async processPing(): Promise<void> {
+    /* eslint-disable no-console */
     console.log(
       `Next step is to validate the connection to your INTERNAL (local) target application(s).${EOL}`
     );
@@ -159,9 +169,11 @@ export class ReadlinePlatform implements Platform {
         urls.length
       } URLs could not be reached.`
     );
+    /* eslint-enable no-console */
   }
 
   private async processTraceroute(): Promise<void> {
+    /* eslint-disable no-console */
     console.log(
       `Traceroute to your INTERNAL (local) target application.${EOL}`
     );
@@ -187,6 +199,7 @@ export class ReadlinePlatform implements Platform {
     process.stdout.write(EOL);
 
     console.log(`Traceroute ${result ? 'completed' : 'failed'}.`);
+    /* eslint-enable no-console */
   }
 
   private async question(question: string): Promise<string> {
@@ -209,6 +222,7 @@ export class ReadlinePlatform implements Platform {
       result = false;
     }
 
+    // eslint-disable-next-line no-console
     console.log(`${text}... ${result ? 'Success' : 'Failed'}`);
   }
 

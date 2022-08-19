@@ -53,7 +53,7 @@ export enum TestType {
   XXE = 'xxe'
 }
 
-export const COMPREHENSIVE_SCAN_TESTS: ReadonlyArray<TestType> = Object.values(
+export const COMPREHENSIVE_SCAN_TESTS: readonly TestType[] = Object.values(
   TestType
 ).filter(
   (x: TestType) =>

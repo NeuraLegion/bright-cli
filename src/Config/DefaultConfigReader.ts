@@ -85,7 +85,7 @@ export class DefaultConfigReader implements ConfigReader {
     return config;
   }
 
-  private configure(map: { [key: string]: unknown }): void {
+  private configure(map: Record<string, unknown>): void {
     Object.entries(Helpers.omit(map)).map(([key, value]: [string, unknown]) =>
       this.config.set(
         key as keyof CliConfig,

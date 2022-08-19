@@ -1,4 +1,5 @@
-import { TestType, Options } from '../';
+import { TestType } from '../TestType';
+import { Options } from '../Options';
 import { URL } from 'url';
 
 export interface Connectivity {

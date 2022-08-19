@@ -43,7 +43,7 @@ export class RabbitMQBus implements Bus {
   >();
   private readonly DEFAULT_RECONNECT_TIMES = 20;
   private readonly DEFAULT_HEARTBEAT_INTERVAL = 30;
-  private readonly DEFAULT_OPERATIONAL_ERRORS: ReadonlyArray<number> = [
+  private readonly DEFAULT_OPERATIONAL_ERRORS: readonly number[] = [
     405, 406, 404, 313, 312, 311, 320
   ];
   private readonly REPLY_QUEUE_NAME = 'amq.rabbitmq.reply-to';
@@ -178,6 +178,7 @@ export class RabbitMQBus implements Bus {
       });
   }
 
+  // eslint-disable-next-line @typescript-eslint/require-await
   public async publish<T extends Event>(event: T): Promise<void> {
     if (!event) {
       return;
@@ -395,6 +396,7 @@ export class RabbitMQBus implements Bus {
     }
   }
 
+  // eslint-disable-next-line @typescript-eslint/require-await
   private async processReply(message: ConsumeMessage): Promise<void> {
     const event: ParsedConsumeMessage | undefined =
       this.parseConsumeMessage(message);

@@ -1,9 +1,9 @@
 import { Validator } from './Validator';
 import { logger } from '../../Utils';
-import collectionV2Draft7 from 'schemas/postman/draft-07/v2.0.0/collection.json';
-import collectionV2Draft4 from 'schemas/postman/draft-04/v2.0.0/collection.json';
-import collectionDraft7 from 'schemas/postman/draft-07/v2.1.0/collection.json';
-import collectionDraft4 from 'schemas/postman/draft-04/v2.1.0/collection.json';
+import collectionV2Draft7 from './schemas/postman/draft-07/v2.0.0/collection.json';
+import collectionV2Draft4 from './schemas/postman/draft-04/v2.0.0/collection.json';
+import collectionDraft7 from './schemas/postman/draft-07/v2.1.0/collection.json';
+import collectionDraft4 from './schemas/postman/draft-04/v2.1.0/collection.json';
 import Ajv, { ValidateFunction } from 'ajv';
 import betterAjvErrors from 'better-ajv-errors';
 import schemaDraft04 from 'ajv/lib/refs/json-schema-draft-04.json';
@@ -15,17 +15,17 @@ import { parse } from 'path';
 @injectable()
 export class PostmanValidator implements Validator<any> {
   private readonly ajv: Ajv.Ajv;
-  private readonly ALLOWED_SCHEMAS: ReadonlyArray<string> = [
+  private readonly ALLOWED_SCHEMAS: readonly string[] = [
     'https://schema.getpostman.com/json/draft-07/collection/v2.0.0/',
     'https://schema.getpostman.com/json/draft-07/collection/v2.1.0/',
     'https://schema.getpostman.com/json/collection/v2.0.0/',
     'https://schema.getpostman.com/json/collection/v2.1.0/'
   ];
-  private readonly META_SCHEMAS: ReadonlyArray<unknown> = [
+  private readonly META_SCHEMAS: readonly unknown[] = [
     schemaDraft04,
     schemaDraft07
   ];
-  private readonly SCHEMAS: ReadonlyArray<unknown> = [
+  private readonly SCHEMAS: readonly unknown[] = [
     collectionV2Draft7,
     collectionV2Draft4,
     collectionDraft7,

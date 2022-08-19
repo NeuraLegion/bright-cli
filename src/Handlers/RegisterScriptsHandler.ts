@@ -10,6 +10,7 @@ export class RegisterScriptsHandler implements Handler<RegisterScripts> {
     @inject(VirtualScripts) private readonly virtualScripts: VirtualScripts
   ) {}
 
+  // eslint-disable-next-line @typescript-eslint/require-await
   public async handle(event: RegisterScripts): Promise<void> {
     this.virtualScripts.clear(VirtualScriptType.REMOTE);
 
