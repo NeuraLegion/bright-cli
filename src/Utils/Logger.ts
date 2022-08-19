@@ -62,6 +62,7 @@ export class Logger {
   }
 
   private write(message: string, level: LogLevel, ...args: any[]): void {
+    // eslint-disable-next-line no-console
     console.log(`${this.formatHeader(level)} - ${message}`, ...args);
   }
 

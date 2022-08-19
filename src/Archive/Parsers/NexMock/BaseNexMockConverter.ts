@@ -29,6 +29,7 @@ export class BaseNexMockConverter implements NexMockConverter {
     private readonly options: { headers?: Record<string, string>; url?: string }
   ) {}
 
+  // eslint-disable-next-line @typescript-eslint/require-await
   public async convertToRequests(mocks: MockRequest[]): Promise<Options[]> {
     return mocks.map((item: MockRequest) => this.mockToRequestOptions(item));
   }

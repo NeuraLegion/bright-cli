@@ -99,8 +99,8 @@ export class Configure implements CommandModule {
     try {
       const app = container.resolve<Platform>(Platform);
 
-      const stop: () => void = () => {
-        app.stop();
+      const stop = async () => {
+        await app.stop();
         process.exit(0);
       };
 

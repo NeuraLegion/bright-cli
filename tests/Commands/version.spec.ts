@@ -1,4 +1,4 @@
-import { Cli } from '../setup';
+import { Cli } from '../Setup';
 import { resolve } from 'path';
 
 describe('"version" command', () => {

@@ -54,7 +54,6 @@ jobs:
             README.md
             LICENSE
             tools
-            schemas
 
   deploy:
     runs-on: ubuntu-latest

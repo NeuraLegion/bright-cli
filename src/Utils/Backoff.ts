@@ -1,4 +1,4 @@
-import { logger } from './index';
+import { logger } from './Logger';
 import { promisify } from 'util';
 
 export class Backoff {
@@ -10,12 +10,11 @@ export class Backoff {
     private readonly shouldRetry: (err: Error) => unknown
   ) {}
 
-  // eslint-disable-next-line space-before-function-paren
-  public async execute<T extends (...args: any[]) => any>(
+  public async execute<T extends (...args: unknown[]) => unknown>(
     task: T
   ): Promise<ReturnType<T>> {
     try {
-      return await task();
+      return (await task()) as ReturnType<T>;
     } catch (e) {
       if (this.shouldRetry?.(e) && this.depth < this.maxDepth) {
         return this.retry(task);

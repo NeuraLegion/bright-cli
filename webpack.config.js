@@ -1,9 +1,10 @@
-const { join } = require('path');
+const { join, resolve } = require('path');
 const { BannerPlugin, EnvironmentPlugin } = require('webpack');
 const nodeExternals = require('webpack-node-externals');
 const TsConfigPathsPlugin = require('tsconfig-paths-webpack-plugin');
 const { CleanWebpackPlugin } = require('clean-webpack-plugin');
 const Terser = require('terser-webpack-plugin');
+const configFile = resolve('./tsconfig.build.json');
 
 module.exports = (env, argv) => ({
   entry: './src/index.ts',
@@ -34,14 +35,21 @@ module.exports = (env, argv) => ({
     new BannerPlugin({ banner: '#!/usr/bin/env node', raw: true })
   ],
   resolve: {
-    plugins: [new TsConfigPathsPlugin()],
+    plugins: [new TsConfigPathsPlugin({ configFile })],
     extensions: ['.ts', '.js', '.json']
   },
   module: {
     rules: [
       {
-        test: /\.ts?$/,
-        use: 'ts-loader',
+        test: /\.ts$/,
+        use: [
+          {
+            loader: 'ts-loader',
+            options: {
+              configFile
+            }
+          }
+        ],
         exclude: /node_modules/
       }
     ]

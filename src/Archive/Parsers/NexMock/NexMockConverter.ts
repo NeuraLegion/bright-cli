@@ -1,9 +1,7 @@
 import { Options } from 'request';
 import { Readable } from 'stream';
 
-export interface Headers {
-  [key: string]: string | string[];
-}
+export type Headers = Record<string, string | string[]>;
 
 type PlanFormData = string | Buffer | Readable;
 
@@ -17,9 +15,7 @@ type FormDataField =
       };
     };
 
-export interface FormData {
-  [key: string]: FormDataField | FormDataField[];
-}
+export type FormData = Record<string, FormDataField | FormDataField[]>;
 
 export enum MockRequestType {
   BUFFER = 'buffer',
@@ -60,9 +56,7 @@ export interface FileMockRequest
 
 export interface FormUrlencodedMockRequest
   extends GenericMockRequest<MockRequestType.FORM_URLENCODED> {
-  readonly body: {
-    readonly [key: string]: string;
-  };
+  readonly body: Readonly<Record<string, string>>;
 }
 
 export type MultiPartField =
@@ -71,9 +65,7 @@ export type MultiPartField =
 
 export interface MultiPartMockRequest
   extends GenericMockRequest<MockRequestType.MULTIPART> {
-  readonly body: {
-    readonly [key: string]: MultiPartField | MultiPartField[];
-  };
+  readonly body: Readonly<Record<string, MultiPartField | MultiPartField[]>>;
 }
 
 export type MockRequest =

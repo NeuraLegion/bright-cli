@@ -38,6 +38,7 @@ export class RetestScan implements CommandModule {
       const scanManager: Scans = container.resolve(Scans);
       const scanId: string = await scanManager.retest(args.scan as string);
 
+      // eslint-disable-next-line no-console
       console.log(scanId);
 
       process.exit(0);

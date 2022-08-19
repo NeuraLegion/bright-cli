@@ -74,7 +74,7 @@ describe('WsRequestExecutor', () => {
       const body = 'test request body';
       const request = new Request({ url, headers, body });
 
-      server.on('connection', async (socket) => {
+      server.on('connection', (socket) => {
         socket.on('message', (data) => {
           expect(data).toBeInstanceOf(Buffer);
           expect(data.toString()).toBe(body);
@@ -85,6 +85,7 @@ describe('WsRequestExecutor', () => {
         });
       });
 
+      // eslint-disable-next-line @typescript-eslint/no-floating-promises
       executor.execute(request);
     });
 
@@ -133,6 +134,7 @@ describe('WsRequestExecutor', () => {
         done();
       });
 
+      // eslint-disable-next-line @typescript-eslint/no-floating-promises
       executor.execute(request);
     });
 
@@ -140,7 +142,7 @@ describe('WsRequestExecutor', () => {
       const url = `ws://localhost:${wsPort}`;
       const request = new Request({ url, headers: {} });
 
-      server.on('connection', async (socket) => {
+      server.on('connection', (socket) => {
         socket.on('message', () => {
           socket.send('test reply', { binary: false, compress: false });
         });

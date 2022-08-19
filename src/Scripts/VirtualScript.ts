@@ -17,7 +17,7 @@ export enum VirtualScriptType {
 export class VirtualScript {
   public readonly id: string;
   public readonly type: VirtualScriptType;
-  private readonly MODULE_EXEC_ARGS: ReadonlyArray<string> = [
+  private readonly MODULE_EXEC_ARGS: string[] = [
     'module.exports',
     'module.require',
     'module',
@@ -62,6 +62,7 @@ export class VirtualScript {
     return this;
   }
 
+  // eslint-disable-next-line @typescript-eslint/require-await
   public async exec<Fun extends (...args: any[]) => any>(
     functionName: string,
     ...functionArgs: Parameters<Fun>

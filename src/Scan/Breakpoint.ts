@@ -7,6 +7,7 @@ export abstract class Breakpoint {
     stats: CountIssuesBySeverity[]
   ): CountIssuesBySeverity | undefined;
 
+  // eslint-disable-next-line @typescript-eslint/require-await
   public async execute(
     statsIssuesCategories: CountIssuesBySeverity[]
   ): Promise<void> {

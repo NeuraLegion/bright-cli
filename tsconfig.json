@@ -1,11 +1,10 @@
 {
+  "compileOnSave": false,
   "compilerOptions": {
     "baseUrl": ".",
-    "outDir": "dist",
-    "target": "es2015",
-    "lib": [
-      "es2016"
-    ],
+    "rootDir": ".",
+    "target": "es2019",
+    "lib": ["es2020"],
     "newLine": "LF",
     "module": "commonjs",
     "moduleResolution": "node",
@@ -15,6 +14,7 @@
     "strictNullChecks": false,
     "sourceMap": true,
     "skipLibCheck": true,
+    "skipDefaultLibCheck": true,
     "importHelpers": true,
     "downlevelIteration": true,
     "esModuleInterop": true,
@@ -22,19 +22,12 @@
     "noEmitOnError": true,
     "noUnusedLocals": true,
     "noFallthroughCasesInSwitch": true,
+    "useUnknownInCatchVariables": false,
     "noUnusedParameters": true,
     "forceConsistentCasingInFileNames": true,
     "suppressImplicitAnyIndexErrors": true,
     "allowSyntheticDefaultImports": true,
-    "typeRoots": [
-      "node_modules/@types",
-      "typings"
-    ]
+    "typeRoots": ["node_modules/@types", "typings"]
   },
-  "exclude": [
-    "**/node_modules",
-    "**/.*/",
-    "**/dist",
-    "**/*.spec.ts"
-  ]
+  "exclude": ["node_modules", "dist", "**/.*/"]
 }

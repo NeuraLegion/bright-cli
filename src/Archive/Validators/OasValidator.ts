@@ -1,11 +1,10 @@
 import { Validator } from './Validator';
 import { logger } from '../../Utils';
-import Ajv from 'ajv';
-import { ValidateFunction } from 'ajv';
+import schemaV2 from './schemas/openapi/v2.0/schema.json';
+import schemaV3 from './schemas/openapi/v3.0/schema.json';
+import Ajv, { ValidateFunction } from 'ajv';
 import semver from 'semver';
 import betterAjvErrors from 'better-ajv-errors';
-import schemaV2 from 'schemas/openapi/v2.0/schema.json';
-import schemaV3 from 'schemas/openapi/v3.0/schema.json';
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore
 import ajvFormats from 'ajv/lib/compile/formats';
@@ -21,7 +20,7 @@ export class OasValidator implements Validator<any> {
     [2, 'http://swagger.io/v2/schema.json#'],
     [3, 'https://spec.openapis.org/oas/3.0/schema/2019-04-02']
   ]);
-  private readonly SCHEMAS: ReadonlyArray<any> = [schemaV2, schemaV3];
+  private readonly SCHEMAS: readonly unknown[] = [schemaV2, schemaV3];
 
   constructor() {
     this.ajv = new Ajv({

@@ -18,6 +18,7 @@ export abstract class OsService implements StartupManager {
     await this.start(name);
   }
 
+  // eslint-disable-next-line @typescript-eslint/require-await
   public async run(): Promise<void> {
     run(() => this.exit(0));
   }
