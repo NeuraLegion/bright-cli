@@ -85,7 +85,10 @@
         ".{1,}": {
           "oneOf": [
             { "$ref": "#/definitions/multiPartItem" },
-            { "type": "array", "items": { "$ref": "#/definitions/multiPartItem" } }
+            {
+              "type": "array",
+              "items": { "$ref": "#/definitions/multiPartItem" }
+            }
           ]
         }
       }

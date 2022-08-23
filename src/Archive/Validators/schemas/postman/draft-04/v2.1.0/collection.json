@@ -1,6 +1,6 @@
 {
   "$schema": "http://json-schema.org/draft-04/schema#",
-  "id": "https://schema.getpostman.com/json/collection/v2.0.0/",
+  "id": "https://schema.getpostman.com/json/collection/v2.1.0/",
   "type": "object",
   "properties": {
     "info": {
@@ -41,12 +41,27 @@
       "$ref": "#/definitions/protocol-profile-behavior"
     }
   },
-  "required": [
-    "info",
-    "item"
-  ],
+  "required": ["info", "item"],
   "definitions": {
+    "auth-attribute": {
+      "$schema": "http://json-schema.org/draft-04/schema#",
+      "type": "object",
+      "title": "Auth",
+      "id": "#/definitions/auth-attribute",
+      "description": "Represents an attribute for any authorization method provided by Postman. For example `username` and `password` are set as auth attributes for Basic Authentication method.",
+      "properties": {
+        "key": {
+          "type": "string"
+        },
+        "value": {},
+        "type": {
+          "type": "string"
+        }
+      },
+      "required": ["key"]
+    },
     "auth": {
+      "$schema": "http://json-schema.org/draft-04/schema#",
       "type": "object",
       "title": "Auth",
       "id": "#/definitions/auth",
@@ -62,69 +77,98 @@
             "digest",
             "edgegrid",
             "hawk",
-            "ntlm",
             "noauth",
             "oauth1",
-            "oauth2"
+            "oauth2",
+            "ntlm"
           ]
         },
         "noauth": {},
         "apikey": {
-          "type": "object",
+          "type": "array",
           "title": "API Key Authentication",
-          "description": "The attributes for API Key Authentication. e.g. key, value, in."
+          "description": "The attributes for API Key Authentication.",
+          "items": {
+            "$ref": "#/definitions/auth-attribute"
+          }
         },
         "awsv4": {
-          "type": "object",
+          "type": "array",
           "title": "AWS Signature v4",
-          "description": "The attributes for [AWS Auth](http://docs.aws.amazon.com/AmazonS3/latest/dev/RESTAuthentication.html). e.g. accessKey, secretKey, region, service."
+          "description": "The attributes for [AWS Auth](http://docs.aws.amazon.com/AmazonS3/latest/dev/RESTAuthentication.html).",
+          "items": {
+            "$ref": "#/definitions/auth-attribute"
+          }
         },
         "basic": {
-          "type": "object",
+          "type": "array",
           "title": "Basic Authentication",
-          "description": "The attributes for [Basic Authentication](https://en.wikipedia.org/wiki/Basic_access_authentication). e.g. username, password."
+          "description": "The attributes for [Basic Authentication](https://en.wikipedia.org/wiki/Basic_access_authentication).",
+          "items": {
+            "$ref": "#/definitions/auth-attribute"
+          }
         },
         "bearer": {
-          "type": "object",
+          "type": "array",
           "title": "Bearer Token Authentication",
-          "description": "The attributes for [Bearer Token Authentication](https://tools.ietf.org/html/rfc6750). e.g. token."
+          "description": "The helper attributes for [Bearer Token Authentication](https://tools.ietf.org/html/rfc6750)",
+          "items": {
+            "$ref": "#/definitions/auth-attribute"
+          }
         },
         "digest": {
-          "type": "object",
+          "type": "array",
           "title": "Digest Authentication",
-          "description": "The attributes for [Digest Authentication](https://en.wikipedia.org/wiki/Digest_access_authentication). e.g. username, password, realm, nonce, nonceCount, algorithm, qop, opaque, clientNonce."
+          "description": "The attributes for [Digest Authentication](https://en.wikipedia.org/wiki/Digest_access_authentication).",
+          "items": {
+            "$ref": "#/definitions/auth-attribute"
+          }
         },
         "edgegrid": {
-          "type": "object",
+          "type": "array",
           "title": "EdgeGrid Authentication",
-          "description": "The attributes for [Akamai EdgeGrid Authentication](https://developer.akamai.com/legacy/introduction/Client_Auth.html). e.g. accessToken, clientToken, clientSecret, baseURL, nonce, timestamp, headersToSign."
+          "description": "The attributes for [Akamai EdgeGrid Authentication](https://developer.akamai.com/legacy/introduction/Client_Auth.html).",
+          "items": {
+            "$ref": "#/definitions/auth-attribute"
+          }
         },
         "hawk": {
-          "type": "object",
+          "type": "array",
           "title": "Hawk Authentication",
-          "description": "The attributes for [Hawk Authentication](https://github.com/hueniverse/hawk). e.g. authId, authKey, algorith, user, nonce, extraData, appId, delegation, timestamp."
+          "description": "The attributes for [Hawk Authentication](https://github.com/hueniverse/hawk)",
+          "items": {
+            "$ref": "#/definitions/auth-attribute"
+          }
         },
         "ntlm": {
-          "type": "object",
+          "type": "array",
           "title": "NTLM Authentication",
-          "description": "The attributes for [NTLM Authentication](https://msdn.microsoft.com/en-us/library/cc237488.aspx). e.g. username, password, domain, workstation."
+          "description": "The attributes for [NTLM Authentication](https://msdn.microsoft.com/en-us/library/cc237488.aspx)",
+          "items": {
+            "$ref": "#/definitions/auth-attribute"
+          }
         },
         "oauth1": {
-          "type": "object",
+          "type": "array",
           "title": "OAuth1",
-          "description": "The attributes for [OAuth1](https://oauth.net/1/). e.g. consumerKey, consumerSecret, token, tokenSecret, signatureMethod, timestamp, nonce, version, realm, encodeOAuthSign."
+          "description": "The attributes for [OAuth2](https://oauth.net/1/)",
+          "items": {
+            "$ref": "#/definitions/auth-attribute"
+          }
         },
         "oauth2": {
-          "type": "object",
+          "type": "array",
           "title": "OAuth2",
-          "description": "The attributes for [OAuth2](https://oauth.net/2/). e.g. accessToken, addTokenTo."
+          "description": "Helper attributes for [OAuth2](https://oauth.net/2/)",
+          "items": {
+            "$ref": "#/definitions/auth-attribute"
+          }
         }
       },
-      "required": [
-        "type"
-      ]
+      "required": ["type"]
     },
     "certificate-list": {
+      "$schema": "http://json-schema.org/draft-04/schema#",
       "id": "#/definitions/certificate-list",
       "title": "Certificate List",
       "description": "A representation of a list of ssl certificates",
@@ -134,6 +178,7 @@
       }
     },
     "certificate": {
+      "$schema": "http://json-schema.org/draft-04/schema#",
       "id": "#/definitions/certificate",
       "title": "Certificate",
       "description": "A representation of an ssl certificate",
@@ -176,6 +221,7 @@
       }
     },
     "cookie-list": {
+      "$schema": "http://json-schema.org/draft-04/schema#",
       "id": "#/definitions/cookie-list",
       "title": "Certificate List",
       "description": "A representation of a list of cookies",
@@ -185,6 +231,7 @@
       }
     },
     "cookie": {
+      "$schema": "http://json-schema.org/draft-04/schema#",
       "type": "object",
       "title": "Cookie",
       "id": "#/definitions/cookie",
@@ -241,10 +288,7 @@
           "description": "Custom attributes for a cookie go here, such as the [Priority Field](https://code.google.com/p/chromium/issues/detail?id=232693)"
         }
       },
-      "required": [
-        "domain",
-        "path"
-      ]
+      "required": ["domain", "path"]
     },
     "description": {
       "$schema": "http://json-schema.org/draft-04/schema#",
@@ -277,10 +321,10 @@
       ]
     },
     "event-list": {
+      "$schema": "http://json-schema.org/draft-04/schema#",
       "id": "#/definitions/event-list",
       "title": "Event List",
       "type": "array",
-      "$schema": "http://json-schema.org/draft-04/schema#",
       "description": "Postman allows you to configure scripts to run when specific events occur. These scripts are stored here, and can be referenced in the collection by their ID.",
       "items": {
         "$ref": "#/definitions/event"
@@ -310,11 +354,10 @@
           "description": "Indicates whether the event is disabled. If absent, the event is assumed to be enabled."
         }
       },
-      "required": [
-        "listen"
-      ]
+      "required": ["listen"]
     },
     "header-list": {
+      "$schema": "http://json-schema.org/draft-04/schema#",
       "id": "#/definitions/header-list",
       "title": "Header List",
       "description": "A representation for a list of headers",
@@ -324,6 +367,7 @@
       }
     },
     "header": {
+      "$schema": "http://json-schema.org/draft-04/schema#",
       "type": "object",
       "title": "Header",
       "id": "#/definitions/header",
@@ -346,10 +390,7 @@
           "$ref": "#/definitions/description"
         }
       },
-      "required": [
-        "key",
-        "value"
-      ]
+      "required": ["key", "value"]
     },
     "info": {
       "$schema": "http://json-schema.org/draft-04/schema#",
@@ -378,10 +419,7 @@
           "type": "string"
         }
       },
-      "required": [
-        "name",
-        "schema"
-      ]
+      "required": ["name", "schema"]
     },
     "item-group": {
       "$schema": "http://json-schema.org/draft-04/schema#",
@@ -432,9 +470,7 @@
           "$ref": "#/definitions/protocol-profile-behavior"
         }
       },
-      "required": [
-        "item"
-      ]
+      "required": ["item"]
     },
     "item": {
       "$schema": "http://json-schema.org/draft-04/schema#",
@@ -474,9 +510,7 @@
           "$ref": "#/definitions/protocol-profile-behavior"
         }
       },
-      "required": [
-        "request"
-      ]
+      "required": ["request"]
     },
     "protocol-profile-behavior": {
       "$schema": "http://json-schema.org/draft-04/schema#",
@@ -629,9 +663,7 @@
                             "$ref": "#/definitions/description"
                           }
                         },
-                        "required": [
-                          "key"
-                        ]
+                        "required": ["key"]
                       }
                     },
                     "formdata": {
@@ -655,9 +687,7 @@
                               },
                               "type": {
                                 "type": "string",
-                                "enum": [
-                                  "text"
-                                ]
+                                "enum": ["text"]
                               },
                               "contentType": {
                                 "type": "string",
@@ -667,9 +697,7 @@
                                 "$ref": "#/definitions/description"
                               }
                             },
-                            "required": [
-                              "key"
-                            ]
+                            "required": ["key"]
                           },
                           {
                             "properties": {
@@ -682,10 +710,10 @@
                                     "type": "string"
                                   },
                                   {
-                                    "type": "array"
+                                    "type": "null"
                                   },
                                   {
-                                    "type": "null"
+                                    "type": "array"
                                   }
                                 ]
                               },
@@ -696,9 +724,7 @@
                               },
                               "type": {
                                 "type": "string",
-                                "enum": [
-                                  "file"
-                                ]
+                                "enum": ["file"]
                               },
                               "contentType": {
                                 "type": "string",
@@ -708,9 +734,7 @@
                                 "$ref": "#/definitions/description"
                               }
                             },
-                            "required": [
-                              "key"
-                            ]
+                            "required": ["key"]
                           }
                         ]
                       }
@@ -776,7 +800,6 @@
         },
         "responseTime": {
           "title": "ResponseTime",
-          "description": "The time taken by the request to complete. If a number, the unit is milliseconds. If the response is manually created, this can be set to `null`.",
           "oneOf": [
             {
               "type": "null"
@@ -787,7 +810,8 @@
             {
               "type": "number"
             }
-          ]
+          ],
+          "description": "The time taken by the request to complete. If a number, the unit is milliseconds. If the response is manually created, this can be set to `null`."
         },
         "timings": {
           "title": "Response Timings",
@@ -835,10 +859,7 @@
           }
         },
         "body": {
-          "type": [
-            "null",
-            "string"
-          ],
+          "type": ["null", "string"],
           "description": "The raw text of the response."
         },
         "status": {
@@ -1042,12 +1063,7 @@
         "type": {
           "description": "A variable may have multiple types. This field specifies the type of the variable.",
           "type": "string",
-          "enum": [
-            "string",
-            "boolean",
-            "any",
-            "number"
-          ]
+          "enum": ["string", "boolean", "any", "number"]
         },
         "name": {
           "type": "string",
@@ -1068,20 +1084,13 @@
       },
       "anyOf": [
         {
-          "required": [
-            "id"
-          ]
+          "required": ["id"]
         },
         {
-          "required": [
-            "key"
-          ]
+          "required": ["key"]
         },
         {
-          "required": [
-            "id",
-            "key"
-          ]
+          "required": ["id", "key"]
         }
       ]
     },
@@ -1116,11 +1125,7 @@
             },
             "meta": {}
           },
-          "required": [
-            "major",
-            "minor",
-            "patch"
-          ]
+          "required": ["major", "minor", "patch"]
         },
         {
           "type": "string"

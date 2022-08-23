@@ -1,6 +1,7 @@
 import { Connectivity } from './Connectivity';
 import { logger, Traceroute } from '../../Utils';
-import { TestType, Options } from '../';
+import { TestType } from '../TestType';
+import { Options } from '../Options';
 import { injectable } from 'tsyringe';
 
 @injectable()

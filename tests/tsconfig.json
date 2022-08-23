@@ -1,8 +1,0 @@
-{
-  "extends": "../tsconfig.json",
-  "compilerOptions": {
-    "outDir": "./dist/e2e",
-    "types": ["node", "jest"]
-  },
-  "include": ["**/*.spec.ts"]
-}

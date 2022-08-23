@@ -3,7 +3,8 @@ import { Bus, RabbitMQBusOptions } from '../Bus';
 import {
   ConnectivityStatus,
   IntegrationClient,
-  IntegrationPingTracer
+  IntegrationPingTracer,
+  IntegrationOptions
 } from '../Integrations';
 import { Helpers, logger } from '../Utils';
 import { StartupManagerFactory } from '../StartupScripts';
@@ -13,7 +14,6 @@ import {
   IntegrationConnected,
   NetworkTestHandler
 } from '../Handlers';
-import { IntegrationOptions } from '../Integrations';
 import { Arguments, Argv, CommandModule } from 'yargs';
 import Timer = NodeJS.Timer;
 

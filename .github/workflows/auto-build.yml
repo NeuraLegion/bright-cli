@@ -17,6 +17,4 @@ jobs:
       - run: npm run lint
       - run: npm run format
       - run: npm run test:unit
-        continue-on-error: false
       - run: npm run test:e2e -- --testTimeout 4000
-        continue-on-error: false

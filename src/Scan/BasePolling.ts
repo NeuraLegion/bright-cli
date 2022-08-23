@@ -60,6 +60,7 @@ export class BasePolling implements Polling {
     }
   }
 
+  // eslint-disable-next-line @typescript-eslint/require-await
   public async stop(): Promise<void> {
     if (!this._active) {
       logger.log('Polling has been terminated by timeout.');

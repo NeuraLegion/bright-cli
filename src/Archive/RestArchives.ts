@@ -17,7 +17,7 @@ export const RestArchivesOptions: unique symbol = Symbol('RestArchivesOptions');
 @injectable()
 export class RestArchives implements Archives {
   private readonly client: RequestPromiseAPI;
-  private readonly ALLOWED_SPECS: ReadonlyArray<SpecType> = [
+  private readonly ALLOWED_SPECS: readonly SpecType[] = [
     SpecType.OPENAPI,
     SpecType.POSTMAN,
     SpecType.HAR
