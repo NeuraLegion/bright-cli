@@ -270,7 +270,8 @@ export class RabbitMQBus implements Bus {
           'ECONNREFUSED',
           'ENOTFOUND',
           'EAI_AGAIN'
-        ].includes(err.code)
+        ].includes(err.code) ||
+        err.message.startsWith('Socket closed')
     );
   }
 
@@ -414,7 +415,7 @@ export class RabbitMQBus implements Bus {
   }
 
   private async createConsumerChannel(): Promise<void> {
-    if (!this.channel) {
+    if (!this.channel && this.client) {
       this.channel = await this.client.createConfirmChannel();
       this.channel.once('close', (reason?: Error) =>
         reason ? this.reconnect() : undefined
