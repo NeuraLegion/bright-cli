@@ -18,6 +18,7 @@ jobs:
       - name: Install deps
         uses: ./.github/workflows/composite/npm
 
-      - run: npm run semantic-release
+      - name: Release a new version
+        run: npm run semantic-release
         env:
           GITHUB_TOKEN: ${{ secrets.GPR_TOKEN }}
