@@ -10,14 +10,14 @@ jobs:
   release:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - name: Checkout
+        uses: actions/checkout@v2
         with:
           token: ${{ secrets.GPR_TOKEN }}
-      - uses: actions/setup-node@v1
-        with:
-          node-version: 14
 
-      - run: npm ci -q
+      - name: Install deps
+        uses: ./.github/workflows/composite/npm
+
       - run: npm run semantic-release
         env:
           GITHUB_TOKEN: ${{ secrets.GPR_TOKEN }}
