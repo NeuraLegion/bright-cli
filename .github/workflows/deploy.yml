@@ -6,28 +6,42 @@ on:
 
 env:
   VERSION: ${{ github.event.release.tag_name }}
-  REF: ${{ github.event.release.target_commitish }}
+  TARGET_REF: ${{ github.event.release.target_commitish }}
   TAG: ${{ github.event.release.target_commitish == 'master' && 'latest' || 'next' }}
 
 jobs:
+  install-deps:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          ref: ${{ env.TARGET_REF }}
+          token: ${{ secrets.GPR_TOKEN }}
+
+      - name: Install deps
+        uses: ./.github/workflows/composite/npm
+
   build:
     runs-on: ubuntu-latest
+    needs: install-deps
     steps:
       - uses: actions/checkout@v2
         with:
-          ref: ${{ env.REF }}
+          ref: ${{ env.TARGET_REF }}
           token: ${{ secrets.GPR_TOKEN }}
 
-      - uses: actions/setup-node@v1
-        with:
-          node-version: 14
-          registry-url: 'https://registry.npmjs.org'
+      - name: Install deps
+        uses: ./.github/workflows/composite/npm
 
-      - run: npm ci -q
-      - run: npm run build -- --env version=$VERSION
-      - run: npm run build:pkg -- -t node14-linux-x64
-      - run: npm version --no-git-tag-version $VERSION
-      - run: npm pack
+      - name: Build package
+        run: npm run build -- --env version=$VERSION
+
+      - name: Set version
+        run: npm version --no-git-tag-version $VERSION
+
+      - name: Pack artifacts
+        run: npm pack
 
       - uses: svenstaro/upload-release-action@v2
         with:
@@ -35,13 +49,6 @@ jobs:
           file: ./neuralegion-nexploit-cli-*
           tag: ${{ github.ref }}
           file_glob: true
-
-      - uses: svenstaro/upload-release-action@v2
-        with:
-          repo_token: ${{ secrets.GITHUB_TOKEN }}
-          file: ./bin/nexploit-cli
-          asset_name: nexploit-cli-linux-x64
-          tag: ${{ github.ref }}
 
       - uses: actions/upload-artifact@v2
         with:
@@ -55,30 +62,116 @@ jobs:
             LICENSE
             tools
 
-  deploy:
-    runs-on: ubuntu-latest
+  generate-binary:
     needs: build
+    strategy:
+      matrix:
+        include:
+          # Use the `windows-2019` runner instead of latest (i.e. `windows-2022`)
+          # because the build was last known working on that version of runner and
+          # `raw-socket` fails to find the 2022 Visual Studio install because
+          # it's internally using an old version of `node-gyp`
+          - os: windows-2019
+            target: win
+          - os: macos-latest
+            target: macos
+          # Using the `ubuntu-18.04` runner instead of latest (i.e. `ubuntu-22.04`)
+          # because G++/GCC 4.8 is not in an official repository yet.
+          - os: ubuntu-18.04
+            target: linux
+    runs-on: ${{ matrix.os }}
     steps:
+      - uses: actions/checkout@v2
+        with:
+          ref: ${{ env.TARGET_REF }}
+          token: ${{ secrets.GPR_TOKEN }}
+
       - uses: actions/download-artifact@v2
         with:
           name: build
 
-      - uses: actions/setup-node@v1
-        with:
-          node-version: 14
-          registry-url: 'https://registry.npmjs.org'
+      - name: Install dev-deps
+        if: startsWith(matrix.os, 'ubuntu')
+        run: |
+          sudo apt-get update -yq \
+            && sudo apt-get install g++-4.8 gcc-4.8 -yq \
+            && sudo apt-get clean \
+            && sudo rm -rf /var/lib/apt/lists/*
 
-      - run: npm ci -q
+      - name: Configures aliases to GCC/G++
+        if: startsWith(matrix.os, 'ubuntu')
+        run: |
+          sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-4.8 10 \
+            --slave /usr/bin/g++ g++ /usr/bin/g++-4.8 \
+            --slave /usr/bin/gcov gcov /usr/bin/gcov-4.8
+
+      - name: Install deps
+        uses: ./.github/workflows/composite/npm
+
+      - name: Build executable file
+        run: npm run build:pkg -- -t node14-${{ matrix.target }}-x64
+
+      - name: Copy deps
+        if: startsWith(matrix.os, 'win')
+        run: |
+          Copy-Item ".\node_modules\@neuralegion\os-service\build\Release\service.node" -Destination ".\bin\service.node"
+          Copy-Item ".\node_modules\win-ca\lib\crypt32-ia32.node" -Destination ".\bin\crypt32-ia32.node"
+          Copy-Item ".\node_modules\win-ca\lib\crypt32-x64.node" -Destination ".\bin\crypt32-x64.node"
+          Copy-Item ".\node_modules\win-ca\lib\roots.exe" -Destination ".\bin\roots.exe"
+          Copy-Item ".\node_modules\raw-socket\build\Release\raw.node" -Destination ".\bin\raw.node"
+
+      - name: Install WIX
+        if: startsWith(matrix.os, 'win')
+        run: |
+          curl -OLS https://github.com/wixtoolset/wix3/releases/download/wix3111rtm/wix311.exe
+          .\wix311.exe /install /quiet /norestart
+
+      - name: Build MSI
+        if: startsWith(matrix.os, 'win')
+        run: .\tools\msi\build.ps1
+        shell: pwsh
+        continue-on-error: true
+
+      - uses: svenstaro/upload-release-action@v2
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file: ${{ startsWith(matrix.os, 'win') && '.\bin\nexploit-cli.exe' || './bin/nexploit-cli' }}
+          asset_name: ${{ format('nexploit-cli-{0}-x64{1}', matrix.target, startsWith(matrix.os, 'win') && '.exe' || '') }}
+          tag: ${{ github.ref }}
+
+      - uses: svenstaro/upload-release-action@v2
+        if: startsWith(matrix.os, 'win')
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file: .\bin\nexploit-cli.msi
+          asset_name: nexploit-cli.msi
+          tag: ${{ github.ref }}
+
+  publish:
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          ref: ${{ env.TARGET_REF }}
+          token: ${{ secrets.GPR_TOKEN }}
+
+      - name: Install deps
+        uses: ./.github/workflows/composite/npm
+
+      - uses: actions/download-artifact@v2
+        with:
+          name: build
 
       - run: npm publish --tag $TAG
         continue-on-error: true
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
-      - uses: actions/setup-node@v1
+      - name: Setup node
+        uses: ./.github/workflows/composite/npm
         with:
-          node-version: 14
-          registry-url: 'https://npm.pkg.github.com'
+          registry: 'https://npm.pkg.github.com'
           scope: '@NeuraLegion'
 
       - run: npm publish --tag $TAG
@@ -100,44 +193,3 @@ jobs:
         run: |
           docker login --username=${{ secrets.DOCKER_USER }} --password=${{ secrets.DOCKER_TOKEN }}
           docker push $TAG_REPEATER --all-tags
-
-  publish:
-    # Using the `windows-2019` runner instead of latest(`windows-2022`)
-    # because the build was last known working on that version of runner and
-    # `raw-socket` fails to find the 2022 Visual Studio install because
-    # it's internally using an old version of `node-gyp`
-    runs-on: windows-2019
-    needs: build
-    steps:
-      - uses: actions/download-artifact@v2
-        with:
-          name: build
-
-      - uses: actions/setup-node@v1
-        with:
-          node-version: 14
-
-      - run: npm ci -q
-      - run: npm rebuild
-      - run: npm run build:pkg -- -t node14-windows-x64
-      - run: |
-          Copy-Item ".\node_modules\@neuralegion\os-service\build\Release\service.node" -Destination ".\bin\service.node"
-          Copy-Item ".\node_modules\win-ca\lib\crypt32-ia32.node" -Destination ".\bin\crypt32-ia32.node"
-          Copy-Item ".\node_modules\win-ca\lib\crypt32-x64.node" -Destination ".\bin\crypt32-x64.node"
-          Copy-Item ".\node_modules\win-ca\lib\roots.exe" -Destination ".\bin\roots.exe"
-          Copy-Item ".\node_modules\raw-socket\build\Release\raw.node" -Destination ".\bin\raw.node"
-
-      - run: |
-          curl -OLS https://github.com/wixtoolset/wix3/releases/download/wix3111rtm/wix311.exe
-          .\wix311.exe /install /quiet /norestart
-
-      - run: .\tools\msi\build.ps1
-        shell: pwsh
-        continue-on-error: true
-
-      - uses: svenstaro/upload-release-action@v2
-        with:
-          repo_token: ${{ secrets.GITHUB_TOKEN }}
-          file: .\bin\nexploit-cli.msi
-          asset_name: nexploit-cli.msi
-          tag: ${{ github.ref }}
