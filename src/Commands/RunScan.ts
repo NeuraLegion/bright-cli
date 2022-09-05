@@ -3,7 +3,6 @@ import {
   COMPREHENSIVE_SCAN_TESTS,
   IntegrationType,
   Module,
-  RequestExclusion,
   RestScansOptions,
   ScanConfig,
   Scans,
@@ -167,25 +166,7 @@ export class RunScan implements CommandModule {
           'Pass an empty string to remove default exclusions. ' +
           'To apply patterns for all HTTP methods, you can set an empty array to "methods". ' +
           'Example: "{ "methods": [], "patterns": "users\\/?$" }"',
-        coerce(args: string[]): RequestExclusion[] {
-          return args
-            .map((arg: string) => JSON.parse(arg))
-            .map(
-              ({ methods = [], patterns = [] }: Partial<RequestExclusion>) => {
-                if (!patterns.length) {
-                  logger.error(
-                    'Error during "scan:run": please make sure that patterns contain at least one regexp.'
-                  );
-                  process.exit(1);
-                }
-
-                return {
-                  methods: [...new Set(methods)],
-                  patterns: [...new Set(patterns)]
-                };
-              }
-            );
-        }
+        coerce: Helpers.excludeEntryPointCoerce
       })
       .option('smart', {
         boolean: true,

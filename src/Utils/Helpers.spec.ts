@@ -1,3 +1,5 @@
+import 'reflect-metadata';
+import { logger } from '.';
 import { Helpers } from './Helpers';
 import { reset, spy, when } from 'ts-mockito';
 
@@ -317,6 +319,37 @@ describe('Helpers', () => {
 
       // assert
       expect(act).toThrow('First argument must be an instance of Array.');
+    });
+  });
+
+  describe('excludeEntryPointCoerce', () => {
+    it('should return an object with unique methods and patterns', () => {
+      // arrange
+      const input = [`{"methods":["POST"],"patterns":["www.example.com"]}`];
+
+      // act
+      const result = Helpers.excludeEntryPointCoerce(input);
+
+      // assert
+      expect(result).toEqual([
+        { methods: ['POST'], patterns: ['www.example.com'] }
+      ]);
+    });
+
+    it('should throw an error if patterns contains only the empty strings', () => {
+      // arrange
+      const input = [`{"patterns":[""]}`];
+      const mockExit = jest.spyOn(process, 'exit').mockImplementation();
+      const mockLogger = jest.spyOn(logger, 'error').mockImplementation();
+
+      // act
+      Helpers.excludeEntryPointCoerce(input);
+
+      // assert
+      expect(mockExit).toHaveBeenCalledWith(1);
+      expect(mockLogger).toHaveBeenCalledWith(
+        'Error during "scan:run": please make sure that patterns contain at least one regexp.'
+      );
     });
   });
 });

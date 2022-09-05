@@ -1,3 +1,5 @@
+import { logger } from '.';
+import { RequestExclusion } from 'src/Scan';
 import { ok } from 'assert';
 import { ChildProcess, spawn } from 'child_process';
 import { URL } from 'url';
@@ -231,6 +233,26 @@ export class Helpers {
 
       return { ...acc, [key]: header };
     }, {});
+  }
+
+  public static excludeEntryPointCoerce(args: string[]): RequestExclusion[] {
+    return args
+      .map((arg: string) => JSON.parse(arg))
+      .map(({ methods = [], patterns = [] }: Partial<RequestExclusion>) => {
+        patterns = patterns.filter((pattern) => pattern !== '');
+
+        if (!patterns.length) {
+          logger.error(
+            'Error during "scan:run": please make sure that patterns contain at least one regexp.'
+          );
+          process.exit(1);
+        }
+
+        return {
+          methods: [...new Set(methods)],
+          patterns: [...new Set(patterns)]
+        };
+      });
   }
 
   // It's based on https://qntm.org/cmd
