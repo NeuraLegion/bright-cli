@@ -325,20 +325,28 @@ describe('Helpers', () => {
   describe('excludeEntryPointCoerce', () => {
     it('should return an object with unique methods and patterns', () => {
       // arrange
-      const input = [`{"methods":["POST"],"patterns":["www.example.com"]}`];
+      const input = [
+        JSON.stringify({
+          methods: ['POST', 'POST', 'GET'],
+          patterns: ['www.example.com', 'www.example.com', 'www.foo.bar']
+        })
+      ];
 
       // act
       const result = Helpers.excludeEntryPointCoerce(input);
 
       // assert
       expect(result).toEqual([
-        { methods: ['POST'], patterns: ['www.example.com'] }
+        {
+          methods: ['POST', 'GET'],
+          patterns: ['www.example.com', 'www.foo.bar']
+        }
       ]);
     });
 
-    it('should throw an error if patterns contains only the empty strings', () => {
+    it('should print an error message and exit if the patterns contains only the empty strings', () => {
       // arrange
-      const input = [`{"patterns":[""]}`];
+      const input = [JSON.stringify({ patterns: [''] })];
       const mockExit = jest.spyOn(process, 'exit').mockImplementation();
       const mockLogger = jest.spyOn(logger, 'error').mockImplementation();
 
@@ -350,6 +358,18 @@ describe('Helpers', () => {
       expect(mockLogger).toHaveBeenCalledWith(
         'Error during "scan:run": please make sure that patterns contain at least one regexp.'
       );
+    });
+
+    it('should throw an error if the patterns contains invalid string', () => {
+      // arrange
+      const input = [`{ 'patterns': ['] }`];
+
+      // act
+      const act = () => Helpers.excludeEntryPointCoerce(input);
+
+      // assert
+      expect(act).toThrowError(SyntaxError);
+      expect(act).toThrowError(`Unexpected token ' in JSON at position 2`);
     });
   });
 });
