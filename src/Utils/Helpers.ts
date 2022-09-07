@@ -1,4 +1,4 @@
-import { logger } from '.';
+import { logger } from './Logger';
 import { RequestExclusion } from 'src/Scan';
 import { ok } from 'assert';
 import { ChildProcess, spawn } from 'child_process';

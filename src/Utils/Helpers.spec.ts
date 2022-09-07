@@ -1,5 +1,5 @@
 import 'reflect-metadata';
-import { logger } from '.';
+import { logger } from './Logger';
 import { Helpers } from './Helpers';
 import { reset, spy, when } from 'ts-mockito';
 
