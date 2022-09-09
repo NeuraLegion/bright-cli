@@ -3,6 +3,7 @@ import {
   COMPREHENSIVE_SCAN_TESTS,
   IntegrationType,
   Module,
+  RequestExclusion,
   RestScansOptions,
   ScanConfig,
   Scans,
@@ -165,8 +166,8 @@ export class RunScan implements CommandModule {
           'A list of JSON strings that contain patterns for entry points you would like to ignore during the tests. ' +
           'Pass an empty string to remove default exclusions. ' +
           'To apply patterns for all HTTP methods, you can set an empty array to "methods". ' +
-          'Example: "{ "methods": [], "patterns": "users\\/?$" }"',
-        coerce: Helpers.excludeEntryPointCoerce
+          'Example: "{ "methods": [], "patterns": ["users\\/?$"] }"',
+        coerce: this.excludeEntryPointCoerce
       })
       .option('smart', {
         boolean: true,
@@ -255,5 +256,25 @@ export class RunScan implements CommandModule {
       logger.error(`Error during "scan:run": ${e.error || e.message}`);
       process.exit(1);
     }
+  }
+
+  public excludeEntryPointCoerce(args: string[]): RequestExclusion[] {
+    return args
+      .map((arg: string) => JSON.parse(arg))
+      .map(({ methods = [], patterns = [] }: Partial<RequestExclusion>) => {
+        const cleanPatterns = patterns.filter((pattern) => !!pattern);
+
+        if (!cleanPatterns.length) {
+          logger.error(
+            'Error during "scan:run": please make sure that patterns contain at least one regexp.'
+          );
+          process.exit(1);
+        }
+
+        return {
+          methods: [...new Set(methods)],
+          patterns: [...new Set(cleanPatterns)]
+        };
+      });
   }
 }
