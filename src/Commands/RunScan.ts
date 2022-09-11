@@ -166,8 +166,8 @@ export class RunScan implements CommandModule {
           'A list of JSON strings that contain patterns for entry points you would like to ignore during the tests. ' +
           'Pass an empty string to remove default exclusions. ' +
           'To apply patterns for all HTTP methods, you can set an empty array to "methods". ' +
-          'Example: "{ "methods": [], "patterns": ["users\\/?$"] }"',
-        coerce: this.excludeEntryPointCoerce
+          `Example: '{ "methods": [], "patterns": ["users\\/?$"] }'`,
+        coerce: this.excludeEntryPoint
       })
       .option('smart', {
         boolean: true,
@@ -258,7 +258,7 @@ export class RunScan implements CommandModule {
     }
   }
 
-  public excludeEntryPointCoerce(args: string[]): RequestExclusion[] {
+  public excludeEntryPoint(args: string[]): RequestExclusion[] {
     return args
       .map((arg: string) => JSON.parse(arg))
       .map(({ methods = [], patterns = [] }: Partial<RequestExclusion>) => {

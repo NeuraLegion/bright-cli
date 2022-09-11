@@ -1,17 +1,23 @@
 import 'reflect-metadata';
-import { logger } from '../Utils';
+import { Logger, logger } from '../Utils';
 import { RunScan } from './RunScan';
-import { anything, spy, verify, when } from 'ts-mockito';
+import { anything, reset, spy, verify, when } from 'ts-mockito';
 
 describe('RunScan', () => {
   let sut!: RunScan;
+  let processSpy: NodeJS.Process;
+  let loggerSpy: Logger;
 
   beforeEach(() => {
     sut = new RunScan();
+    processSpy = spy(process);
+    loggerSpy = spy(logger);
   });
 
-  describe('excludeEntryPointCoerce', () => {
-    it('should return lists of unique methods and patterns', () => {
+  afterEach(() => reset<NodeJS.Process | Logger>(processSpy, loggerSpy));
+
+  describe('excludeEntryPoint', () => {
+    it('should return list of unique methods and patterns', () => {
       // arrange
       const input = [
         JSON.stringify({
@@ -21,7 +27,7 @@ describe('RunScan', () => {
       ];
 
       // act
-      const result = sut.excludeEntryPointCoerce(input);
+      const result = sut.excludeEntryPoint(input);
 
       // assert
       expect(result).toEqual([
@@ -35,14 +41,12 @@ describe('RunScan', () => {
     it('should print an error message and exit if patterns contain only empty strings', () => {
       // arrange
       const input = [JSON.stringify({ patterns: [''] })];
-      const processSpy = spy(process);
-      const loggerSpy = spy(logger);
 
-      when(processSpy.exit(anything())).thenResolve();
-      when(loggerSpy.error(anything())).thenResolve();
+      when(processSpy.exit(anything())).thenReturn(undefined);
+      when(loggerSpy.error(anything())).thenReturn(undefined);
 
       // act
-      sut.excludeEntryPointCoerce(input);
+      sut.excludeEntryPoint(input);
 
       // assert
       verify(processSpy.exit(1)).once();
@@ -58,7 +62,7 @@ describe('RunScan', () => {
       const input = [`{ 'patterns': ['] }`];
 
       // act
-      const act = () => sut.excludeEntryPointCoerce(input);
+      const act = () => sut.excludeEntryPoint(input);
 
       // assert
       expect(act).toThrowError(SyntaxError);
