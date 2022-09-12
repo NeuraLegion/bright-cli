@@ -17,6 +17,26 @@ export class RunScan implements CommandModule {
   public readonly command = 'scan:run [options]';
   public readonly describe = 'Start a new scan for the received configuration.';
 
+  public static excludeEntryPoint(args: string[]): RequestExclusion[] {
+    return args
+      .map((arg: string) => JSON.parse(arg))
+      .map(({ methods = [], patterns = [] }: Partial<RequestExclusion>) => {
+        const cleanPatterns = patterns.filter((pattern) => !!pattern);
+
+        if (!cleanPatterns.length) {
+          logger.error(
+            'Error during "scan:run": please make sure that patterns contain at least one regexp.'
+          );
+          process.exit(1);
+        }
+
+        return {
+          methods: [...new Set(methods)],
+          patterns: [...new Set(cleanPatterns)]
+        };
+      });
+  }
+
   private static splitCompositeStringBySeparator(
     val: string,
     separator: string = ':'
@@ -167,7 +187,7 @@ export class RunScan implements CommandModule {
           'Pass an empty string to remove default exclusions. ' +
           'To apply patterns for all HTTP methods, you can set an empty array to "methods". ' +
           `Example: '{ "methods": [], "patterns": ["users\\/?$"] }'`,
-        coerce: this.excludeEntryPoint
+        coerce: RunScan.excludeEntryPoint
       })
       .option('smart', {
         boolean: true,
@@ -256,25 +276,5 @@ export class RunScan implements CommandModule {
       logger.error(`Error during "scan:run": ${e.error || e.message}`);
       process.exit(1);
     }
-  }
-
-  public excludeEntryPoint(args: string[]): RequestExclusion[] {
-    return args
-      .map((arg: string) => JSON.parse(arg))
-      .map(({ methods = [], patterns = [] }: Partial<RequestExclusion>) => {
-        const cleanPatterns = patterns.filter((pattern) => !!pattern);
-
-        if (!cleanPatterns.length) {
-          logger.error(
-            'Error during "scan:run": please make sure that patterns contain at least one regexp.'
-          );
-          process.exit(1);
-        }
-
-        return {
-          methods: [...new Set(methods)],
-          patterns: [...new Set(cleanPatterns)]
-        };
-      });
   }
 }

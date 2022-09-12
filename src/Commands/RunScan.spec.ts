@@ -4,12 +4,10 @@ import { RunScan } from './RunScan';
 import { anything, reset, spy, verify, when } from 'ts-mockito';
 
 describe('RunScan', () => {
-  let sut!: RunScan;
   let processSpy: NodeJS.Process;
   let loggerSpy: Logger;
 
   beforeEach(() => {
-    sut = new RunScan();
     processSpy = spy(process);
     loggerSpy = spy(logger);
   });
@@ -27,7 +25,7 @@ describe('RunScan', () => {
       ];
 
       // act
-      const result = sut.excludeEntryPoint(input);
+      const result = RunScan.excludeEntryPoint(input);
 
       // assert
       expect(result).toEqual([
@@ -46,7 +44,7 @@ describe('RunScan', () => {
       when(loggerSpy.error(anything())).thenReturn(undefined);
 
       // act
-      sut.excludeEntryPoint(input);
+      RunScan.excludeEntryPoint(input);
 
       // assert
       verify(processSpy.exit(1)).once();
@@ -62,7 +60,7 @@ describe('RunScan', () => {
       const input = [`{ 'patterns': ['] }`];
 
       // act
-      const act = () => sut.excludeEntryPoint(input);
+      const act = () => RunScan.excludeEntryPoint(input);
 
       // assert
       expect(act).toThrowError(SyntaxError);
