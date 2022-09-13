@@ -1,11 +1,10 @@
-import 'reflect-metadata';
 import { Logger, logger } from '../Utils';
 import { RunScan } from './RunScan';
 import { anything, reset, spy, verify, when } from 'ts-mockito';
 
 describe('RunScan', () => {
-  let processSpy: NodeJS.Process;
-  let loggerSpy: Logger;
+  let processSpy!: NodeJS.Process;
+  let loggerSpy!: Logger;
 
   beforeEach(() => {
     processSpy = spy(process);
@@ -40,8 +39,8 @@ describe('RunScan', () => {
       // arrange
       const input = [JSON.stringify({ patterns: [''] })];
 
-      when(processSpy.exit(anything())).thenReturn(undefined);
-      when(loggerSpy.error(anything())).thenReturn(undefined);
+      when(processSpy.exit(anything())).thenReturn();
+      when(loggerSpy.error(anything())).thenReturn();
 
       // act
       RunScan.excludeEntryPoint(input);
