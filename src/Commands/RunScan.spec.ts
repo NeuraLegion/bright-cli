@@ -40,8 +40,8 @@ describe('RunScan', () => {
       // arrange
       const input = [JSON.stringify({ patterns: [''] })];
 
-      when(processSpy.exit(anything())).thenReturn();
-      when(loggerSpy.error(anything())).thenReturn();
+      when(processSpy.exit(anything())).thenReturn(undefined);
+      when(loggerSpy.error(anything())).thenReturn(undefined);
 
       // act
       RunScan.excludeEntryPoint(input);

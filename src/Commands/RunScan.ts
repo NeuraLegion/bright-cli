@@ -21,9 +21,9 @@ export class RunScan implements CommandModule {
     return args
       .map((arg: string) => JSON.parse(arg))
       .map(({ methods = [], patterns = [] }: Partial<RequestExclusion>) => {
-        const cleanPatterns = patterns.filter((pattern) => !!pattern);
+        const nonEmptyPatterns = patterns.filter((pattern) => !!pattern);
 
-        if (!cleanPatterns.length) {
+        if (!nonEmptyPatterns.length) {
           logger.error(
             'Error during "scan:run": please make sure that patterns contain at least one regexp.'
           );
@@ -32,7 +32,7 @@ export class RunScan implements CommandModule {
 
         return {
           methods: [...new Set(methods)],
-          patterns: [...new Set(cleanPatterns)]
+          patterns: [...new Set(nonEmptyPatterns)]
         };
       });
   }
