@@ -1,4 +1,3 @@
-import 'reflect-metadata';
 import { Helpers } from './Helpers';
 import { reset, spy, when } from 'ts-mockito';
 

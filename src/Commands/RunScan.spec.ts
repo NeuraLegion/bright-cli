@@ -1,3 +1,4 @@
+import 'reflect-metadata';
 import { Logger, logger } from '../Utils';
 import { RunScan } from './RunScan';
 import { anything, reset, spy, verify, when } from 'ts-mockito';
