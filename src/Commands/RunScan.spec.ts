@@ -39,7 +39,7 @@ describe('RunScan', () => {
       // arrange
       const input = [JSON.stringify({ patterns: [''] })];
 
-      // due to the bug in ts-mockito an undefined value has to be passed
+      // ADHOC: due to the bug in ts-mockito an undefined value has to be passed
       when(processSpy.exit(anything())).thenReturn(undefined);
       when(loggerSpy.error(anything())).thenReturn();
 
