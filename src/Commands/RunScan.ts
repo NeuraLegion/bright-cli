@@ -17,6 +17,26 @@ export class RunScan implements CommandModule {
   public readonly command = 'scan:run [options]';
   public readonly describe = 'Start a new scan for the received configuration.';
 
+  public static excludeEntryPoint(args: string[]): RequestExclusion[] {
+    return args
+      .map((arg: string) => JSON.parse(arg))
+      .map(({ methods = [], patterns = [] }: Partial<RequestExclusion>) => {
+        const nonEmptyPatterns = patterns.filter((pattern) => !!pattern);
+
+        if (!nonEmptyPatterns.length) {
+          logger.error(
+            'Error during "scan:run": please make sure that patterns contain at least one regexp.'
+          );
+          process.exit(1);
+        }
+
+        return {
+          methods: [...new Set(methods)],
+          patterns: [...new Set(nonEmptyPatterns)]
+        };
+      });
+  }
+
   private static splitCompositeStringBySeparator(
     val: string,
     separator: string = ':'
@@ -166,26 +186,8 @@ export class RunScan implements CommandModule {
           'A list of JSON strings that contain patterns for entry points you would like to ignore during the tests. ' +
           'Pass an empty string to remove default exclusions. ' +
           'To apply patterns for all HTTP methods, you can set an empty array to "methods". ' +
-          'Example: "{ "methods": [], "patterns": "users\\/?$" }"',
-        coerce(args: string[]): RequestExclusion[] {
-          return args
-            .map((arg: string) => JSON.parse(arg))
-            .map(
-              ({ methods = [], patterns = [] }: Partial<RequestExclusion>) => {
-                if (!patterns.length) {
-                  logger.error(
-                    'Error during "scan:run": please make sure that patterns contain at least one regexp.'
-                  );
-                  process.exit(1);
-                }
-
-                return {
-                  methods: [...new Set(methods)],
-                  patterns: [...new Set(patterns)]
-                };
-              }
-            );
-        }
+          `Example: '{ "methods": [], "patterns": ["users\\/?$"] }'`,
+        coerce: RunScan.excludeEntryPoint
       })
       .option('smart', {
         boolean: true,
