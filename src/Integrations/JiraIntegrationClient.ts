@@ -1,7 +1,7 @@
 import { JiraIssue, JiraProject } from './JiraClient';
 import { ConnectivityStatus } from './ConnectivityStatus';
 import { logger } from '../Utils';
-import { IntegrationClient } from './IntegrationClient';
+import { IntegrationClient, TicketMetadata } from './IntegrationClient';
 import { IntegrationType } from './IntegrationType';
 import { IntegrationOptions } from './IntegrationOptions';
 import request, { RequestPromiseAPI } from 'request-promise';
@@ -32,11 +32,13 @@ export class JiraIntegrationClient implements IntegrationClient<JiraIssue> {
     });
   }
 
-  public async createTicket(issue: JiraIssue): Promise<void> {
-    await this.client.post({
+  public async createTicket(issue: JiraIssue): Promise<TicketMetadata> {
+    const { self } = await this.client.post({
       body: issue,
       uri: '/rest/api/2/issue'
     });
+
+    return { url: self };
   }
 
   public async getProjects(): Promise<JiraProject[]> {
