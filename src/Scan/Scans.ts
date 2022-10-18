@@ -81,36 +81,10 @@ export enum AttackParamLocation {
   QUERY = 'query'
 }
 
-export enum IntegrationType {
-  SLACK = 'slack',
-  GITHUB = 'github',
-  GITLAB = 'gitlab',
-  JIRA = 'jira',
-  TRELLO = 'trello',
-  AZURE = 'azure',
-  MONDAY = 'monday',
-  SERVICENOW = 'sevicenow'
-}
-
 export interface Header {
   name: string;
   value: string;
   mergeStrategy: 'replace';
-}
-
-export interface Repository {
-  id: string;
-  service: IntegrationType;
-  name: string;
-  uri?: string;
-}
-
-export interface Board {
-  id: string;
-  externalId: string;
-  service: IntegrationType;
-  name: string;
-  uri?: string;
 }
 
 export interface RequestExclusion {
@@ -140,8 +114,6 @@ export interface ScanConfig {
   crawlerUrls?: string[];
   hostsFilter?: string[];
   repeaters?: string[];
-  boards?: Map<IntegrationType, string[]>;
-  repositories?: Repository[];
 }
 
 export enum IssueCategory {

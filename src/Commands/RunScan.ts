@@ -1,7 +1,6 @@
 import {
   AttackParamLocation,
   COMPREHENSIVE_SCAN_TESTS,
-  IntegrationType,
   Module,
   RequestExclusion,
   RestScansOptions,
@@ -35,59 +34,6 @@ export class RunScan implements CommandModule {
           patterns: [...new Set(nonEmptyPatterns)]
         };
       });
-  }
-
-  private static splitCompositeStringBySeparator(
-    val: string,
-    separator: string = ':'
-  ): string[] {
-    return val
-      .split(new RegExp(`${separator}(.+)`), 2)
-      .map((part: string) => part.toLowerCase().trim());
-  }
-
-  private static verifyIntegration(
-    integration: IntegrationType,
-    board: string
-  ): void {
-    if (
-      !Object.values(IntegrationType).includes(integration as IntegrationType)
-    ) {
-      throw new Error(
-        `Selected type of integration is not supported: ${integration}.`
-      );
-    }
-
-    if (!board.length) {
-      throw new Error(
-        `You have to specify a board name after separator. For example: "github:NeuraLegion/nexploit-cli".`
-      );
-    }
-  }
-
-  private static mapIntegrationsToRegistry(
-    integrations: string[]
-  ): Map<IntegrationType, string[]> {
-    return integrations
-      .map((x: string) => this.splitCompositeStringBySeparator(x))
-      .reduce(
-        (
-          registry: Map<IntegrationType, string[]>,
-          [integration, board]: string[]
-        ) => {
-          const integrationBoards =
-            registry.get(integration as IntegrationType) ?? [];
-
-          integrationBoards.push(board);
-
-          registry.set(integration as IntegrationType, [
-            ...new Set(integrationBoards)
-          ]);
-
-          return registry;
-        },
-        new Map<IntegrationType, string[]>()
-      );
   }
 
   public builder(argv: Argv): Argv {
@@ -135,15 +81,6 @@ export class RunScan implements CommandModule {
         default: COMPREHENSIVE_SCAN_TESTS,
         array: true,
         describe: 'A list of tests which you want to run during a scan.'
-      })
-      .option('integration', {
-        alias: 'i',
-        array: true,
-        requiresArg: true,
-        describe:
-          'The integration name your project uses. Name must contain an integration name and a name of board, ' +
-          'represented as "INTEGRATION_NAME:BOARD_NAME". A name component may not start or end with a separator. ' +
-          'Example: "github:NeuraLegion/nexploit-cli"'
       })
       .option('project', {
         alias: 'p',
@@ -210,28 +147,6 @@ export class RunScan implements CommandModule {
         ['host-filter', 'header', 'module', 'repeater', 'test', 'smart'],
         'Additional Options'
       )
-      .check((args: Arguments) => {
-        const integrations = (args.integration ?? []) as string[];
-
-        if (integrations?.length && !args.project) {
-          throw new Error('Argument integration requires project to be set.');
-        }
-
-        integrations.forEach((val: string) => {
-          const [integration, board]: string[] =
-            RunScan.splitCompositeStringBySeparator(val);
-          RunScan.verifyIntegration(integration as IntegrationType, board);
-        });
-
-        return true;
-      })
-      .middleware((args: Arguments) => {
-        const integrations = args.integration as string[];
-
-        args.boards = integrations
-          ? RunScan.mapIntegrationsToRegistry(integrations)
-          : undefined;
-      })
       .middleware((args: Arguments) =>
         container.register<RestScansOptions>(RestScansOptions, {
           useValue: {
