@@ -176,7 +176,6 @@ export class RunScan implements CommandModule {
         repeaters: args.repeater,
         smart: args.smart,
         attackParamLocations: args.param,
-        boards: args.boards,
         exclusions: {
           requests: args.excludeEntryPoint,
           params: args.excludeParam
