@@ -120,7 +120,7 @@ export class RestScans implements Scans {
     if (fileId) {
       try {
         const file: StorageFile = await this.client.get({
-          uri: `/api/v1/files/${fileId}`
+          uri: `/api/v1/files/${fileId}/info`
         });
 
         discoveryTypes.push(

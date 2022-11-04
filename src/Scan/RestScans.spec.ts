@@ -72,7 +72,7 @@ describe('RestScans', () => {
 
         nock('https://example.com/')
           .replyContentLength()
-          .get(`/api/v1/files/${scanConfig.fileId}`)
+          .get(`/api/v1/files/${scanConfig.fileId}/info`)
           .reply(200, file, {
             'content-type': 'application/json'
           });
