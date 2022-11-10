@@ -58,8 +58,8 @@ describe('Helpers', () => {
       const result = Helpers.getClusterUrls(args);
       // assert
       expect(result).toEqual({
-        api: 'https://app.neuralegion.com',
-        bus: 'amqps://amq.app.neuralegion.com:5672'
+        api: 'https://app.brightsec.com',
+        bus: 'amqps://amq.app.brightsec.com:5672'
       });
     });
 
