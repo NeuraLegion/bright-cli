@@ -74,8 +74,8 @@ export class Helpers {
         api = `https://${host}`;
       }
     } else {
-      api = (args.api as string) ?? `https://app.neuralegion.com`;
-      bus = (args.bus as string) ?? `amqps://amq.app.neuralegion.com:5672`;
+      api = (args.api as string) ?? `https://app.brightsec.com`;
+      bus = (args.bus as string) ?? `amqps://amq.app.brightsec.com:5672`;
     }
 
     return { api, bus };

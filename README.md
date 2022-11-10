@@ -19,7 +19,7 @@
 
 Before you can use **NexPloit CLI** make sure you have the following:
 
-- An active user in [the Bright app](https://app.neuralegion.com/)
+- An active user in [the Bright app](https://app.brightsec.com/)
 - A valid `TOKEN`
   - For the quick start these scopes are required: `bot`, `scans:run` and `scans:read`
   - More info about [setting up an API key](https://docs.brightsec.com/docs/manage-your-organization#manage-organization-apicli-authentication-tokens)
@@ -46,7 +46,7 @@ This will show you a list of possible commands for NexPloit CLI, for a full list
 nexploit-cli repeater \
   --token {TOKEN} \
   --id {ID} \
-  --bus amqps://amq.app.neuralegion.com:5672
+  --bus amqps://amq.app.brightsec.com:5672
 ```
 
 #### 3. Start a new scan with a Crawler
@@ -64,7 +64,7 @@ This command will initialize a new scan engine in the cloud, which will start sc
 
 #### 4. Check out the scan results
 
-You can follow the scan status here: https://app.neuralegion.com/scans, or by using the [NexPloit CLI polling](https://docs.brightsec.com/docs/checking-scan-status) command.
+You can follow the scan status here: https://app.brightsec.com/scans, or by using the [NexPloit CLI polling](https://docs.brightsec.com/docs/checking-scan-status) command.
 
 ## 📚 Full Documentation
 

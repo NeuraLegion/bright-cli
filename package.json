@@ -6,7 +6,7 @@
     "type": "git",
     "url": "git+https://github.com/NeuraLegion/nexploit-cli.git"
   },
-  "author": "Artem Derevnjuk <artem.derevnjuk@neuralegion.com>",
+  "author": "Artem Derevnjuk <artem.derevnjuk@brightsec.com>",
   "bin": {
     "nexploit-cli": "./dist/index.js"
   },
