@@ -45,19 +45,19 @@ export class CliBuilder {
         demandOption: true,
         deprecated: true,
         describe:
-          'Bright application base URL. [default: https://app.neuralegion.com]'
+          'Bright application base URL. [default: https://app.brightsec.com]'
       })
       .option('bus', {
         requiresArg: true,
         demandOption: true,
         deprecated: true,
         describe:
-          'Bright Event Bus base URL. [default: amqps://amq.app.neuralegion.com:5672]'
+          'Bright Event Bus base URL. [default: amqps://amq.app.brightsec.com:5672]'
       })
       .option('cluster', {
         requiresArg: true,
         describe:
-          'Bright application name (domain name). [default: app.neuralegion.com]'
+          'Bright application name (domain name). [default: app.brightsec.com]'
       })
       .option('insecure', {
         boolean: true,
