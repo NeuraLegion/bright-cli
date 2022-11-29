@@ -4,6 +4,7 @@ export interface Spec {
   type: SpecType;
   contentType?: string;
   discard?: boolean;
+  projectId?: string;
   headers?: Record<string, string>;
   variables?: Record<string, string>;
 }
