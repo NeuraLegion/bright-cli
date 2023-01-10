@@ -49,7 +49,7 @@ export class RestArchives implements Archives {
       `Invalid specification type. Allowed: ${this.ALLOWED_SPECS}`
     );
 
-    const { discard, headers, variables } = spec;
+    const { discard, headers, variables, projectId } = spec;
     const file = this.castToFile(spec);
 
     const { id }: { id: string } = await this.client.post({
@@ -57,6 +57,7 @@ export class RestArchives implements Archives {
       qs: { discard },
       formData: {
         file,
+        projectId,
         headers: JSON.stringify(headers ?? {}),
         variables: JSON.stringify(variables ?? {})
       }
