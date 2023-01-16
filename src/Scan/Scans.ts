@@ -21,6 +21,7 @@ export enum TestType {
   EXPOSED_COUCH_DB_APIS = 'exposed_couch_db_apis',
   FILE_UPLOAD = 'file_upload',
   FULL_PATH_DISCLOSURE = 'full_path_disclosure',
+  GRAPHQL_INTROSPECTION = 'graphql_introspection',
   HEADER_SECURITY = 'header_security',
   HRS = 'hrs',
   HTML_INJECTION = 'html_injection',
