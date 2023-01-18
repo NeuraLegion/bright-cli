@@ -40,6 +40,12 @@ export class UploadArchive implements CommandModule {
         describe:
           'Indicates if archive should be remove or not after scan running. Enabled by default.'
       })
+      .option('projectId', {
+        alias: 'p',
+        describe:
+          'ID of the project for uploading file (Optional for transition period, will be mandatory in future)' +
+          'In case project-level API key project ID determined from that API key'
+      })
       .option('header', {
         alias: 'H',
         default: [],
@@ -117,6 +123,7 @@ export class UploadArchive implements CommandModule {
         ...file,
         type,
         discard: args.discard as boolean,
+        projectId: args.projectId as string,
         headers: args.header as Record<string, string>,
         variables: args.variable as Record<string, string>
       };
