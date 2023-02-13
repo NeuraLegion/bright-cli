@@ -132,6 +132,10 @@ export class UploadArchive implements CommandModule {
       console.log(await archives.upload(spec));
       process.exit(0);
     } catch (e) {
+      if (e.code === 'ERR_STRING_TOO_LONG') {
+        e.message = 'There is not enough storage space to save this file';
+      }
+
       logger.error(`Error during "archive:upload": ${e.message}`);
       process.exit(1);
     }
