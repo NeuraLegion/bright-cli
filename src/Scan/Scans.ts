@@ -120,7 +120,8 @@ export interface ScanConfig {
 export enum IssueCategory {
   MEDIUM = 'Medium',
   HIGH = 'High',
-  LOW = 'Low'
+  LOW = 'Low',
+  CRITICAL = 'Critical'
 }
 
 export interface CountIssuesBySeverity {
