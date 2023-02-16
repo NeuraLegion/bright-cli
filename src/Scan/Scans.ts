@@ -33,6 +33,7 @@ export enum TestType {
   JWT = 'jwt',
   LDAPI = 'ldapi',
   LFI = 'lfi',
+  LRRL = 'lrrl',
   MASS_ASSIGNMENT = 'mass_assignment',
   NOSQL = 'nosql',
   OPEN_BUCKETS = 'open_buckets',
