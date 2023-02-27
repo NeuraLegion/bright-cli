@@ -15,6 +15,8 @@ export class DefaultBreakpointFactory implements BreakpointFactory {
         return new OnSeverity(IssueCategory.HIGH);
       case BreakpointType.MEDIUM_ISSUE:
         return new OnSeverity(IssueCategory.MEDIUM);
+      case BreakpointType.CRITICAL_ISSUE:
+        return new OnSeverity(IssueCategory.CRITICAL);
       default:
         return null;
     }
