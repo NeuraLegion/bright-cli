@@ -6,6 +6,7 @@ describe('Request', () => {
   let Request!: typeof RequestInterface;
   const noError: NodeJS.ErrnoException | null = null;
   const certContent = Buffer.from([]);
+  
   beforeEach(async () => {
     readFileMock = jest.fn();
     jest.doMock('fs', () => ({ readFile: readFileMock }));
