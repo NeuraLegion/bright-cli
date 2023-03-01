@@ -198,6 +198,7 @@ describe('Helpers', () => {
       },
       { wildcard: '*.example.com', input: 'examp1e.com', expected: false },
       { wildcard: '*.example.com', input: 'example.co', expected: false },
+      { wildcard: '*.example.com', input: 'example.com', expected: false },
       { wildcard: '*', input: 'sub.example.co', expected: true },
       { wildcard: '*', input: 'sub.sub.example.co', expected: true },
       { wildcard: '*', input: 'example.com', expected: true }
