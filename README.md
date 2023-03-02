@@ -1,6 +1,6 @@
-# NexPloit CLI
+# Bright CLI
 
-**NexPloit CLI** is a Command Line Interface ([CLI](https://en.wikipedia.org/wiki/Command-line_interface)) tool for [Bright's solutions](https://www.brightsec.com). You can use **NexPloit CLI** for full control over scans such as: initialize, stop, poll, maintain and more. In addition, **NexPloit CLI** can serve as a [Repeater](https://docs.brightsec.com/docs/on-premises-repeater-local-agent) to scan local targets, without exposing them to the internet.
+**Bright CLI** is a Command Line Interface ([CLI](https://en.wikipedia.org/wiki/Command-line_interface)) tool for [Bright's solutions](https://www.brightsec.com). You can use **Bright CLI** for full control over scans such as: initialize, stop, poll, maintain and more. In addition, **Bright CLI** can serve as a [Repeater](https://docs.brightsec.com/docs/on-premises-repeater-local-agent) to scan local targets, without exposing them to the internet.
 
 ##### Features:
 
@@ -17,7 +17,7 @@
 
 ## 🚀 Quick Start
 
-Before you can use **NexPloit CLI** make sure you have the following:
+Before you can use **Bright CLI** make sure you have the following:
 
 - An active user in [the Bright app](https://app.brightsec.com/)
 - A valid `TOKEN`
@@ -26,24 +26,24 @@ Before you can use **NexPloit CLI** make sure you have the following:
 - An active `ID`
   - More info about [Setting up a New Repeater](https://docs.brightsec.com/docs/manage-repeaters)
 
-#### 1. Install NexPloit CLI globally
+#### 1. Install Bright CLI globally
 
 ```bash
-npm install @neuralegion/nexploit-cli -g
+npm install @neuralegion/bright-cli -g
 ```
 
 You can validate the installation by going to the directory of your project and running the command:
 
 ```bash
-nexploit-cli -h
+bright-cli -h
 ```
 
-This will show you a list of possible commands for NexPloit CLI, for a full list go [here](https://docs.brightsec.com/docs/command-list)
+This will show you a list of possible commands for Bright CLI, for a full list go [here](https://docs.brightsec.com/docs/command-list)
 
 #### 2. Activate the Repeater
 
 ```bash
-nexploit-cli repeater \
+bright-cli repeater \
   --token {TOKEN} \
   --id {ID} \
   --bus amqps://amq.app.brightsec.com:5672
@@ -52,7 +52,7 @@ nexploit-cli repeater \
 #### 3. Start a new scan with a Crawler
 
 ```bash
-nexploit-cli scan:run \
+bright-cli scan:run \
   --token {TOKEN} \
   --repeater {ID} \
   --name "My First Scan" \
@@ -64,11 +64,11 @@ This command will initialize a new scan engine in the cloud, which will start sc
 
 #### 4. Check out the scan results
 
-You can follow the scan status here: https://app.brightsec.com/scans, or by using the [NexPloit CLI polling](https://docs.brightsec.com/docs/checking-scan-status) command.
+You can follow the scan status here: https://app.brightsec.com/scans, or by using the [Bright CLI polling](https://docs.brightsec.com/docs/checking-scan-status) command.
 
 ## 📚 Full Documentation
 
-**NexPloit CLI** can do so much more! A full documentation with usage examples is available on [Bright's knowledgebase](https://docs.brightsec.com)
+**Bright CLI** can do so much more! A full documentation with usage examples is available on [Bright's knowledgebase](https://docs.brightsec.com)
 
 ## 📝 License
 

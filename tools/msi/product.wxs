@@ -1,14 +1,14 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Wix xmlns="http://schemas.microsoft.com/wix/2006/wi" xmlns:util="http://schemas.microsoft.com/wix/UtilExtension">
-  <?define ProductName="NexPloit CLI" ?>
+  <?define ProductName="Bright CLI" ?>
   <?define ProductAuthor="Bright Security Inc." ?>
   <?define ProductDescription="$(var.ProductName) is a CLI tool that can initialize, stop, polling and maintain scans in $(var.ProductAuthor)s solutions (Such as NexPloit)." ?>
   <?define RegistryKeyPath="SOFTWARE\$(var.ProductName)" ?>
   <Product Id="*" Name="$(var.ProductName)" UpgradeCode="74b15b74-a063-4524-ae83-69ad421be456" Language="1033" Codepage="1252" Version="$(var.ProductVersion)" Manufacturer="$(var.ProductAuthor)">
     <Package InstallerVersion="200" Compressed="yes" InstallScope="perMachine" />
     <Property Id="PREVIOUSVERSIONSINSTALLED" Secure="yes" />
-    <Property Id="ARPPRODUCTICON" Value="NexPloitIcon" />
-    <Property Id="ApplicationFolderName" Value="nexploit-cli" />
+    <Property Id="ARPPRODUCTICON" Value="BrightIcon" />
+    <Property Id="ApplicationFolderName" Value="bright-cli" />
     <Property Id="WIXUI_INSTALLDIR" Value="INSTALLDIR" />
     <Property Id="INSTALLDIR" Secure="yes">
       <RegistrySearch Id="InstallPathRegistry" Type="raw" Root="HKLM" Key="$(var.RegistryKeyPath)" Name="InstallPath" />
@@ -22,7 +22,7 @@
     <InstallExecuteSequence>
       <RemoveExistingProducts After="InstallValidate" />
     </InstallExecuteSequence>
-    <Icon Id="NexPloitIcon" SourceFile="$(var.RepoDir)\tools\resources\logo.ico" />
+    <Icon Id="BrightIcon" SourceFile="$(var.RepoDir)\tools\resources\logo.ico" />
     <Icon Id="WixUIInfoIco" SourceFile="$(var.RepoDir)\tools\resources\logo.ico" />
     <Directory Id="TARGETDIR" Name="SourceDir">
       <Directory Id="ProgramMenuFolder">
@@ -31,18 +31,18 @@
             <!-- RegistryValue needed because every Component must have a KeyPath.
                                             Because of ICE43, the Root must be HKCU. -->
             <RegistryValue Root="HKCU" Key="$(var.RegistryKeyPath)\Components" Type="integer" Value="1" KeyPath="yes" />
-            <util:InternetShortcut Id="OnlineWebsiteShortcut" Name="$(var.ProductName) repository" Target="https://github.com/NeuraLegion/nexploit-cli" Type="url" />
-            <util:InternetShortcut Id="OnlineDocumentationShortcut" Name="$(var.ProductName) documentation" Target="https://docs.brightsec.com/docs/about-nexploit-cli" Type="url" />
+            <util:InternetShortcut Id="OnlineWebsiteShortcut" Name="$(var.ProductName) repository" Target="https://github.com/NeuraLegion/bright-cli" Type="url" />
+            <util:InternetShortcut Id="OnlineDocumentationShortcut" Name="$(var.ProductName) documentation" Target="https://docs.brightsec.com/docs/about-bright-cli" Type="url" />
             <Shortcut Id="UninstallProduct" Name="Uninstall $(var.ProductName)" Target="[System64Folder]msiexec.exe" Arguments="/x [ProductCode]" />
-            <Shortcut Id="ExeShortcut" Name="$(var.ProductName)" Icon="NexPloitIcon" Target="[INSTALLDIR]nexploit-cli.exe" WorkingDirectory="INSTALLDIR" IconIndex="0" />
+            <Shortcut Id="ExeShortcut" Name="$(var.ProductName)" Icon="BrightIcon" Target="[INSTALLDIR]bright-cli.exe" WorkingDirectory="INSTALLDIR" IconIndex="0" />
             <RemoveFolder Id="ProgramMenuDir" On="uninstall" />
           </Component>
         </Directory>
       </Directory>
       <Directory Id="ProgramFiles64Folder" Name="PFiles">
-        <Directory Id="INSTALLDIR" Name="NexPloitCLI">
+        <Directory Id="INSTALLDIR" Name="BrightCLI">
           <Component Id="Executable" Guid="8363278e-56cf-47c1-ba33-77eeaacb2baf" DiskId="1">
-            <File Id="nexploitcli.exe" Name="nexploit-cli.exe" KeyPath="yes" Source="$(var.SourceDir)\nexploit-cli.exe" Checksum="yes" />
+            <File Id="nexploitcli.exe" Name="bright-cli.exe" KeyPath="yes" Source="$(var.SourceDir)\bright-cli.exe" Checksum="yes" />
             <File Id="service.node" Name="service.node" Source="$(var.SourceDir)\service.node" Checksum="yes" />
             <File Id="raw.node" Name="raw.node" Source="$(var.SourceDir)\raw.node" Checksum="yes" />
             <File Id="roots.exe" Name="roots.exe" Source="$(var.SourceDir)\roots.exe" Checksum="yes" />
@@ -67,7 +67,7 @@
         </Directory>
       </Directory>
     </Directory>
-    <Feature Id="NexPloitRuntime" Level="1" Absent="disallow" Title="$(var.ProductName)" ConfigurableDirectory="INSTALLDIR" Description="Install $(var.ProductName) (nexploit-cli.exe).">
+    <Feature Id="BrightRuntime" Level="1" Absent="disallow" Title="$(var.ProductName)" ConfigurableDirectory="INSTALLDIR" Description="Install $(var.ProductName) (bright-cli.exe).">
       <ComponentRef Id="RegistryEntries" />
       <ComponentRef Id="EnvironmentPath" />
       <ComponentRef Id="Executable" />
@@ -115,7 +115,7 @@
       <Publish Dialog="MaintenanceTypeDlg" Control="RemoveButton" Event="NewDialog" Value="VerifyReadyDlg">1</Publish>
       <Publish Dialog="MaintenanceTypeDlg" Control="Back" Event="NewDialog" Value="MaintenanceWelcomeDlg">1</Publish>
       <Property Id="ARPNOMODIFY" Value="1" />
-      <Property Id="WIXUI_EXITDIALOGOPTIONALTEXT" Value="$(var.ProductName) has been succesfully installed. To run $(var.ProductName) open command prompt (cmd.exe), and run 'nexploit-cli'." />
+      <Property Id="WIXUI_EXITDIALOGOPTIONALTEXT" Value="$(var.ProductName) has been succesfully installed. To run $(var.ProductName) open command prompt (cmd.exe), and run 'bright-cli'." />
     </UI>
     <UIRef Id="InstallUI" />
   </Product>

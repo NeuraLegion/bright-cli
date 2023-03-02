@@ -9,7 +9,7 @@ export class OnSeverity extends Breakpoint {
 
   protected breakOn(): never {
     throw new BreakpointException(
-      `NexPloit CLI found a first ${this.severity} issue.`
+      `Bright CLI found a first ${this.severity} issue.`
     );
   }
 

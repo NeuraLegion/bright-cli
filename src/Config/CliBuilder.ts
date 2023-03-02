@@ -90,7 +90,7 @@ export class CliBuilder {
             : LogLevel[args.logLevel.toString().toUpperCase()])
       )
       .usage('Usage: $0 <command> [options] [<file | scan>]')
-      .pkgConf('nexploit', info.cwd)
+      .pkgConf('bright', info.cwd)
       .example(
         '$0 archive:generate --mockfile=.mockfile --name=archive.har',
         'output har file on base your mock requests'
