@@ -1,5 +1,5 @@
 import { CliConfig, ConfigReader } from './ConfigReader';
-import { Helpers } from '../Utils/Helpers';
+import { Helpers } from '../Utils';
 import { sync } from 'find-up';
 import { load } from 'js-yaml';
 import { extname } from 'path';
@@ -8,6 +8,12 @@ import { Context, createContext, Script } from 'vm';
 
 export class DefaultConfigReader implements ConfigReader {
   private readonly rcOptions: string[] = [
+    '.brightrc',
+    '.brightrc.json',
+    '.brightrc.yml',
+    '.brightrc.yaml',
+    'bright.config.js',
+    //backward compatibility with legacy nexploit-cli
     '.nexploitrc',
     '.nexploitrc.json',
     '.nexploitrc.yml',

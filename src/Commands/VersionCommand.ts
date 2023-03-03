@@ -29,7 +29,22 @@ export class VersionCommand implements CommandModule {
     });
   }
 
-  private static getGlobalNpmVersion(globalNpmList: string) {
+  public async handler(): Promise<void> {
+    const localNpmList: string = await VersionCommand.executeCommand(
+      'npm list --depth=0'
+    );
+    const localMatches: RegExpMatchArray | null = localNpmList.match(
+      / @neuralegion\/bright-cli@(.*)\n/
+    );
+    const localNpmVersion: string = (
+      localMatches && localMatches[1] ? localMatches[1] : ''
+    )
+      .replace(/"invalid"/gi, '')
+      .trim();
+
+    const globalNpmList: string = await VersionCommand.executeCommand(
+      'npm list -g --depth=0'
+    );
     const globalMatches: RegExpMatchArray | null = globalNpmList.match(
       / @neuralegion\/bright-cli@(.*)\n/
     );
@@ -39,50 +54,6 @@ export class VersionCommand implements CommandModule {
       .replace(/"invalid"/gi, '')
       .trim();
 
-    return globalNpmVersion;
-  }
-
-  private static getLegacyGlobalNpmVersion(globalNpmList: string) {
-    const legacyGlobalMatches: RegExpMatchArray | null = globalNpmList.match(
-      / @neuralegion\/nexploit-cli@(.*)\n/
-    );
-    const legacyGlobalNpmVersion: string = (
-      legacyGlobalMatches && legacyGlobalMatches[1]
-        ? legacyGlobalMatches[1]
-        : ''
-    )
-      .replace(/"invalid"/gi, '')
-      .trim();
-
-    return legacyGlobalNpmVersion;
-  }
-
-  private static async getLocalNpmVersion() {
-    const localNpmList: string = await VersionCommand.executeCommand(
-      'npm list --depth=0'
-    );
-    const localMatches: RegExpMatchArray | null = localNpmList.match(
-      / @nexploit\/cli@(.*)\n/
-    );
-    const localNpmVersion: string = (
-      localMatches && localMatches[1] ? localMatches[1] : ''
-    )
-      .replace(/"invalid"/gi, '')
-      .trim();
-
-    return localNpmVersion;
-  }
-
-  public async handler(): Promise<void> {
-    const localNpmVersion = await VersionCommand.getLocalNpmVersion();
-
-    const globalNpmList: string = await VersionCommand.executeCommand(
-      'npm list -g --depth=0'
-    );
-    const legacyGlobalNpmVersion =
-      VersionCommand.getLegacyGlobalNpmVersion(globalNpmList);
-    const globalNpmVersion = VersionCommand.getGlobalNpmVersion(globalNpmList);
-
     if (localNpmVersion) {
       logger.log('Local installed version:', localNpmVersion);
     } else {
@@ -91,10 +62,6 @@ export class VersionCommand implements CommandModule {
 
     if (globalNpmVersion) {
       logger.log('Global installed Bright CLI version:', globalNpmVersion);
-    } else if (legacyGlobalNpmVersion) {
-      logger.warn(
-        `Legacy NexPloit CLI found with version: ${legacyGlobalNpmVersion}. Install new Bright CLI: https://github.com/NeuraLegion/bright-cli#1-install-bright-cli-globally.`
-      );
     } else {
       logger.warn('No global installed was found.');
     }

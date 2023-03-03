@@ -2,7 +2,7 @@
 <Wix xmlns="http://schemas.microsoft.com/wix/2006/wi" xmlns:util="http://schemas.microsoft.com/wix/UtilExtension">
   <?define ProductName="Bright CLI" ?>
   <?define ProductAuthor="Bright Security Inc." ?>
-  <?define ProductDescription="$(var.ProductName) is a CLI tool that can initialize, stop, polling and maintain scans in $(var.ProductAuthor)s solutions (Such as NexPloit)." ?>
+  <?define ProductDescription="$(var.ProductName) is a CLI tool that can initialize, stop, polling and maintain scans in $(var.ProductAuthor)s solutions (Such as Bright)." ?>
   <?define RegistryKeyPath="SOFTWARE\$(var.ProductName)" ?>
   <Product Id="*" Name="$(var.ProductName)" UpgradeCode="74b15b74-a063-4524-ae83-69ad421be456" Language="1033" Codepage="1252" Version="$(var.ProductVersion)" Manufacturer="$(var.ProductAuthor)">
     <Package InstallerVersion="200" Compressed="yes" InstallScope="perMachine" />
@@ -14,14 +14,8 @@
       <RegistrySearch Id="InstallPathRegistry" Type="raw" Root="HKLM" Key="$(var.RegistryKeyPath)" Name="InstallPath" />
       <RegistrySearch Id="InstallPathRegistryCU" Type="raw" Root="HKCU" Key="$(var.RegistryKeyPath)" Name="InstallPath" />
     </Property>
-    <Media Id="1" Cabinet="nexploitcli.cab" EmbedCab="yes" />
-    <CustomAction Id="NewVersionError" Error="A later version of $(var.ProductName) is already installed. Setup will now exit." />
-    <Upgrade Id="74b15b74-a063-4524-ae83-69ad421be456">
-      <UpgradeVersion Property="PREVIOUSVERSIONSINSTALLED" IncludeMinimum="no" IncludeMaximum="yes" Minimum="0.0.0" Maximum="$(var.ProductVersion)" />
-    </Upgrade>
-    <InstallExecuteSequence>
-      <RemoveExistingProducts After="InstallValidate" />
-    </InstallExecuteSequence>
+    <Media Id="1" Cabinet="brightcli.cab" EmbedCab="yes" />
+    <MajorUpgrade DowngradeErrorMessage="A later version of $(var.ProductName) is already installed. Setup will now exit." Schedule="afterInstallExecute" />
     <Icon Id="BrightIcon" SourceFile="$(var.RepoDir)\tools\resources\logo.ico" />
     <Icon Id="WixUIInfoIco" SourceFile="$(var.RepoDir)\tools\resources\logo.ico" />
     <Directory Id="TARGETDIR" Name="SourceDir">
@@ -42,7 +36,7 @@
       <Directory Id="ProgramFiles64Folder" Name="PFiles">
         <Directory Id="INSTALLDIR" Name="BrightCLI">
           <Component Id="Executable" Guid="8363278e-56cf-47c1-ba33-77eeaacb2baf" DiskId="1">
-            <File Id="nexploitcli.exe" Name="bright-cli.exe" KeyPath="yes" Source="$(var.SourceDir)\bright-cli.exe" Checksum="yes" />
+            <File Id="brightcli.exe" Name="bright-cli.exe" KeyPath="yes" Source="$(var.SourceDir)\bright-cli.exe" Checksum="yes" />
             <File Id="service.node" Name="service.node" Source="$(var.SourceDir)\service.node" Checksum="yes" />
             <File Id="raw.node" Name="raw.node" Source="$(var.SourceDir)\raw.node" Checksum="yes" />
             <File Id="roots.exe" Name="roots.exe" Source="$(var.SourceDir)\roots.exe" Checksum="yes" />
