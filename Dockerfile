@@ -6,7 +6,7 @@ LABEL org.opencontainers.image.vendor="NeuraLegion"
 LABEL org.opencontainers.image.title="Repeater"
 LABEL org.opencontainers.image.source="git@github.com:NeuraLegion/bright-cli.git"
 LABEL org.opencontainers.image.url="https://github.com/NeuraLegion/bright-cli"
-LABEL org.opencontainers.image.authors="Arten Derevnjuk <artem.derevnjuk@brightsec.com>"
+LABEL org.opencontainers.image.authors="Artem Derevnjuk <artem.derevnjuk@brightsec.com>"
 LABEL org.opencontainers.image.version="$VERSION"
 
 # a few environment variables to make NPM installs easier
