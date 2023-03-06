@@ -2,7 +2,7 @@ FROM node:14-alpine as base
 
 ARG VERSION
 
-LABEL org.opencontainers.image.vendor="NeuraLegion"
+LABEL org.opencontainers.image.vendor="Bright Security Inc."
 LABEL org.opencontainers.image.title="Repeater"
 LABEL org.opencontainers.image.source="git@github.com:NeuraLegion/bright-cli.git"
 LABEL org.opencontainers.image.url="https://github.com/NeuraLegion/bright-cli"
