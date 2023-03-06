@@ -29,7 +29,7 @@ Before you can use **Bright CLI** make sure you have the following:
 #### 1. Install Bright CLI globally
 
 ```bash
-npm install @neuralegion/bright-cli -g
+npm install @brightsec/cli -g
 ```
 
 You can validate the installation by going to the directory of your project and running the command:

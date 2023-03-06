@@ -46,7 +46,7 @@ jobs:
       - uses: svenstaro/upload-release-action@v2
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
-          file: ./neuralegion-bright-cli-*
+          file: ./brightsec-cli-*
           tag: ${{ github.ref }}
           file_glob: true
 

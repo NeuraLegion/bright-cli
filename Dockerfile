@@ -23,7 +23,7 @@ RUN npm config -g set user $(whoami)
 
 #  add libraries needed to build os-service
 RUN apk add --no-cache --virtual .build-deps make gcc g++ python3 \
-    && npm i -g -q @neuralegion/bright-cli@${VERSION} \
+    && npm i -g -q @brightsec/cli@${VERSION} \
     && apk del .build-deps
 
 ENTRYPOINT [ "bright-cli" ]

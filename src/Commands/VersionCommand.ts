@@ -34,7 +34,7 @@ export class VersionCommand implements CommandModule {
       'npm list --depth=0'
     );
     const localMatches: RegExpMatchArray | null = localNpmList.match(
-      / @neuralegion\/bright-cli@(.*)\n/
+      / @brightsec\/cli@(.*)\n/
     );
     const localNpmVersion: string = (
       localMatches && localMatches[1] ? localMatches[1] : ''
@@ -46,7 +46,7 @@ export class VersionCommand implements CommandModule {
       'npm list -g --depth=0'
     );
     const globalMatches: RegExpMatchArray | null = globalNpmList.match(
-      / @neuralegion\/bright-cli@(.*)\n/
+      / @brightsec\/cli@(.*)\n/
     );
     const globalNpmVersion: string = (
       globalMatches && globalMatches[1] ? globalMatches[1] : ''
