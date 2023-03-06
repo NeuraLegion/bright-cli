@@ -1,18 +1,22 @@
 # Bright CLI
 
-**Bright CLI** is a Command Line Interface ([CLI](https://en.wikipedia.org/wiki/Command-line_interface)) tool for [Bright's solutions](https://www.brightsec.com). You can use **Bright CLI** for full control over scans such as: initialize, stop, poll, maintain and more. In addition, **Bright CLI** can serve as a [Repeater](https://docs.brightsec.com/docs/on-premises-repeater-local-agent) to scan local targets, without exposing them to the internet.
+[Bright](https://brightsec.com) is a powerful dynamic application & API security testing (DAST) platform.With its effective automation and integration capabilities, Bright allows developers to scan multiple targets, uncover security vulnerabilities without false positives, get detailed reports on every finding, and quickly fix security issues by following the remediation guidelines.
+
+The NPM allows you to install the Bright Command Line Interface (CLI) on your machine. You can use the **Bright CLI** to run and manage security scans directly from your development environment. In addition, the container includes a preconfigured [Repeater (scan proxy)](https://docs.brightsec.com/docs/on-premises-repeater-local-agent), which enables you to scan local targets securely, without exposing them to the Internet.
 
 ##### Features:
 
-- Supports official API
-- Configurable using JSON / XML / YML / JS formats
-- Can generate real interaction data (.har files) from mock interactions (Unit Tests), more info about NexMock [here](https://www.npmjs.com/package/@neuralegion/nexmock)
-- Can serve as a [Repeater](https://docs.brightsec.com/docs/on-premises-repeater-local-agent) for communication from the cloud to a local target
+- Easy control of the Bright REST API.
+- [Repeater mode](https://docs.brightsec.com/docs/initializing-the-repeater), which allows the Bright cloud engine to connect to local targets securely, pulling all scan requests as outbound traffic, without exposing the targets to the Internet.
+- Flexible proxy configuration, which allows you to control the CLI requests both internally and externally.
+- Connector to on-premises (local) ticketing services. For example, you can enable the Bright integration with on-premises Jira, for tickets to be automatically opened for each security vulnerability detected.
+- Integration of Bright with your CI pipelines. Please see our (guide on integrating Bright with CI pipelines)[https://docs.neuralegion.com/docs/integrate-nexploit-with-your-ci-pipeline] for more information.
+- Running commands from a configuration file. You can run the CLI commands from your console or save them as a JSON, XML, YML, or JavaScript file. Running the CLI from a pre-configured file will simplify further scanning.
 
 ## 🔎 Table of Contents
 
 - [Quick Start](#🚀-quick-start)
-- [Documentation](#📚-full-documentation)
+- [Full Documentation](#📚-full-documentation)
 - [License](#📝-license)
 
 ## 🚀 Quick Start
@@ -20,11 +24,10 @@
 Before you can use **Bright CLI** make sure you have the following:
 
 - An active user in [the Bright app](https://app.brightsec.com/)
-- A valid `TOKEN`
-  - For the quick start these scopes are required: `bot`, `scans:run` and `scans:read`
-  - More info about [setting up an API key](https://docs.brightsec.com/docs/manage-your-organization#manage-organization-apicli-authentication-tokens)
-- An active `ID`
-  - More info about [Setting up a New Repeater](https://docs.brightsec.com/docs/manage-repeaters)
+- You have Docker installed on your machine.
+- You have a valid [organization API key](https://docs.neuralegion.com/docs/manage-your-organization#manage-organization-apicli-authentication-tokens) or a [personal API key](https://docs.neuralegion.com/docs/manage-your-personal-account#manage-your-personal-api-keys-authentication-tokens) with the following scopes: `bot`, `scans:run` and `scans:read`. You can watch video about [creating API keys](https://www.youtube.com/watch?v=W_WdIGPXoUQ&t=3s).
+- You have registered (created) a Repeater in the Bright app and copied the generated Repeater ID. For the instructions on how to register a Repeater, see [here](https://docs.neuralegion.com/docs/manage-repeaters#create-a-new-repeater).
+- You have copied the Bright Project ID under which you want to run a scan. A Project ID is required. If you do not have any custom projects, use the Default Project ID.
 
 #### 1. Install Bright CLI globally
 
@@ -32,21 +35,20 @@ Before you can use **Bright CLI** make sure you have the following:
 npm install @brightsec/cli -g
 ```
 
-You can validate the installation by going to the directory of your project and running the command:
+You can make sure the installation worked by executing the following command:
 
 ```bash
-bright-cli -h
+bright-cli --version
 ```
 
-This will show you a list of possible commands for Bright CLI, for a full list go [here](https://docs.brightsec.com/docs/command-list)
+It should return the latest Repeater version.
 
 #### 2. Activate the Repeater
 
 ```bash
 bright-cli repeater \
   --token {TOKEN} \
-  --id {ID} \
-  --bus amqps://amq.app.brightsec.com:5672
+  --id {ID}
 ```
 
 #### 3. Start a new scan with a Crawler
@@ -55,23 +57,26 @@ bright-cli repeater \
 bright-cli scan:run \
   --token {TOKEN} \
   --repeater {ID} \
-  --name "My First Scan" \
-  --crawler https://www.example.com \
+  --name "Bright scan" \
+  --crawler {TARGET_URL} \
+  --project {PROJECT_ID}  \ #If you do not have any custom projects, specify the Default Project ID.
   --smart
 ```
 
-This command will initialize a new scan engine in the cloud, which will start scanning the target via the local [Repeater](https://docs.brightsec.com/docs/on-premises-repeater-local-agent).
+This command will initialize a new scan engine on the cloud, which will start scanning the target in the Repeater mode.
+
+We recommend that you use the `--smart` option to optimize the scan coverage and time. This enables you to use automatic smart decisions, such as parameter skipping, detection phases and so on.
 
 #### 4. Check out the scan results
 
-You can follow the scan status here: https://app.brightsec.com/scans, or by using the [Bright CLI polling](https://docs.brightsec.com/docs/checking-scan-status) command.
+You can follow the scan status in the [Bright app](https://app.neuralegion.com/scans) or by using the [**Bright CLI** polling](https://docs.neuralegion.com/docs/checking-scan-status) command.
 
 ## 📚 Full Documentation
 
-**Bright CLI** can do so much more! A full documentation with usage examples is available on [Bright's knowledgebase](https://docs.brightsec.com)
+The **Bright CLI** can do so much more! You can find a full guide with the usage examples in the [Bright docs](https://docs.neuralegion.com/docs/getting-started-with-nexploit-cli).
 
 ## 📝 License
 
-Copyright © 2021 [Bright](https://github.com/NeuraLegion).
+Copyright © 2022 Bright Security Inc.
 
 This project is licensed under the MIT License - see the [LICENSE file](LICENSE) for details.
