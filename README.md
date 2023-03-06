@@ -1,6 +1,6 @@
 # Bright CLI
 
-[Bright](https://brightsec.com) is a powerful dynamic application & API security testing (DAST) platform.With its effective automation and integration capabilities, Bright allows developers to scan multiple targets, uncover security vulnerabilities without false positives, get detailed reports on every finding, and quickly fix security issues by following the remediation guidelines.
+[Bright](https://brightsec.com) is a powerful dynamic application & API security testing (DAST) platform. With its effective automation and integration capabilities, Bright allows developers to scan multiple targets, uncover security vulnerabilities without false positives, get detailed reports on every finding, and quickly fix security issues by following the remediation guidelines.
 
 The NPM allows you to install the Bright Command Line Interface (CLI) on your machine. You can use the **Bright CLI** to run and manage security scans directly from your development environment. In addition, the container includes a preconfigured [Repeater (scan proxy)](https://docs.brightsec.com/docs/on-premises-repeater-local-agent), which enables you to scan local targets securely, without exposing them to the Internet.
 
@@ -10,7 +10,7 @@ The NPM allows you to install the Bright Command Line Interface (CLI) on your ma
 - [Repeater mode](https://docs.brightsec.com/docs/initializing-the-repeater), which allows the Bright cloud engine to connect to local targets securely, pulling all scan requests as outbound traffic, without exposing the targets to the Internet.
 - Flexible proxy configuration, which allows you to control the CLI requests both internally and externally.
 - Connector to on-premises (local) ticketing services. For example, you can enable the Bright integration with on-premises Jira, for tickets to be automatically opened for each security vulnerability detected.
-- Integration of Bright with your CI pipelines. Please see our (guide on integrating Bright with CI pipelines)[https://docs.neuralegion.com/docs/integrate-nexploit-with-your-ci-pipeline] for more information.
+- Integration of Bright with your CI pipelines. Please see our [guide on integrating Bright with CI pipelines](https://docs.neuralegion.com/docs/integrate-nexploit-with-your-ci-pipeline) for more information.
 - Running commands from a configuration file. You can run the CLI commands from your console or save them as a JSON, XML, YML, or JavaScript file. Running the CLI from a pre-configured file will simplify further scanning.
 
 ## 🔎 Table of Contents
@@ -41,7 +41,7 @@ You can make sure the installation worked by executing the following command:
 bright-cli --version
 ```
 
-It should return the latest Repeater version.
+It should return the latest Bright CLI version.
 
 #### 2. Activate the Repeater
 
