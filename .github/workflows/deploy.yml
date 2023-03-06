@@ -172,7 +172,7 @@ jobs:
         uses: ./.github/workflows/composite/npm
         with:
           registry: 'https://npm.pkg.github.com'
-          scope: '@NeuraLegion'
+          scope: '@BrightSec'
 
       - run: npm publish --tag $TAG
         continue-on-error: true
