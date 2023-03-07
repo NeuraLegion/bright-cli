@@ -40,20 +40,6 @@ export class CliBuilder {
         describe:
           'What level of logs to report. Any logs of a higher level than the setting are shown.'
       })
-      .option('api', {
-        requiresArg: true,
-        demandOption: true,
-        deprecated: true,
-        describe:
-          'Bright application base URL. [default: https://app.brightsec.com]'
-      })
-      .option('bus', {
-        requiresArg: true,
-        demandOption: true,
-        deprecated: true,
-        describe:
-          'Bright Event Bus base URL. [default: amqps://amq.app.brightsec.com:5672]'
-      })
       .option('cluster', {
         requiresArg: true,
         describe:
