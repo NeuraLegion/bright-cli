@@ -67,7 +67,7 @@ export class CliBuilder {
         ({ bus: args.bus, api: args.api } = Helpers.getClusterUrls(
           args as ClusterArgs
         ));
-      }, true)
+      })
       // TODO: (victor.polyakov@brightsec.com) Write correct type checking
       .middleware(
         (args: Arguments) =>
