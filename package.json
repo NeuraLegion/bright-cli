@@ -45,7 +45,7 @@
     "ws": "~8.1.0",
     "yargs": "~16.2.0"
   },
-  "description": "Bright CLI is a CLI tool that can initialize, stop, polling and maintain scans in NeuraLegions solutions (Such as Bright).",
+  "description": "Bright CLI is a CLI tool that can initialize, stop, polling and maintain scans in Bright solutions.",
   "devDependencies": {
     "@commitlint/cli": "^17.0.3",
     "@commitlint/config-conventional": "^17.0.3",
@@ -99,7 +99,6 @@
     "nexploit",
     "cli",
     "api",
-    "nexploit",
     "bright",
     "cyber-security",
     "security",
