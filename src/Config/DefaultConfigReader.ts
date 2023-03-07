@@ -13,7 +13,7 @@ export class DefaultConfigReader implements ConfigReader {
     '.brightrc.yml',
     '.brightrc.yaml',
     'bright.config.js',
-    //backward compatibility with legacy nexploit-cli
+    // ADHOC: keep for backward compatibility with the legacy nexploit-cli.
     '.nexploitrc',
     '.nexploitrc.json',
     '.nexploitrc.yml',
