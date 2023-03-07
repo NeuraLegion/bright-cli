@@ -40,6 +40,6 @@ export class FSTokens implements Tokens {
    * @deprecated `.nexploit-cli` path is deprecated, use .bright-cli. It's handled for backward compatibility.
    */
   private get legacyPath(): string {
-    return join(this.baseDir, '.bright-cli');
+    return join(this.baseDir, '.nexploit-cli');
   }
 }
