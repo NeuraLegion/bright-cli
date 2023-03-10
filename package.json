@@ -1,17 +1,20 @@
 {
-  "name": "@neuralegion/nexploit-cli",
-  "version": "8.11.0",
+  "name": "@brightsec/cli",
+  "version": "0.0.0",
   "private": false,
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/NeuraLegion/nexploit-cli.git"
+    "url": "git+https://github.com/NeuraLegion/bright-cli.git"
+  },
+  "publishConfig": {
+    "access": "public"
   },
   "author": "Artem Derevnjuk <artem.derevnjuk@brightsec.com>",
   "bin": {
-    "nexploit-cli": "./dist/index.js"
+    "bright-cli": "./dist/index.js"
   },
   "bugs": {
-    "url": "https://github.com/NeuraLegion/nexploit-cli/issues"
+    "url": "https://github.com/NeuraLegion/bright-cli/issues"
   },
   "commitlint": {
     "extends": [
@@ -45,7 +48,7 @@
     "ws": "~8.1.0",
     "yargs": "~16.2.0"
   },
-  "description": "NexPloit CLI is a CLI tool that can initialize, stop, polling and maintain scans in NeuraLegions solutions (Such as NexPloit).",
+  "description": "Bright CLI is a CLI tool that can initialize, stop, polling and maintain scans in Bright solutions.",
   "devDependencies": {
     "@commitlint/cli": "^17.0.3",
     "@commitlint/config-conventional": "^17.0.3",
@@ -94,12 +97,12 @@
   "files": [
     "dist"
   ],
-  "homepage": "https://github.com/NeuraLegion/nexploit-cli#readme",
+  "homepage": "https://github.com/NeuraLegion/bright-cli#readme",
   "keywords": [
     "nexploit",
     "cli",
     "api",
-    "nexploit-cli",
+    "bright",
     "cyber-security",
     "security",
     "har",

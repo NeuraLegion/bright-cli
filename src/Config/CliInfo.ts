@@ -26,7 +26,7 @@ export class CliInfo {
 
   private getPkgPath(cwd?: string): string {
     return sync('package.json', {
-      cwd: cwd || process.env.NEXPLOIT_CWD || process.cwd()
+      cwd: cwd || process.env.BRIGHT_CWD || process.cwd()
     });
   }
 }

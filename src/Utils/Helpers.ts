@@ -22,8 +22,6 @@ export interface CommandArgs {
 }
 
 export interface ClusterArgs {
-  api?: string;
-  bus?: string;
   cluster?: string;
 }
 
@@ -55,9 +53,6 @@ export class Helpers {
     let api: string;
 
     if (args.cluster) {
-      if (args.api || args.bus) {
-        throw new Error('Arguments api/bus and cluster are mutually exclusive');
-      }
       let host = args.cluster;
 
       try {
@@ -74,8 +69,8 @@ export class Helpers {
         api = `https://${host}`;
       }
     } else {
-      api = (args.api as string) ?? `https://app.brightsec.com`;
-      bus = (args.bus as string) ?? `amqps://amq.app.brightsec.com:5672`;
+      api = 'https://app.brightsec.com';
+      bus = 'amqps://amq.app.brightsec.com:5672';
     }
 
     return { api, bus };

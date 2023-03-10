@@ -21,7 +21,7 @@ import Timer = NodeJS.Timer;
 
 @injectable()
 export class DefaultRepeaterLauncher implements RepeaterLauncher {
-  private static SERVICE_NAME = 'nexploit-repeater';
+  private static SERVICE_NAME = 'bright-repeater';
   private timer: Timer | undefined;
   private repeaterId: string | undefined;
   private repeaterStarted: boolean = false;
@@ -68,7 +68,7 @@ export class DefaultRepeaterLauncher implements RepeaterLauncher {
       command,
       args: execArgs,
       name: DefaultRepeaterLauncher.SERVICE_NAME,
-      displayName: 'NexPloit Repeater'
+      displayName: 'Bright Repeater'
     });
 
     logger.log(

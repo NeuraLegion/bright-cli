@@ -20,7 +20,7 @@ import Timer = NodeJS.Timer;
 let timer: Timer;
 
 export class Integration implements CommandModule {
-  private static SERVICE_NAME = 'nexploit-integration';
+  private static SERVICE_NAME = 'bright-integration';
   public readonly command = 'integration [options]';
   public readonly describe = 'Starts an on-prem integration.';
 
@@ -134,7 +134,7 @@ export class Integration implements CommandModule {
         command,
         args: execArgs,
         name: Integration.SERVICE_NAME,
-        displayName: 'NexPloit Integration'
+        displayName: 'Bright Integration'
       });
 
       logger.log(

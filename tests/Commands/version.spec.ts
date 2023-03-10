@@ -19,7 +19,7 @@ describe('"version" command', () => {
     async () => {
       const actual = await cli.spawn('version');
       expect(actual).toEqual(
-        expect.stringContaining('No local installed NexPloit CLI was found.')
+        expect.stringContaining('No local installed Bright CLI was found.')
       );
       expect(actual).toEqual(
         expect.stringContaining('No global installed was found.')

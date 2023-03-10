@@ -8,34 +8,6 @@ enum TestEnum {
 
 describe('Helpers', () => {
   describe('getClusterUrls', () => {
-    it('should throw error when --cluster and --bus used', () => {
-      // arrange
-      const args = {
-        bus: 'amqps://localhost:5672',
-        cluster: 'localhost'
-      };
-      // act
-      const act = () => Helpers.getClusterUrls(args);
-      // assert
-      expect(act).toThrow(
-        'Arguments api/bus and cluster are mutually exclusive'
-      );
-    });
-
-    it('should throw error when --cluster and --api used', () => {
-      // arrange
-      const args = {
-        api: 'http://localhost:8000',
-        cluster: 'localhost'
-      };
-      // act
-      const act = () => Helpers.getClusterUrls(args);
-      // assert
-      expect(act).toThrow(
-        'Arguments api/bus and cluster are mutually exclusive'
-      );
-    });
-
     it('should returns localhost api and bus if --cluster is localhost', () => {
       // arrange
       const args = {
@@ -74,21 +46,6 @@ describe('Helpers', () => {
       expect(result).toEqual({
         api: 'https://test.com',
         bus: 'amqps://amq.test.com:5672'
-      });
-    });
-
-    it('should returns values with --api and --bus option', () => {
-      // arrange
-      const args = {
-        api: 'https://test.com',
-        bus: 'amqps://rabbit.test.com'
-      };
-      // act
-      const result = Helpers.getClusterUrls(args);
-      // assert
-      expect(result).toEqual({
-        api: 'https://test.com',
-        bus: 'amqps://rabbit.test.com'
       });
     });
   });

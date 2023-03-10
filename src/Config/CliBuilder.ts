@@ -40,20 +40,6 @@ export class CliBuilder {
         describe:
           'What level of logs to report. Any logs of a higher level than the setting are shown.'
       })
-      .option('api', {
-        requiresArg: true,
-        demandOption: true,
-        deprecated: true,
-        describe:
-          'Bright application base URL. [default: https://app.brightsec.com]'
-      })
-      .option('bus', {
-        requiresArg: true,
-        demandOption: true,
-        deprecated: true,
-        describe:
-          'Bright Event Bus base URL. [default: amqps://amq.app.brightsec.com:5672]'
-      })
       .option('cluster', {
         requiresArg: true,
         describe:
@@ -81,7 +67,7 @@ export class CliBuilder {
         ({ bus: args.bus, api: args.api } = Helpers.getClusterUrls(
           args as ClusterArgs
         ));
-      }, true)
+      })
       // TODO: (victor.polyakov@brightsec.com) Write correct type checking
       .middleware(
         (args: Arguments) =>
@@ -90,7 +76,7 @@ export class CliBuilder {
             : LogLevel[args.logLevel.toString().toUpperCase()])
       )
       .usage('Usage: $0 <command> [options] [<file | scan>]')
-      .pkgConf('nexploit', info.cwd)
+      .pkgConf('bright', info.cwd)
       .example(
         '$0 archive:generate --mockfile=.mockfile --name=archive.har',
         'output har file on base your mock requests'

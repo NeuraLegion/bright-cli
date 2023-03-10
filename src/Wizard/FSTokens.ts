@@ -17,19 +17,29 @@ export class FSTokens implements Tokens {
   }
 
   public readTokens(): Credentials | undefined {
-    logger.debug('Reading saved tokens from file %s', this.path);
+    let result: Credentials;
+    for (const path of [this.path, this.legacyPath]) {
+      logger.debug('Reading saved tokens from file %s', path);
+      if (existsSync(path)) {
+        logger.debug('File found. Return the tokens.');
+        const resultRaw: Buffer = readFileSync(path);
 
-    if (existsSync(this.path)) {
-      logger.debug('File found. Returns the tokens.');
-      const result: Buffer = readFileSync(this.path);
-
-      return JSON.parse(result.toString('utf8')) as Credentials;
+        return JSON.parse(resultRaw.toString('utf8')) as Credentials;
+      }
     }
-
-    logger.debug("File doesn't exist.");
+    if (!result) {
+      logger.debug("File doesn't exist.");
+    }
   }
 
   private get path(): string {
+    return join(this.baseDir, '.bright-cli');
+  }
+
+  /**
+   * @deprecated `.nexploit-cli` path is deprecated, use .bright-cli. It's handled for backward compatibility.
+   */
+  private get legacyPath(): string {
     return join(this.baseDir, '.nexploit-cli');
   }
 }
