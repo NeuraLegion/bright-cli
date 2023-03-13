@@ -42,6 +42,7 @@ export enum TestType {
   PROTO_POLLUTION = 'proto_pollution',
   RETIRE_JS = 'retire_js',
   RFI = 'rfi',
+  S3_TAKEOVER = 'amazon_s3_takeover',
   SECRET_TOKENS = 'secret_tokens',
   SERVER_SIDE_JS_INJECTION = 'server_side_js_injection',
   SQLI = 'sqli',
