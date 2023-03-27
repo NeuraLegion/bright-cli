@@ -13,6 +13,7 @@ export enum TestType {
   COMMON_FILES = 'common_files',
   COOKIE_SECURITY = 'cookie_security',
   CSRF = 'csrf',
+  CVE = 'cve_test',
   DATE_MANIPULATION = 'date_manipulation',
   DEFAULT_LOGIN_LOCATION = 'default_login_location',
   DIRECTORY_LISTING = 'directory_listing',
