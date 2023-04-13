@@ -1,6 +1,6 @@
 import {
   AttackParamLocation,
-  COMPREHENSIVE_SCAN_TESTS,
+  SCAN_TESTS_TO_RUN_BY_DEFAULT,
   Module,
   RequestExclusion,
   RestScansOptions,
@@ -78,7 +78,7 @@ export class RunScan implements CommandModule {
       })
       .option('test', {
         choices: Helpers.toArray(TestType),
-        default: COMPREHENSIVE_SCAN_TESTS,
+        default: SCAN_TESTS_TO_RUN_BY_DEFAULT,
         array: true,
         describe: 'A list of tests which you want to run during a scan.'
       })
