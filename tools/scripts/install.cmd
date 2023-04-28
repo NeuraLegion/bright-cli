@@ -1,6 +1,8 @@
 @echo off
 
-setlocal enableextensions
+setlocal enableDelayedExpansion
+
+set "ErrorActionPreference=Stop"
 
 :: check for existence of PowerShell
 echo Checking for existence of powershell.exe
@@ -9,9 +11,9 @@ where.exe powershell.exe >nul 2>nul || (
     exit /b 1
 )
 
-:: Checking for admin rights
+:: Check for admin rights
 net session >nul 2>&1
-if %errorLevel% NEQ 0 (
+if %errorLevel% neq 0 (
     echo You need to run this script as an administrator. Please right-click the script and select "Run as administrator".
     echo.
     pause
@@ -26,19 +28,18 @@ set "INSTALL_DIR=%ProgramFiles%\%CLI_NAME%"
 set "DOWNLOAD_BASE_URL=https://github.com/NeuraLegion/%CLI_NAME%/releases/latest/download"
 :: TODO: map to ours asset names
 set "OS=win"
-:: TODO: hardcoded at this moment, replace with %PROCESSOR_ARCHITECTURE%
+:: TODO: hardcoded at this moment, replace with $env:PROCESSOR_ARCHITECTURE
 set "ARCH=x64"
 :: name of the asset to download
 set "FILENAME=%CLI_NAME%-%OS%-%ARCH%.exe"
 
-:: create INSTALL_DIR if it doesn't exist
+:: Create INSTALL_DIR if it doesn't exist
 if not exist "%INSTALL_DIR%" (
-    echo Creating a folder %INSTALL_DIR%
+    echo Creating %INSTALL_DIR% folder
     mkdir "%INSTALL_DIR%"
-    echo %INSTALL_DIR% folder created.
 )
 
-:: download and ensure non-duplicate filename
+:: Download and ensure non-duplicate filename
 set "DOWNLOAD_URL=%DOWNLOAD_BASE_URL%/%FILENAME%"
 
 if exist "%INSTALL_DIR%\%CLI_NAME%.exe" (
@@ -47,15 +48,11 @@ if exist "%INSTALL_DIR%\%CLI_NAME%.exe" (
 )
 
 echo Installing %CLI_NAME% to %INSTALL_DIR%...
-powershell -Command "Invoke-WebRequest -Uri '%DOWNLOAD_URL%' -OutFile '%INSTALL_DIR%\%CLI_NAME%.exe'" || exit /b 1
-echo %CLI_NAME% installed to %INSTALL_DIR%.
+powershell -Command "$ProgressPreference = 'SilentlyContinue'; Invoke-WebRequest -Uri '%DOWNLOAD_URL%' -OutFile '%INSTALL_DIR%\%CLI_NAME%.exe'" || exit /b 1
 echo Patching PATH env variable...
 :: add installation directory to the system's PATH environment variable
 if "!path:%INSTALL_DIR%=!" equ "%PATH%" (
    setx PATH "%INSTALL_DIR%;%PATH%"
 )
-
-echo.
-pause
 
 endlocal

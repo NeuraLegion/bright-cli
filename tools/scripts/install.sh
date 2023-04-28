@@ -17,16 +17,6 @@
   # possible profile files
   PROFILE_FILES=("$HOME/.bashrc" "$HOME/.bash_profile" "$HOME/.zshrc" "$HOME/.profile")
 
-  # check for existence of curl or wget
-  if command -v curl > /dev/null; then
-    DOWNLOAD_COMMAND="curl -fsSL"
-  elif command -v wget > /dev/null; then
-    DOWNLOAD_COMMAND="wget -qO-"
-  else
-    echo "Error: curl or wget not found."
-    exit 1
-  fi
-
   # download and ensure non-duplicate filename
   if [[ "$OS" == "linux-gnu"* ]]; then
     FILENAME+="-linux-$ARCH"
@@ -39,6 +29,7 @@
 
   # create INSTALL_DIR if it doesn't exist
   if [ ! -d "$INSTALL_DIR" ] ; then
+    echo "Creating $INSTALL_DIR folder..."
     mkdir -p "$INSTALL_DIR"
   fi
 
@@ -50,16 +41,26 @@
   fi
 
   echo "Installing $CLI_NAME to $INSTALL_DIR..."
-  $DOWNLOAD_COMMAND "$DOWNLOAD_URL" > "$INSTALL_DIR/$CLI_NAME" && chmod +x "$INSTALL_DIR/$CLI_NAME"
-  echo "$CLI_NAME installed to $INSTALL_DIR."
+  if command -v curl >/dev/null 2>&1; then
+      curl -fsSL "$DOWNLOAD_URL" > "$INSTALL_DIR/$CLI_NAME"
+  elif command -v wget >/dev/null 2>&1; then
+      wget -qO- "$DOWNLOAD_URL" > "$INSTALL_DIR/$CLI_NAME"
+  else
+      echo "Error: curl or wget not found."
+      exit 1
+  fi
 
+  echo "Granting permission to execute $INSTALL_DIR/$CLI_NAME..."
+  chmod +x "$INSTALL_DIR/$CLI_NAME"
+
+  echo "Patching PATH env variable..."
   # loop over profile files and update PATH if they exist
   for PROFILE_FILE in "${PROFILE_FILES[@]}"
   do
       if [ -f "$PROFILE_FILE" ]; then
           if ! grep -q "$INSTALL_DIR" "$PROFILE_FILE"; then
-              echo "export PATH=\"${INSTALL_DIR}:\$PATH\"" >> "$PROFILE_FILE"
-              source "$PROFILE_FILE"
+              echo -n "export PATH=\"${INSTALL_DIR}:\$PATH\"" >> "$PROFILE_FILE"
+              source "$PROFILE_FILE" > /dev/null 2>&1
               # change the PATH right now
               PATH="$PATH:$HOME/.local/bin"
           fi
