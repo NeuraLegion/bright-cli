@@ -46,7 +46,7 @@ jobs:
       - uses: svenstaro/upload-release-action@v2
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
-          file: ./neuralegion-nexploit-cli-*
+          file: ./brightsec-cli-*
           tag: ${{ github.ref }}
           file_glob: true
 
@@ -135,16 +135,16 @@ jobs:
       - uses: svenstaro/upload-release-action@v2
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
-          file: ${{ startsWith(matrix.os, 'win') && '.\bin\nexploit-cli.exe' || './bin/nexploit-cli' }}
-          asset_name: ${{ format('nexploit-cli-{0}-x64{1}', matrix.target, startsWith(matrix.os, 'win') && '.exe' || '') }}
+          file: ${{ startsWith(matrix.os, 'win') && '.\bin\cli.exe' || './bin/cli' }}
+          asset_name: ${{ format('bright-cli-{0}-x64{1}', matrix.target, startsWith(matrix.os, 'win') && '.exe' || '') }}
           tag: ${{ github.ref }}
 
       - uses: svenstaro/upload-release-action@v2
         if: startsWith(matrix.os, 'win')
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
-          file: .\bin\nexploit-cli.msi
-          asset_name: nexploit-cli.msi
+          file: .\bin\bright-cli.msi
+          asset_name: bright-cli.msi
           tag: ${{ github.ref }}
 
   publish:

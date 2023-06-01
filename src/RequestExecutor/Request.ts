@@ -1,4 +1,4 @@
-import { logger } from '../Utils';
+import { Helpers, logger } from '../Utils';
 import { URL } from 'url';
 import { readFile } from 'fs';
 import { basename, extname } from 'path';
@@ -116,7 +116,9 @@ export class Request {
   public async setCerts(certs: Cert[]): Promise<void> {
     const { hostname } = new URL(this.url);
 
-    const cert: Cert | undefined = certs.find((x) => x.hostname === hostname);
+    const cert: Cert | undefined = certs.find((x) =>
+      this.matchHostname(hostname, x.hostname)
+    );
 
     if (!cert) {
       logger.warn(`Warning: certificate for ${hostname} not found.`);
@@ -166,6 +168,12 @@ export class Request {
       default:
         logger.warn(`Warning: certificate of type "${ext}" does not support.`);
     }
+  }
+
+  private matchHostname(hostname: string, wildcard: string): boolean {
+    return (
+      wildcard === hostname || Helpers.wildcardToRegExp(wildcard).test(hostname)
+    );
   }
 
   private assertPassphrase(

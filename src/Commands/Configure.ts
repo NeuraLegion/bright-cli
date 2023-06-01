@@ -36,12 +36,6 @@ export class Configure implements CommandModule {
         requiresArg: true,
         describe: `Bright event message authentication endpoint`
       })
-      .option('nogui', {
-        default: true,
-        deprecated: true,
-        boolean: true,
-        describe: `Start a configuration wizard without GUI`
-      })
       .option('ping', {
         boolean: true,
         describe: `Start network tests.`

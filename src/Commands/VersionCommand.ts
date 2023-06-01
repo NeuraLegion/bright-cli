@@ -4,7 +4,7 @@ import { exec, ExecException } from 'child_process';
 
 export class VersionCommand implements CommandModule {
   public readonly command = 'version';
-  public readonly describe = 'Prints NexPloit CLI version this project uses.';
+  public readonly describe = 'Prints Bright CLI version this project uses.';
 
   protected static executeCommand(command: string): Promise<string> {
     return new Promise<string>((resolve, reject) => {
@@ -34,7 +34,7 @@ export class VersionCommand implements CommandModule {
       'npm list --depth=0'
     );
     const localMatches: RegExpMatchArray | null = localNpmList.match(
-      / @nexploit\/cli@(.*)\n/
+      / @brightsec\/cli@(.*)\n/
     );
     const localNpmVersion: string = (
       localMatches && localMatches[1] ? localMatches[1] : ''
@@ -46,7 +46,7 @@ export class VersionCommand implements CommandModule {
       'npm list -g --depth=0'
     );
     const globalMatches: RegExpMatchArray | null = globalNpmList.match(
-      / @nexploit\/cli@(.*)\n/
+      / @brightsec\/cli@(.*)\n/
     );
     const globalNpmVersion: string = (
       globalMatches && globalMatches[1] ? globalMatches[1] : ''
@@ -57,11 +57,11 @@ export class VersionCommand implements CommandModule {
     if (localNpmVersion) {
       logger.log('Local installed version:', localNpmVersion);
     } else {
-      logger.warn('No local installed NexPloit CLI was found.');
+      logger.warn('No local installed Bright CLI was found.');
     }
 
     if (globalNpmVersion) {
-      logger.log('Global installed NexPloit CLI version:', globalNpmVersion);
+      logger.log('Global installed Bright CLI version:', globalNpmVersion);
     } else {
       logger.warn('No global installed was found.');
     }
@@ -72,8 +72,8 @@ export class VersionCommand implements CommandModule {
       localNpmVersion !== globalNpmVersion
     ) {
       logger.warn(
-        'To avoid issues with CLI please make sure your global and local NexPloit CLI versions match, ' +
-          'or you are using locally installed NexPloit CLI instead of global one.'
+        'To avoid issues with CLI please make sure your global and local Bright CLI versions match, ' +
+          'or you are using locally installed Bright CLI instead of global one.'
       );
     }
   }

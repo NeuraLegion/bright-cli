@@ -13,11 +13,13 @@ export enum TestType {
   COMMON_FILES = 'common_files',
   COOKIE_SECURITY = 'cookie_security',
   CSRF = 'csrf',
+  CVE = 'cve_test',
   DATE_MANIPULATION = 'date_manipulation',
   DEFAULT_LOGIN_LOCATION = 'default_login_location',
   DIRECTORY_LISTING = 'directory_listing',
   DOM_XSS = 'dom_xss',
   EMAIL_INJECTION = 'email_injection',
+  EXCESSIVE_DATA_EXPOSURE = 'excessive_data_exposure',
   EXPOSED_COUCH_DB_APIS = 'exposed_couch_db_apis',
   FILE_UPLOAD = 'file_upload',
   FULL_PATH_DISCLOSURE = 'full_path_disclosure',
@@ -42,6 +44,7 @@ export enum TestType {
   PROTO_POLLUTION = 'proto_pollution',
   RETIRE_JS = 'retire_js',
   RFI = 'rfi',
+  S3_TAKEOVER = 'amazon_s3_takeover',
   SECRET_TOKENS = 'secret_tokens',
   SERVER_SIDE_JS_INJECTION = 'server_side_js_injection',
   SQLI = 'sqli',
@@ -55,17 +58,29 @@ export enum TestType {
   XXE = 'xxe'
 }
 
-export const COMPREHENSIVE_SCAN_TESTS: readonly TestType[] = Object.values(
+export const EXPENSIVE_TESTS: readonly TestType[] = [
+  TestType.BUSINESS_CONSTRAINT_BYPASS,
+  TestType.CVE,
+  TestType.DATE_MANIPULATION,
+  TestType.EXCESSIVE_DATA_EXPOSURE,
+  TestType.ID_ENUMERATION,
+  TestType.LRRL,
+  TestType.MASS_ASSIGNMENT,
+  TestType.RETIRE_JS,
+  // not implemented yet by the engine
+  TestType.ANGULAR_CSTI,
+  TestType.BACKUP_LOCATIONS,
+  TestType.EXPOSED_COUCH_DB_APIS,
+  TestType.HTTP_RESPONSE_SPLITTING,
+  TestType.HRS
+];
+
+export const EXCLUSIVE_TESTS: readonly TestType[] = [TestType.LRRL];
+
+export const SCAN_TESTS_TO_RUN_BY_DEFAULT: readonly TestType[] = Object.values(
   TestType
 ).filter(
-  (x: TestType) =>
-    ![
-      TestType.BUSINESS_CONSTRAINT_BYPASS,
-      TestType.DATE_MANIPULATION,
-      TestType.ID_ENUMERATION,
-      TestType.MASS_ASSIGNMENT,
-      TestType.RETIRE_JS
-    ].includes(x)
+  (x: TestType) => ![...EXPENSIVE_TESTS, ...EXCLUSIVE_TESTS].includes(x)
 );
 
 export enum Module {
