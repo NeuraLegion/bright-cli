@@ -17,10 +17,15 @@ import {
 } from 'ts-mockito';
 import { URL } from 'url';
 import { promisify } from 'util';
-import { constants, gzip } from 'zlib';
+import { brotliCompress, constants, gzip } from 'zlib';
 
 const createRequest = (options?: Partial<RequestOptions>) => {
-  const requestOptions = { url: 'https://foo.bar', headers: {}, ...options };
+  const requestOptions = {
+    url: 'https://foo.bar',
+    headers: {},
+    protocol: Protocol.HTTP,
+    ...options
+  };
   const request = new Request(requestOptions);
   const spiedRequest = spy(request);
   when(spiedRequest.method).thenReturn('GET');
@@ -145,6 +150,34 @@ describe('HttpRequestExecutor', () => {
       });
     });
 
+    it('should preserve directory traversal', async () => {
+      const path = 'public/../../../../../../etc/passwd';
+      const { request } = createRequest({
+        url: `http://localhost:8080/${path}`
+      });
+      nock('http://localhost:8080').get(`/${path}`).reply(200, {});
+
+      const response = await executor.execute(request);
+
+      expect(response).toMatchObject({
+        statusCode: 200,
+        body: {}
+      });
+    });
+
+    it('should handle timeout', async () => {
+      when(spiedExecutorOptions.timeout).thenReturn(1);
+      const { request, requestOptions } = createRequest();
+      nock(requestOptions.url).get('/').delayBody(2).reply(204);
+
+      const response = await executor.execute(request);
+
+      expect(response).toMatchObject({
+        errorCode: 'Error',
+        message: 'Waiting response has timed out'
+      });
+    });
+
     it('should handle non-HTTP errors', async () => {
       const { request } = createRequest();
 
@@ -183,6 +216,22 @@ describe('HttpRequestExecutor', () => {
       const response = await executor.execute(request);
 
       expect(response.body).toEqual(bigBody);
+    });
+
+    it('should decode response body if content-encoding is brotli', async () => {
+      when(spiedExecutorOptions.maxContentLength).thenReturn(1);
+      when(spiedExecutorOptions.whitelistMimes).thenReturn(['text/plain']);
+      const { request, requestOptions } = createRequest();
+      const expected = 'x'.repeat(1025);
+      const bigBody = await promisify(brotliCompress)(expected);
+      nock(requestOptions.url).get('/').reply(200, bigBody, {
+        'content-type': 'text/plain',
+        'content-encoding': 'br'
+      });
+
+      const response = await executor.execute(request);
+
+      expect(response.body).toEqual(expected);
     });
 
     it('should decode response body if content-encoding is gzip', async () => {
