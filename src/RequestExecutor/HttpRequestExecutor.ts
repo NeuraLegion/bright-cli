@@ -5,18 +5,29 @@ import { logger } from '../Utils';
 import { VirtualScripts } from '../Scripts';
 import { Protocol } from './Protocol';
 import { RequestExecutorOptions } from './RequestExecutorOptions';
-import request from 'request-promise';
-import { Response as IncomingResponse } from 'request';
 import { SocksProxyAgent } from 'socks-proxy-agent';
 import { inject, injectable } from 'tsyringe';
-import { parse as contentTypeParse } from 'content-type';
-import { parse, URL } from 'url';
-import http, { OutgoingMessage } from 'http';
-import https, { AgentOptions } from 'https';
+import { parse as parseMimetype } from 'content-type';
+import { parse as parseUrl, URL } from 'url';
+import http, { ClientRequest, IncomingMessage, OutgoingMessage } from 'http';
+import https, {
+  AgentOptions,
+  RequestOptions as ClientRequestOptions
+} from 'https';
+import { once } from 'events';
+import { Readable } from 'stream';
+import {
+  constants,
+  createBrotliDecompress,
+  createGunzip,
+  createInflate
+} from 'zlib';
 
 type ScriptEntrypoint = (
   options: RequestOptions
 ) => Promise<RequestOptions> | RequestOptions;
+
+type IncomingResponse = IncomingMessage & { body?: string };
 
 @injectable()
 export class HttpRequestExecutor implements RequestExecutor {
@@ -36,7 +47,7 @@ export class HttpRequestExecutor implements RequestExecutor {
   ) {
     if (this.options.proxyUrl) {
       this.proxy = new SocksProxyAgent({
-        ...parse(this.options.proxyUrl)
+        ...parseUrl(this.options.proxyUrl)
       });
     }
 
@@ -86,8 +97,9 @@ export class HttpRequestExecutor implements RequestExecutor {
         });
       }
 
-      const message = err.cause?.message ?? err.message;
-      const errorCode = err.cause?.code ?? err.error?.syscall ?? err.name;
+      const { cause } = err;
+      const { message, code, syscall, name } = cause ?? err;
+      const errorCode = code ?? syscall ?? name;
 
       logger.error(
         'Error executing request: "%s %s HTTP/1.1"',
@@ -105,36 +117,88 @@ export class HttpRequestExecutor implements RequestExecutor {
   }
 
   private async request(options: Request): Promise<IncomingResponse> {
-    const agent =
-      this.proxy ??
-      (options.url.startsWith('https') ? this.httpsAgent : this.httpAgent);
+    let timer: NodeJS.Timeout | undefined;
+    let res!: IncomingMessage;
 
-    const res = await request({
-      agent,
-      agentOptions: {
-        ca: options.ca,
-        pfx: options.pfx,
-        passphrase: options.passphrase
-      },
-      body: options.body,
-      followRedirect: false,
-      gzip: true,
-      method: options.method,
-      resolveWithFullResponse: true,
-      strictSSL: false,
-      rejectUnauthorized: false,
-      timeout: this.options.timeout,
-      url: options.url
-    }).on('request', (req: OutgoingMessage) => this.setHeaders(req, options));
+    try {
+      const req = this.createRequest(options);
 
-    this.truncateResponse(res);
+      process.nextTick(() => req.end(options.body));
+      timer = this.setTimeout(req);
 
-    return res;
+      [res] = (await once(req, 'response')) as [IncomingMessage];
+    } finally {
+      clearTimeout(timer);
+    }
+
+    return this.truncateResponse(res);
   }
 
-  private truncateResponse(res: IncomingResponse): void {
-    if (res.statusCode === 204 || res.method === 'HEAD') {
-      return;
+  private createRequest(request: Request): ClientRequest {
+    const protocol = request.url.startsWith('https') ? https : http;
+    const outgoingMessage = protocol.request(
+      this.createRequestOptions(request)
+    );
+    this.setHeaders(outgoingMessage, request);
+
+    if (!outgoingMessage.hasHeader('accept-encoding')) {
+      outgoingMessage.setHeader('accept-encoding', 'gzip, deflate');
+    }
+
+    return outgoingMessage;
+  }
+
+  private setTimeout(req: ClientRequest): NodeJS.Timeout | undefined {
+    if (typeof this.options.timeout === 'number') {
+      return setTimeout(
+        () => req.destroy(new Error('Waiting response has timed out')),
+        this.options.timeout
+      );
+    }
+  }
+
+  private createRequestOptions(request: Request): ClientRequestOptions {
+    const {
+      auth,
+      hostname,
+      port,
+      hash = '',
+      pathname = '/',
+      search = ''
+    } = parseUrl(request.url);
+    const path = `${pathname ?? '/'}${search ?? ''}${hash ?? ''}`;
+    const agent = this.getRequestAgent(request);
+
+    return {
+      hostname,
+      port,
+      path,
+      auth,
+      agent,
+      ca: request.ca,
+      pfx: request.pfx,
+      passphrase: request.passphrase,
+      method: request.method,
+      timeout: this.options.timeout,
+      rejectUnauthorized: false
+    };
+  }
+
+  private getRequestAgent(options: Request) {
+    return (
+      this.proxy ?? (options.secureEndpoint ? this.httpsAgent : this.httpAgent)
+    );
+  }
+
+  private async truncateResponse(
+    res: IncomingResponse
+  ): Promise<IncomingResponse> {
+    if (this.responseHasNoBody(res)) {
+      logger.debug('The response does not contain any body.');
+
+      res.body = '';
+
+      return res;
     }
 
     const type = this.parseContentType(res);
@@ -143,17 +207,19 @@ export class HttpRequestExecutor implements RequestExecutor {
       (mime: string) => type.startsWith(mime)
     );
 
-    const body = this.parseBody(res, { maxBodySize, requiresTruncating });
+    const body = await this.parseBody(res, { maxBodySize, requiresTruncating });
 
     res.body = body.toString();
     res.headers['content-length'] = String(body.byteLength);
+
+    return res;
   }
 
-  private parseContentType(res: IncomingResponse) {
-    let type = res.headers['content-type'];
+  private parseContentType(res: IncomingMessage): string {
+    let type = res.headers['content-type'] || 'text/plain';
 
     try {
-      ({ type } = contentTypeParse(type || 'text/plain'));
+      ({ type } = parseMimetype(type));
     } catch {
       // noop
     }
@@ -161,11 +227,56 @@ export class HttpRequestExecutor implements RequestExecutor {
     return type;
   }
 
-  private parseBody(
-    res: IncomingResponse,
+  private unzipBody(response: IncomingMessage): Readable {
+    let body: Readable = response;
+
+    if (!this.responseHasNoBody(response)) {
+      let contentEncoding = response.headers['content-encoding'] || 'identity';
+      contentEncoding = contentEncoding.trim().toLowerCase();
+
+      // Always using Z_SYNC_FLUSH is what cURL does.
+      const zlibOptions = {
+        flush: constants.Z_SYNC_FLUSH,
+        finishFlush: constants.Z_SYNC_FLUSH
+      };
+
+      switch (contentEncoding) {
+        case 'gzip':
+          body = response.pipe(createGunzip(zlibOptions));
+          break;
+        case 'deflate':
+          body = response.pipe(createInflate(zlibOptions));
+          break;
+        case 'br':
+          body = response.pipe(createBrotliDecompress());
+          break;
+      }
+    }
+
+    return body;
+  }
+
+  private responseHasNoBody(response: IncomingMessage): boolean {
+    return (
+      response.method === 'HEAD' ||
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      (response.statusCode! >= 100 && response.statusCode! < 200) ||
+      response.statusCode === 204 ||
+      response.statusCode === 304
+    );
+  }
+
+  private async parseBody(
+    res: IncomingMessage,
     options: { maxBodySize: number; requiresTruncating: boolean }
-  ): Buffer {
-    let body = Buffer.from(res.body);
+  ): Promise<Buffer> {
+    const chunks: Buffer[] = [];
+
+    for await (const chuck of this.unzipBody(res)) {
+      chunks.push(chuck);
+    }
+
+    let body = Buffer.concat(chunks);
 
     const truncated =
       this.options.maxContentLength !== -1 &&

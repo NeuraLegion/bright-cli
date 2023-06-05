@@ -1,4 +1,5 @@
 import { Helpers, logger } from '../Utils';
+import { Protocol } from './Protocol';
 import { URL } from 'url';
 import { readFile } from 'fs';
 import { basename, extname } from 'path';
@@ -6,9 +7,10 @@ import { promisify } from 'util';
 import { createSecureContext } from 'tls';
 
 export interface RequestOptions {
-  method?: string;
+  protocol: Protocol;
   url: string;
-  headers: Record<string, string | string[]>;
+  headers?: Record<string, string | string[]>;
+  method?: string;
   pfx?: Buffer | string;
   ca?: Buffer | string;
   body?: string;
@@ -23,41 +25,47 @@ export interface Cert {
 }
 
 export class Request {
+  public readonly protocol: Protocol;
   public readonly url: string;
   public readonly body?: string;
   public readonly correlationIdRegex?: RegExp;
 
-  private _method?: string;
+  private _method: string;
 
   get method(): string {
     return this._method;
   }
 
-  private _headers: Record<string, string | string[]>;
+  private _headers?: Record<string, string | string[]>;
 
-  get headers(): Record<string, string | string[]> {
+  get headers(): Readonly<Record<string, string | string[]>> {
     return this._headers;
   }
 
   private _ca?: Buffer;
 
-  get ca(): Buffer {
+  get ca() {
     return this._ca;
   }
 
   private _pfx?: Buffer;
 
-  get pfx(): Buffer {
+  get pfx() {
     return this._pfx;
   }
 
   private _passphrase?: string;
 
-  get passphrase(): string {
+  get passphrase() {
     return this._passphrase;
   }
 
+  get secureEndpoint(): boolean {
+    return this.url.startsWith('https');
+  }
+
   constructor({
+    protocol,
     method,
     url,
     body,
@@ -67,31 +75,17 @@ export class Request {
     correlationIdRegex,
     headers = {}
   }: RequestOptions) {
+    this.protocol = protocol;
     this._method = method?.toUpperCase() ?? 'GET';
 
-    if (!url) {
-      throw new Error('Url must be declared explicitly.');
-    }
+    this.validateUrl(url);
+    this.url = url;
 
-    try {
-      this.url = new URL(url).toString();
-    } catch {
-      throw new Error('Invalid URL.');
-    }
-
-    if (body && typeof body !== 'string') {
-      throw new Error('Body must be string.');
-    }
-
+    this.precheckBody(body);
     this.body = body;
 
-    if (correlationIdRegex) {
-      try {
-        this.correlationIdRegex = new RegExp(correlationIdRegex, 'i');
-      } catch {
-        // noop
-      }
-    }
+    this.correlationIdRegex =
+      this.normalizeCorrelationIdRegex(correlationIdRegex);
 
     this._headers = headers;
 
@@ -131,6 +125,7 @@ export class Request {
 
   public toJSON(): RequestOptions {
     return {
+      protocol: this.protocol,
       url: this.url,
       body: this.body,
       method: this._method,
@@ -140,6 +135,32 @@ export class Request {
       pfx: this._pfx?.toString('utf8'),
       correlationIdRegex: this.correlationIdRegex
     };
+  }
+
+  private validateUrl(url: string): void {
+    try {
+      new URL(url);
+    } catch {
+      throw new Error('Invalid URL.');
+    }
+  }
+
+  private precheckBody(body: string | undefined): void {
+    if (body && typeof body !== 'string') {
+      throw new Error('Body must be string.');
+    }
+  }
+
+  private normalizeCorrelationIdRegex(
+    correlationIdRegex: RegExp | string | undefined
+  ): RegExp | undefined {
+    if (correlationIdRegex) {
+      try {
+        return new RegExp(correlationIdRegex, 'i');
+      } catch {
+        throw new Error('Correlation id must be regular expression.');
+      }
+    }
   }
 
   private async loadCert({ path, passphrase }: Cert): Promise<void> {

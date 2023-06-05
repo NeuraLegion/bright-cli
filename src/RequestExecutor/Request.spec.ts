@@ -1,5 +1,6 @@
 import 'reflect-metadata';
 import type { Request as RequestInterface } from './Request';
+import { Protocol } from './Protocol';
 
 describe('Request', () => {
   let readFileMock!: jest.Mock;
@@ -28,7 +29,11 @@ describe('Request', () => {
           path: '~/cert.pfx',
           hostname: 'foo.bar'
         };
-        const request = new Request({ url, headers: {} });
+        const request = new Request({
+          url,
+          headers: {},
+          protocol: Protocol.HTTP
+        });
         //arrange:mock
         readFileMock.mockImplementation((filePath, callback) =>
           filePath === cert.path
@@ -50,7 +55,11 @@ describe('Request', () => {
           path: '~/cert.pfx',
           hostname: 'not-a-foo.bar'
         };
-        const request = new Request({ url, headers: {} });
+        const request = new Request({
+          url,
+          headers: {},
+          protocol: Protocol.HTTP
+        });
         //arrange:mock
         readFileMock.mockImplementation((filePath, callback) =>
           filePath === cert.path
@@ -77,7 +86,8 @@ describe('Request', () => {
         };
         const request = new Request({
           url,
-          headers: {}
+          headers: {},
+          protocol: Protocol.HTTP
         });
         //arrange:mock
         readFileMock.mockImplementation((filePath, callback) =>
