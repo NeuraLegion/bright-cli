@@ -27,14 +27,15 @@
     exit 1
   fi
 
+  # download and ensure non-duplicate filename
+  DOWNLOAD_URL="$DOWNLOAD_BASE_URL/$FILENAME"
+
   # create INSTALL_DIR if it doesn't exist
   if [ ! -d "$INSTALL_DIR" ] ; then
     echo "Creating $INSTALL_DIR folder..."
     mkdir -p "$INSTALL_DIR"
   fi
 
-  # download and ensure non-duplicate filename
-  DOWNLOAD_URL="$DOWNLOAD_BASE_URL/$FILENAME"
   if [ -f "$INSTALL_DIR/$CLI_NAME" ]; then
     echo "$CLI_NAME already exists in $INSTALL_DIR. Removing the existing version."
     rm -f "$INSTALL_DIR/$CLI_NAME"
