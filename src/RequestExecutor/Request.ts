@@ -25,6 +25,23 @@ export interface Cert {
 }
 
 export class Request {
+  public static readonly SINGLE_VALUE_HEADERS: ReadonlySet<string> =
+    new Set<string>([
+      'authorization',
+      'content-disposition',
+      'content-length',
+      'content-type',
+      'from',
+      'host',
+      'if-modified-since',
+      'if-unmodified-since',
+      'location',
+      'max-forwards',
+      'proxy-authorization',
+      'referer',
+      'user-agent'
+    ]);
+
   public readonly protocol: Protocol;
   public readonly url: string;
   public readonly body?: string;
@@ -87,7 +104,7 @@ export class Request {
     this.correlationIdRegex =
       this.normalizeCorrelationIdRegex(correlationIdRegex);
 
-    this._headers = headers;
+    this.setHeaders(headers);
 
     if (pfx) {
       this._pfx = Buffer.from(pfx);
@@ -101,10 +118,22 @@ export class Request {
   }
 
   public setHeaders(headers: Record<string, string | string[]>): void {
-    this._headers = {
+    const mergedHeaders = {
       ...this._headers,
-      ...(headers ?? {})
+      ...headers
     };
+
+    this._headers = Object.fromEntries(
+      Object.entries(mergedHeaders).map(
+        ([field, value]: [string, string | string[]]) => [
+          field,
+          Array.isArray(value) &&
+          Request.SINGLE_VALUE_HEADERS.has(field.toLowerCase())
+            ? value.join(', ')
+            : value
+        ]
+      )
+    );
   }
 
   public async setCerts(certs: Cert[]): Promise<void> {

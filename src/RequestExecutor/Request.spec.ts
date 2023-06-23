@@ -102,4 +102,35 @@ describe('Request', () => {
       }
     );
   });
+
+  describe('setHeaders', () => {
+    it('should append headers', () => {
+      const request = new Request({
+        url: 'http://foo.bar',
+        headers: { 'x-key': 'value' },
+        protocol: Protocol.HTTP
+      });
+
+      request.setHeaders({ 'x-a1': 'a1', 'x-a2': 'a2' });
+
+      expect(request.headers).toEqual({
+        'x-key': 'value',
+        'x-a1': 'a1',
+        'x-a2': 'a2'
+      });
+    });
+
+    it('should join headers if multiple values is present', () => {
+      const request = new Request({
+        url: 'http://foo.bar',
+        protocol: Protocol.HTTP
+      });
+
+      request.setHeaders({ host: ['example.com', 'example1.com'] });
+
+      expect(request.headers).toEqual({
+        host: 'example.com, example1.com'
+      });
+    });
+  });
 });
