@@ -77,9 +77,11 @@ jobs:
             target: macos
           # Using the `ubuntu-18.04` runner instead of latest (i.e. `ubuntu-22.04`)
           # because G++/GCC 4.8 is not in an official repository yet.
-          - os: ubuntu-18.04
+          - os: ubuntu-22.04
             target: linux
+            container: ubuntu:18.04
     runs-on: ${{ matrix.os }}
+    container: ${{ matrix.container }}
     steps:
       - uses: actions/checkout@v2
         with:
@@ -93,15 +95,15 @@ jobs:
       - name: Install dev-deps
         if: startsWith(matrix.os, 'ubuntu')
         run: |
-          sudo apt-get update -yq \
-            && sudo apt-get install g++-4.8 gcc-4.8 -yq \
-            && sudo apt-get clean \
-            && sudo rm -rf /var/lib/apt/lists/*
+          apt-get update -yq \
+            && apt-get install build-essential python python-dev python3-pip g++-4.8 gcc-4.8 -yq \
+            && apt-get clean \
+            && rm -rf /var/lib/apt/lists/*
 
       - name: Configures aliases to GCC/G++
         if: startsWith(matrix.os, 'ubuntu')
         run: |
-          sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-4.8 10 \
+          update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-4.8 10 \
             --slave /usr/bin/g++ g++ /usr/bin/g++-4.8 \
             --slave /usr/bin/gcov gcov /usr/bin/gcov-4.8
 
