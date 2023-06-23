@@ -77,9 +77,11 @@ jobs:
             target: macos
           # Using the `ubuntu-18.04` runner instead of latest (i.e. `ubuntu-22.04`)
           # because G++/GCC 4.8 is not in an official repository yet.
-          - os: ubuntu-18.04
+          - os: ubuntu-22.04
             target: linux
+            container: ubuntu:18.04
     runs-on: ${{ matrix.os }}
+    container: ${{ matrix.container }}
     steps:
       - uses: actions/checkout@v2
         with:
