@@ -14,7 +14,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           ref: ${{ env.TARGET_REF }}
           token: ${{ secrets.GPR_TOKEN }}
@@ -26,7 +26,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: install-deps
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         with:
           ref: ${{ env.TARGET_REF }}
           token: ${{ secrets.GPR_TOKEN }}
@@ -35,10 +35,7 @@ jobs:
         uses: ./.github/workflows/composite/npm
 
       - name: Build package
-        run: npm run build -- --env version=$VERSION
-
-      - name: Set version
-        run: npm version --no-git-tag-version $VERSION
+        run: npm run build
 
       - name: Pack artifacts
         run: npm pack
@@ -50,7 +47,7 @@ jobs:
           tag: ${{ github.ref }}
           file_glob: true
 
-      - uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v3
         with:
           name: build
           path: |
@@ -83,12 +80,12 @@ jobs:
     runs-on: ${{ matrix.os }}
     container: ${{ matrix.container }}
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         with:
           ref: ${{ env.TARGET_REF }}
           token: ${{ secrets.GPR_TOKEN }}
 
-      - uses: actions/download-artifact@v2
+      - uses: actions/download-artifact@v3
         with:
           name: build
 
@@ -111,7 +108,7 @@ jobs:
         uses: ./.github/workflows/composite/npm
 
       - name: Build executable file
-        run: npm run build:pkg -- -t node14-${{ matrix.target }}-x64
+        run: npm run build:pkg -- -t node18-${{ matrix.target }}-x64
 
       - name: Copy deps
         if: startsWith(matrix.os, 'win')
@@ -153,7 +150,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: build
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         with:
           ref: ${{ env.TARGET_REF }}
           token: ${{ secrets.GPR_TOKEN }}
@@ -161,12 +158,11 @@ jobs:
       - name: Install deps
         uses: ./.github/workflows/composite/npm
 
-      - uses: actions/download-artifact@v2
+      - uses: actions/download-artifact@v3
         with:
           name: build
 
       - run: npm publish --tag $TAG
-        continue-on-error: true
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
@@ -177,7 +173,6 @@ jobs:
           scope: '@NeuraLegion'
 
       - run: npm publish --tag $TAG
-        continue-on-error: true
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GPR_TOKEN }}
 

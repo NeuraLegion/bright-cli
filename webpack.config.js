@@ -1,9 +1,11 @@
 const { join, resolve } = require('path');
-const { BannerPlugin, EnvironmentPlugin } = require('webpack');
+const { BannerPlugin, DefinePlugin } = require('webpack');
 const nodeExternals = require('webpack-node-externals');
 const TsConfigPathsPlugin = require('tsconfig-paths-webpack-plugin');
 const { CleanWebpackPlugin } = require('clean-webpack-plugin');
 const Terser = require('terser-webpack-plugin');
+const { version } = require('./package.json');
+
 const configFile = resolve('./tsconfig.build.json');
 
 module.exports = (env, argv) => ({
@@ -28,8 +30,9 @@ module.exports = (env, argv) => ({
     ]
   },
   plugins: [
-    new EnvironmentPlugin({
-      VERSION: env.version
+    new DefinePlugin({
+      'process.env.VERSION': JSON.stringify(version),
+      'process.env.NODE_ENV': JSON.stringify(argv.mode)
     }),
     new CleanWebpackPlugin(),
     new BannerPlugin({ banner: '#!/usr/bin/env node', raw: true })
