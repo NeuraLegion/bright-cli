@@ -121,6 +121,7 @@ export interface ScanConfig {
   projectId?: string;
   discoveryTypes?: Discovery[];
   tests: TestType[];
+  buckets: string[];
   poolSize?: number;
   fileId?: string;
   attackParamLocations?: AttackParamLocation[];

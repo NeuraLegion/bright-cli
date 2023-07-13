@@ -82,6 +82,10 @@ export class RunScan implements CommandModule {
         array: true,
         describe: 'A list of tests which you want to run during a scan.'
       })
+      .option('bucket', {
+        array: true,
+        describe: 'A list of test buckets which you want to run during a scan.'
+      })
       .option('project', {
         alias: 'p',
         requiresArg: true,
@@ -169,6 +173,7 @@ export class RunScan implements CommandModule {
         authObjectId: args.auth,
         projectId: args.project,
         tests: args.test,
+        buckets: args.bucket,
         hostsFilter: args.hostFilter,
         headers: Helpers.parseHeaders(args.header as string[]),
         crawlerUrls: args.crawler,
