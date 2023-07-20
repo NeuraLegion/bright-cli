@@ -56,7 +56,6 @@ export enum TestType {
   STORED_XSS = 'stored_xss',
   UNVALIDATED_REDIRECT = 'unvalidated_redirect',
   VERSION_CONTROL_SYSTEMS = 'version_control_systems',
-  WEBDAV = 'webdav',
   WORDPRESS = 'wordpress',
   XPATHI = 'xpathi',
   XSS = 'xss',
