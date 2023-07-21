@@ -1,8 +1,7 @@
-import { RabbitMQBusOptions } from '../Bus';
 import { Cert, RequestExecutorOptions } from '../RequestExecutor';
 import { Helpers, logger } from '../Utils';
 import { container } from '../Config';
-import { RepeaterLauncher } from '../Repeater';
+import { RepeaterLauncher, DefaultRepeaterOptions } from '../Repeater';
 import { Arguments, Argv, CommandModule } from 'yargs';
 import { normalize } from 'path';
 
@@ -24,7 +23,7 @@ export class RunRepeater implements CommandModule {
           'ID of an existing repeater which you want to use to run a new scan.',
         type: 'string',
         requiresArg: true,
-        demandOption: true
+        demandOption: false
       })
       .option('scripts', {
         alias: 'S',
@@ -141,8 +140,12 @@ export class RunRepeater implements CommandModule {
       }, true)
       .exitProcess(false)
       .check((args: Arguments) => {
-        const id = args.id as string;
-        if (!Helpers.isShortUUID(id) && !Helpers.isUUID(id)) {
+        const id = args.id as string | undefined;
+        if (
+          typeof id !== 'undefined' &&
+          !Helpers.isShortUUID(id) &&
+          !Helpers.isUUID(id)
+        ) {
           throw new Error(
             'Option --id has wrong value. Please ensure that --id option has a valid ID.'
           );
@@ -178,17 +181,10 @@ export class RunRepeater implements CommandModule {
               ]
             }
           })
-          .register<RabbitMQBusOptions>(RabbitMQBusOptions, {
+          .register<DefaultRepeaterOptions>(DefaultRepeaterOptions, {
             useValue: {
-              exchange: 'EventBus',
-              clientQueue: `agent:${args.id as string}`,
-              connectTimeout: 10000,
-              url: args.bus as string,
-              proxyUrl: (args.proxyExternal ?? args.proxy) as string,
-              credentials: {
-                username: 'bot',
-                password: args.token as string
-              }
+              uri: args['repeater-server'] as string,
+              token: args.token as string
             }
           })
       );
@@ -223,16 +219,19 @@ export class RunRepeater implements CommandModule {
 
     try {
       ['SIGTERM', 'SIGINT', 'SIGHUP'].forEach((event) =>
-        process.on(event, async () => {
-          await repeaterLauncher.close();
+        process.on(event, () => {
+          repeaterLauncher.close();
           process.exit(0);
         })
       );
 
-      await repeaterLauncher.run(args.id as string, args.run as boolean);
+      await repeaterLauncher.run(
+        args.id as string | undefined,
+        args.run as boolean
+      );
     } catch (e) {
       logger.error(e.message);
-      await repeaterLauncher.close();
+      repeaterLauncher.close();
       process.exit(1);
     }
   }

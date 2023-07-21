@@ -19,7 +19,8 @@ describe('Helpers', () => {
 
       expect(result).toEqual({
         api: 'http://localhost:8000',
-        bus: 'amqp://localhost:5672'
+        bus: 'amqp://localhost:5672',
+        repeaterServer: 'wss://localhost/workstations'
       });
     });
 
@@ -31,7 +32,8 @@ describe('Helpers', () => {
       // assert
       expect(result).toEqual({
         api: 'https://app.brightsec.com',
-        bus: 'amqps://amq.app.brightsec.com:5672'
+        bus: 'amqps://amq.app.brightsec.com:5672',
+        repeaterServer: 'wss://app.brightsec.com/workstations'
       });
     });
 
@@ -45,7 +47,8 @@ describe('Helpers', () => {
       // assert
       expect(result).toEqual({
         api: 'https://test.com',
-        bus: 'amqps://amq.test.com:5672'
+        bus: 'amqps://amq.test.com:5672',
+        repeaterServer: 'wss://test.com/workstations'
       });
     });
   });
