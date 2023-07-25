@@ -196,5 +196,5 @@ jobs:
 
       - name: Push Images
         run: |
-          docker login --username=anatolkaralkou --password=${{ secrets.DOCKERHUB_BRIGHT_TOKEN }}
+          docker login --username=${{ secrets.DOCKERHUB_BRIGHT_USER }} --password=${{ secrets.DOCKERHUB_BRIGHT_TOKEN }}
           docker push $TAG_REPEATER --all-tags
