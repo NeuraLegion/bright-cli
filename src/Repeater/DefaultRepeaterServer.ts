@@ -11,6 +11,7 @@ import { inject, injectable } from 'tsyringe';
 import io, { Socket } from 'socket.io-client';
 import parser from 'socket.io-msgpack-parser';
 import { once } from 'events';
+import Timer = NodeJS.Timer;
 
 export interface DefaultRepeaterServerOptions {
   readonly uri: string;
@@ -26,21 +27,16 @@ export class DefaultRepeaterServer implements RepeaterServer {
   private latestReconnectionError?: Error;
   private readonly DEFAULT_RECONNECT_TIMES = 3;
   private socket?: Socket;
+  private timer?: Timer;
 
   constructor(
     @inject(DefaultRepeaterServerOptions)
     private readonly options: DefaultRepeaterServerOptions
   ) {}
 
-  public ping(): void {
-    if (!this.socket) {
-      throw new Error('Not connected');
-    }
-
-    this.socket.volatile.emit('ping');
-  }
-
   public disconnect() {
+    this.clearPingTimer();
+
     this.socket?.disconnect();
     this.socket?.removeAllListeners();
     this.socket = undefined;
@@ -82,6 +78,8 @@ export class DefaultRepeaterServer implements RepeaterServer {
     this.socket.on('connect_error', (error: Error) => {
       logger.debug(`Unable to connect to the %s host`, this.options.uri, error);
     });
+
+    this.createPingTimer();
 
     logger.debug('Event bus connected to %s', this.options.uri);
   }
@@ -154,5 +152,22 @@ export class DefaultRepeaterServer implements RepeaterServer {
         );
         logger.error('Error: %s', error.message);
       });
+  }
+
+  private createPingTimer() {
+    if (this.timer) {
+      clearInterval(this.timer);
+    }
+
+    this.timer = setInterval(
+      () => this.socket.volatile.emit('ping'),
+      10000
+    ).unref();
+  }
+
+  private clearPingTimer() {
+    if (this.timer) {
+      clearInterval(this.timer);
+    }
   }
 }

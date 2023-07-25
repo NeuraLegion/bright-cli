@@ -16,12 +16,10 @@ import { Helpers, logger } from '../Utils';
 import { CliInfo } from '../Config';
 import { delay, inject, injectAll, injectable } from 'tsyringe';
 import { hostname } from 'os';
-import Timer = NodeJS.Timer;
 
 @injectable()
 export class ServerRepeaterLauncher implements RepeaterLauncher {
   private static SERVICE_NAME = 'bright-repeater';
-  private timer?: Timer;
   private repeaterId: string | undefined;
   private repeaterStarted: boolean = false;
 
@@ -37,10 +35,6 @@ export class ServerRepeaterLauncher implements RepeaterLauncher {
   ) {}
 
   public close() {
-    if (this.timer) {
-      clearInterval(this.timer);
-    }
-
     this.repeaterStarted = false;
     this.repeaterServer.disconnect();
 
@@ -112,7 +106,6 @@ export class ServerRepeaterLauncher implements RepeaterLauncher {
     this.repeaterServer.connect(repeaterId || hostname());
 
     this.subscribeToEvents();
-    this.createPingTimer();
 
     const result = await this.repeaterServer.deploy(repeaterId);
 
@@ -135,14 +128,6 @@ export class ServerRepeaterLauncher implements RepeaterLauncher {
       this.onReconnectionFailed(payload)
     );
     this.repeaterServer.on('request', (payload) => this.onRequest(payload));
-  }
-
-  private createPingTimer() {
-    if (this.timer) {
-      clearInterval(this.timer);
-    }
-
-    this.timer = setInterval(() => this.repeaterServer.ping(), 10000).unref();
   }
 
   private onReconnectionFailed({
