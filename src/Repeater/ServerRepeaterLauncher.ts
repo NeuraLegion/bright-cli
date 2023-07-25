@@ -25,7 +25,7 @@ export class ServerRepeaterLauncher implements RepeaterLauncher {
   private repeaterStarted: boolean = false;
 
   constructor(
-    @inject(RepeaterServer) private readonly repeater: RepeaterServer,
+    @inject(RepeaterServer) private readonly repeaterServer: RepeaterServer,
     @inject(StartupManagerFactory)
     private readonly startupManagerFactory: StartupManagerFactory,
     @inject(Certificates) private readonly certificates: Certificates,
@@ -41,7 +41,7 @@ export class ServerRepeaterLauncher implements RepeaterLauncher {
     }
 
     this.repeaterStarted = false;
-    this.repeater.disconnect();
+    this.repeaterServer.disconnect();
 
     return Promise.resolve();
   }
@@ -108,15 +108,15 @@ export class ServerRepeaterLauncher implements RepeaterLauncher {
 
     logger.log('Starting the Repeater (%s)...', this.info.version);
 
-    this.repeater.connect();
+    this.repeaterServer.connect();
 
-    this.repeater.on('reconnection_failed', (payload) =>
+    this.repeaterServer.on('reconnection_failed', (payload) =>
       this.onReconnectionFailed(payload)
     );
-    this.repeater.on('request', (payload) => this.onRequest(payload));
+    this.repeaterServer.on('request', (payload) => this.onRequest(payload));
     this.createPingTimer();
 
-    const result = await this.repeater.deploy(repeaterId);
+    const result = await this.repeaterServer.deploy(repeaterId);
 
     this.repeaterId = result.repeaterId;
 
@@ -134,7 +134,7 @@ export class ServerRepeaterLauncher implements RepeaterLauncher {
       clearInterval(this.timer);
     }
 
-    this.timer = setInterval(() => this.repeater.ping(), 10000).unref();
+    this.timer = setInterval(() => this.repeaterServer.ping(), 10000).unref();
   }
 
   private onReconnectionFailed({
