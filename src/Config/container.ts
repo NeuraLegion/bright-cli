@@ -54,10 +54,10 @@ import { DefaultConfigReader } from './DefaultConfigReader';
 import { CliInfo } from './CliInfo';
 import { CliBuilder } from './CliBuilder';
 import {
-  DefaultRepeaterLauncher,
+  ServerRepeaterLauncher,
   RepeaterLauncher,
-  Repeater,
-  DefaultRepeater
+  RepeaterServer,
+  DefaultRepeaterServer
 } from '../Repeater';
 import { container, Lifecycle } from 'tsyringe';
 
@@ -109,9 +109,9 @@ container
     { lifecycle: Lifecycle.Singleton }
   )
   .register(
-    Repeater,
+    RepeaterServer,
     {
-      useClass: DefaultRepeater
+      useClass: DefaultRepeaterServer
     },
     { lifecycle: Lifecycle.Singleton }
   )
@@ -214,7 +214,7 @@ container
   )
   .register<RepeaterLauncher>(
     RepeaterLauncher,
-    { useClass: DefaultRepeaterLauncher },
+    { useClass: ServerRepeaterLauncher },
     { lifecycle: Lifecycle.Singleton }
   )
   .register<CliBuilder>(CliBuilder, {

@@ -1,7 +1,7 @@
 import { Cert, RequestExecutorOptions } from '../RequestExecutor';
 import { Helpers, logger } from '../Utils';
 import { container } from '../Config';
-import { RepeaterLauncher, DefaultRepeaterOptions } from '../Repeater';
+import { DefaultRepeaterServerOptions, RepeaterLauncher } from '../Repeater';
 import { Arguments, Argv, CommandModule } from 'yargs';
 import { normalize } from 'path';
 
@@ -181,12 +181,15 @@ export class RunRepeater implements CommandModule {
               ]
             }
           })
-          .register<DefaultRepeaterOptions>(DefaultRepeaterOptions, {
-            useValue: {
-              uri: args['repeater-server'] as string,
-              token: args.token as string
+          .register<DefaultRepeaterServerOptions>(
+            DefaultRepeaterServerOptions,
+            {
+              useValue: {
+                uri: args['repeater-server'] as string,
+                token: args.token as string
+              }
             }
-          })
+          )
       );
   }
 
@@ -219,19 +222,16 @@ export class RunRepeater implements CommandModule {
 
     try {
       ['SIGTERM', 'SIGINT', 'SIGHUP'].forEach((event) =>
-        process.on(event, () => {
-          repeaterLauncher.close();
+        process.on(event, async () => {
+          await repeaterLauncher.close();
           process.exit(0);
         })
       );
 
-      await repeaterLauncher.run(
-        args.id as string | undefined,
-        args.run as boolean
-      );
+      await repeaterLauncher.run(args.id as string, args.run as boolean);
     } catch (e) {
       logger.error(e.message);
-      repeaterLauncher.close();
+      await repeaterLauncher.close();
       process.exit(1);
     }
   }

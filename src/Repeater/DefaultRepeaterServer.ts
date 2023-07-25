@@ -1,34 +1,34 @@
 import { logger } from '../Utils';
 import {
-  Repeater,
-  RepeaterEventHandler,
-  RepeaterDeployedEvent,
-  RepeaterEvents
-} from './Repeater';
+  RepeaterServer,
+  RepeaterServerEventHandler,
+  RepeaterServerDeployedEvent,
+  RepeaterServerEvents
+} from './RepeaterServer';
 import { inject, injectable } from 'tsyringe';
 import io, { Socket } from 'socket.io-client';
 import parser from 'socket.io-msgpack-parser';
 import { hostname } from 'os';
 import { once } from 'events';
 
-export interface DefaultRepeaterOptions {
+export interface DefaultRepeaterServerOptions {
   readonly uri: string;
   readonly token: string;
 }
 
-export const DefaultRepeaterOptions: unique symbol = Symbol(
-  'DefaultRepeaterOptions'
+export const DefaultRepeaterServerOptions: unique symbol = Symbol(
+  'DefaultRepeaterServerOptions'
 );
 
 @injectable()
-export class DefaultRepeater implements Repeater {
+export class DefaultRepeaterServer implements RepeaterServer {
   private latestReconnectionError?: Error;
   private readonly DEFAULT_RECONNECT_TIMES = 3;
   private socket?: Socket;
 
   constructor(
-    @inject(DefaultRepeaterOptions)
-    private readonly options: DefaultRepeaterOptions
+    @inject(DefaultRepeaterServerOptions)
+    private readonly options: DefaultRepeaterServerOptions
   ) {}
 
   public disconnect() {
@@ -36,14 +36,14 @@ export class DefaultRepeater implements Repeater {
       throw new Error('Not connected');
     }
 
-    this.socket?.disconnect();
-    this.socket?.removeAllListeners();
+    this.socket.disconnect();
+    this.socket.removeAllListeners();
     this.socket = undefined;
   }
 
   public async deploy(
     repeaterId?: string
-  ): Promise<RepeaterDeployedEvent['response']> {
+  ): Promise<RepeaterServerDeployedEvent['response']> {
     if (!this.socket) {
       throw new Error('Repeater is not connected yet');
     }
@@ -52,7 +52,7 @@ export class DefaultRepeater implements Repeater {
       repeaterId
     });
 
-    const [result]: RepeaterDeployedEvent['response'][] = await once(
+    const [result]: RepeaterServerDeployedEvent['response'][] = await once(
       this.socket,
       'deployed'
     );
@@ -79,10 +79,10 @@ export class DefaultRepeater implements Repeater {
     logger.debug('Event bus connected to %s', this.options.uri);
   }
 
-  public on<E extends keyof RepeaterEvents, H extends RepeaterEventHandler<E>>(
-    event: E,
-    handler: H
-  ): void {
+  public on<
+    E extends keyof RepeaterServerEvents,
+    H extends RepeaterServerEventHandler<E>
+  >(event: E, handler: H): void {
     const eventName: string = event;
 
     if (event === 'reconnection_failed') {
@@ -96,7 +96,7 @@ export class DefaultRepeater implements Repeater {
   }
 
   private onReconnectionFailure<
-    H extends RepeaterEventHandler<'reconnection_failed'>
+    H extends RepeaterServerEventHandler<'reconnection_failed'>
   >(handler: H) {
     this.socket.io.on('reconnect', () => {
       this.latestReconnectionError = undefined;
@@ -118,11 +118,11 @@ export class DefaultRepeater implements Repeater {
   }
 
   private processEventHandler<
-    E extends keyof RepeaterEvents,
-    H extends RepeaterEventHandler<E>
+    E extends keyof RepeaterServerEvents,
+    H extends RepeaterServerEventHandler<E>
   >(
     event: E,
-    payload: RepeaterEvents[E]['request'],
+    payload: RepeaterServerEvents[E]['request'],
     handler: H,
     callback?: unknown
   ) {

@@ -1,4 +1,5 @@
 export * from './DefaultRepeaterLauncher';
+export * from './ServerRepeaterLauncher';
 export * from './RepeaterLauncher';
-export * from './Repeater';
-export * from './DefaultRepeater';
+export * from './RepeaterServer';
+export * from './DefaultRepeaterServer';
