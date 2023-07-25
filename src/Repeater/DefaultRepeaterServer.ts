@@ -134,7 +134,7 @@ export class DefaultRepeaterServer implements RepeaterServer {
   ) {
     Promise.resolve(handler(payload))
       .then((response) => {
-        if (typeof callback !== 'function' || typeof response === 'undefined') {
+        if (typeof callback !== 'function') {
           return;
         }
 
