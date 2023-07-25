@@ -15,6 +15,7 @@ import {
 import { Helpers, logger } from '../Utils';
 import { CliInfo } from '../Config';
 import { delay, inject, injectAll, injectable } from 'tsyringe';
+import { hostname } from 'os';
 import Timer = NodeJS.Timer;
 
 @injectable()
@@ -108,7 +109,7 @@ export class ServerRepeaterLauncher implements RepeaterLauncher {
 
     logger.log('Starting the Repeater (%s)...', this.info.version);
 
-    this.repeaterServer.connect();
+    this.repeaterServer.connect(repeaterId || hostname());
 
     this.subscribeToEvents();
     this.createPingTimer();

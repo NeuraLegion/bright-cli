@@ -10,7 +10,6 @@ import {
 import { inject, injectable } from 'tsyringe';
 import io, { Socket } from 'socket.io-client';
 import parser from 'socket.io-msgpack-parser';
-import { hostname } from 'os';
 import { once } from 'events';
 
 export interface DefaultRepeaterServerOptions {
@@ -68,7 +67,7 @@ export class DefaultRepeaterServer implements RepeaterServer {
     return result;
   }
 
-  public connect() {
+  public connect(hostname: string) {
     this.socket = io(this.options.uri, {
       parser,
       path: '/api/ws/v1',
@@ -76,7 +75,7 @@ export class DefaultRepeaterServer implements RepeaterServer {
       reconnectionAttempts: this.DEFAULT_RECONNECT_TIMES,
       auth: {
         token: this.options.token,
-        domain: hostname()
+        domain: hostname
       }
     });
 

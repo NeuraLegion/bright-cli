@@ -47,7 +47,7 @@ export type RepeaterServerEventHandler<P, R = void> = (
 export interface RepeaterServer {
   disconnect(): void;
 
-  connect(): void;
+  connect(hostname: string): void;
 
   deploy(repeaterId?: string): Promise<RepeaterServerDeployedEvent>;
 
@@ -67,8 +67,6 @@ export interface RepeaterServer {
     handler: RepeaterServerEventHandler<RepeaterServerErrorEvent>
   ): void;
   on(event: RepeaterServerEvents, handler: RepeaterServerEventHandlers): void;
-
-  ping(): void;
 }
 
 export const RepeaterServer: unique symbol = Symbol('RepeaterServer');
