@@ -188,7 +188,7 @@ jobs:
 
       - name: Prepare Image Tags
         run: |
-          echo "TAG_REPEATER=neuralegion/repeater" >> $GITHUB_ENV
+          echo "TAG_REPEATER=brightsec/cli" >> $GITHUB_ENV
 
       - name: Build Images
         run: |
