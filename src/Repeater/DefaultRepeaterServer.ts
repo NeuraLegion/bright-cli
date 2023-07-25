@@ -25,7 +25,7 @@ export const DefaultRepeaterServerOptions: unique symbol = Symbol(
 @injectable()
 export class DefaultRepeaterServer implements RepeaterServer {
   private latestReconnectionError?: Error;
-  private readonly DEFAULT_RECONNECT_TIMES = 3;
+  private readonly DEFAULT_RECONNECT_TIMES = 20;
   private socket?: Socket;
   private timer?: Timer;
 
