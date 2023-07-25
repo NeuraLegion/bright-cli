@@ -26,17 +26,19 @@ export interface RepeaterServerReconnectionFailedEvent {
   error: Error;
 }
 
-export type RepeaterServerEvents =
-  | 'deployed'
-  | 'request'
-  | 'reconnection_failed';
+export interface RepeaterServerErrorEvent {
+  message: string;
+}
+
+export type RepeaterServerEvents = 'request' | 'reconnection_failed' | 'error';
 export type RepeaterServerEventHandlers =
   | RepeaterServerEventHandler<RepeaterServerDeployedEvent>
   | RepeaterServerEventHandler<
       RepeaterServerRequestEvent,
       RepeaterServerRequestResponse
     >
-  | RepeaterServerEventHandler<RepeaterServerReconnectionFailedEvent>;
+  | RepeaterServerEventHandler<RepeaterServerReconnectionFailedEvent>
+  | RepeaterServerEventHandler<RepeaterServerErrorEvent>;
 
 export type RepeaterServerEventHandler<P, R = void> = (
   payload: P
@@ -59,6 +61,10 @@ export interface RepeaterServer {
   on(
     event: 'reconnection_failed',
     handler: RepeaterServerEventHandler<RepeaterServerReconnectionFailedEvent>
+  ): void;
+  on(
+    event: 'error',
+    handler: RepeaterServerEventHandler<RepeaterServerErrorEvent>
   ): void;
   on(event: RepeaterServerEvents, handler: RepeaterServerEventHandlers): void;
 

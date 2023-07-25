@@ -110,10 +110,7 @@ export class ServerRepeaterLauncher implements RepeaterLauncher {
 
     this.repeaterServer.connect();
 
-    this.repeaterServer.on('reconnection_failed', (payload) =>
-      this.onReconnectionFailed(payload)
-    );
-    this.repeaterServer.on('request', (payload) => this.onRequest(payload));
+    this.subscribeToEvents();
     this.createPingTimer();
 
     const result = await this.repeaterServer.deploy(repeaterId);
@@ -127,6 +124,16 @@ export class ServerRepeaterLauncher implements RepeaterLauncher {
       this.info.version,
       this.repeaterId
     );
+  }
+
+  private subscribeToEvents() {
+    this.repeaterServer.on('error', ({ message }) => {
+      logger.error(message);
+    });
+    this.repeaterServer.on('reconnection_failed', (payload) =>
+      this.onReconnectionFailed(payload)
+    );
+    this.repeaterServer.on('request', (payload) => this.onRequest(payload));
   }
 
   private createPingTimer() {
