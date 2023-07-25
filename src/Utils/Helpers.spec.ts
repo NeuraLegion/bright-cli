@@ -20,7 +20,7 @@ describe('Helpers', () => {
       expect(result).toEqual({
         api: 'http://localhost:8000',
         bus: 'amqp://localhost:5672',
-        repeaterServer: 'wss://localhost/workstations'
+        repeaterServer: 'ws://localhost:8000/workstations'
       });
     });
 
