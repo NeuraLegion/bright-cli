@@ -1,9 +1,9 @@
 import {
   AttackParamLocation,
-  SCAN_TESTS_TO_RUN_BY_DEFAULT,
   Module,
   RequestExclusion,
   RestScansOptions,
+  SCAN_TESTS_TO_RUN_BY_DEFAULT,
   ScanConfig,
   Scans,
   TestType
@@ -78,7 +78,9 @@ export class RunScan implements CommandModule {
       })
       .option('test', {
         choices: Helpers.toArray(TestType),
-        default: SCAN_TESTS_TO_RUN_BY_DEFAULT,
+        defaultDescription: `[${SCAN_TESTS_TO_RUN_BY_DEFAULT.map(
+          (item) => `"${item}"`
+        ).join(',')}]`,
         array: true,
         describe: 'A list of tests which you want to run during a scan.'
       })
@@ -167,12 +169,15 @@ export class RunScan implements CommandModule {
     try {
       const scanManager: Scans = container.resolve(Scans);
 
+      const tests =
+        args.test ?? (args.bucket ? undefined : SCAN_TESTS_TO_RUN_BY_DEFAULT);
+
       const scanId: string = await scanManager.create({
+        tests,
         name: args.name,
         module: args.module,
         authObjectId: args.auth,
         projectId: args.project,
-        tests: args.test,
         buckets: args.bucket,
         hostsFilter: args.hostFilter,
         headers: Helpers.parseHeaders(args.header as string[]),
