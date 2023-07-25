@@ -40,12 +40,8 @@ export class DefaultRepeaterServer implements RepeaterServer {
   }
 
   public disconnect() {
-    if (!this.socket) {
-      throw new Error('Not connected');
-    }
-
-    this.socket.disconnect();
-    this.socket.removeAllListeners();
+    this.socket?.disconnect();
+    this.socket?.removeAllListeners();
     this.socket = undefined;
   }
 
