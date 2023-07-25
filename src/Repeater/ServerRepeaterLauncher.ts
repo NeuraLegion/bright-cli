@@ -139,13 +139,13 @@ export class ServerRepeaterLauncher implements RepeaterLauncher {
 
   private onReconnectionFailed({
     error
-  }: RepeaterServerReconnectionFailedEvent['request']) {
+  }: RepeaterServerReconnectionFailedEvent) {
     logger.error(error.message);
     this.close().catch(logger.error);
     process.exit(1);
   }
 
-  private async onRequest(event: RepeaterServerRequestEvent['request']) {
+  private async onRequest(event: RepeaterServerRequestEvent) {
     const { protocol } = event;
 
     const requestExecutor = this.requestExecutors.find(

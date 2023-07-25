@@ -3,7 +3,9 @@ import {
   RepeaterServer,
   RepeaterServerEventHandler,
   RepeaterServerDeployedEvent,
-  RepeaterServerEvents
+  RepeaterServerEvents,
+  RepeaterServerReconnectionFailedEvent,
+  RepeaterServerEventHandlers
 } from './RepeaterServer';
 import { inject, injectable } from 'tsyringe';
 import io, { Socket } from 'socket.io-client';
@@ -47,7 +49,7 @@ export class DefaultRepeaterServer implements RepeaterServer {
 
   public async deploy(
     repeaterId?: string
-  ): Promise<RepeaterServerDeployedEvent['response']> {
+  ): Promise<RepeaterServerDeployedEvent> {
     if (!this.socket) {
       throw new Error(
         'Please make sure that repeater established a connection with host.'
@@ -58,7 +60,7 @@ export class DefaultRepeaterServer implements RepeaterServer {
       repeaterId
     });
 
-    const [result]: RepeaterServerDeployedEvent['response'][] = await once(
+    const [result]: RepeaterServerDeployedEvent[] = await once(
       this.socket,
       'deployed'
     );
@@ -85,24 +87,23 @@ export class DefaultRepeaterServer implements RepeaterServer {
     logger.debug('Event bus connected to %s', this.options.uri);
   }
 
-  public on<
-    E extends keyof RepeaterServerEvents,
-    H extends RepeaterServerEventHandler<E>
-  >(event: E, handler: H): void {
-    const eventName: string = event;
-
+  public on(
+    event: RepeaterServerEvents,
+    handler: RepeaterServerEventHandlers
+  ): void {
     if (event === 'reconnection_failed') {
-      // TODO: Figure out why type is not narrowing
-      this.onReconnectionFailed(handler as any);
+      this.onReconnectionFailed(
+        handler as RepeaterServerEventHandler<RepeaterServerReconnectionFailedEvent>
+      );
     } else {
-      this.socket.on(eventName, (payload, callback) => {
-        this.processEventHandler(event, payload, handler, callback);
+      this.socket.on(event, (payload, callback) => {
+        this.processEventHandler(event, payload, (p) => handler(p), callback);
       });
     }
   }
 
   private onReconnectionFailed<
-    H extends RepeaterServerEventHandler<'reconnection_failed'>
+    H extends RepeaterServerEventHandler<RepeaterServerReconnectionFailedEvent>
   >(handler: H) {
     this.socket.io.on('reconnect', () => {
       this.latestReconnectionError = undefined;
@@ -131,13 +132,10 @@ export class DefaultRepeaterServer implements RepeaterServer {
     });
   }
 
-  private processEventHandler<
-    E extends keyof RepeaterServerEvents,
-    H extends RepeaterServerEventHandler<E>
-  >(
-    event: E,
-    payload: RepeaterServerEvents[E]['request'],
-    handler: H,
+  private processEventHandler<P>(
+    event: string,
+    payload: P,
+    handler: (payload: P) => unknown,
     callback?: unknown
   ) {
     Promise.resolve(handler(payload))

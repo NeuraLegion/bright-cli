@@ -1,66 +1,66 @@
 import { Protocol } from '../RequestExecutor';
 
-export interface RepeaterServerEvent<I, O = void> {
-  request: I;
-  response: O;
+export interface RepeaterServerDeployedEvent {
+  repeaterId: string;
 }
 
-export type RepeaterServerRequestEvent = RepeaterServerEvent<
-  {
-    protocol: Protocol;
-    url: string;
-    method?: string;
-    headers?: Record<string, string | string[]>;
-    correlationIdRegex?: string;
-    body?: string;
-  },
-  {
-    protocol: Protocol;
-    statusCode?: number;
-    message?: string;
-    errorCode?: string;
-    headers?: Record<string, string | string[] | undefined>;
-    body?: string;
-  }
->;
+export interface RepeaterServerRequestEvent {
+  protocol: Protocol;
+  url: string;
+  method?: string;
+  headers?: Record<string, string | string[]>;
+  correlationIdRegex?: string;
+  body?: string;
+}
 
-export type RepeaterServerDeployedEvent = RepeaterServerEvent<
-  undefined,
-  {
-    repeaterId: string;
-  }
->;
+export interface RepeaterServerRequestResponse {
+  protocol: Protocol;
+  statusCode?: number;
+  message?: string;
+  errorCode?: string;
+  headers?: Record<string, string | string[] | undefined>;
+  body?: string;
+}
 
-export type RepeaterServerReconnectionFailedEvent = RepeaterServerEvent<{
+export interface RepeaterServerReconnectionFailedEvent {
   error: Error;
-}>;
-
-export interface RepeaterServerEvents {
-  deployed: RepeaterServerDeployedEvent;
-  request: RepeaterServerRequestEvent;
-  reconnection_failed: RepeaterServerReconnectionFailedEvent;
 }
 
-export type RepeaterServerEventHandler<E extends keyof RepeaterServerEvents> = (
-  payload: RepeaterServerEvents[E]['request']
-) =>
-  | RepeaterServerEvents[E]['response']
-  | Promise<RepeaterServerEvents[E]['response']>;
+export type RepeaterServerEvents =
+  | 'deployed'
+  | 'request'
+  | 'reconnection_failed';
+export type RepeaterServerEventHandlers =
+  | RepeaterServerEventHandler<RepeaterServerDeployedEvent>
+  | RepeaterServerEventHandler<
+      RepeaterServerRequestEvent,
+      RepeaterServerRequestResponse
+    >
+  | RepeaterServerEventHandler<RepeaterServerReconnectionFailedEvent>;
+
+export type RepeaterServerEventHandler<P, R = void> = (
+  payload: P
+) => R | Promise<R>;
 
 export interface RepeaterServer {
   disconnect(): void;
 
   connect(): void;
 
-  deploy(repeaterId?: string): Promise<RepeaterServerDeployedEvent['response']>;
+  deploy(repeaterId?: string): Promise<RepeaterServerDeployedEvent>;
 
-  on<
-    E extends keyof RepeaterServerEvents,
-    H extends RepeaterServerEventHandler<E>
-  >(
-    event: E,
-    handler: H
+  on(
+    event: 'request',
+    handler: RepeaterServerEventHandler<
+      RepeaterServerRequestEvent,
+      RepeaterServerRequestResponse
+    >
   ): void;
+  on(
+    event: 'reconnection_failed',
+    handler: RepeaterServerEventHandler<RepeaterServerReconnectionFailedEvent>
+  ): void;
+  on(event: RepeaterServerEvents, handler: RepeaterServerEventHandlers): void;
 
   ping(): void;
 }
