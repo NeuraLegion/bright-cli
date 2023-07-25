@@ -66,7 +66,7 @@ export class Helpers {
       if (['localhost', '127.0.0.1'].includes(host)) {
         bus = `amqp://${host}:5672`;
         api = `http://${host}:8000`;
-        repeaterServer = `wss://${host}/workstations`;
+        repeaterServer = `ws://${host}:8000/workstations`;
       } else {
         bus = `amqps://amq.${host}:5672`;
         api = `https://${host}`;
