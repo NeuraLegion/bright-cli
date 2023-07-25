@@ -31,6 +31,14 @@ export class DefaultRepeaterServer implements RepeaterServer {
     private readonly options: DefaultRepeaterServerOptions
   ) {}
 
+  public ping(): void {
+    if (!this.socket) {
+      throw new Error('Not connected');
+    }
+
+    this.socket.volatile.emit('ping');
+  }
+
   public disconnect() {
     if (!this.socket) {
       throw new Error('Not connected');

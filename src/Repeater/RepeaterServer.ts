@@ -61,6 +61,8 @@ export interface RepeaterServer {
     event: E,
     handler: H
   ): void;
+
+  ping(): void;
 }
 
 export const RepeaterServer: unique symbol = Symbol('RepeaterServer');
