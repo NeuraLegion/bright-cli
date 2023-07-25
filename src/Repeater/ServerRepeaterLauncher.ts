@@ -54,7 +54,7 @@ export class ServerRepeaterLauncher implements RepeaterLauncher {
     });
 
     const startupManager = this.startupManagerFactory.create({
-      dispose: this.close.bind(this)
+      dispose: () => this.close()
     });
 
     await startupManager.install({
@@ -80,7 +80,7 @@ export class ServerRepeaterLauncher implements RepeaterLauncher {
 
   public async uninstall(): Promise<void> {
     const startupManager = this.startupManagerFactory.create({
-      dispose: this.close.bind(this)
+      dispose: () => this.close()
     });
 
     await startupManager.uninstall(ServerRepeaterLauncher.SERVICE_NAME);
@@ -101,7 +101,7 @@ export class ServerRepeaterLauncher implements RepeaterLauncher {
 
     if (asDaemon) {
       const startupManager = this.startupManagerFactory.create({
-        dispose: this.close.bind(this)
+        dispose: () => this.close()
       });
       await startupManager.run();
     }
@@ -110,11 +110,10 @@ export class ServerRepeaterLauncher implements RepeaterLauncher {
 
     this.repeater.connect();
 
-    this.repeater.on(
-      'reconnection_failed',
-      this.onReconnectionFailed.bind(this)
+    this.repeater.on('reconnection_failed', (payload) =>
+      this.onReconnectionFailed(payload)
     );
-    this.repeater.on('request', this.onRequest.bind(this));
+    this.repeater.on('request', (payload) => this.onRequest(payload));
     this.createPingTimer();
 
     const result = await this.repeater.deploy(repeaterId);
