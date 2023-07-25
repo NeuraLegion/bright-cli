@@ -49,7 +49,9 @@ export class DefaultRepeaterServer implements RepeaterServer {
     repeaterId?: string
   ): Promise<RepeaterServerDeployedEvent['response']> {
     if (!this.socket) {
-      throw new Error('Repeater is not connected yet');
+      throw new Error(
+        'Please make sure that repeater established a connection with host.'
+      );
     }
 
     this.socket.emit('deploy', {
