@@ -112,6 +112,14 @@ export class DefaultRepeaterServer implements RepeaterServer {
       this.latestReconnectionError = error;
     });
 
+    this.socket.io.on('reconnect_attempt', (attempt) => {
+      logger.warn(
+        'Failed to connect (attempt %d/%d)',
+        attempt,
+        this.DEFAULT_RECONNECT_TIMES
+      );
+    });
+
     this.socket.io.on('reconnect_failed', () => {
       this.processEventHandler(
         'reconnection_failed',
