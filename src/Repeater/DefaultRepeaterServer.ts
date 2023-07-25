@@ -79,7 +79,7 @@ export class DefaultRepeaterServer implements RepeaterServer {
     });
 
     this.socket.on('connect_error', (error: Error) => {
-      logger.debug(`Unexpected error: %s`, error);
+      logger.debug(`Unable to connect to the %s host`, this.options.uri, error);
     });
 
     logger.debug('Event bus connected to %s', this.options.uri);
