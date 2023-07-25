@@ -93,7 +93,7 @@ export class DefaultRepeaterServer implements RepeaterServer {
 
     if (event === 'reconnection_failed') {
       // TODO: Figure out why type is not narrowing
-      this.onReconnectionFailure(handler as any);
+      this.onReconnectionFailed(handler as any);
     } else {
       this.socket.on(eventName, (payload, callback) => {
         this.processEventHandler(event, payload, handler, callback);
@@ -101,7 +101,7 @@ export class DefaultRepeaterServer implements RepeaterServer {
     }
   }
 
-  private onReconnectionFailure<
+  private onReconnectionFailed<
     H extends RepeaterServerEventHandler<'reconnection_failed'>
   >(handler: H) {
     this.socket.io.on('reconnect', () => {
