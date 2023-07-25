@@ -67,7 +67,7 @@ export class CliBuilder {
         ({
           bus: args.bus,
           api: args.api,
-          repeaterServer: args['repeater-server']
+          repeaterServer: args.repeaterServer
         } = Helpers.getClusterUrls(args as ClusterArgs));
       })
       // TODO: (victor.polyakov@brightsec.com) Write correct type checking

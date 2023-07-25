@@ -185,7 +185,7 @@ export class RunRepeater implements CommandModule {
             DefaultRepeaterServerOptions,
             {
               useValue: {
-                uri: args['repeater-server'] as string,
+                uri: args.repeaterServer as string,
                 token: args.token as string
               }
             }
