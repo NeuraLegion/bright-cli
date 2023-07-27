@@ -17,6 +17,9 @@ export enum TestType {
   DATE_MANIPULATION = 'date_manipulation',
   DEFAULT_LOGIN_LOCATION = 'default_login_location',
   DIRECTORY_LISTING = 'directory_listing',
+  /**
+   * @deprecated Use TestType.XSS instead
+   */
   DOM_XSS = 'dom_xss',
   EMAIL_INJECTION = 'email_injection',
   EXCESSIVE_DATA_EXPOSURE = 'excessive_data_exposure',
@@ -50,6 +53,7 @@ export enum TestType {
   SQLI = 'sqli',
   SSRF = 'ssrf',
   SSTI = 'ssti',
+  STORED_XSS = 'stored_xss',
   UNVALIDATED_REDIRECT = 'unvalidated_redirect',
   VERSION_CONTROL_SYSTEMS = 'version_control_systems',
   WORDPRESS = 'wordpress',
@@ -66,8 +70,10 @@ export const EXPENSIVE_TESTS: readonly TestType[] = [
   TestType.ID_ENUMERATION,
   TestType.LRRL,
   TestType.MASS_ASSIGNMENT,
-  TestType.RETIRE_JS,
-  // not implemented yet by the engine
+  TestType.RETIRE_JS
+];
+
+export const NOT_IMPLEMENTED_TESTS: readonly TestType[] = [
   TestType.ANGULAR_CSTI,
   TestType.BACKUP_LOCATIONS,
   TestType.EXPOSED_COUCH_DB_APIS,
@@ -75,12 +81,19 @@ export const EXPENSIVE_TESTS: readonly TestType[] = [
   TestType.HRS
 ];
 
-export const EXCLUSIVE_TESTS: readonly TestType[] = [TestType.LRRL];
+export const DEPRECATED_TESTS: ReadonlySet<TestType> = new Set<TestType>([
+  TestType.DOM_XSS
+]);
 
 export const SCAN_TESTS_TO_RUN_BY_DEFAULT: readonly TestType[] = Object.values(
   TestType
 ).filter(
-  (x: TestType) => ![...EXPENSIVE_TESTS, ...EXCLUSIVE_TESTS].includes(x)
+  (x: TestType) =>
+    ![
+      ...EXPENSIVE_TESTS,
+      ...NOT_IMPLEMENTED_TESTS,
+      ...DEPRECATED_TESTS
+    ].includes(x)
 );
 
 export enum Module {
@@ -121,6 +134,7 @@ export interface ScanConfig {
   projectId?: string;
   discoveryTypes?: Discovery[];
   tests: TestType[];
+  buckets: string[];
   poolSize?: number;
   fileId?: string;
   attackParamLocations?: AttackParamLocation[];
