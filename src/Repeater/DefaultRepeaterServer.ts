@@ -8,7 +8,8 @@ import {
   RepeaterServerEventHandlers,
   RepeaterServerRequestEvent,
   RepeaterServerRequestResponse,
-  RepeaterServerErrorEvent
+  RepeaterServerErrorEvent,
+  RepeaterServerReconnectionAttemptedEvent
 } from './RepeaterServer';
 import { inject, injectable } from 'tsyringe';
 import io, { Socket } from 'socket.io-client';
@@ -28,7 +29,7 @@ export const DefaultRepeaterServerOptions: unique symbol = Symbol(
 @injectable()
 export class DefaultRepeaterServer implements RepeaterServer {
   private latestReconnectionError?: Error;
-  private readonly DEFAULT_RECONNECT_TIMES = 20;
+  private readonly MAX_RECONNECTION_ATTEMPTS = 20;
   private _socket?: Socket;
   private timer?: Timer;
 
@@ -65,7 +66,7 @@ export class DefaultRepeaterServer implements RepeaterServer {
       parser,
       path: '/api/ws/v1',
       transports: ['websocket'],
-      reconnectionAttempts: this.DEFAULT_RECONNECT_TIMES,
+      reconnectionAttempts: this.MAX_RECONNECTION_ATTEMPTS,
       auth: {
         token: this.options.token,
         domain: hostname
@@ -103,14 +104,6 @@ export class DefaultRepeaterServer implements RepeaterServer {
       this.latestReconnectionError = error;
     });
 
-    this.socket.io.on('reconnect_attempt', (attempt) => {
-      logger.warn(
-        'Failed to connect (attempt %d/%d)',
-        attempt,
-        this.DEFAULT_RECONNECT_TIMES
-      );
-    });
-
     this.socket.io.on('reconnect_failed', () => {
       this.processEventHandler(
         'reconnection_failed',
@@ -127,6 +120,18 @@ export class DefaultRepeaterServer implements RepeaterServer {
   ): void {
     this.socket.on('error', (payload, callback) => {
       this.processEventHandler('error', payload, handler, callback);
+    });
+  }
+
+  public reconnectionAttempted(
+    handler: RepeaterServerEventHandler<RepeaterServerReconnectionAttemptedEvent>
+  ): void {
+    this.socket.io.on('reconnect_attempt', (attempt) => {
+      this.processEventHandler(
+        'reconnect_attempt',
+        { attempt, maxAttempts: this.MAX_RECONNECTION_ATTEMPTS },
+        handler
+      );
     });
   }
 

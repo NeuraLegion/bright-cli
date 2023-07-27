@@ -32,6 +32,11 @@ export interface RepeaterServerReconnectionFailedEvent {
   error: Error;
 }
 
+export interface RepeaterServerReconnectionAttemptedEvent {
+  attempt: number;
+  maxAttempts: number;
+}
+
 export interface RepeaterServerErrorEvent {
   message: string;
 }
@@ -66,6 +71,10 @@ export interface RepeaterServer {
 
   reconnectionFailed(
     handler: RepeaterServerEventHandler<RepeaterServerReconnectionFailedEvent>
+  ): void;
+
+  reconnectionAttempted(
+    handler: RepeaterServerEventHandler<RepeaterServerReconnectionAttemptedEvent>
   ): void;
 
   errorOccurred(
