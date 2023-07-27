@@ -155,9 +155,7 @@ export class DefaultRepeaterServer implements RepeaterServer {
   }
 
   private createPingTimer() {
-    if (this.timer) {
-      clearInterval(this.timer);
-    }
+    this.clearPingTimer();
 
     this.timer = setInterval(
       () => this.socket.volatile.emit('ping'),
