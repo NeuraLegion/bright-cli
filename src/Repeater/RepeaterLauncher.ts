@@ -6,7 +6,7 @@ export interface RepeaterLauncher {
   /**
    * @deprecated currently not supported by some implementations
    */
-  compileScripts(scripts: string | Record<string, string>): void;
+  compileScripts?(scripts: string | Record<string, string>): void;
 
   run(repeaterId: string, asDaemon?: boolean): Promise<void>;
 
