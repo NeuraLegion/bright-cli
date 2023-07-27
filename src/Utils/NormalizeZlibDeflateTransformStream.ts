@@ -2,6 +2,7 @@ import { Transform, TransformCallback } from 'stream';
 
 export class NormalizeZlibDeflateTransformStream extends Transform {
   private hasCheckedHead = false;
+  private readonly header = Buffer.from([0x78, 0x9c]);
   // eslint-disable-next-line @typescript-eslint/naming-convention
   public _transform(
     chunk: any,
@@ -10,9 +11,8 @@ export class NormalizeZlibDeflateTransformStream extends Transform {
   ) {
     if (!this.hasCheckedHead && chunk.length !== 0) {
       // ADHOC: detects raw deflate: https://stackoverflow.com/a/37528114
-      if (chunk[0] !== 0x78) {
-        const header = Buffer.from([0x78, 0x9c]);
-        this.push(header, encoding);
+      if (chunk.compare(this.header, 0, 1, 0, 1) !== 0) {
+        this.push(this.header, encoding);
       }
       this.hasCheckedHead = true;
     }
