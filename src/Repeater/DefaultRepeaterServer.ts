@@ -18,6 +18,7 @@ import Timer = NodeJS.Timer;
 export interface DefaultRepeaterServerOptions {
   readonly uri: string;
   readonly token: string;
+  readonly connectTimeout?: number;
 }
 
 export const DefaultRepeaterServerOptions: unique symbol = Symbol(
@@ -64,6 +65,7 @@ export class DefaultRepeaterServer implements RepeaterServer {
       parser,
       path: '/api/ws/v1',
       transports: ['websocket'],
+      timeout: this.options?.connectTimeout,
       reconnectionAttempts: this.MAX_RECONNECTION_ATTEMPTS,
       auth: {
         token: this.options.token,

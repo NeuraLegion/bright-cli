@@ -182,7 +182,8 @@ export class RunRepeater implements CommandModule {
             {
               useValue: {
                 uri: args.repeaterServer as string,
-                token: args.token as string
+                token: args.token as string,
+                connectTimeout: 10000
               }
             }
           )
