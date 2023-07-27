@@ -130,7 +130,7 @@
       "./node_modules/win-ca/lib/crypt32-x64.node"
     ],
     "targets": [
-      "node18-linux-x64",
+      "node14-linux-x64",
       "node18-macos-x64",
       "node18-windows-x64"
     ],
