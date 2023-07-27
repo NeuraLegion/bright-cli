@@ -133,7 +133,7 @@ export class ServerRepeaterLauncher implements RepeaterLauncher {
       logger.warn('Failed to connect (attempt %d/%d)', attempt, maxAttempts)
     );
     this.repeaterServer.reconnectionSucceeded(() =>
-      logger.log('Repeater reconnected')
+      logger.log('Repeater connected')
     );
   }
 
