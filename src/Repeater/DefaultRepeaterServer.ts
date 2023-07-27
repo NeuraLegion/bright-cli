@@ -12,13 +12,16 @@ import {
 import { inject, injectable } from 'tsyringe';
 import io, { Socket } from 'socket.io-client';
 import parser from 'socket.io-msgpack-parser';
+import { SocksProxyAgent } from 'socks-proxy-agent';
 import { once } from 'events';
+import { parse } from 'url';
 import Timer = NodeJS.Timer;
 
 export interface DefaultRepeaterServerOptions {
   readonly uri: string;
   readonly token: string;
   readonly connectTimeout?: number;
+  readonly proxyUrl?: string;
 }
 
 export const DefaultRepeaterServerOptions: unique symbol = Symbol(
@@ -66,6 +69,12 @@ export class DefaultRepeaterServer implements RepeaterServer {
       path: '/api/ws/v1',
       transports: ['websocket'],
       timeout: this.options?.connectTimeout,
+      // @ts-expect-error Wrong typing. Agent is passed directly to "ws" extension under the hood
+      agent: this.options.proxyUrl
+        ? new SocksProxyAgent({
+            ...parse(this.options.proxyUrl)
+          })
+        : false,
       reconnectionAttempts: this.MAX_RECONNECTION_ATTEMPTS,
       auth: {
         token: this.options.token,
