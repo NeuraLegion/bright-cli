@@ -5,6 +5,7 @@ import { logger } from '../Utils';
 import { VirtualScripts } from '../Scripts';
 import { Protocol } from './Protocol';
 import { RequestExecutorOptions } from './RequestExecutorOptions';
+import { NormalizeZlibDeflateTransformStream } from '../Utils/NormalizeZlibDeflateTransformStream';
 import { SocksProxyAgent } from 'socks-proxy-agent';
 import { inject, injectable } from 'tsyringe';
 import { parse as parseMimetype } from 'content-type';
@@ -245,7 +246,9 @@ export class HttpRequestExecutor implements RequestExecutor {
           body = response.pipe(createGunzip(zlibOptions));
           break;
         case 'deflate':
-          body = response.pipe(createInflate(zlibOptions));
+          body = response
+            .pipe(new NormalizeZlibDeflateTransformStream())
+            .pipe(createInflate(zlibOptions));
           break;
         case 'br':
           body = response.pipe(createBrotliDecompress());
