@@ -25,9 +25,16 @@ runs:
         registry-url: ${{ inputs.registry }}
         scope: ${{ inputs.scope }}
 
-
     - name: Install deps in quiet mode
+      if: ${{ inputs.version == 18 }}
       shell: bash
       run: npm ci -q
+      env:
+        NODE_AUTH_TOKEN: ${{ env.NODE_AUTH_TOKEN }}
+
+    - name: Install deps in quiet mode
+      if: ${{ inputs.version == 14 }}
+      shell: bash
+      run: npm i -q
       env:
         NODE_AUTH_TOKEN: ${{ env.NODE_AUTH_TOKEN }}
