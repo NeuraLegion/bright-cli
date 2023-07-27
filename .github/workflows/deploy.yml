@@ -77,7 +77,7 @@ jobs:
           - os: ubuntu-22.04
             target: linux
             container: ubuntu:18.04
-            node: 16
+            node: 14
     runs-on: ${{ matrix.os }}
     container: ${{ matrix.container }}
     steps:
