@@ -169,6 +169,11 @@ jobs:
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
+        # The scope does not align with the package name
+        # FIXME: once GitHub organization name has been changed, we should prevent this behavior
+      - name: Prepare GPR package
+        run: npm pkg set name='@neuralegion/bright-cli'
+
       - name: Setup node
         uses: ./.github/workflows/composite/npm
         with:
