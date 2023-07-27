@@ -18,13 +18,11 @@ ENV npm_config_loglevel warn
 # allow installing when the main user is root
 ENV npm_config_unsafe_perm true
 
-RUN echo "whoami: $(whoami)"
-RUN npm config -g set user $(whoami)
-
 #  add libraries needed to build os-service
 RUN apk add --no-cache --virtual .build-deps make gcc g++ python3 \
     && npm i -g -q @brightsec/cli@${VERSION} \
     && apk del .build-deps
 
+USER node
 ENTRYPOINT [ "bright-cli" ]
 CMD ["repeater"]
