@@ -41,16 +41,6 @@ export interface RepeaterServerErrorEvent {
   message: string;
 }
 
-export type RepeaterServerEvents = 'request' | 'reconnection_failed' | 'error';
-export type RepeaterServerEventHandlers =
-  | RepeaterServerEventHandler<RepeaterServerDeployedEvent>
-  | RepeaterServerEventHandler<
-      RepeaterServerRequestEvent,
-      RepeaterServerRequestResponse
-    >
-  | RepeaterServerEventHandler<RepeaterServerReconnectionFailedEvent>
-  | RepeaterServerEventHandler<RepeaterServerErrorEvent>;
-
 export type RepeaterServerEventHandler<P, R = void> = P extends undefined
   ? () => R | Promise<R>
   : (payload: P) => R | Promise<R>;
