@@ -26,15 +26,13 @@ runs:
         scope: ${{ inputs.scope }}
 
     - name: Install deps in quiet mode
-      if: ${{ inputs.version == 18 }}
       shell: bash
-      run: npm ci -q
-      env:
-        NODE_AUTH_TOKEN: ${{ env.NODE_AUTH_TOKEN }}
-
-    - name: Install deps in quiet mode
-      if: ${{ inputs.version == 14 }}
-      shell: bash
-      run: npm i -q
+      run: |
+        if [[ "${{ inputs.version }}" != "18" ]]; 
+        then
+          npm i -q
+        else
+          npm ci -q
+        fi
       env:
         NODE_AUTH_TOKEN: ${{ env.NODE_AUTH_TOKEN }}
