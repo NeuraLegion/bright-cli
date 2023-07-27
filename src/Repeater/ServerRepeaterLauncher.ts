@@ -33,6 +33,11 @@ export class ServerRepeaterLauncher implements RepeaterLauncher {
     private readonly requestExecutors: RequestExecutor[]
   ) {}
 
+  public compileScripts() {
+    // Not supported
+    return;
+  }
+
   public close() {
     this.repeaterStarted = false;
     this.repeaterServer.disconnect();
