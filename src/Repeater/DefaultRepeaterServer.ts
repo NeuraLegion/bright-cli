@@ -89,7 +89,7 @@ export class DefaultRepeaterServer implements RepeaterServer {
     handler: RepeaterServerEventHandlers
   ): void {
     if (event === 'reconnection_failed') {
-      this.onReconnectionFailed(
+      this.reconnectionFailed(
         handler as RepeaterServerEventHandler<RepeaterServerReconnectionFailedEvent>
       );
     } else {
@@ -99,7 +99,7 @@ export class DefaultRepeaterServer implements RepeaterServer {
     }
   }
 
-  private onReconnectionFailed<
+  private reconnectionFailed<
     H extends RepeaterServerEventHandler<RepeaterServerReconnectionFailedEvent>
   >(handler: H) {
     this.socket.io.on('reconnect', () => {
