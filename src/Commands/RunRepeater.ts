@@ -23,7 +23,7 @@ export class RunRepeater implements CommandModule {
           'ID of an existing repeater which you want to use to run a new scan.',
         type: 'string',
         requiresArg: true,
-        demandOption: false
+        demandOption: true
       })
       .option('scripts', {
         alias: 'S',
@@ -140,12 +140,8 @@ export class RunRepeater implements CommandModule {
       }, true)
       .exitProcess(false)
       .check((args: Arguments) => {
-        const id = args.id as string | undefined;
-        if (
-          typeof id !== 'undefined' &&
-          !Helpers.isShortUUID(id) &&
-          !Helpers.isUUID(id)
-        ) {
+        const id = args.id as string;
+        if (!Helpers.isShortUUID(id) && !Helpers.isUUID(id)) {
           throw new Error(
             'Option --id has wrong value. Please ensure that --id option has a valid ID.'
           );

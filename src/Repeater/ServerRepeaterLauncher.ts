@@ -15,7 +15,6 @@ import {
 import { Helpers, logger } from '../Utils';
 import { CliInfo } from '../Config';
 import { delay, inject, injectAll, injectable } from 'tsyringe';
-import { hostname } from 'os';
 
 @injectable()
 export class ServerRepeaterLauncher implements RepeaterLauncher {
@@ -87,7 +86,7 @@ export class ServerRepeaterLauncher implements RepeaterLauncher {
   }
 
   public async run(
-    repeaterId?: string,
+    repeaterId: string,
     asDaemon: boolean = false
   ): Promise<void> {
     if (this.repeaterStarted) {
@@ -103,7 +102,7 @@ export class ServerRepeaterLauncher implements RepeaterLauncher {
 
     logger.log('Starting the Repeater (%s)...', this.info.version);
 
-    this.repeaterServer.connect(repeaterId || hostname());
+    this.repeaterServer.connect(repeaterId);
 
     this.subscribeToEvents();
 
