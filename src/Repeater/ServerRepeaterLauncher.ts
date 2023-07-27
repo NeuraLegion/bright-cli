@@ -125,13 +125,13 @@ export class ServerRepeaterLauncher implements RepeaterLauncher {
   }
 
   private subscribeToEvents() {
-    this.repeaterServer.on('error', ({ message }) => {
+    this.repeaterServer.errorOccurred(({ message }) => {
       logger.error(message);
     });
-    this.repeaterServer.on('reconnection_failed', (payload) =>
+    this.repeaterServer.reconnectionFailed((payload) =>
       this.reconnectionFailed(payload)
     );
-    this.repeaterServer.on('request', (payload) =>
+    this.repeaterServer.requestReceived((payload) =>
       this.requestReceived(payload)
     );
   }

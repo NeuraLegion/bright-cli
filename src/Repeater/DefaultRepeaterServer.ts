@@ -5,7 +5,10 @@ import {
   RepeaterServerDeployedEvent,
   RepeaterServerEvents,
   RepeaterServerReconnectionFailedEvent,
-  RepeaterServerEventHandlers
+  RepeaterServerEventHandlers,
+  RepeaterServerRequestEvent,
+  RepeaterServerRequestResponse,
+  RepeaterServerErrorEvent
 } from './RepeaterServer';
 import { inject, injectable } from 'tsyringe';
 import io, { Socket } from 'socket.io-client';
@@ -78,34 +81,20 @@ export class DefaultRepeaterServer implements RepeaterServer {
     logger.debug('Event bus connected to %s', this.options.uri);
   }
 
-  public on(
-    event: RepeaterServerEvents,
-    handler: RepeaterServerEventHandlers
+  public requestReceived(
+    handler: RepeaterServerEventHandler<
+      RepeaterServerRequestEvent,
+      RepeaterServerRequestResponse
+    >
   ): void {
-    if (event === 'reconnection_failed') {
-      this.reconnectionFailed(
-        handler as RepeaterServerEventHandler<RepeaterServerReconnectionFailedEvent>
-      );
-    } else {
-      this.socket.on(event, (payload, callback) => {
-        this.processEventHandler(event, payload, (p) => handler(p), callback);
-      });
-    }
+    this.socket.on('request', (payload, callback) => {
+      this.processEventHandler('request', payload, handler, callback);
+    });
   }
 
-  private get socket() {
-    if (!this._socket) {
-      throw new Error(
-        'Please make sure that repeater established a connection with host.'
-      );
-    }
-
-    return this._socket;
-  }
-
-  private reconnectionFailed<
-    H extends RepeaterServerEventHandler<RepeaterServerReconnectionFailedEvent>
-  >(handler: H) {
+  public reconnectionFailed(
+    handler: RepeaterServerEventHandler<RepeaterServerReconnectionFailedEvent>
+  ): void {
     this.socket.io.on('reconnect', () => {
       this.latestReconnectionError = undefined;
     });
@@ -131,6 +120,24 @@ export class DefaultRepeaterServer implements RepeaterServer {
         handler
       );
     });
+  }
+
+  public errorOccurred(
+    handler: RepeaterServerEventHandler<RepeaterServerErrorEvent, void>
+  ): void {
+    this.socket.on('error', (payload, callback) => {
+      this.processEventHandler('error', payload, handler, callback);
+    });
+  }
+
+  private get socket() {
+    if (!this._socket) {
+      throw new Error(
+        'Please make sure that repeater established a connection with host.'
+      );
+    }
+
+    return this._socket;
   }
 
   private processEventHandler<P>(

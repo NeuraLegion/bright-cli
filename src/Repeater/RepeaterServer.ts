@@ -57,22 +57,20 @@ export interface RepeaterServer {
 
   deploy(repeaterId?: string): Promise<RepeaterServerDeployedEvent>;
 
-  on(
-    event: 'request',
+  requestReceived(
     handler: RepeaterServerEventHandler<
       RepeaterServerRequestEvent,
       RepeaterServerRequestResponse
     >
   ): void;
-  on(
-    event: 'reconnection_failed',
+
+  reconnectionFailed(
     handler: RepeaterServerEventHandler<RepeaterServerReconnectionFailedEvent>
   ): void;
-  on(
-    event: 'error',
+
+  errorOccurred(
     handler: RepeaterServerEventHandler<RepeaterServerErrorEvent>
   ): void;
-  on(event: RepeaterServerEvents, handler: RepeaterServerEventHandlers): void;
 }
 
 export const RepeaterServer: unique symbol = Symbol('RepeaterServer');
