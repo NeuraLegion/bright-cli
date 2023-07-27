@@ -26,7 +26,7 @@ export const DefaultRepeaterServerOptions: unique symbol = Symbol(
 export class DefaultRepeaterServer implements RepeaterServer {
   private latestReconnectionError?: Error;
   private readonly DEFAULT_RECONNECT_TIMES = 20;
-  private socket?: Socket;
+  private _socket?: Socket;
   private timer?: Timer;
 
   constructor(
@@ -37,20 +37,14 @@ export class DefaultRepeaterServer implements RepeaterServer {
   public disconnect() {
     this.clearPingTimer();
 
-    this.socket?.disconnect();
-    this.socket?.removeAllListeners();
-    this.socket = undefined;
+    this._socket?.disconnect();
+    this._socket?.removeAllListeners();
+    this._socket = undefined;
   }
 
   public async deploy(
     repeaterId?: string
   ): Promise<RepeaterServerDeployedEvent> {
-    if (!this.socket) {
-      throw new Error(
-        'Please make sure that repeater established a connection with host.'
-      );
-    }
-
     this.socket.emit('deploy', {
       repeaterId
     });
@@ -64,7 +58,7 @@ export class DefaultRepeaterServer implements RepeaterServer {
   }
 
   public connect(hostname: string) {
-    this.socket = io(this.options.uri, {
+    this._socket = io(this.options.uri, {
       parser,
       path: '/api/ws/v1',
       transports: ['websocket'],
@@ -97,6 +91,16 @@ export class DefaultRepeaterServer implements RepeaterServer {
         this.processEventHandler(event, payload, (p) => handler(p), callback);
       });
     }
+  }
+
+  private get socket() {
+    if (!this._socket) {
+      throw new Error(
+        'Please make sure that repeater established a connection with host.'
+      );
+    }
+
+    return this._socket;
   }
 
   private reconnectionFailed<
