@@ -17,7 +17,7 @@ import {
 } from 'ts-mockito';
 import { URL } from 'url';
 import { promisify } from 'util';
-import { brotliCompress, constants, gzip } from 'zlib';
+import { brotliCompress, constants, gzip, deflate, deflateRaw } from 'zlib';
 
 const createRequest = (options?: Partial<RequestOptions>) => {
   const requestOptions = {
@@ -246,6 +246,44 @@ describe('HttpRequestExecutor', () => {
       nock(requestOptions.url).get('/').reply(200, bigBody, {
         'content-type': 'text/plain',
         'content-encoding': 'gzip'
+      });
+
+      const response = await executor.execute(request);
+
+      expect(response.body).toEqual(expected);
+    });
+
+    it('should decode response body if content-encoding is deflate', async () => {
+      when(spiedExecutorOptions.maxContentLength).thenReturn(1);
+      when(spiedExecutorOptions.whitelistMimes).thenReturn(['text/plain']);
+      const { request, requestOptions } = createRequest();
+      const expected = 'x'.repeat(1025);
+      const bigBody = await promisify(deflate)(expected, {
+        flush: constants.Z_SYNC_FLUSH,
+        finishFlush: constants.Z_SYNC_FLUSH
+      });
+      nock(requestOptions.url).get('/').reply(200, bigBody, {
+        'content-type': 'text/plain',
+        'content-encoding': 'deflate'
+      });
+
+      const response = await executor.execute(request);
+
+      expect(response.body).toEqual(expected);
+    });
+
+    it('should decode response body if content-encoding is deflate and content does not have zlib headers', async () => {
+      when(spiedExecutorOptions.maxContentLength).thenReturn(1);
+      when(spiedExecutorOptions.whitelistMimes).thenReturn(['text/plain']);
+      const { request, requestOptions } = createRequest();
+      const expected = 'x'.repeat(1025);
+      const bigBody = await promisify(deflateRaw)(expected, {
+        flush: constants.Z_SYNC_FLUSH,
+        finishFlush: constants.Z_SYNC_FLUSH
+      });
+      nock(requestOptions.url).get('/').reply(200, bigBody, {
+        'content-type': 'text/plain',
+        'content-encoding': 'deflate'
       });
 
       const response = await executor.execute(request);
