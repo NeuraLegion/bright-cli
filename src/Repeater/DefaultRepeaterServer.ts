@@ -69,7 +69,8 @@ export class DefaultRepeaterServer implements RepeaterServer {
       path: '/api/ws/v1',
       transports: ['websocket'],
       timeout: this.options?.connectTimeout,
-      // @ts-expect-error Wrong typing. Agent is passed directly to "ws" extension under the hood
+      // @ts-expect-error Type is wrong.
+      // Agent is passed directly to "ws" package, which accepts http.Agent
       agent: this.options.proxyUrl
         ? new SocksProxyAgent({
             ...parse(this.options.proxyUrl)
