@@ -13,14 +13,20 @@ export interface RepeaterServerRequestEvent {
   body?: string;
 }
 
-export interface RepeaterServerRequestResponse {
-  protocol: Protocol;
-  statusCode?: number;
-  message?: string;
-  errorCode?: string;
-  headers?: Record<string, string | string[] | undefined>;
-  body?: string;
-}
+export type RepeaterServerRequestResponse =
+  | {
+      protocol: Protocol;
+      statusCode?: number;
+      message?: string;
+      errorCode?: string;
+      headers?: Record<string, string | string[] | undefined>;
+      body?: string;
+    }
+  | {
+      protocol: Protocol;
+      message?: string;
+      errorCode?: string;
+    };
 
 export interface RepeaterServerReconnectionFailedEvent {
   error: Error;
