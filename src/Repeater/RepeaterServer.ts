@@ -51,9 +51,9 @@ export type RepeaterServerEventHandlers =
   | RepeaterServerEventHandler<RepeaterServerReconnectionFailedEvent>
   | RepeaterServerEventHandler<RepeaterServerErrorEvent>;
 
-export type RepeaterServerEventHandler<P, R = void> = (
-  payload: P
-) => R | Promise<R>;
+export type RepeaterServerEventHandler<P, R = void> = P extends undefined
+  ? () => R | Promise<R>
+  : (payload: P) => R | Promise<R>;
 
 export interface RepeaterServer {
   disconnect(): void;
@@ -76,6 +76,8 @@ export interface RepeaterServer {
   reconnectionAttempted(
     handler: RepeaterServerEventHandler<RepeaterServerReconnectionAttemptedEvent>
   ): void;
+
+  reconnectionSucceeded(handler: RepeaterServerEventHandler<undefined>): void;
 
   errorOccurred(
     handler: RepeaterServerEventHandler<RepeaterServerErrorEvent>

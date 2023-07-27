@@ -135,6 +135,14 @@ export class DefaultRepeaterServer implements RepeaterServer {
     });
   }
 
+  public reconnectionSucceeded(
+    handler: RepeaterServerEventHandler<void, void>
+  ): void {
+    this.socket.io.on('reconnect', () => {
+      this.processEventHandler('reconnect', undefined, handler);
+    });
+  }
+
   private get socket() {
     if (!this._socket) {
       throw new Error(

@@ -137,6 +137,9 @@ export class ServerRepeaterLauncher implements RepeaterLauncher {
     this.repeaterServer.reconnectionAttempted(({ attempt, maxAttempts }) =>
       logger.warn('Failed to connect (attempt %d/%d)', attempt, maxAttempts)
     );
+    this.repeaterServer.reconnectionSucceeded(() =>
+      logger.log('Repeater reconnected')
+    );
   }
 
   private reconnectionFailed({ error }: RepeaterServerReconnectionFailedEvent) {
