@@ -131,7 +131,9 @@ export class ServerRepeaterLauncher implements RepeaterLauncher {
     this.repeaterServer.on('reconnection_failed', (payload) =>
       this.reconnectionFailed(payload)
     );
-    this.repeaterServer.on('request', (payload) => this.onRequest(payload));
+    this.repeaterServer.on('request', (payload) =>
+      this.requestReceived(payload)
+    );
   }
 
   private reconnectionFailed({ error }: RepeaterServerReconnectionFailedEvent) {
@@ -140,7 +142,7 @@ export class ServerRepeaterLauncher implements RepeaterLauncher {
     process.exit(1);
   }
 
-  private async onRequest(event: RepeaterServerRequestEvent) {
+  private async requestReceived(event: RepeaterServerRequestEvent) {
     const { protocol } = event;
 
     const requestExecutor = this.requestExecutors.find(
