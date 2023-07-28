@@ -44,6 +44,7 @@ export enum TestType {
   OPEN_BUCKETS = 'open_buckets',
   OPEN_DATABASE = 'open_database',
   OSI = 'osi',
+  PROMPT_INJECTION = 'prompt_injection',
   PROTO_POLLUTION = 'proto_pollution',
   RETIRE_JS = 'retire_js',
   RFI = 'rfi',
@@ -78,7 +79,8 @@ export const NOT_IMPLEMENTED_TESTS: readonly TestType[] = [
   TestType.BACKUP_LOCATIONS,
   TestType.EXPOSED_COUCH_DB_APIS,
   TestType.HTTP_RESPONSE_SPLITTING,
-  TestType.HRS
+  TestType.HRS,
+  TestType.PROMPT_INJECTION
 ];
 
 export const DEPRECATED_TESTS: ReadonlySet<TestType> = new Set<TestType>([
