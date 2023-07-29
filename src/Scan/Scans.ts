@@ -13,6 +13,7 @@ export enum TestType {
   COMMON_FILES = 'common_files',
   COOKIE_SECURITY = 'cookie_security',
   CSRF = 'csrf',
+  CSS_INJECTION = 'css_injection',
   CVE = 'cve_test',
   DATE_MANIPULATION = 'date_manipulation',
   DEFAULT_LOGIN_LOCATION = 'default_login_location',
@@ -78,6 +79,7 @@ export const EXPENSIVE_TESTS: readonly TestType[] = [
 export const NOT_IMPLEMENTED_TESTS: readonly TestType[] = [
   TestType.ANGULAR_CSTI,
   TestType.BACKUP_LOCATIONS,
+  TestType.CSS_INJECTION,
   TestType.EXPOSED_COUCH_DB_APIS,
   TestType.HTTP_RESPONSE_SPLITTING,
   TestType.HRS
