@@ -1,8 +1,7 @@
-import { RabbitMQBusOptions } from '../Bus';
 import { Cert, RequestExecutorOptions } from '../RequestExecutor';
 import { Helpers, logger } from '../Utils';
 import { container } from '../Config';
-import { RepeaterLauncher } from '../Repeater';
+import { DefaultRepeaterServerOptions, RepeaterLauncher } from '../Repeater';
 import { Arguments, Argv, CommandModule } from 'yargs';
 import { normalize } from 'path';
 
@@ -178,19 +177,17 @@ export class RunRepeater implements CommandModule {
               ]
             }
           })
-          .register<RabbitMQBusOptions>(RabbitMQBusOptions, {
-            useValue: {
-              exchange: 'EventBus',
-              clientQueue: `agent:${args.id as string}`,
-              connectTimeout: 10000,
-              url: args.bus as string,
-              proxyUrl: (args.proxyExternal ?? args.proxy) as string,
-              credentials: {
-                username: 'bot',
-                password: args.token as string
+          .register<DefaultRepeaterServerOptions>(
+            DefaultRepeaterServerOptions,
+            {
+              useValue: {
+                uri: args.repeaterServer as string,
+                token: args.token as string,
+                connectTimeout: 10000,
+                proxyUrl: (args.proxyExternal ?? args.proxy) as string
               }
             }
-          })
+          )
       );
   }
 

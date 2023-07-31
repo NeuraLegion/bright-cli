@@ -53,7 +53,12 @@ import { ConfigReader } from './ConfigReader';
 import { DefaultConfigReader } from './DefaultConfigReader';
 import { CliInfo } from './CliInfo';
 import { CliBuilder } from './CliBuilder';
-import { DefaultRepeaterLauncher, RepeaterLauncher } from '../Repeater';
+import {
+  ServerRepeaterLauncher,
+  RepeaterLauncher,
+  RepeaterServer,
+  DefaultRepeaterServer
+} from '../Repeater';
 import { container, Lifecycle } from 'tsyringe';
 
 container
@@ -100,6 +105,13 @@ container
     Bus,
     {
       useClass: RabbitMQBus
+    },
+    { lifecycle: Lifecycle.Singleton }
+  )
+  .register(
+    RepeaterServer,
+    {
+      useClass: DefaultRepeaterServer
     },
     { lifecycle: Lifecycle.Singleton }
   )
@@ -202,7 +214,7 @@ container
   )
   .register<RepeaterLauncher>(
     RepeaterLauncher,
-    { useClass: DefaultRepeaterLauncher },
+    { useClass: ServerRepeaterLauncher },
     { lifecycle: Lifecycle.Singleton }
   )
   .register<CliBuilder>(CliBuilder, {
