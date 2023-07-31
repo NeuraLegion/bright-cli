@@ -169,15 +169,16 @@ export class DefaultRepeaterServer implements RepeaterServer {
     handler: (payload: P) => unknown,
     callback?: unknown
   ) {
-    Promise.resolve(handler(payload))
-      .then((response) => {
+    (async function () {
+      try {
+        const response = await handler(payload);
+
         if (typeof callback !== 'function') {
           return;
         }
 
         callback(response);
-      })
-      .catch((error) => {
+      } catch (error) {
         logger.debug(
           'Error processing event "%s" with the following payload: %s. Details: %s',
           event,
@@ -185,7 +186,8 @@ export class DefaultRepeaterServer implements RepeaterServer {
           error
         );
         logger.error('Error: %s', error.message);
-      });
+      }
+    })();
   }
 
   private createPingTimer() {
