@@ -44,6 +44,7 @@ export enum TestType {
   OPEN_BUCKETS = 'open_buckets',
   OPEN_DATABASE = 'open_database',
   OSI = 'osi',
+  PROMPT_INJECTION = 'prompt_injection',
   PROTO_POLLUTION = 'proto_pollution',
   RETIRE_JS = 'retire_js',
   RFI = 'rfi',
@@ -70,6 +71,7 @@ export const EXPENSIVE_TESTS: readonly TestType[] = [
   TestType.ID_ENUMERATION,
   TestType.LRRL,
   TestType.MASS_ASSIGNMENT,
+  TestType.PROMPT_INJECTION,
   TestType.RETIRE_JS
 ];
 
