@@ -79,7 +79,6 @@ export const EXPENSIVE_TESTS: readonly TestType[] = [
 export const NOT_IMPLEMENTED_TESTS: readonly TestType[] = [
   TestType.ANGULAR_CSTI,
   TestType.BACKUP_LOCATIONS,
-  TestType.CSS_INJECTION,
   TestType.EXPOSED_COUCH_DB_APIS,
   TestType.HTTP_RESPONSE_SPLITTING,
   TestType.HRS
