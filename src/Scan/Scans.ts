@@ -71,6 +71,7 @@ export const EXPENSIVE_TESTS: readonly TestType[] = [
   TestType.ID_ENUMERATION,
   TestType.LRRL,
   TestType.MASS_ASSIGNMENT,
+  TestType.PROMPT_INJECTION,
   TestType.RETIRE_JS
 ];
 
@@ -79,8 +80,7 @@ export const NOT_IMPLEMENTED_TESTS: readonly TestType[] = [
   TestType.BACKUP_LOCATIONS,
   TestType.EXPOSED_COUCH_DB_APIS,
   TestType.HTTP_RESPONSE_SPLITTING,
-  TestType.HRS,
-  TestType.PROMPT_INJECTION
+  TestType.HRS
 ];
 
 export const DEPRECATED_TESTS: ReadonlySet<TestType> = new Set<TestType>([
