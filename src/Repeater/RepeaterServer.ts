@@ -41,10 +41,6 @@ export interface RepeaterServerErrorEvent {
   message: string;
 }
 
-export type RepeaterServerEventHandler<P, R = void> = P extends undefined
-  ? () => R | Promise<R>
-  : (payload: P) => R | Promise<R>;
-
 export interface RepeaterServer {
   disconnect(): void;
 
@@ -53,24 +49,27 @@ export interface RepeaterServer {
   deploy(repeaterId?: string): Promise<RepeaterServerDeployedEvent>;
 
   requestReceived(
-    handler: RepeaterServerEventHandler<
-      RepeaterServerRequestEvent,
-      RepeaterServerRequestResponse
-    >
+    handler: (
+      event: RepeaterServerRequestEvent
+    ) => RepeaterServerRequestResponse | Promise<RepeaterServerRequestResponse>
   ): void;
 
   reconnectionFailed(
-    handler: RepeaterServerEventHandler<RepeaterServerReconnectionFailedEvent>
+    handler: (
+      event: RepeaterServerReconnectionFailedEvent
+    ) => void | Promise<void>
   ): void;
 
   reconnectionAttempted(
-    handler: RepeaterServerEventHandler<RepeaterServerReconnectionAttemptedEvent>
+    handler: (
+      event: RepeaterServerReconnectionAttemptedEvent
+    ) => void | Promise<void>
   ): void;
 
-  reconnectionSucceeded(handler: RepeaterServerEventHandler<undefined>): void;
+  reconnectionSucceeded(handler: () => void | Promise<void>): void;
 
   errorOccurred(
-    handler: RepeaterServerEventHandler<RepeaterServerErrorEvent>
+    handler: (event: RepeaterServerErrorEvent) => void | Promise<void>
   ): void;
 }
 

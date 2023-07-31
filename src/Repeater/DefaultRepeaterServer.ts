@@ -1,7 +1,6 @@
 import { logger } from '../Utils';
 import {
   RepeaterServer,
-  RepeaterServerEventHandler,
   RepeaterServerDeployedEvent,
   RepeaterServerReconnectionFailedEvent,
   RepeaterServerRequestEvent,
@@ -93,10 +92,9 @@ export class DefaultRepeaterServer implements RepeaterServer {
   }
 
   public requestReceived(
-    handler: RepeaterServerEventHandler<
-      RepeaterServerRequestEvent,
-      RepeaterServerRequestResponse
-    >
+    handler: (
+      event: RepeaterServerRequestEvent
+    ) => RepeaterServerRequestResponse | Promise<RepeaterServerRequestResponse>
   ): void {
     this.socket.on('request', (payload, callback) => {
       this.processEventHandler('request', payload, handler, callback);
@@ -104,7 +102,9 @@ export class DefaultRepeaterServer implements RepeaterServer {
   }
 
   public reconnectionFailed(
-    handler: RepeaterServerEventHandler<RepeaterServerReconnectionFailedEvent>
+    handler: (
+      event: RepeaterServerReconnectionFailedEvent
+    ) => void | Promise<void>
   ): void {
     this.socket.io.on('reconnect', () => {
       this.latestReconnectionError = undefined;
@@ -126,7 +126,7 @@ export class DefaultRepeaterServer implements RepeaterServer {
   }
 
   public errorOccurred(
-    handler: RepeaterServerEventHandler<RepeaterServerErrorEvent, void>
+    handler: (event: RepeaterServerErrorEvent) => void | Promise<void>
   ): void {
     this.socket.on('error', (payload, callback) => {
       this.processEventHandler('error', payload, handler, callback);
@@ -134,7 +134,9 @@ export class DefaultRepeaterServer implements RepeaterServer {
   }
 
   public reconnectionAttempted(
-    handler: RepeaterServerEventHandler<RepeaterServerReconnectionAttemptedEvent>
+    handler: (
+      event: RepeaterServerReconnectionAttemptedEvent
+    ) => void | Promise<void>
   ): void {
     this.socket.io.on('reconnect_attempt', (attempt) => {
       this.processEventHandler(
@@ -145,9 +147,7 @@ export class DefaultRepeaterServer implements RepeaterServer {
     });
   }
 
-  public reconnectionSucceeded(
-    handler: RepeaterServerEventHandler<void, void>
-  ): void {
+  public reconnectionSucceeded(handler: () => void | Promise<void>): void {
     this.socket.io.on('reconnect', () => {
       this.processEventHandler('reconnect', undefined, handler);
     });
