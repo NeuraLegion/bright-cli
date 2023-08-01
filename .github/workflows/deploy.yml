@@ -70,8 +70,10 @@ jobs:
           # it's internally using an old version of `node-gyp`
           - os: windows-2019
             target: win
+            node: 18
           - os: macos-latest
             target: macos
+            node: 18
           # Using the `ubuntu-18.04` runner instead of latest (i.e. `ubuntu-22.04`)
           # because G++/GCC 4.8 is not in an official repository yet.
           - os: ubuntu-22.04
@@ -111,7 +113,7 @@ jobs:
           version: ${{ matrix.node }}
 
       - name: Build executable file
-        run: npm run build:pkg -- -t node${{ matrix.node || 18 }}-${{ matrix.target }}-x64
+        run: npm run build:pkg -- -t node${{ matrix.node }}-${{ matrix.target }}-x64
 
       - name: Copy deps
         if: startsWith(matrix.os, 'win')
