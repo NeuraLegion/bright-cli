@@ -12,7 +12,7 @@ inputs:
   version:
     description: 'Node.JS version'
     required: false
-    default: 18
+    default: "18"
 
 runs:
   using: 'composite'
@@ -28,7 +28,7 @@ runs:
     - name: Install deps in quiet mode
       shell: bash
       run: |
-        if [[ "${{ inputs.version }}" != "18" ]]; 
+        if [[ "${{ inputs.version }}" < "18" ]]; 
         then
           npm i -q
         else
