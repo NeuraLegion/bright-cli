@@ -1,4 +1,7 @@
 process.env.UV_THREADPOOL_SIZE = String(1024);
+process.env.NODE_OPTIONS = `${
+  process.env.NODE_OPTIONS ?? ''
+} --max-http-header-size=40960`.trim();
 import 'reflect-metadata';
 import {
   GenerateArchive,
