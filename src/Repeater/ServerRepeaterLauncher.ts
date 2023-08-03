@@ -112,11 +112,7 @@ export class ServerRepeaterLauncher implements RepeaterLauncher {
 
     this.repeaterStarted = true;
 
-    logger.log(
-      `The Repeater (%s) started. Repeater id is %s`,
-      this.info.version,
-      this.repeaterId
-    );
+    logger.log(`The Repeater (%s) started`, this.info.version);
   }
 
   private subscribeToEvents() {
