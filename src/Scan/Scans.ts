@@ -33,6 +33,7 @@ export enum TestType {
   HTTP_METHOD_FUZZING = 'http_method_fuzzing',
   HTTP_RESPONSE_SPLITTING = 'http_response_splitting',
   ID_ENUMERATION = 'id_enumeration',
+  IFRAME_INJECTION = 'iframe_injection',
   IMPROPER_ASSET_MANAGEMENT = 'improper_asset_management',
   INSECURE_TLS_CONFIGURATION = 'insecure_tls_configuration',
   JWT = 'jwt',
