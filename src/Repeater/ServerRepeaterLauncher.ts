@@ -19,7 +19,6 @@ import { delay, inject, injectAll, injectable } from 'tsyringe';
 @injectable()
 export class ServerRepeaterLauncher implements RepeaterLauncher {
   private static SERVICE_NAME = 'bright-repeater';
-  private repeaterId: string | undefined;
   private repeaterStarted: boolean = false;
 
   constructor(
@@ -106,9 +105,7 @@ export class ServerRepeaterLauncher implements RepeaterLauncher {
 
     this.subscribeToEvents();
 
-    const result = await this.repeaterServer.deploy(repeaterId);
-
-    this.repeaterId = result.repeaterId;
+    await this.repeaterServer.deploy(repeaterId);
 
     this.repeaterStarted = true;
 
