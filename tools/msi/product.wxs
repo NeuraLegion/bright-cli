@@ -112,5 +112,6 @@
       <Property Id="WIXUI_EXITDIALOGOPTIONALTEXT" Value="$(var.ProductName) has been succesfully installed. To run $(var.ProductName) open command prompt (cmd.exe), and run 'bright-cli'." />
     </UI>
     <UIRef Id="InstallUI" />
+    <UIRef Id="WixUI_Common" />
   </Product>
 </Wix>
