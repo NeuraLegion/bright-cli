@@ -5,7 +5,7 @@ import {
   RepeaterServerRequestEvent
 } from './RepeaterServer';
 import { ScriptLoader } from '../Scripts';
-import { StartupManagerFactory } from '../StartupScripts';
+import { StartupManager } from '../StartupScripts';
 import {
   Certificates,
   Request,
@@ -23,8 +23,8 @@ export class ServerRepeaterLauncher implements RepeaterLauncher {
 
   constructor(
     @inject(RepeaterServer) private readonly repeaterServer: RepeaterServer,
-    @inject(StartupManagerFactory)
-    private readonly startupManagerFactory: StartupManagerFactory,
+    @inject(StartupManager)
+    private readonly startupManager: StartupManager,
     @inject(Certificates) private readonly certificates: Certificates,
     @inject(ScriptLoader) private readonly scriptLoader: ScriptLoader,
     @inject(delay(() => CliInfo)) private readonly info: CliInfo,
@@ -46,11 +46,7 @@ export class ServerRepeaterLauncher implements RepeaterLauncher {
       exclude: ['--daemon', '-d']
     });
 
-    const startupManager = this.startupManagerFactory.create({
-      dispose: () => this.close()
-    });
-
-    await startupManager.install({
+    await this.startupManager.install({
       command,
       args: execArgs,
       name: ServerRepeaterLauncher.SERVICE_NAME,
@@ -72,11 +68,7 @@ export class ServerRepeaterLauncher implements RepeaterLauncher {
   }
 
   public async uninstall(): Promise<void> {
-    const startupManager = this.startupManagerFactory.create({
-      dispose: () => this.close()
-    });
-
-    await startupManager.uninstall(ServerRepeaterLauncher.SERVICE_NAME);
+    await this.startupManager.uninstall(ServerRepeaterLauncher.SERVICE_NAME);
 
     logger.log(
       'The Repeater daemon process (SERVICE: %s) was stopped and deleted successfully',
@@ -93,10 +85,7 @@ export class ServerRepeaterLauncher implements RepeaterLauncher {
     }
 
     if (asDaemon) {
-      const startupManager = this.startupManagerFactory.create({
-        dispose: () => this.close()
-      });
-      await startupManager.run();
+      await this.startupManager.run(() => this.close());
     }
 
     logger.log('Starting the Repeater (%s)...', this.info.version);
