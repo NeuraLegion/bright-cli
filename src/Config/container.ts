@@ -13,10 +13,7 @@ import {
   ScriptLoader,
   VirtualScripts
 } from '../Scripts';
-import {
-  DefaultStartupManagerFactory,
-  StartupManagerFactory
-} from '../StartupScripts';
+import { DefaultStartupManager, StartupManager } from '../StartupScripts';
 import {
   AMQConnectivity,
   Connectivity,
@@ -95,9 +92,9 @@ container
     { lifecycle: Lifecycle.Singleton }
   )
   .register(
-    StartupManagerFactory,
+    StartupManager,
     {
-      useClass: DefaultStartupManagerFactory
+      useClass: DefaultStartupManager
     },
     { lifecycle: Lifecycle.Singleton }
   )

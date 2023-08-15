@@ -64,14 +64,12 @@ jobs:
     strategy:
       matrix:
         include:
-          # Use the `windows-2019` runner instead of latest (i.e. `windows-2022`)
-          # because the build was last known working on that version of runner and
-          # `raw-socket` fails to find the 2022 Visual Studio install because
-          # it's internally using an old version of `node-gyp`
-          - os: windows-2019
+          - os: windows-2022
             target: win
+            node: 18
           - os: macos-latest
             target: macos
+            node: 18
           # Using the `ubuntu-18.04` runner instead of latest (i.e. `ubuntu-22.04`)
           # because G++/GCC 4.8 is not in an official repository yet.
           - os: ubuntu-22.04
@@ -111,7 +109,7 @@ jobs:
           version: ${{ matrix.node }}
 
       - name: Build executable file
-        run: npm run build:pkg -- -t node${{ matrix.node || 18 }}-${{ matrix.target }}-x64
+        run: npm run build:pkg -- -t node${{ matrix.node }}-${{ matrix.target }}-x64
 
       - name: Copy deps
         if: startsWith(matrix.os, 'win')

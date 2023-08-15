@@ -5,7 +5,7 @@ import {
   RepeaterServerRequestEvent
 } from './RepeaterServer';
 import { ScriptLoader } from '../Scripts';
-import { StartupManagerFactory } from '../StartupScripts';
+import { StartupManager } from '../StartupScripts';
 import {
   Certificates,
   Request,
@@ -19,13 +19,12 @@ import { delay, inject, injectAll, injectable } from 'tsyringe';
 @injectable()
 export class ServerRepeaterLauncher implements RepeaterLauncher {
   private static SERVICE_NAME = 'bright-repeater';
-  private repeaterId: string | undefined;
   private repeaterStarted: boolean = false;
 
   constructor(
     @inject(RepeaterServer) private readonly repeaterServer: RepeaterServer,
-    @inject(StartupManagerFactory)
-    private readonly startupManagerFactory: StartupManagerFactory,
+    @inject(StartupManager)
+    private readonly startupManager: StartupManager,
     @inject(Certificates) private readonly certificates: Certificates,
     @inject(ScriptLoader) private readonly scriptLoader: ScriptLoader,
     @inject(delay(() => CliInfo)) private readonly info: CliInfo,
@@ -47,11 +46,7 @@ export class ServerRepeaterLauncher implements RepeaterLauncher {
       exclude: ['--daemon', '-d']
     });
 
-    const startupManager = this.startupManagerFactory.create({
-      dispose: () => this.close()
-    });
-
-    await startupManager.install({
+    await this.startupManager.install({
       command,
       args: execArgs,
       name: ServerRepeaterLauncher.SERVICE_NAME,
@@ -73,11 +68,7 @@ export class ServerRepeaterLauncher implements RepeaterLauncher {
   }
 
   public async uninstall(): Promise<void> {
-    const startupManager = this.startupManagerFactory.create({
-      dispose: () => this.close()
-    });
-
-    await startupManager.uninstall(ServerRepeaterLauncher.SERVICE_NAME);
+    await this.startupManager.uninstall(ServerRepeaterLauncher.SERVICE_NAME);
 
     logger.log(
       'The Repeater daemon process (SERVICE: %s) was stopped and deleted successfully',
@@ -94,10 +85,7 @@ export class ServerRepeaterLauncher implements RepeaterLauncher {
     }
 
     if (asDaemon) {
-      const startupManager = this.startupManagerFactory.create({
-        dispose: () => this.close()
-      });
-      await startupManager.run();
+      await this.startupManager.run(() => this.close());
     }
 
     logger.log('Starting the Repeater (%s)...', this.info.version);
@@ -106,17 +94,11 @@ export class ServerRepeaterLauncher implements RepeaterLauncher {
 
     this.subscribeToEvents();
 
-    const result = await this.repeaterServer.deploy(repeaterId);
-
-    this.repeaterId = result.repeaterId;
+    await this.repeaterServer.deploy(repeaterId);
 
     this.repeaterStarted = true;
 
-    logger.log(
-      `The Repeater (%s) started. Repeater id is %s`,
-      this.info.version,
-      this.repeaterId
-    );
+    logger.log(`The Repeater (%s) started`, this.info.version);
   }
 
   private subscribeToEvents() {
