@@ -1,8 +1,15 @@
 import { Cert, RequestExecutorOptions } from '../RequestExecutor';
 import { Helpers, logger } from '../Utils';
 import { container } from '../Config';
-import { DefaultRepeaterServerOptions, RepeaterLauncher } from '../Repeater';
+import { RabbitMQBusOptions } from '../Bus';
+import {
+  DefaultRepeaterLauncher,
+  DefaultRepeaterServerOptions,
+  RepeaterLauncher,
+  ServerRepeaterLauncher
+} from '../Repeater';
 import { Arguments, Argv, CommandModule } from 'yargs';
+import { Lifecycle } from 'tsyringe';
 import { normalize } from 'path';
 
 export class RunRepeater implements CommandModule {
@@ -124,6 +131,10 @@ export class RunRepeater implements CommandModule {
         alias: ['rm', 'remove'],
         describe: 'Stop and remove repeater daemon'
       })
+      .option('legacy', {
+        boolean: true,
+        describe: 'Use legacy flow, which utilizes RabbitMQ connection'
+      })
       .conflicts('remove-daemon', 'daemon')
       .conflicts('experimental-connection-reuse', 'proxy')
       .conflicts('experimental-connection-reuse', 'proxy-external')
@@ -149,46 +160,74 @@ export class RunRepeater implements CommandModule {
 
         return true;
       })
-      .middleware((args: Arguments) =>
-        container
-          .register<RequestExecutorOptions>(RequestExecutorOptions, {
-            useValue: {
-              headers: (args.header ?? args.headers) as Record<string, string>,
-              timeout: args.timeout as number,
-              proxyUrl: (args.proxyInternal ?? args.proxy) as string,
-              certs: args.cert as Cert[],
-              maxContentLength: 100,
-              reuseConnection: !!args.experimentalConnectionReuse,
-              whitelistMimes: [
-                'text/html',
-                'text/plain',
-                'text/css',
-                'text/javascript',
-                'text/markdown',
-                'text/xml',
-                'application/javascript',
-                'application/x-javascript',
-                'application/json',
-                'application/xml',
-                'application/x-www-form-urlencoded',
-                'application/msgpack',
-                'application/ld+json',
-                'application/graphql'
-              ]
-            }
-          })
-          .register<DefaultRepeaterServerOptions>(
-            DefaultRepeaterServerOptions,
-            {
+      .middleware((args: Arguments) => {
+        container.register<RequestExecutorOptions>(RequestExecutorOptions, {
+          useValue: {
+            headers: (args.header ?? args.headers) as Record<string, string>,
+            timeout: args.timeout as number,
+            proxyUrl: (args.proxyInternal ?? args.proxy) as string,
+            certs: args.cert as Cert[],
+            maxContentLength: 100,
+            reuseConnection: !!args.experimentalConnectionReuse,
+            whitelistMimes: [
+              'text/html',
+              'text/plain',
+              'text/css',
+              'text/javascript',
+              'text/markdown',
+              'text/xml',
+              'application/javascript',
+              'application/x-javascript',
+              'application/json',
+              'application/xml',
+              'application/x-www-form-urlencoded',
+              'application/msgpack',
+              'application/ld+json',
+              'application/graphql'
+            ]
+          }
+        });
+
+        if (args.legacy) {
+          container
+            .register<RepeaterLauncher>(
+              RepeaterLauncher,
+              { useClass: DefaultRepeaterLauncher },
+              { lifecycle: Lifecycle.Singleton }
+            )
+            .register<RabbitMQBusOptions>(RabbitMQBusOptions, {
               useValue: {
-                uri: args.repeaterServer as string,
-                token: args.token as string,
+                exchange: 'EventBus',
+                clientQueue: `agent:${args.id as string}`,
                 connectTimeout: 10000,
-                proxyUrl: (args.proxyExternal ?? args.proxy) as string
+                url: args.bus as string,
+                proxyUrl: (args.proxyExternal ?? args.proxy) as string,
+                credentials: {
+                  username: 'bot',
+                  password: args.token as string
+                }
               }
-            }
-          )
-      );
+            });
+        } else {
+          container
+            .register<RepeaterLauncher>(
+              RepeaterLauncher,
+              { useClass: ServerRepeaterLauncher },
+              { lifecycle: Lifecycle.Singleton }
+            )
+            .register<DefaultRepeaterServerOptions>(
+              DefaultRepeaterServerOptions,
+              {
+                useValue: {
+                  uri: args.repeaterServer as string,
+                  token: args.token as string,
+                  connectTimeout: 10000,
+                  proxyUrl: (args.proxyExternal ?? args.proxy) as string
+                }
+              }
+            );
+        }
+      });
   }
 
   // eslint-disable-next-line complexity

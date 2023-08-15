@@ -50,12 +50,7 @@ import { ConfigReader } from './ConfigReader';
 import { DefaultConfigReader } from './DefaultConfigReader';
 import { CliInfo } from './CliInfo';
 import { CliBuilder } from './CliBuilder';
-import {
-  ServerRepeaterLauncher,
-  RepeaterLauncher,
-  RepeaterServer,
-  DefaultRepeaterServer
-} from '../Repeater';
+import { RepeaterServer, DefaultRepeaterServer } from '../Repeater';
 import { container, Lifecycle } from 'tsyringe';
 
 container
@@ -207,11 +202,6 @@ container
   .register<ConfigReader>(
     ConfigReader,
     { useClass: DefaultConfigReader },
-    { lifecycle: Lifecycle.Singleton }
-  )
-  .register<RepeaterLauncher>(
-    RepeaterLauncher,
-    { useClass: ServerRepeaterLauncher },
     { lifecycle: Lifecycle.Singleton }
   )
   .register<CliBuilder>(CliBuilder, {
