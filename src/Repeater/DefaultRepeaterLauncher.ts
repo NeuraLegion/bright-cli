@@ -127,6 +127,9 @@ export class DefaultRepeaterLauncher implements RepeaterLauncher {
     }
 
     logger.log('Starting the Repeater (%s)...', this.info.version);
+    logger.warn(
+      'WARNING: You are using the legacy flow. Consider using the new repeater that utilizes standard ports.'
+    );
 
     this.repeaterId = repeaterId;
 
