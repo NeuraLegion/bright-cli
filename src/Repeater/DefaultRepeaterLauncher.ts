@@ -126,7 +126,10 @@ export class DefaultRepeaterLauncher implements RepeaterLauncher {
       await this.startupManager.run(() => this.close());
     }
 
-    logger.log('Starting the Legacy Repeater (%s)...', this.info.version);
+    logger.log('Starting the Repeater (%s)...', this.info.version);
+    logger.warn(
+      'WARNING: You are using the legacy flow. Consider using the new repeater that utilizes standard ports.'
+    );
 
     this.repeaterId = repeaterId;
 
@@ -164,7 +167,7 @@ export class DefaultRepeaterLauncher implements RepeaterLauncher {
       new RepeaterStatusUpdated(this.repeaterId, 'connected')
     );
 
-    logger.log(`The Legacy Repeater (%s) started`, this.info.version);
+    logger.log(`The Repeater (%s) started`, this.info.version);
   }
 
   private async subscribeToEvents(): Promise<void> {
