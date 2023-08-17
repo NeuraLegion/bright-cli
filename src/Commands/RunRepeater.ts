@@ -133,7 +133,8 @@ export class RunRepeater implements CommandModule {
       })
       .option('legacy', {
         boolean: true,
-        describe: 'Use legacy flow, which utilizes RabbitMQ connection'
+        describe:
+          'Enable legacy mode, utilizing the RabbitMQ connection for communication.'
       })
       .conflicts('remove-daemon', 'daemon')
       .conflicts('experimental-connection-reuse', 'proxy')
