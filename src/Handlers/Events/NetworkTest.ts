@@ -1,9 +1,5 @@
 import { Event } from '../../Bus';
-
-export enum NetworkTestType {
-  PING = 'ping',
-  TRACEROUTE = 'traceroute'
-}
+import { NetworkTestType } from '../../Repeater';
 
 export class NetworkTest implements Event {
   constructor(

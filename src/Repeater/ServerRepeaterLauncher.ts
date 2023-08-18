@@ -1,20 +1,17 @@
 import { RepeaterLauncher } from './RepeaterLauncher';
 import {
   RepeaterServer,
+  RepeaterServerNetworkTestEvent,
   RepeaterServerReconnectionFailedEvent,
   RepeaterServerRequestEvent
 } from './RepeaterServer';
 import { ScriptLoader } from '../Scripts';
 import { StartupManager } from '../StartupScripts';
-import {
-  Certificates,
-  Request,
-  RequestExecutor,
-  Response
-} from '../RequestExecutor';
+import { Certificates, Request } from '../RequestExecutor';
 import { Helpers, logger } from '../Utils';
 import { CliInfo } from '../Config';
-import { delay, inject, injectAll, injectable } from 'tsyringe';
+import { RepeaterCommandHub } from './RepeaterCommandHub';
+import { delay, inject, injectable } from 'tsyringe';
 
 @injectable()
 export class ServerRepeaterLauncher implements RepeaterLauncher {
@@ -25,11 +22,11 @@ export class ServerRepeaterLauncher implements RepeaterLauncher {
     @inject(RepeaterServer) private readonly repeaterServer: RepeaterServer,
     @inject(StartupManager)
     private readonly startupManager: StartupManager,
+    @inject(RepeaterCommandHub)
+    private readonly commandHub: RepeaterCommandHub,
     @inject(Certificates) private readonly certificates: Certificates,
     @inject(ScriptLoader) private readonly scriptLoader: ScriptLoader,
-    @inject(delay(() => CliInfo)) private readonly info: CliInfo,
-    @injectAll(RequestExecutor)
-    private readonly requestExecutors: RequestExecutor[]
+    @inject(delay(() => CliInfo)) private readonly info: CliInfo
   ) {}
 
   public close() {
@@ -94,7 +91,9 @@ export class ServerRepeaterLauncher implements RepeaterLauncher {
 
     this.subscribeToEvents();
 
-    await this.repeaterServer.deploy(repeaterId);
+    await this.repeaterServer.deploy({
+      repeaterId
+    });
 
     this.repeaterStarted = true;
 
@@ -111,6 +110,12 @@ export class ServerRepeaterLauncher implements RepeaterLauncher {
     this.repeaterServer.requestReceived((payload) =>
       this.requestReceived(payload)
     );
+    this.repeaterServer.networkTesting((payload) =>
+      this.testingNetwork(payload)
+    );
+    this.repeaterServer.scriptsUpdated((payload) =>
+      this.commandHub.compileScripts(payload.script)
+    );
     this.repeaterServer.reconnectionAttempted(({ attempt, maxAttempts }) =>
       logger.warn('Failed to connect (attempt %d/%d)', attempt, maxAttempts)
     );
@@ -125,22 +130,27 @@ export class ServerRepeaterLauncher implements RepeaterLauncher {
     process.exit(1);
   }
 
-  private async requestReceived(event: RepeaterServerRequestEvent) {
-    const { protocol } = event;
+  private async testingNetwork(event: RepeaterServerNetworkTestEvent) {
+    try {
+      const output = await this.commandHub.testNetwork(event.type, event.input);
 
-    const requestExecutor = this.requestExecutors.find(
-      (x) => x.protocol === protocol
-    );
-
-    if (!requestExecutor) {
-      throw new Error(`Unsupported protocol "${protocol}"`);
+      return {
+        output
+      };
+    } catch (e) {
+      return {
+        error: typeof e === 'string' ? e : (e as Error).message
+      };
     }
+  }
 
-    const response: Response = await requestExecutor.execute(
+  private async requestReceived(event: RepeaterServerRequestEvent) {
+    const response = await this.commandHub.sendRequest(
       new Request({ ...event })
     );
 
-    const { statusCode, message, errorCode, body, headers } = response;
+    const { statusCode, message, errorCode, body, headers, protocol } =
+      response;
 
     return {
       protocol,

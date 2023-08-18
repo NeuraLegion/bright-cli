@@ -1,6 +1,6 @@
 import { RepeaterLauncher } from './RepeaterLauncher';
 import { Bus } from '../Bus';
-import { ScriptLoader, VirtualScripts, VirtualScriptType } from '../Scripts';
+import { ScriptLoader, VirtualScripts } from '../Scripts';
 import { StartupManager } from '../StartupScripts';
 import { Certificates } from '../RequestExecutor';
 import { Helpers, logger } from '../Utils';
@@ -14,6 +14,7 @@ import {
   SendRequestHandler
 } from '../Handlers';
 import { CliInfo } from '../Config';
+import { RepeaterCommandHub } from './RepeaterCommandHub';
 import { gt } from 'semver';
 import chalk from 'chalk';
 import { delay, inject, injectable } from 'tsyringe';
@@ -28,6 +29,7 @@ export class DefaultRepeaterLauncher implements RepeaterLauncher {
 
   constructor(
     @inject(Bus) private readonly bus: Bus,
+    @inject(RepeaterCommandHub) private readonly commandHub: RepeaterCommandHub,
     @inject(VirtualScripts) private readonly virtualScripts: VirtualScripts,
     @inject(StartupManager)
     private readonly startupManager: StartupManager,
@@ -81,30 +83,6 @@ export class DefaultRepeaterLauncher implements RepeaterLauncher {
     return this.scriptLoader.load(scripts);
   }
 
-  public compileScripts(script: string | Record<string, string>): void {
-    if (!script) {
-      return;
-    }
-
-    this.virtualScripts.clear(VirtualScriptType.REMOTE);
-
-    if (this.virtualScripts.size) {
-      logger.warn(
-        'Error Loading Script: Cannot accept scripts from the cloud when a local script is already loaded'
-      );
-
-      return;
-    }
-
-    if (typeof script === 'string') {
-      this.virtualScripts.set('*', VirtualScriptType.REMOTE, script);
-    } else {
-      Object.entries(script).map(([wildcard, code]: [string, string]) =>
-        this.virtualScripts.set(wildcard, VirtualScriptType.REMOTE, code)
-      );
-    }
-  }
-
   public async uninstall(): Promise<void> {
     await this.startupManager.uninstall(DefaultRepeaterLauncher.SERVICE_NAME);
 
@@ -155,7 +133,7 @@ export class DefaultRepeaterLauncher implements RepeaterLauncher {
       }
 
       if (payload.script) {
-        this.compileScripts(payload.script);
+        this.commandHub.compileScripts(payload.script);
       }
     }
 
