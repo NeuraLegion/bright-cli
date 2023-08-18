@@ -1,4 +1,5 @@
 import { Protocol } from '../RequestExecutor';
+import { NetworkTestType } from './NetworkTestType';
 
 export interface RepeaterServerDeployedEvent {
   repeaterId: string;
@@ -12,6 +13,24 @@ export interface RepeaterServerRequestEvent {
   correlationIdRegex?: string;
   body?: string;
 }
+
+export type RepeaterServerNetworkTestEvent =
+  | {
+      type: NetworkTestType.PING;
+      input: string[];
+    }
+  | {
+      type: NetworkTestType.TRACEROUTE;
+      input: string;
+    };
+
+export type RepeaterServerNetworkTestResult =
+  | {
+      output: string;
+    }
+  | {
+      error: string;
+    };
 
 export type RepeaterServerRequestResponse =
   | {
@@ -41,12 +60,40 @@ export interface RepeaterServerErrorEvent {
   message: string;
 }
 
+export interface RepeaterServerScriptsUpdatedEvent {
+  script: string | Record<string, string>;
+}
+
+export interface DeployCommandOptions {
+  repeaterId?: string;
+}
+
+export interface DeploymentRuntime {
+  version: string;
+  scriptsLoaded: boolean;
+}
+
 export interface RepeaterServer {
   disconnect(): void;
 
   connect(hostname: string): void;
 
-  deploy(repeaterId?: string): Promise<RepeaterServerDeployedEvent>;
+  deploy(
+    options: DeployCommandOptions,
+    runtime?: DeploymentRuntime
+  ): Promise<RepeaterServerDeployedEvent>;
+
+  scriptsUpdated(
+    handler: (event: RepeaterServerScriptsUpdatedEvent) => Promise<void> | void
+  ): void;
+
+  networkTesting(
+    handler: (
+      event: RepeaterServerNetworkTestEvent
+    ) =>
+      | RepeaterServerNetworkTestResult
+      | Promise<RepeaterServerNetworkTestResult>
+  ): void;
 
   requestReceived(
     handler: (
