@@ -1,0 +1,27 @@
+name: 'TODO App'
+description: 'Runs TODO App'
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Download Executable
+      id: download
+      shell: bash
+      run: |
+        if [ "$RUNNER_OS" == "Linux" ]; then
+          EXECUTABLE=todoapp-linux-x64
+        elif [ "$RUNNER_OS" == "Windows" ]; then
+          EXECUTABLE=todoapp-windows-x64.exe
+        elif [ "$RUNNER_OS" == "macOS" ]; then
+          EXECUTABLE=todoapp-darwin-x64
+        fi
+
+        curl --compressed --location https://github.com/NeuraLegion/go-todoapp-demo/releases/latest/download/$EXECUTABLE -o ./$EXECUTABLE
+        chmod +x ./$EXECUTABLE
+
+        echo "executable=$EXECUTABLE" >> "$GITHUB_OUTPUT"
+
+    - name: Run Executable
+      shell: bash
+      run: |
+        ./${{ steps.download.outputs.executable }} &

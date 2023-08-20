@@ -1,4 +1,3 @@
-import concat from 'concat-stream';
 import { ChildProcess, spawn } from 'child_process';
 
 export class Cli {
@@ -11,17 +10,37 @@ export class Cli {
     command: string,
     args: string[] = [],
     env: Record<string, string> = null
+  ): ChildProcess {
+    const child: ChildProcess = this.createProcess([command, ...args], env);
+    child.unref();
+
+    return child;
+  }
+
+  public exec(
+    command: string,
+    args: string[] = [],
+    env: Record<string, string> = null
   ): Promise<string> {
     return new Promise((resolve, reject) => {
+      const result: string[] = [];
+
       const child: ChildProcess = this.createProcess([command, ...args], env);
 
       child.unref();
 
-      child.stderr.once('data', (data: Buffer) =>
-        reject(new Error(data.toString()))
-      );
+      child.stderr.on('data', (data: Buffer) => {
+        result.push(data.toString());
+      });
+
+      child.stdout.on('data', (data: Buffer) => {
+        result.push(data.toString());
+      });
+
       child.once('error', reject);
-      child.stdout.pipe(concat((result: Buffer) => resolve(result.toString())));
+      child.once('close', () => {
+        resolve(result.join(''));
+      });
     });
   }
 
@@ -32,7 +51,9 @@ export class Cli {
     const execArgs = [...this.execArgs].concat(args);
 
     return spawn(this.execPath, execArgs, {
+      shell: true,
       env: {
+        ...process.env,
         NODE_ENV: 'test',
         ...env
       }

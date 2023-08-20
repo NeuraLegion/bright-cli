@@ -1,7 +1,7 @@
 import { Cli } from '../Setup';
 import { resolve } from 'path';
 
-describe('"version" command', () => {
+describe('Version Command', () => {
   let cli: Cli | undefined;
 
   beforeEach(() => {
@@ -17,7 +17,7 @@ describe('"version" command', () => {
   it(
     'should not find any installed version',
     async () => {
-      const actual = await cli.spawn('version');
+      const actual = await cli.exec('version');
       expect(actual).toEqual(
         expect.stringContaining('No local installed Bright CLI was found.')
       );
