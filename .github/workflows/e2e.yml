@@ -57,7 +57,9 @@ jobs:
       - name: Install Packages (${{ matrix.container }})
         if: ${{ startsWith(matrix.container, 'fedora') }}
         run: |
-          dnf install -y python gcc-c++
+          dnf -y update \
+            && dnf install -y python gcc-c++ \
+            && dnf clean all
 
       - name: Install Packages (${{ matrix.container }})
         if: startsWith(matrix.container, 'ubuntu')
@@ -164,7 +166,9 @@ jobs:
       - name: Install Packages (${{ matrix.container }})
         if: ${{ startsWith(matrix.container, 'fedora') }}
         run: |
-          dnf install -y python gcc-c++
+          dnf -y update \
+            && dnf install -y python gcc-c++ \
+            && dnf clean all
 
       - name: Install Packages (${{ matrix.container }})
         if: startsWith(matrix.container, 'ubuntu')
