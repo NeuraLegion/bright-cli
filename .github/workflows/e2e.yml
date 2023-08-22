@@ -97,7 +97,6 @@ jobs:
   docker:
     if: ${{ inputs.test-docker }}
     runs-on: ${{ matrix.os }}
-    container: ${{ matrix.container }}
     strategy:
       fail-fast: false
       matrix:
