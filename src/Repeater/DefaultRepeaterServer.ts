@@ -120,8 +120,8 @@ export class DefaultRepeaterServer implements RepeaterServer {
   public scriptsUpdated(
     handler: (event: RepeaterServerScriptsUpdatedEvent) => Promise<void> | void
   ): void {
-    this.socket.on('update-scripts', (payload, callback) =>
-      this.processEventHandler('update-scripts', payload, handler, callback)
+    this.socket.on('scripts-updated', (payload, callback) =>
+      this.processEventHandler('scripts-updated', payload, handler, callback)
     );
   }
 
