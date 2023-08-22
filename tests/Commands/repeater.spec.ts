@@ -34,7 +34,7 @@ describe('Repeater Command', () => {
       commandProcess.stdin.destroy();
       commandProcess.stderr.destroy();
       commandProcess.stdout.destroy();
-      commandProcess.kill();
+      commandProcess.kill('SIGTERM');
     }
 
     await api.deleteRepeater(repeaterId);
