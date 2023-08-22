@@ -54,7 +54,9 @@ import {
   RepeaterServer,
   DefaultRepeaterServer,
   RepeaterCommandHub,
-  DefaultRepeaterCommandHub
+  DefaultRepeaterCommandHub,
+  RuntimeDetector,
+  DefaultRuntimeDetector
 } from '../Repeater';
 import { container, Lifecycle } from 'tsyringe';
 
@@ -103,6 +105,11 @@ container
     {
       useClass: RabbitMQBus
     },
+    { lifecycle: Lifecycle.Singleton }
+  )
+  .register(
+    RuntimeDetector,
+    { useClass: DefaultRuntimeDetector },
     { lifecycle: Lifecycle.Singleton }
   )
   .register(

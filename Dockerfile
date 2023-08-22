@@ -13,6 +13,9 @@ LABEL org.opencontainers.image.version="$VERSION"
 # good colors for most applications
 ENV TERM xterm
 
+# inform cli that it's running inside docker container
+ENV BRIGHT_CLI_DOCKER 1
+
 # avoid million NPM install messages
 ENV npm_config_loglevel warn
 # allow installing when the main user is root

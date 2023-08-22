@@ -6,6 +6,7 @@ import {
   RepeaterServerReconnectionFailedEvent,
   RepeaterServerRequestEvent
 } from './RepeaterServer';
+import { RuntimeDetector } from './RuntimeDetector';
 import { ScriptLoader, VirtualScripts } from '../Scripts';
 import { StartupManager } from '../StartupScripts';
 import { Certificates, Request } from '../RequestExecutor';
@@ -20,6 +21,7 @@ export class ServerRepeaterLauncher implements RepeaterLauncher {
   private repeaterStarted: boolean = false;
 
   constructor(
+    @inject(RuntimeDetector) private readonly runtimeDetector: RuntimeDetector,
     @inject(VirtualScripts) private readonly virtualScripts: VirtualScripts,
     @inject(RepeaterServer) private readonly repeaterServer: RepeaterServer,
     @inject(StartupManager)
@@ -108,7 +110,12 @@ export class ServerRepeaterLauncher implements RepeaterLauncher {
   private getRuntime(): DeploymentRuntime {
     return {
       version: this.info.version,
-      scriptsLoaded: !!this.virtualScripts.size
+      scriptsLoaded: !!this.virtualScripts.size,
+      os: this.runtimeDetector.os(),
+      arch: this.runtimeDetector.arch(),
+      docker: this.runtimeDetector.isInsideDocker(),
+      distribution: this.runtimeDetector.distribution(),
+      nodeVersion: this.runtimeDetector.nodeVersion()
     };
   }
 

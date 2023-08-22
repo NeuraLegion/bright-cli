@@ -6,3 +6,5 @@ export * from './DefaultRepeaterServer';
 export * from './RepeaterLauncher';
 export * from './RepeaterServer';
 export * from './ServerRepeaterLauncher';
+export * from './RuntimeDetector';
+export * from './DefaultRuntimeDetector';
