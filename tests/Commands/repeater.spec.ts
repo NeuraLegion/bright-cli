@@ -75,7 +75,7 @@ describe('Repeater Command', () => {
     config.maxTestTimeout
   );
 
-  it(`should fail to start scan when repeater is not connected`, async () => {
+  it('should fail to start scan when repeater is not connected', async () => {
     // arrange
 
     // act
