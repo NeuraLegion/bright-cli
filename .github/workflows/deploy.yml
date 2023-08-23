@@ -112,7 +112,7 @@ jobs:
           version: ${{ matrix.node }}
 
       - name: Set distribution
-        run: npm pkg set brightCli.distribution=${{ matrix.target }}-executable
+        run: npx json -I -f package.json -e "this.brightCli.distribution='${{ matrix.target }}-executable'"
 
       - name: Build executable file
         run: npm run build:pkg -- -t node${{ matrix.node }}-${{ matrix.target }}-x64
