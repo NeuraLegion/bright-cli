@@ -15,6 +15,7 @@ import {
 } from '../Handlers';
 import { CliInfo } from '../Config';
 import { RepeaterCommandHub } from './RepeaterCommandHub';
+import { RuntimeDetector } from './RuntimeDetector';
 import { gt } from 'semver';
 import chalk from 'chalk';
 import { delay, inject, injectable } from 'tsyringe';
@@ -28,6 +29,7 @@ export class DefaultRepeaterLauncher implements RepeaterLauncher {
   private repeaterStarted: boolean = false;
 
   constructor(
+    @inject(RuntimeDetector) private readonly runtimeDetector: RuntimeDetector,
     @inject(Bus) private readonly bus: Bus,
     @inject(RepeaterCommandHub) private readonly commandHub: RepeaterCommandHub,
     @inject(VirtualScripts) private readonly virtualScripts: VirtualScripts,
@@ -117,7 +119,15 @@ export class DefaultRepeaterLauncher implements RepeaterLauncher {
       payload: new RepeaterRegistering(
         repeaterId,
         this.info.version,
-        !!this.virtualScripts.size
+        !!this.virtualScripts.size,
+        {
+          transport: 'rabbitmq',
+          os: this.runtimeDetector.os(),
+          arch: this.runtimeDetector.arch(),
+          docker: this.runtimeDetector.isInsideDocker(),
+          distribution: this.runtimeDetector.distribution(),
+          nodeVersion: this.runtimeDetector.nodeVersion()
+        }
       )
     });
 

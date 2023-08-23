@@ -71,6 +71,11 @@ export interface DeployCommandOptions {
 export interface DeploymentRuntime {
   version: string;
   scriptsLoaded: boolean;
+  os?: string;
+  arch?: string;
+  docker?: boolean;
+  distribution?: string;
+  nodeVersion?: string;
 }
 
 export interface RepeaterServer {

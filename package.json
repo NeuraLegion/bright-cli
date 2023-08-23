@@ -29,6 +29,7 @@
     "@neuralegion/os-service": "^1.1.1",
     "ajv": "^6.12.6",
     "amqplib": "~0.10.2",
+    "arch": "^2.2.0",
     "better-ajv-errors": "^1.2.0",
     "chalk": "^4.1.2",
     "content-type": "^1.0.4",
@@ -155,5 +156,8 @@
     "build:pkg": "pkg .",
     "prepare": "is-ci || husky install",
     "start": "node -r ts-node/register/transpile-only -r tsconfig-paths/register src/index.ts"
+  },
+  "brightCli": {
+    "distribution": "unknown"
   }
 }
