@@ -119,7 +119,7 @@ jobs:
           cache: ''
           
       - name: Pull Image
-        run: docker pull neuralegion/repeater:v${{ inputs.version }}
+        run: docker pull brightsec/cli:v${{ inputs.version }}
 
       - name: Run Target
         uses: ./.github/workflows/composite/todoapp 
@@ -127,7 +127,7 @@ jobs:
       - name: Run Tests
         run: npm run test:e2e 
         env:
-          E2E_CLI_CMD: docker run --add-host host.docker.internal:host-gateway --network host neuralegion/repeater:v${{ inputs.version }}
+          E2E_CLI_CMD: docker run --add-host host.docker.internal:host-gateway --network host brightsec/cli:v${{ inputs.version }}
           E2E_RUN_ID: ${{ format('{0}-{1}-{2}-{3}', github.run_number, github.run_attempt, github.job, strategy.job-index) }}
           E2E_CLUSTER: ${{ secrets.E2E_TEST_HOST }}
           E2E_REPEATER_API_KEY: ${{ secrets.E2E_TEST_TOKEN }}
