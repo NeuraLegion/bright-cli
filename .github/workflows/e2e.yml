@@ -184,13 +184,16 @@ jobs:
           # https://github.com/actions/setup-node/issues/286#issuecomment-878865957
           cache: ''
 
+      - name: Install CLI
+        run: npm i -g @brightsec/cli@${{ inputs.version }}
+
       - name: Run Target
         uses: ./.github/workflows/composite/todoapp 
 
       - name: Run Tests
         run: npm run test:e2e 
         env:
-          E2E_CLI_CMD: npx --yes @brightsec/cli@${{ inputs.version }}
+          E2E_CLI_CMD: bright-cli
           E2E_RUN_ID: ${{ format('{0}-{1}-{2}-{3}', github.run_number, github.run_attempt, github.job, strategy.job-index) }}
           E2E_CLUSTER: ${{ secrets.E2E_TEST_HOST }}
           E2E_REPEATER_API_KEY: ${{ secrets.E2E_TEST_TOKEN }}
