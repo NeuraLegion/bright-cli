@@ -64,7 +64,9 @@ container
   .register('tsyringe', {
     useValue: container
   })
-  .register<CliInfo>(CliInfo, { useValue: new CliInfo(process.cwd()) })
+  .register<CliInfo>(CliInfo, {
+    useValue: new CliInfo(__dirname)
+  })
   .register(
     RequestExecutor,
     {
