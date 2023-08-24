@@ -88,6 +88,7 @@ jobs:
       - name: Run Tests
         run: npm run test:e2e 
         env:
+          E2E_CLI_VERSION: ${{ inputs.version }}
           E2E_CLI_CMD: ${{ runner.os != 'windows' && format('./{0}', matrix.executable) || format('.\{0}', matrix.executable) }}
           E2E_RUN_ID: ${{ format('{0}-{1}-{2}-{3}', github.run_number, github.run_attempt, github.job, strategy.job-index) }}
           E2E_CLUSTER: ${{ secrets.E2E_TEST_HOST }}
@@ -127,6 +128,7 @@ jobs:
       - name: Run Tests
         run: npm run test:e2e 
         env:
+          E2E_CLI_VERSION: ${{ inputs.version }}
           E2E_CLI_CMD: docker run --add-host host.docker.internal:host-gateway --network host brightsec/cli:v${{ inputs.version }}
           E2E_RUN_ID: ${{ format('{0}-{1}-{2}-{3}', github.run_number, github.run_attempt, github.job, strategy.job-index) }}
           E2E_CLUSTER: ${{ secrets.E2E_TEST_HOST }}
@@ -193,6 +195,7 @@ jobs:
       - name: Run Tests
         run: npm run test:e2e 
         env:
+          E2E_CLI_VERSION: ${{ inputs.version }}
           E2E_CLI_CMD: bright-cli
           E2E_RUN_ID: ${{ format('{0}-{1}-{2}-{3}', github.run_number, github.run_attempt, github.job, strategy.job-index) }}
           E2E_CLUSTER: ${{ secrets.E2E_TEST_HOST }}
