@@ -7,13 +7,13 @@ export class CliInfo {
   public readonly version: string;
   public readonly distribution: string | undefined;
 
-  constructor(cwd: string = process.cwd()) {
+  constructor(cwd: string) {
     const packagePath = this.getPackagePath(cwd);
     const packageData = this.getPackageData(packagePath);
 
     this.cwd = packagePath ? path.dirname(packagePath) : cwd;
     this.version = process.env.VERSION ?? packageData?.version;
-    this.distribution = packageData.brightCli?.distribution;
+    this.distribution = packageData?.brightCli?.distribution;
   }
 
   private getPackageData(packagePath: string) {

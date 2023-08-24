@@ -59,12 +59,17 @@ import {
   DefaultRuntimeDetector
 } from '../Repeater';
 import { container, Lifecycle } from 'tsyringe';
+import path from 'path';
 
 container
   .register('tsyringe', {
     useValue: container
   })
-  .register<CliInfo>(CliInfo, { useValue: new CliInfo(process.cwd()) })
+  .register<CliInfo>(CliInfo, {
+    useValue: new CliInfo(
+      (require.main && path.dirname(require.main.filename)) ?? __dirname
+    )
+  })
   .register(
     RequestExecutor,
     {
