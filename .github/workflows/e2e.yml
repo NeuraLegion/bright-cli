@@ -18,8 +18,16 @@ on:
         type: boolean
         description: "Test NPM"
         default: true
+      environment:
+        required: true
+        type: choice
+        default: STAGING
+        description: Environment
+        options: 
+        - STAGING
+        - DEVELOPMENT
       repeater_max_test_timeout:
-        description: "Max repeater test timeout (sec)"
+        description: "[Repeater] Max test timeout (sec)"
         default: 3600
         required: true
 
@@ -91,8 +99,8 @@ jobs:
           E2E_CLI_VERSION: ${{ inputs.version }}
           E2E_CLI_CMD: ${{ runner.os != 'windows' && format('./{0}', matrix.executable) || format('.\{0}', matrix.executable) }}
           E2E_RUN_ID: ${{ format('{0}-{1}-{2}-{3}', github.run_number, github.run_attempt, github.job, strategy.job-index) }}
-          E2E_CLUSTER: ${{ secrets.E2E_TEST_HOST }}
-          E2E_REPEATER_API_KEY: ${{ secrets.E2E_TEST_TOKEN }}
+          E2E_CLUSTER: ${{ secrets[format('E2E_{0}_HOST', inputs.environment )] }}
+          E2E_CLUSTER_API_KEY: ${{ secrets[format('E2E_{0}_API_KEY', inputs.environment )] }}
           E2E_REPEATER_TARGET_URL: "http://localhost:9000"
           E2E_REPEATER_MAX_TEST_TIMEOUT: ${{ inputs.repeater_max_test_timeout }}
   docker:
@@ -131,8 +139,8 @@ jobs:
           E2E_CLI_VERSION: ${{ inputs.version }}
           E2E_CLI_CMD: docker run --add-host host.docker.internal:host-gateway --network host brightsec/cli:v${{ inputs.version }}
           E2E_RUN_ID: ${{ format('{0}-{1}-{2}-{3}', github.run_number, github.run_attempt, github.job, strategy.job-index) }}
-          E2E_CLUSTER: ${{ secrets.E2E_TEST_HOST }}
-          E2E_REPEATER_API_KEY: ${{ secrets.E2E_TEST_TOKEN }}
+          E2E_CLUSTER: ${{ secrets[format('E2E_{0}_HOST', inputs.environment )] }}
+          E2E_CLUSTER_API_KEY: ${{ secrets[format('E2E_{0}_API_KEY', inputs.environment )] }}
           E2E_REPEATER_TARGET_URL: "http://host.docker.internal:9000"
           E2E_REPEATER_MAX_TEST_TIMEOUT: ${{ inputs.repeater_max_test_timeout }}
   npm:
@@ -198,7 +206,7 @@ jobs:
           E2E_CLI_VERSION: ${{ inputs.version }}
           E2E_CLI_CMD: bright-cli
           E2E_RUN_ID: ${{ format('{0}-{1}-{2}-{3}', github.run_number, github.run_attempt, github.job, strategy.job-index) }}
-          E2E_CLUSTER: ${{ secrets.E2E_TEST_HOST }}
-          E2E_REPEATER_API_KEY: ${{ secrets.E2E_TEST_TOKEN }}
+          E2E_CLUSTER: ${{ secrets[format('E2E_{0}_HOST', inputs.environment )] }}
+          E2E_CLUSTER_API_KEY: ${{ secrets[format('E2E_{0}_API_KEY', inputs.environment )] }}
           E2E_REPEATER_TARGET_URL: "http://localhost:9000"
           E2E_REPEATER_MAX_TEST_TIMEOUT: ${{ inputs.repeater_max_test_timeout }}

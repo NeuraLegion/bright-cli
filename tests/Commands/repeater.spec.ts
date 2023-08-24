@@ -7,8 +7,8 @@ const config = {
   version: process.env['E2E_CLI_VERSION'],
   cmd: process.env['E2E_CLI_CMD'],
   cluster: process.env['E2E_CLUSTER'],
+  apiKey: process.env['E2E_CLUSTER_API_KEY'],
   runId: process.env['E2E_RUN_ID'],
-  apiKey: process.env['E2E_REPEATER_API_KEY'],
   targetUrl: process.env['E2E_REPEATER_TARGET_URL'],
   maxTestTimeout:
     parseInt(process.env['E2E_REPEATER_MAX_TEST_TIMEOUT'], 10) * 1000
