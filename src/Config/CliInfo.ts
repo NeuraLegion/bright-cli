@@ -5,26 +5,28 @@ import { readFileSync } from 'fs';
 export class CliInfo {
   public readonly cwd: string;
   public readonly version: string;
-  private _pkgPath: string;
+  public readonly distribution: string | undefined;
 
   constructor(cwd: string = process.cwd()) {
-    this._pkgPath = this.getPkgPath(cwd);
-    this.cwd = this._pkgPath ? path.dirname(this._pkgPath) : cwd;
-    this.version = process.env.VERSION ?? this.getVersion();
+    const packagePath = this.getPackagePath(cwd);
+    const packageData = this.getPackageData(packagePath);
+
+    this.cwd = packagePath ? path.dirname(packagePath) : cwd;
+    this.version = process.env.VERSION ?? packageData?.version;
+    this.distribution = packageData.brightCli?.distribution;
   }
 
-  private getVersion(): string | undefined {
+  private getPackageData(packagePath: string) {
     try {
-      const pkg = readFileSync(this._pkgPath, 'utf8');
-      const { version } = JSON.parse(pkg);
+      const pkg = readFileSync(packagePath, 'utf8');
 
-      return version;
+      return JSON.parse(pkg);
     } catch {
       // noop
     }
   }
 
-  private getPkgPath(cwd?: string): string {
+  private getPackagePath(cwd?: string): string {
     return sync('package.json', {
       cwd: cwd || process.env.BRIGHT_CWD || process.cwd()
     });
