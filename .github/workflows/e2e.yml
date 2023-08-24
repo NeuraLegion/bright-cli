@@ -54,14 +54,14 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v2
 
-      - name: Install Packages (${{ matrix.container }})
+      - name: Install Packages (Fedora)
         if: ${{ startsWith(matrix.container, 'fedora') }}
         run: |
           dnf -y update \
             && dnf install -y python gcc-c++ \
             && dnf clean all
 
-      - name: Install Packages (${{ matrix.container }})
+      - name: Install Packages (Ubuntu)
         if: startsWith(matrix.container, 'ubuntu')
         run: |
           apt-get update -yq \
@@ -106,7 +106,7 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v2
 
-      - name: Install Docker (${{ matrix.os }})
+      - name: Install Docker (MacOS)
         if: ${{ startsWith(matrix.os, 'macos') }}
         run: |
           brew install docker
@@ -162,14 +162,14 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v2
 
-      - name: Install Packages (${{ matrix.container }})
+      - name: Install Packages (Fedora)
         if: ${{ startsWith(matrix.container, 'fedora') }}
         run: |
           dnf -y update \
             && dnf install -y python gcc-c++ \
             && dnf clean all
 
-      - name: Install Packages (${{ matrix.container }})
+      - name: Install Packages (Ubuntu)
         if: startsWith(matrix.container, 'ubuntu')
         run: |
           apt-get update -yq \
