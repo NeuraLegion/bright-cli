@@ -1,12 +1,18 @@
-import packageInfo from '../../package.json';
+import { CliInfo } from '../Config';
 import { RuntimeDetector } from './RuntimeDetector';
 import arch from 'arch';
+import { delay, inject, injectable } from 'tsyringe';
 import { execSync } from 'child_process';
 import os from 'os';
 
+@injectable()
 export class DefaultRuntimeDetector implements RuntimeDetector {
+  constructor(
+    @inject(delay(() => CliInfo)) private readonly cliInfo: CliInfo
+  ) {}
+
   public distribution(): string | undefined {
-    return packageInfo.brightCli.distribution;
+    return this.cliInfo.distribution;
   }
 
   public isInsideDocker(): boolean {
