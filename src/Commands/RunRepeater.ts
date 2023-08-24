@@ -131,7 +131,7 @@ export class RunRepeater implements CommandModule {
         alias: ['rm', 'remove'],
         describe: 'Stop and remove repeater daemon'
       })
-      .option('legacy', {
+      .option('rabbitmq', {
         boolean: true,
         describe:
           'Enable legacy mode, utilizing the RabbitMQ connection for communication.'
@@ -216,7 +216,7 @@ export class RunRepeater implements CommandModule {
           .register<RepeaterLauncher>(
             RepeaterLauncher,
             {
-              useClass: args.legacy
+              useClass: args.rabbitmq
                 ? DefaultRepeaterLauncher
                 : ServerRepeaterLauncher
             },
