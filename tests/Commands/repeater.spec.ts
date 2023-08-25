@@ -34,9 +34,9 @@ describe('Repeater Command', () => {
 
   afterEach(async () => {
     if (commandProcess) {
-      commandProcess.stdin.destroy();
       commandProcess.stderr.destroy();
       commandProcess.stdout.destroy();
+
       commandProcess.kill('SIGINT');
     }
 

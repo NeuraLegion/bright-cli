@@ -52,6 +52,7 @@ export class Cli {
 
     return spawn(this.execPath, execArgs, {
       shell: true,
+      stdio: ['ignore', 'pipe', 'pipe'],
       env: {
         ...process.env,
         NODE_ENV: 'test',
