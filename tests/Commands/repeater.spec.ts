@@ -69,10 +69,12 @@ describe('Repeater Command', () => {
           smart: true
         });
         const scan = await api.waitForScanToFinish(scanId);
+        const connectivity = await api.getScanEntryPointsConnectivity(scanId);
 
         // assert
         expect(scan.requests).toBeGreaterThan(0);
         expect(scan.entryPoints).toBeGreaterThan(0);
+        expect(connectivity.ok).toBeGreaterThan(0);
         expect(scan.targets).toEqual([targetHost]);
         expect(scan.status).toBe('done');
       },
@@ -127,10 +129,12 @@ describe('Repeater Command', () => {
             smart: true
           });
           const scan = await api.waitForScanToFinish(scanId);
+          const connectivity = await api.getScanEntryPointsConnectivity(scanId);
 
           // assert
           expect(scan.requests).toBeGreaterThan(0);
           expect(scan.entryPoints).toBeGreaterThan(0);
+          expect(connectivity.ok).toBeGreaterThan(0);
           expect(scan.targets).toEqual([targetHost]);
           expect(scan.status).toBe('done');
         },

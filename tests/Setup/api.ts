@@ -28,6 +28,14 @@ export class Api {
     });
   }
 
+  public async getScanEntryPointsConnectivity(scanId: string) {
+    const response: { ok: number } = await this.client.get({
+      uri: `/api/v2/scans/${scanId}/entry-points/connectivity`
+    });
+
+    return response;
+  }
+
   public async createRepeater(name: string): Promise<string> {
     const { id }: { id: string } = await this.client.post({
       body: {
