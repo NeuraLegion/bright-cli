@@ -42,19 +42,18 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          # TODO: Troubleshoot
-          #- os: ubuntu-latest
-          #  container: ubuntu:18.04
-          #  executable: bright-cli-linux-x64
-          #  node: 16
-          #- os: ubuntu-latest
-          #  container: ubuntu:16.04
-          #  executable: bright-cli-linux-x64
-          #  node: 14
-          #- os: ubuntu-latest
-          #  container: fedora:latest
-          #  executable: bright-cli-linux-x64
-          #  node: 18
+          - os: ubuntu-latest
+            container: ubuntu:18.04
+            executable: bright-cli-linux-x64
+            node: 16
+          - os: ubuntu-latest
+            container: ubuntu:16.04
+            executable: bright-cli-linux-x64
+            node: 14
+          - os: ubuntu-latest
+            container: fedora:latest
+            executable: bright-cli-linux-x64
+            node: 18
           - os: ubuntu-latest
             executable: bright-cli-linux-x64
             node: 18
@@ -96,7 +95,8 @@ jobs:
           curl --compressed --location https://github.com/NeuraLegion/bright-cli/releases/download/v${{ inputs.version }}/${{ matrix.executable }} -o ./${{ matrix.executable }}
           chmod +x ./${{ matrix.executable }}
 
-      - name: Run Target
+      - name: Download Target
+        id: target
         uses: ./.github/workflows/composite/todoapp
 
       - name: Run Tests
@@ -107,7 +107,8 @@ jobs:
           E2E_RUN_ID: ${{ format('{0}-{1}-{2}-{3}', github.run_number, github.run_attempt, github.job, strategy.job-index) }}
           E2E_CLUSTER: ${{ secrets[format('E2E_{0}_HOST', inputs.environment )] }}
           E2E_CLUSTER_API_KEY: ${{ secrets[format('E2E_{0}_API_KEY', inputs.environment )] }}
-          E2E_REPEATER_TARGET_URL: "http://localhost:9000"
+          E2E_REPEATER_TARGET_URL: ${{ format('http://localhost:{0}', steps.target.outputs.port) }}
+          E2E_REPEATER_TARGET_CMD: ${{ steps.target.outputs.cmd }}
           E2E_REPEATER_MAX_TEST_TIMEOUT: ${{ inputs.repeater_max_test_timeout }}
   docker:
     if: ${{ inputs.test-docker }}
@@ -136,8 +137,9 @@ jobs:
       - name: Pull Image
         run: docker pull brightsec/cli:v${{ inputs.version }}
 
-      - name: Run Target
-        uses: ./.github/workflows/composite/todoapp 
+      - name: Download Target
+        id: target
+        uses: ./.github/workflows/composite/todoapp
 
       - name: Run Tests
         run: npm run test:e2e 
@@ -147,7 +149,8 @@ jobs:
           E2E_RUN_ID: ${{ format('{0}-{1}-{2}-{3}', github.run_number, github.run_attempt, github.job, strategy.job-index) }}
           E2E_CLUSTER: ${{ secrets[format('E2E_{0}_HOST', inputs.environment )] }}
           E2E_CLUSTER_API_KEY: ${{ secrets[format('E2E_{0}_API_KEY', inputs.environment )] }}
-          E2E_REPEATER_TARGET_URL: "http://host.docker.internal:9000"
+          E2E_REPEATER_TARGET_URL: ${{ format('http://host.docker.internal:{0}', steps.target.outputs.port) }}
+          E2E_REPEATER_TARGET_CMD: ${{ steps.target.outputs.cmd }}
           E2E_REPEATER_MAX_TEST_TIMEOUT: ${{ inputs.repeater_max_test_timeout }}
   npm:
     if: ${{ inputs.test-npm }} 
@@ -165,13 +168,12 @@ jobs:
             node: 16
           - os: ubuntu-latest
             node: 18
-          # TODO: Troubleshoot
-          #- os: ubuntu-latest
-          #  container: ubuntu:16.04
-          #  node: 14
-          #- os: ubuntu-latest
-          #  container: fedora:latest
-          #  node: 18
+          - os: ubuntu-latest
+            container: ubuntu:16.04
+            node: 14
+          - os: ubuntu-latest
+            container: fedora:latest
+            node: 18
         exclude:
           # TODO: Troubleshoot
           - os: windows-latest
@@ -205,8 +207,9 @@ jobs:
       - name: Install CLI
         run: npm i -g @brightsec/cli@${{ inputs.version }}
 
-      - name: Run Target
-        uses: ./.github/workflows/composite/todoapp 
+      - name: Download Target
+        id: target
+        uses: ./.github/workflows/composite/todoapp
 
       - name: Run Tests
         run: npm run test:e2e 
@@ -216,5 +219,6 @@ jobs:
           E2E_RUN_ID: ${{ format('{0}-{1}-{2}-{3}', github.run_number, github.run_attempt, github.job, strategy.job-index) }}
           E2E_CLUSTER: ${{ secrets[format('E2E_{0}_HOST', inputs.environment )] }}
           E2E_CLUSTER_API_KEY: ${{ secrets[format('E2E_{0}_API_KEY', inputs.environment )] }}
-          E2E_REPEATER_TARGET_URL: "http://localhost:9000"
+          E2E_REPEATER_TARGET_URL: ${{ format('http://localhost:{0}', steps.target.outputs.port) }}
+          E2E_REPEATER_TARGET_CMD: ${{ steps.target.outputs.cmd }}
           E2E_REPEATER_MAX_TEST_TIMEOUT: ${{ inputs.repeater_max_test_timeout }}

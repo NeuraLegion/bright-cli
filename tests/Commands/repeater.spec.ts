@@ -1,7 +1,7 @@
 import { Cli, Api } from '../Setup';
 import { gt } from 'semver';
 import { URL } from 'url';
-import { ChildProcess } from 'child_process';
+import { ChildProcess, spawn } from 'child_process';
 
 const config = {
   version: process.env.E2E_CLI_VERSION,
@@ -9,23 +9,48 @@ const config = {
   cluster: process.env.E2E_CLUSTER,
   apiKey: process.env.E2E_CLUSTER_API_KEY,
   runId: process.env.E2E_RUN_ID,
-  targetUrl: process.env.E2E_REPEATER_TARGET_URL,
+  targetUrl: process.env['E2E_REPEATER_TARGET_URL'],
+  targetCmd: process.env['E2E_REPEATER_TARGET_CMD'],
   maxTestTimeout: parseInt(process.env.E2E_REPEATER_MAX_TEST_TIMEOUT, 10) * 1000
 };
 
 describe('Repeater Command', () => {
-  const name = `E2E: Repeater Bright CLI ${config.version} (${config.runId})`;
+  let name: string;
+  let api: Api;
+  let cli: Cli;
+  let targetHost: string;
+  let repeaterId: string;
+  let targetProcess: ChildProcess;
+  let commandProcess: ChildProcess;
 
-  const [cmd, ...args]: string[] = config.cmd.split(' ');
-  const cli = new Cli(cmd, args);
-  const targetHost = new URL(config.targetUrl).host;
-  const api = new Api({
-    baseUrl: `https://${config.cluster}`,
-    apiKey: config.apiKey
+  beforeAll(() => {
+    const [cliCmd, ...cliArgs]: string[] = config.cmd.split(' ');
+    cli = new Cli(cliCmd, cliArgs);
+    name = `E2E: Repeater Bright CLI ${config.version} (${config.runId})`;
+    targetHost = new URL(config.targetUrl).host;
+    api = new Api({
+      baseUrl: `https://${config.cluster}`,
+      apiKey: config.apiKey
+    });
+
+    const [targetCmd, ...targetArgs]: string[] = config.targetCmd.split(' ');
+    targetProcess = spawn(targetCmd, targetArgs, {
+      shell: true,
+      stdio: ['ignore', 'pipe', 'pipe'],
+      env: {
+        ...process.env
+      }
+    });
+
+    targetProcess.stdout.pipe(process.stdout);
+    targetProcess.stderr.pipe(process.stderr);
   });
 
-  let repeaterId: string;
-  let commandProcess: ChildProcess;
+  afterAll(() => {
+    targetProcess.stderr.destroy();
+    targetProcess.stdout.destroy();
+    targetProcess.kill('SIGTERM');
+  });
 
   beforeEach(async () => {
     repeaterId = await api.createRepeater(name);
@@ -35,8 +60,7 @@ describe('Repeater Command', () => {
     if (commandProcess) {
       commandProcess.stderr.destroy();
       commandProcess.stdout.destroy();
-
-      commandProcess.kill('SIGINT');
+      commandProcess.kill('SIGTERM');
     }
 
     await api.deleteRepeater(repeaterId);

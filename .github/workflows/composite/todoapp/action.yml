@@ -1,6 +1,14 @@
 name: 'TODO App'
 description: 'Runs TODO App'
 
+outputs:
+  port:
+    description: "Target port"
+    value: "9000"
+  cmd:
+    description: "Command to run the target"
+    value: ${{ steps.download.outputs.cmd }}
+
 runs:
   using: 'composite'
   steps:
@@ -10,18 +18,16 @@ runs:
       run: |
         if [ "$RUNNER_OS" == "Linux" ]; then
           EXECUTABLE=todoapp-linux-x64
+          CMD=./$EXECUTABLE
         elif [ "$RUNNER_OS" == "Windows" ]; then
           EXECUTABLE=todoapp-windows-x64.exe
+          CMD=.\\$EXECUTABLE
         elif [ "$RUNNER_OS" == "macOS" ]; then
           EXECUTABLE=todoapp-darwin-x64
+          CMD=./$EXECUTABLE
         fi
 
         curl --compressed --location https://github.com/NeuraLegion/go-todoapp-demo/releases/latest/download/$EXECUTABLE -o ./$EXECUTABLE
         chmod +x ./$EXECUTABLE
 
-        echo "executable=$EXECUTABLE" >> "$GITHUB_OUTPUT"
-
-    - name: Run Executable
-      shell: bash
-      run: |
-        ./${{ steps.download.outputs.executable }} &
+        echo "cmd=$CMD" >> "$GITHUB_OUTPUT"
