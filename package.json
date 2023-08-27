@@ -26,7 +26,8 @@
   },
   "dependencies": {
     "@neuralegion/capture-har": "^0.3.4",
-    "@neuralegion/os-service": "^1.1.1",
+    "@neuralegion/os-service": "^1.2.0",
+    "@neuralegion/raw-socket": "^1.8.1",
     "ajv": "^6.12.6",
     "amqplib": "~0.10.2",
     "arch": "^2.2.0",
@@ -36,7 +37,6 @@
     "find-up": "^5.0.0",
     "js-yaml": "^4.1.0",
     "ms": "^2.1.3",
-    "raw-socket": "^1.7.0",
     "reflect-metadata": "^0.1.13",
     "request": "~2.88.2",
     "request-promise": "~4.2.6",
@@ -127,10 +127,9 @@
   "pkg": {
     "scripts": "dist/**/*.js",
     "assets": [
-      "./node_modules/@neuralegion/os-service/build/Release/service.node",
-      "./node_modules/raw-socket/build/Release/raw.node",
-      "./node_modules/win-ca/lib/crypt32-ia32.node",
-      "./node_modules/win-ca/lib/crypt32-x64.node"
+      "./node_modules/@neuralegion/os-service/lib/binding/Release/**/os_service.node",
+      "./node_modules/@neuralegion/raw-socket/lib/binding/Release/**/raw_socket.node",
+      "./node_modules/win-ca/lib/crypt32-*.node"
     ],
     "targets": [
       "node14-linux-x64",
