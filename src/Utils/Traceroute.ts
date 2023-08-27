@@ -1,12 +1,12 @@
 import { Helpers } from './Helpers';
 import { logger } from './Logger';
-import raw from 'raw-socket';
+import raw from '@neuralegion/raw-socket';
 import dgram from 'dgram';
 import { promises as dns } from 'dns';
 import { EventEmitter, once } from 'events';
 import { isIP } from 'net';
 
-export { Protocol } from 'raw-socket';
+export { Protocol } from '@neuralegion/raw-socket';
 
 const Stop: unique symbol = Symbol('Stop');
 

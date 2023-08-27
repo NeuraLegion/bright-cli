@@ -119,12 +119,7 @@ jobs:
 
       - name: Copy deps
         if: startsWith(matrix.os, 'win')
-        run: |
-          Copy-Item ".\node_modules\@neuralegion\os-service\build\Release\service.node" -Destination ".\bin\service.node"
-          Copy-Item ".\node_modules\win-ca\lib\crypt32-ia32.node" -Destination ".\bin\crypt32-ia32.node"
-          Copy-Item ".\node_modules\win-ca\lib\crypt32-x64.node" -Destination ".\bin\crypt32-x64.node"
-          Copy-Item ".\node_modules\win-ca\lib\roots.exe" -Destination ".\bin\roots.exe"
-          Copy-Item ".\node_modules\raw-socket\build\Release\raw.node" -Destination ".\bin\raw.node"
+        run: Copy-Item ".\node_modules\win-ca\lib\roots.exe" -Destination ".\bin\roots.exe"
 
       - name: Install WIX
         if: startsWith(matrix.os, 'win')
