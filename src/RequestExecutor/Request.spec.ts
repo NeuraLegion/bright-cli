@@ -1,6 +1,7 @@
 import 'reflect-metadata';
 import type { Request as RequestInterface } from './Request';
 import { Protocol } from './Protocol';
+import fs from 'fs';
 
 describe('Request', () => {
   let readFileMock!: jest.Mock;
@@ -10,7 +11,7 @@ describe('Request', () => {
 
   beforeEach(async () => {
     readFileMock = jest.fn();
-    jest.doMock('fs', () => ({ readFile: readFileMock }));
+    jest.doMock('fs', () => ({ ...fs, readFile: readFileMock }));
     // ADHOC: `jest.doMock` must be called before importing SUT
     Request = (await import('./Request')).Request;
   });
