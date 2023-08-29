@@ -124,9 +124,8 @@ jobs:
 
       - name: Install Docker (MacOS)
         if: ${{ startsWith(matrix.os, 'macos') }}
-        run: |
-          brew install docker
-          colima start
+        uses: docker-practice/actions-setup-docker@master
+        timeout-minutes: 12
 
       - name: Install Dependencies
         uses: ./.github/workflows/composite/npm
