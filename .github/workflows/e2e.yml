@@ -23,13 +23,13 @@ on:
       environment:
         required: true
         type: choice
-        default: STAGING
+        default: staging
         description: Environment
         options:
-        - STAGING
-        - DEVELOPMENT
-      repeater_max_test_timeout:
-        description: "[Repeater] Max test timeout (sec)"
+          - staging
+          - development
+      test_timeout:
+        description: "Test timeout in seconds"
         default: 3600
         required: true
 
@@ -94,7 +94,7 @@ jobs:
           E2E_CLUSTER_API_KEY: ${{ secrets[format('E2E_{0}_API_KEY', inputs.environment )] }}
           E2E_REPEATER_TARGET_URL: ${{ format('http://localhost:{0}', steps.target.outputs.port) }}
           E2E_REPEATER_TARGET_CMD: ${{ steps.target.outputs.cmd }}
-          E2E_REPEATER_MAX_TEST_TIMEOUT: ${{ inputs.repeater_max_test_timeout }}
+          E2E_test_timeout: ${{ inputs.test_timeout }}
   docker:
     if: ${{ inputs.test-docker }}
     runs-on: ${{ matrix.os }}
@@ -135,7 +135,7 @@ jobs:
           E2E_CLUSTER_API_KEY: ${{ secrets[format('E2E_{0}_API_KEY', inputs.environment )] }}
           E2E_REPEATER_TARGET_URL: ${{ format('http://host.docker.internal:{0}', steps.target.outputs.port) }}
           E2E_REPEATER_TARGET_CMD: ${{ steps.target.outputs.cmd }}
-          E2E_REPEATER_MAX_TEST_TIMEOUT: ${{ inputs.repeater_max_test_timeout }}
+          E2E_test_timeout: ${{ inputs.test_timeout }}
   npm:
     if: ${{ inputs.test-npm }}
     runs-on: ${{ matrix.os }}
@@ -190,4 +190,4 @@ jobs:
           E2E_CLUSTER_API_KEY: ${{ secrets[format('E2E_{0}_API_KEY', inputs.environment )] }}
           E2E_REPEATER_TARGET_URL: ${{ format('http://localhost:{0}', steps.target.outputs.port) }}
           E2E_REPEATER_TARGET_CMD: ${{ steps.target.outputs.cmd }}
-          E2E_REPEATER_MAX_TEST_TIMEOUT: ${{ inputs.repeater_max_test_timeout }}
+          E2E_test_timeout: ${{ inputs.test_timeout }}
