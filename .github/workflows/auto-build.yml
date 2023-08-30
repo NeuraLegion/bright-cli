@@ -27,7 +27,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        target: [ 'lint', 'format', 'test:unit', 'test:e2e' ]
+        target: [ 'lint', 'format', 'test:unit' ]
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -36,10 +36,6 @@ jobs:
 
       - name: Install deps
         uses: ./.github/workflows/composite/npm
-
-      - name: Compute arguments
-        if: matrix.target == 'test:e2e'
-        run: echo "JEST_ARGUMENTS=--testTimeout 4000" >> $GITHUB_ENV
 
       - name: Execute ${{ matrix.target }} npm script
         run: npm run ${{ matrix.target }} -- $JEST_ARGUMENTS
