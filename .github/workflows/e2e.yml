@@ -25,7 +25,7 @@ on:
         type: choice
         default: STAGING
         description: Environment
-        options: 
+        options:
         - STAGING
         - DEVELOPMENT
       repeater_max_test_timeout:
@@ -67,21 +67,6 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v2
 
-      - name: Install Packages (Fedora)
-        if: ${{ startsWith(matrix.container, 'fedora') }}
-        run: |
-          dnf -y update \
-            && dnf install -y python gcc-c++ \
-            && dnf clean all
-
-      - name: Install Packages (Ubuntu)
-        if: startsWith(matrix.container, 'ubuntu')
-        run: |
-          apt-get update -yq \
-            && apt-get install build-essential curl python python-dev python3-pip g++-4.8 gcc-4.8 -yq \
-            && apt-get clean \
-            && rm -rf /var/lib/apt/lists/*
-
       - name: Install Dependencies
         uses: ./.github/workflows/composite/npm
         with:
@@ -100,7 +85,7 @@ jobs:
         uses: ./.github/workflows/composite/todoapp
 
       - name: Run Tests
-        run: npm run test:e2e 
+        run: npm run test:e2e
         env:
           E2E_CLI_VERSION: ${{ inputs.version }}
           E2E_CLI_CMD: ${{ runner.os != 'windows' && format('./{0}', matrix.executable) || format('.\{0}', matrix.executable) }}
@@ -132,7 +117,7 @@ jobs:
         with:
           # https://github.com/actions/setup-node/issues/286#issuecomment-878865957
           cache: ''
-          
+
       - name: Pull Image
         run: docker pull brightsec/cli:v${{ inputs.version }}
 
@@ -141,7 +126,7 @@ jobs:
         uses: ./.github/workflows/composite/todoapp
 
       - name: Run Tests
-        run: npm run test:e2e 
+        run: npm run test:e2e
         env:
           E2E_CLI_VERSION: ${{ inputs.version }}
           E2E_CLI_CMD: docker run --add-host host.docker.internal:host-gateway --network host brightsec/cli:v${{ inputs.version }}
@@ -152,7 +137,7 @@ jobs:
           E2E_REPEATER_TARGET_CMD: ${{ steps.target.outputs.cmd }}
           E2E_REPEATER_MAX_TEST_TIMEOUT: ${{ inputs.repeater_max_test_timeout }}
   npm:
-    if: ${{ inputs.test-npm }} 
+    if: ${{ inputs.test-npm }}
     runs-on: ${{ matrix.os }}
     container: ${{ matrix.container }}
     strategy:
@@ -181,21 +166,6 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v2
 
-      - name: Install Packages (Fedora)
-        if: ${{ startsWith(matrix.container, 'fedora') }}
-        run: |
-          dnf -y update \
-            && dnf install -y python gcc-c++ \
-            && dnf clean all
-
-      - name: Install Packages (Ubuntu)
-        if: startsWith(matrix.container, 'ubuntu')
-        run: |
-          apt-get update -yq \
-            && apt-get install build-essential curl python python-dev python3-pip g++-4.8 gcc-4.8 -yq \
-            && apt-get clean \
-            && rm -rf /var/lib/apt/lists/*
-
       - name: Install Dependencies
         uses: ./.github/workflows/composite/npm
         with:
@@ -211,7 +181,7 @@ jobs:
         uses: ./.github/workflows/composite/todoapp
 
       - name: Run Tests
-        run: npm run test:e2e 
+        run: npm run test:e2e
         env:
           E2E_CLI_VERSION: ${{ inputs.version }}
           E2E_CLI_CMD: bright-cli
