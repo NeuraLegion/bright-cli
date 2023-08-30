@@ -6,8 +6,9 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: "Bright CLI version (e.g.: 10.3.1)"
+        description: "Bright CLI version (e.g.: v10.3.1)"
         required: true
+        default: v11.0.0-next.21
       test-docker:
         type: boolean
         description: "Test Docker"
@@ -77,7 +78,7 @@ jobs:
       - name: Download Executable
         shell: bash
         run: |
-          curl --compressed --location https://github.com/NeuraLegion/bright-cli/releases/download/v${{ inputs.version }}/${{ matrix.executable }} -o ./${{ matrix.executable }}
+          curl --compressed --location https://github.com/NeuraLegion/bright-cli/releases/download/${{ inputs.version }}/${{ matrix.executable }} -o ./${{ matrix.executable }}
           chmod +x ./${{ matrix.executable }}
 
       - name: Download Target
@@ -119,7 +120,7 @@ jobs:
           cache: ''
 
       - name: Pull Image
-        run: docker pull brightsec/cli:v${{ inputs.version }}
+        run: docker pull brightsec/cli:${{ inputs.version }}
 
       - name: Download Target
         id: target
@@ -129,7 +130,7 @@ jobs:
         run: npm run test:e2e
         env:
           E2E_CLI_VERSION: ${{ inputs.version }}
-          E2E_CLI_CMD: docker run --add-host host.docker.internal:host-gateway --network host brightsec/cli:v${{ inputs.version }}
+          E2E_CLI_CMD: docker run --add-host host.docker.internal:host-gateway --network host brightsec/cli:${{ inputs.version }}
           E2E_RUN_ID: ${{ format('{0}-{1}-{2}-{3}', github.run_number, github.run_attempt, github.job, strategy.job-index) }}
           E2E_CLUSTER: ${{ secrets[format('E2E_{0}_HOST', inputs.environment )] }}
           E2E_CLUSTER_API_KEY: ${{ secrets[format('E2E_{0}_API_KEY', inputs.environment )] }}
