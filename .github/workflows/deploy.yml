@@ -73,12 +73,14 @@ jobs:
           - os: macos-latest
             target: macos
             node: 18
-          # Using the `ubuntu-18.04` runner instead of latest (i.e. `ubuntu-22.04`)
-          # because G++/GCC 4.8 is not in an official repository yet.
+          # Using the `centos7-devtoolset7` runner instead of latest (i.e. `ubuntu-22.04`)
+          # with gcc 7 but glibc 2.17, so binaries are compatible for Ubuntu 14.04 and Debian 8.
           - os: ubuntu-22.04
             target: linux
-            container: ubuntu:18.04
             node: 14
+            container:
+              image: centos/devtoolset-7-toolchain-centos7:7
+              options: "--user root"
     runs-on: ${{ matrix.os }}
     container: ${{ matrix.container }}
     steps:
@@ -94,17 +96,9 @@ jobs:
       - name: Install dev-deps
         if: startsWith(matrix.os, 'ubuntu')
         run: |
-          apt-get update -yq \
-            && apt-get install build-essential python python-dev python3-pip g++-4.8 gcc-4.8 -yq \
-            && apt-get clean \
-            && rm -rf /var/lib/apt/lists/*
-
-      - name: Configures aliases to GCC/G++
-        if: startsWith(matrix.os, 'ubuntu')
-        run: |
-          update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-4.8 10 \
-            --slave /usr/bin/g++ g++ /usr/bin/g++-4.8 \
-            --slave /usr/bin/gcov gcov /usr/bin/gcov-4.8
+          yum install build-essential python3 -y \
+            && yum clean all -y \
+            && rm -rf /var/cache/yum
 
       - name: Install deps
         uses: ./.github/workflows/composite/npm
