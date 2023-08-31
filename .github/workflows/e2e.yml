@@ -86,14 +86,14 @@ jobs:
             && apt-get clean \
             && rm -rf /var/lib/apt/lists/*
 
+      - name: Checkout Repository
+        uses: actions/checkout@v2
+
       - name: Download Executable
         shell: bash
         run: |
           curl -fsSL https://github.com/NeuraLegion/bright-cli/releases/download/${{ inputs.version }}/${{ matrix.executable }} > ./${{ matrix.executable }}
           chmod +x ./${{ matrix.executable }}
-
-      - name: Checkout Repository
-        uses: actions/checkout@v2
 
       - name: Download Target
         id: target
@@ -139,9 +139,7 @@ jobs:
           "C:\Program Files\BrightCLI" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
 
       - name: Get the version of Bright CLI after install
-        run: |
-          Write-Host "$env:GITHUB_PATH"
-          bright-cli.exe -v
+        run: bright-cli.exe -v
         shell: pwsh
 
       - name: Checkout Repository
