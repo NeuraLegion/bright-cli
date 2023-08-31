@@ -71,6 +71,7 @@ export interface DeployCommandOptions {
 export interface DeploymentRuntime {
   version: string;
   scriptsLoaded: boolean;
+  ci?: string;
   os?: string;
   arch?: string;
   docker?: boolean;

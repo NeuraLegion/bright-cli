@@ -1,4 +1,6 @@
 export interface RuntimeDetector {
+  ci(): string | undefined;
+
   os(): string;
 
   arch(): string;
