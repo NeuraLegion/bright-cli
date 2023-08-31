@@ -16,6 +16,10 @@ on:
         type: boolean
         description: "Test Executables"
         default: true
+      test-msi:
+        type: boolean
+        description: "Test MSI"
+        default: true
       test-npm:
         type: boolean
         description: "Test NPM"
@@ -82,8 +86,18 @@ jobs:
             && apt-get clean \
             && rm -rf /var/lib/apt/lists/*
 
+      - name: Download Executable
+        shell: bash
+        run: |
+          curl -fsSL https://github.com/NeuraLegion/bright-cli/releases/download/${{ inputs.version }}/${{ matrix.executable }} > ./${{ matrix.executable }}
+          chmod +x ./${{ matrix.executable }}
+
       - name: Checkout Repository
         uses: actions/checkout@v2
+
+      - name: Download Target
+        id: target
+        uses: ./.github/workflows/composite/todoapp
 
       - name: Install Dependencies
         uses: ./.github/workflows/composite/npm
@@ -92,21 +106,62 @@ jobs:
           # https://github.com/actions/setup-node/issues/286#issuecomment-878865957
           cache: ''
 
-      - name: Download Executable
-        shell: bash
-        run: |
-          curl -fsSL https://github.com/NeuraLegion/bright-cli/releases/download/${{ inputs.version }}/${{ matrix.executable }} > ./${{ matrix.executable }}
-          chmod +x ./${{ matrix.executable }}
-
-      - name: Download Target
-        id: target
-        uses: ./.github/workflows/composite/todoapp
-
       - name: Run Tests
         run: npm run test:e2e
         env:
           E2E_CLI_VERSION: ${{ inputs.version }}
           E2E_CLI_CMD: ${{ runner.os != 'windows' && format('./{0}', matrix.executable) || format('.\{0}', matrix.executable) }}
+          E2E_RUN_ID: ${{ format('{0}-{1}-{2}-{3}', github.run_number, github.run_attempt, github.job, strategy.job-index) }}
+          E2E_CLUSTER: ${{ secrets[format('E2E_{0}_HOST', inputs.environment )] }}
+          E2E_CLUSTER_API_KEY: ${{ secrets[format('E2E_{0}_API_KEY', inputs.environment )] }}
+          E2E_REPEATER_TARGET_URL: ${{ format('http://localhost:{0}', steps.target.outputs.port) }}
+          E2E_REPEATER_TARGET_CMD: ${{ steps.target.outputs.cmd }}
+          E2E_TEST_TIMEOUT: ${{ inputs.test_timeout }}
+  msi:
+    if: ${{ inputs.test-msi }}
+    runs-on: windows-latest
+    steps:
+      - name: Download and Install Bright CLI using MSI
+        shell: pwsh
+        run: |
+          Invoke-WebRequest -Uri https://github.com/NeuraLegion/bright-cli/releases/download/${{ inputs.version }}/bright-cli.msi -OutFile bright-cli.msi
+          $lastExitCode = (Start-Process msiexec.exe `
+            -ArgumentList "/i bright-cli.msi /qn /norestart /l*v `"$($pwd)\install.log`"" `
+            -PassThru `
+            -Wait `
+            -WorkingDirectory "$pwd").ExitCode
+          if ($lastExitCode -ne 0) {
+            Write-Error "Got exit code $lastExitCode."
+            Get-Content "$($pwd)\install.log"
+            exit 1
+          }
+          Write-Host "Bright CLI installation complete"
+          "C:\Program Files\BrightCLI" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+
+      - name: Get the version of Bright CLI after install
+        run: |
+          Write-Host "$env:GITHUB_PATH"
+          bright-cli.exe -v
+        shell: pwsh
+
+      - name: Checkout Repository
+        uses: actions/checkout@v2
+
+      - name: Download Target
+        id: target
+        uses: ./.github/workflows/composite/todoapp
+
+      - name: Install Dependencies
+        uses: ./.github/workflows/composite/npm
+        with:
+          # https://github.com/actions/setup-node/issues/286#issuecomment-878865957
+          cache: ''
+
+      - name: Run Tests
+        run: npm run test:e2e
+        env:
+          E2E_CLI_VERSION: ${{ inputs.version }}
+          E2E_CLI_CMD: ${{ 'bright-cli.exe' }}
           E2E_RUN_ID: ${{ format('{0}-{1}-{2}-{3}', github.run_number, github.run_attempt, github.job, strategy.job-index) }}
           E2E_CLUSTER: ${{ secrets[format('E2E_{0}_HOST', inputs.environment )] }}
           E2E_CLUSTER_API_KEY: ${{ secrets[format('E2E_{0}_API_KEY', inputs.environment )] }}
@@ -122,26 +177,26 @@ jobs:
         # Windows can't run linux docker images: https://github.com/actions/runner-images/issues/1143
         os: [ubuntu-latest, macos-latest]
     steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v2
-
       - name: Install Docker (MacOS)
         if: ${{ startsWith(matrix.os, 'macos') }}
         uses: docker-practice/actions-setup-docker@master
         timeout-minutes: 12
+
+      - name: Pull Image
+        run: docker pull brightsec/cli:${{ inputs.version }}
+
+      - name: Checkout Repository
+        uses: actions/checkout@v2
+
+      - name: Download Target
+        id: target
+        uses: ./.github/workflows/composite/todoapp
 
       - name: Install Dependencies
         uses: ./.github/workflows/composite/npm
         with:
           # https://github.com/actions/setup-node/issues/286#issuecomment-878865957
           cache: ''
-
-      - name: Pull Image
-        run: docker pull brightsec/cli:${{ inputs.version }}
-
-      - name: Download Target
-        id: target
-        uses: ./.github/workflows/composite/todoapp
 
       - name: Run Tests
         run: npm run test:e2e
@@ -203,6 +258,10 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v2
 
+      - name: Download Target
+        id: target
+        uses: ./.github/workflows/composite/todoapp
+
       - name: Install Dependencies
         uses: ./.github/workflows/composite/npm
         with:
@@ -212,10 +271,6 @@ jobs:
 
       - name: Install CLI
         run: npm i -g @brightsec/cli@${{ inputs.version }}
-
-      - name: Download Target
-        id: target
-        uses: ./.github/workflows/composite/todoapp
 
       - name: Run Tests
         run: npm run test:e2e
