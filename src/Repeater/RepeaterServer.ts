@@ -121,6 +121,8 @@ export interface RepeaterServer {
 
   reconnectionSucceeded(handler: () => void | Promise<void>): void;
 
+  connected(handler: () => void | Promise<void>): void;
+
   errorOccurred(
     handler: (event: RepeaterServerErrorEvent) => void | Promise<void>
   ): void;

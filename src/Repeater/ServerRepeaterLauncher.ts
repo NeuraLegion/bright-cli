@@ -19,6 +19,7 @@ import { delay, inject, injectable } from 'tsyringe';
 export class ServerRepeaterLauncher implements RepeaterLauncher {
   private static SERVICE_NAME = 'bright-repeater';
   private repeaterStarted: boolean = false;
+  private repeaterId: string | undefined;
 
   constructor(
     @inject(RuntimeDetector) private readonly runtimeDetector: RuntimeDetector,
@@ -91,17 +92,9 @@ export class ServerRepeaterLauncher implements RepeaterLauncher {
 
     logger.log('Starting the Repeater (%s)...', this.info.version);
 
+    this.repeaterId = repeaterId;
     this.repeaterServer.connect(repeaterId);
-
     this.subscribeToEvents();
-
-    await this.repeaterServer.deploy(
-      {
-        repeaterId
-      },
-      this.getRuntime()
-    );
-
     this.repeaterStarted = true;
 
     logger.log(`The Repeater (%s) started`, this.info.version);
@@ -121,6 +114,14 @@ export class ServerRepeaterLauncher implements RepeaterLauncher {
   }
 
   private subscribeToEvents() {
+    this.repeaterServer.connected(async () => {
+      await this.repeaterServer.deploy(
+        {
+          repeaterId: this.repeaterId
+        },
+        this.getRuntime()
+      );
+    });
     this.repeaterServer.errorOccurred(({ message }) => {
       logger.error(message);
     });
