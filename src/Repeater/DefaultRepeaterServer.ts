@@ -95,6 +95,12 @@ export class DefaultRepeaterServer implements RepeaterServer {
     logger.debug('Event bus connected to %s', this.options.uri);
   }
 
+  public connected(handler: () => void | Promise<void>): void {
+    this.socket.on('connect', () =>
+      this.processEventHandler('connect', undefined, handler)
+    );
+  }
+
   public requestReceived(
     handler: (
       event: RepeaterServerRequestEvent
