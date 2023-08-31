@@ -49,6 +49,10 @@ jobs:
             executable: bright-cli-linux-x64
             node: 14
           - os: ubuntu-latest
+            container: fedora:24
+            executable: bright-cli-linux-x64
+            node: 14
+          - os: ubuntu-latest
             container: fedora:latest
             executable: bright-cli-linux-x64
             node: 18
@@ -172,6 +176,9 @@ jobs:
           - os: ubuntu-latest
             container: fedora:latest
             node: 18
+          - os: ubuntu-latest
+            container: fedora:24
+            node: 14
         exclude:
           # TODO: Troubleshoot
           - os: windows-latest
