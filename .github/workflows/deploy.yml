@@ -67,15 +67,15 @@ jobs:
     strategy:
       matrix:
         include:
-          - os: windows-2022
+          - os: windows-2019
             target: win
             node: 18
-          - os: macos-latest
+          - os: macos-11
             target: macos
             node: 18
-          # Using the `centos7-devtoolset7` runner instead of latest (i.e. `ubuntu-22.04`)
+          # Using the `centos7-devtoolset7` runner instead of latest (i.e. `ubuntu-20.04`)
           # with gcc 7 but glibc 2.17, so binaries are compatible for Ubuntu 14.04 and Debian 8.
-          - os: ubuntu-22.04
+          - os: ubuntu-20.04
             target: linux
             node: 14
             container:

@@ -49,6 +49,10 @@ jobs:
             executable: bright-cli-linux-x64
             node: 14
           - os: ubuntu-latest
+            container: fedora:24
+            executable: bright-cli-linux-x64
+            node: 14
+          - os: ubuntu-latest
             container: fedora:latest
             executable: bright-cli-linux-x64
             node: 18
@@ -62,14 +66,11 @@ jobs:
             executable: bright-cli-win-x64.exe
             node: 18
     steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v2
-
       - name: Install Packages (Fedora)
         if: ${{ startsWith(matrix.container, 'fedora') }}
         run: |
           dnf -y update \
-            && dnf install -y curl \
+            && dnf install -y curl tar \
             && dnf clean all \
             && rm -rf /var/cache/dnf/*
 
@@ -80,6 +81,9 @@ jobs:
             && apt-get install curl -yq \
             && apt-get clean \
             && rm -rf /var/lib/apt/lists/*
+
+      - name: Checkout Repository
+        uses: actions/checkout@v2
 
       - name: Install Dependencies
         uses: ./.github/workflows/composite/npm
@@ -172,19 +176,19 @@ jobs:
           - os: ubuntu-latest
             container: fedora:latest
             node: 18
+          - os: ubuntu-latest
+            container: fedora:24
+            node: 14
         exclude:
           # TODO: Troubleshoot
           - os: windows-latest
             node: 14
     steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v2
-
       - name: Install Packages (Fedora)
         if: ${{ startsWith(matrix.container, 'fedora') }}
         run: |
           dnf -y update \
-            && dnf install -y curl \
+            && dnf install -y curl tar \
             && dnf clean all \
             && rm -rf /var/cache/dnf/*
 
@@ -195,6 +199,9 @@ jobs:
             && apt-get install curl -yq \
             && apt-get clean \
             && rm -rf /var/lib/apt/lists/*
+
+      - name: Checkout Repository
+        uses: actions/checkout@v2
 
       - name: Install Dependencies
         uses: ./.github/workflows/composite/npm
