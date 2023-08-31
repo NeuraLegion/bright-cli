@@ -122,6 +122,7 @@ export class DefaultRepeaterLauncher implements RepeaterLauncher {
         !!this.virtualScripts.size,
         {
           transport: 'rabbitmq',
+          ci: this.runtimeDetector.ci(),
           os: this.runtimeDetector.os(),
           arch: this.runtimeDetector.arch(),
           docker: this.runtimeDetector.isInsideDocker(),

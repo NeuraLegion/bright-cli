@@ -2,6 +2,7 @@ import { CliInfo } from '../Config';
 import { RuntimeDetector } from './RuntimeDetector';
 import arch from 'arch';
 import { delay, inject, injectable } from 'tsyringe';
+import ci from 'ci-info';
 import { execSync } from 'child_process';
 import os from 'os';
 
@@ -21,6 +22,10 @@ export class DefaultRuntimeDetector implements RuntimeDetector {
 
   public nodeVersion(): string {
     return process.version;
+  }
+
+  public ci(): string {
+    return ci.name ?? undefined;
   }
 
   public arch(): string {
