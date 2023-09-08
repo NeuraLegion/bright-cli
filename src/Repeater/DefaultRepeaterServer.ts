@@ -36,6 +36,7 @@ export const DefaultRepeaterServerOptions: unique symbol = Symbol(
 export class DefaultRepeaterServer implements RepeaterServer {
   private latestReconnectionError?: Error;
   private readonly MAX_RECONNECTION_ATTEMPTS = 20;
+  private readonly MAX_RECONNECTION_DELAY = 86400000;
   private _socket?: Socket;
   private timer?: Timer;
 
@@ -71,6 +72,7 @@ export class DefaultRepeaterServer implements RepeaterServer {
       parser,
       path: '/api/ws/v1',
       transports: ['websocket'],
+      reconnectionDelayMax: this.MAX_RECONNECTION_DELAY,
       timeout: this.options?.connectTimeout,
       // @ts-expect-error Type is wrong.
       // Agent is passed directly to "ws" package, which accepts http.Agent
