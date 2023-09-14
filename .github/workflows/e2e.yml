@@ -29,6 +29,7 @@ on:
         default: staging
         description: Environment
         options:
+          - production
           - staging
           - development
       test_timeout:
