@@ -14,6 +14,7 @@ import { Helpers, logger } from '../Utils';
 import { CliInfo } from '../Config';
 import { RepeaterCommandHub } from './RepeaterCommandHub';
 import { delay, inject, injectable } from 'tsyringe';
+import { captureException } from '@sentry/node';
 import chalk from 'chalk';
 
 @injectable()
@@ -124,6 +125,7 @@ export class ServerRepeaterLauncher implements RepeaterLauncher {
       );
     });
     this.repeaterServer.errorOccurred(({ message }) => {
+      captureException(message);
       logger.error(`%s: %s`, chalk.red('(!) CRITICAL'), message);
     });
     this.repeaterServer.reconnectionFailed((payload) =>

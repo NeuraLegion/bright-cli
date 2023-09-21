@@ -32,7 +32,8 @@ module.exports = (env, argv) => ({
   plugins: [
     new DefinePlugin({
       'process.env.VERSION': JSON.stringify(version),
-      'process.env.NODE_ENV': JSON.stringify(argv.mode)
+      'process.env.NODE_ENV': JSON.stringify(argv.mode),
+      'process.env.SENTRY_DSN': JSON.stringify(process.env.SENTRY_DSN)
     }),
     new CleanWebpackPlugin(),
     new BannerPlugin({ banner: '#!/usr/bin/env node', raw: true })

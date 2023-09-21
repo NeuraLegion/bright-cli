@@ -38,7 +38,9 @@ jobs:
 
       - name: Build package
         run: npm run build
-
+        env:
+          SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
+          
       - name: Pack artifacts
         run: npm pack
 

@@ -2,6 +2,7 @@ import { CliConfig, ConfigReader } from './ConfigReader';
 import { ClusterArgs, Helpers, logger, LogLevel } from '../Utils';
 import { CliInfo } from './CliInfo';
 import { Arguments, Argv, CommandModule } from 'yargs';
+import { runWithAsyncContext, setContext } from '@sentry/node';
 
 export interface CliBuilderOptions {
   info: CliInfo;
@@ -85,7 +86,20 @@ export class CliBuilder {
       );
 
     return commands
-      .reduce((acc: Argv, item: CommandModule) => acc.command(item), cli)
+      .reduce((acc: Argv, item: CommandModule) => {
+        const handler = item.handler.bind(item);
+
+        item.handler = (args) =>
+          runWithAsyncContext(() => {
+            setContext('args', args);
+
+            handler(args);
+          });
+
+        acc.command(item);
+
+        return acc;
+      }, cli)
       .recommendCommands()
       .demandCommand(1)
       .strict(true)

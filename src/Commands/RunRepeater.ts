@@ -10,6 +10,7 @@ import {
 } from '../Repeater';
 import { Arguments, Argv, CommandModule } from 'yargs';
 import { Lifecycle } from 'tsyringe';
+import { captureException } from '@sentry/node';
 import { normalize } from 'path';
 
 export class RunRepeater implements CommandModule {
@@ -256,15 +257,16 @@ export class RunRepeater implements CommandModule {
       ['SIGTERM', 'SIGINT', 'SIGHUP'].forEach((event) =>
         process.on(event, async () => {
           await repeaterLauncher.close();
-          process.exit(0);
+          process.exitCode = 0;
         })
       );
 
       await repeaterLauncher.run(args.id as string, args.run as boolean);
     } catch (e) {
+      captureException(e);
       logger.error(e.message);
       await repeaterLauncher.close();
-      process.exit(1);
+      process.exitCode = 1;
     }
   }
 }
