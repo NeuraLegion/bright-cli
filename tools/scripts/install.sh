@@ -1,61 +1,53 @@
 #!/usr/bin/env bash
 
-# ensure the entire script has been downloaded
+# Ensure the entire script has been downloaded
 {
-  # install directory for the script
+  # Expected environment variables
+  VENDOR=bright
+  PRODUCT_NAME=$VENDOR-cli
   INSTALL_DIR="${INSTALL_DIR:-$HOME/.local/bin}"
-  # name of the script
-  CLI_NAME=bright-cli
-  # name of the asset to download
-  FILENAME=$CLI_NAME
-  # base URL for downloading the binary
-  DOWNLOAD_BASE_URL=https://github.com/NeuraLegion/$FILENAME/releases/latest/download
-  # TODO: map to ours asset names
-  OS=$(uname -s | tr '[:upper:]' '[:lower:]')
-  # TODO: hardcoded at this moment, replace with $(uname -m) later on
-  ARCH=x64
-  # possible profile files
   PROFILE_FILES=("$HOME/.bashrc" "$HOME/.bash_profile" "$HOME/.zshrc" "$HOME/.profile")
 
-  # download and ensure non-duplicate filename
+  # Download an executable
+  OS=$(uname -s | tr '[:upper:]' '[:lower:]')
+  DOWNLOAD_URL=https://github.com/NeuraLegion/$PRODUCT_NAME/releases/latest/download/$PRODUCT_NAME
+
   if [[ "$OS" == "linux-gnu"* ]]; then
-    FILENAME+="-linux-$ARCH"
+    DOWNLOAD_URL+="-linux-x64"
   elif [[ "$OSTYPE" == "darwin"* ]]; then
-    FILENAME+="-macos-$ARCH"
+    DOWNLOAD_URL+="-macos-x64"
   else
     echo "Error: unknown OS type."
     exit 1
   fi
 
-  # download and ensure non-duplicate filename
-  DOWNLOAD_URL="$DOWNLOAD_BASE_URL/$FILENAME"
-
-  # create INSTALL_DIR if it doesn't exist
+  # Create an installation folder if not exist
   if [ ! -d "$INSTALL_DIR" ] ; then
     echo "Creating $INSTALL_DIR folder..."
     mkdir -p "$INSTALL_DIR"
   fi
 
-  if [ -f "$INSTALL_DIR/$CLI_NAME" ]; then
-    echo "$CLI_NAME already exists in $INSTALL_DIR. Removing the existing version."
-    rm -f "$INSTALL_DIR/$CLI_NAME"
+  # Remove the original executable if exists
+  if [ -f "$INSTALL_DIR/$PRODUCT_NAME" ]; then
+    echo "$PRODUCT_NAME already exists in $INSTALL_DIR. Removing the existing version."
+    rm -f "$INSTALL_DIR/$PRODUCT_NAME"
   fi
 
-  echo "Installing $CLI_NAME to $INSTALL_DIR..."
+  echo "Installing $PRODUCT_NAME to $INSTALL_DIR..."
   if command -v curl >/dev/null 2>&1; then
-      curl -fsSL "$DOWNLOAD_URL" > "$INSTALL_DIR/$CLI_NAME"
+      curl -fsSL "$DOWNLOAD_URL" > "$INSTALL_DIR/$PRODUCT_NAME"
   elif command -v wget >/dev/null 2>&1; then
-      wget -qO- "$DOWNLOAD_URL" > "$INSTALL_DIR/$CLI_NAME"
+      wget -qO- "$DOWNLOAD_URL" > "$INSTALL_DIR/$PRODUCT_NAME"
   else
       echo "Error: curl or wget not found."
       exit 1
   fi
 
-  echo "Granting permission to execute $INSTALL_DIR/$CLI_NAME..."
-  chmod +x "$INSTALL_DIR/$CLI_NAME"
+  echo "Granting permission to execute $INSTALL_DIR/$PRODUCT_NAME..."
+  chmod +x "$INSTALL_DIR/$PRODUCT_NAME"
 
   echo "Patching PATH env variable..."
-  # loop over profile files and update PATH if they exist
+  # Loop over profile files and update PATH if they exist
   for PROFILE_FILE in "${PROFILE_FILES[@]}"
   do
       if [ -f "$PROFILE_FILE" ]; then

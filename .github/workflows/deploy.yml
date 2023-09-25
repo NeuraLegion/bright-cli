@@ -111,21 +111,10 @@ jobs:
       - name: Build executable file
         run: npm run build:pkg -- -t node${{ matrix.node }}-${{ matrix.target }}-x64
 
-      - name: Copy deps
-        if: startsWith(matrix.os, 'win')
-        run: Copy-Item ".\node_modules\win-ca\lib\roots.exe" -Destination ".\bin\roots.exe"
-
-      - name: Install WIX
-        if: startsWith(matrix.os, 'win')
-        run: |
-          curl -OLS https://github.com/wixtoolset/wix3/releases/download/wix3111rtm/wix311.exe
-          .\wix311.exe /install /quiet /norestart
-
       - name: Build MSI
         if: startsWith(matrix.os, 'win')
-        run: .\tools\msi\build.ps1
+        run: .\tools\scripts\build-msi.ps1
         shell: pwsh
-        continue-on-error: true
 
       - uses: svenstaro/upload-release-action@v2
         with:

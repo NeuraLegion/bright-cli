@@ -17,7 +17,6 @@
     <Media Id="1" Cabinet="brightcli.cab" EmbedCab="yes" />
     <MajorUpgrade DowngradeErrorMessage="A later version of $(var.ProductName) is already installed. Setup will now exit." Schedule="afterInstallExecute" />
     <Icon Id="BrightIcon" SourceFile="$(var.RepoDir)\tools\resources\logo.ico" />
-    <Icon Id="WixUIInfoIco" SourceFile="$(var.RepoDir)\tools\resources\logo.ico" />
     <Directory Id="TARGETDIR" Name="SourceDir">
       <Directory Id="ProgramMenuFolder">
         <Directory Id="ProgramMenuDir" Name="$(var.ProductName)">
