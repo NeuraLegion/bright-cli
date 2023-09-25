@@ -1,3 +1,4 @@
+import { captureException } from '@sentry/node';
 import chalk from 'chalk';
 import { format } from 'util';
 
@@ -33,6 +34,17 @@ export class Logger {
     if (this.logLevel < LogLevel.ERROR) {
       return;
     }
+
+    captureException(message, {
+      fingerprint: [message],
+      contexts: {
+        errorArgs: args.reduce<Record<number, any>>((acc, arg, index) => {
+          acc[index] = arg;
+
+          return acc;
+        }, {})
+      }
+    });
 
     this.write(message, LogLevel.ERROR, ...args);
   }
