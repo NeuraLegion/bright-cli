@@ -8,7 +8,6 @@ export function sentry() {
       if (event.contexts.args) {
         event.contexts.args = {
           ...event.contexts.args,
-
           t: event.contexts.args.t && '[Filtered]',
           token: event.contexts.args.token && '[Filtered]'
         };
