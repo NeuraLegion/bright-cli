@@ -39,11 +39,7 @@ export class Logger {
       fingerprint: [message],
       level: 'error',
       contexts: {
-        errorArgs: args.reduce<Record<number, any>>((acc, arg, index) => {
-          acc[index] = arg;
-
-          return acc;
-        }, {})
+        errorArgs: Object.fromEntries(args.entries())
       }
     });
 
