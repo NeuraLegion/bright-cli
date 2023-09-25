@@ -60,6 +60,10 @@ export interface RepeaterServerErrorEvent {
   message: string;
 }
 
+export interface RepeaterUpgradeAvailableEvent {
+  version: string;
+}
+
 export interface RepeaterServerScriptsUpdatedEvent {
   script: string | Record<string, string>;
 }
@@ -91,6 +95,10 @@ export interface RepeaterServer {
 
   scriptsUpdated(
     handler: (event: RepeaterServerScriptsUpdatedEvent) => Promise<void> | void
+  ): void;
+
+  upgradeAvailable(
+    handler: (event: RepeaterUpgradeAvailableEvent) => Promise<void> | void
   ): void;
 
   networkTesting(

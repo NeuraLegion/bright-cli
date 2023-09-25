@@ -11,7 +11,8 @@ import {
   RepeaterServerNetworkTestResult,
   RepeaterServerScriptsUpdatedEvent,
   DeployCommandOptions,
-  DeploymentRuntime
+  DeploymentRuntime,
+  RepeaterUpgradeAvailableEvent
 } from './RepeaterServer';
 import { inject, injectable } from 'tsyringe';
 import io, { Socket } from 'socket.io-client';
@@ -122,6 +123,14 @@ export class DefaultRepeaterServer implements RepeaterServer {
   ): void {
     this.socket.on('test-network', (payload, callback) =>
       this.processEventHandler('test-network', payload, handler, callback)
+    );
+  }
+
+  public upgradeAvailable(
+    handler: (event: RepeaterUpgradeAvailableEvent) => Promise<void> | void
+  ): void {
+    this.socket.on('update-available', (payload, callback) =>
+      this.processEventHandler('update-available', payload, handler, callback)
     );
   }
 
