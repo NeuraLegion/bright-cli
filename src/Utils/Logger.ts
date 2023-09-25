@@ -1,4 +1,4 @@
-import { captureException } from '@sentry/node';
+import { captureMessage } from '@sentry/node';
 import chalk from 'chalk';
 import { format } from 'util';
 
@@ -35,8 +35,9 @@ export class Logger {
       return;
     }
 
-    captureException(message, {
+    captureMessage(message, {
       fingerprint: [message],
+      level: 'error',
       contexts: {
         errorArgs: args.reduce<Record<number, any>>((acc, arg, index) => {
           acc[index] = arg;

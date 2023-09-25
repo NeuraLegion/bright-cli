@@ -2,6 +2,7 @@ import { init } from '@sentry/node';
 
 export function sentry() {
   init({
+    attachStacktrace: true,
     dsn: process.env.SENTRY_DSN,
     release: process.env.VERSION,
     beforeSend: (event) => {
