@@ -137,6 +137,12 @@ export class ServerRepeaterLauncher implements RepeaterLauncher {
     this.repeaterServer.scriptsUpdated((payload) =>
       this.commandHub.compileScripts(payload.script)
     );
+    this.repeaterServer.upgradeAvailable((payload) =>
+      logger.warn(
+        'A new Repeater version (%s) is available, please update Bright CLI',
+        payload.version
+      )
+    );
     this.repeaterServer.reconnectionAttempted(({ attempt, maxAttempts }) =>
       logger.warn('Failed to connect (attempt %d/%d)', attempt, maxAttempts)
     );
