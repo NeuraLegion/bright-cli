@@ -262,7 +262,7 @@ export class RunRepeater implements CommandModule {
 
       await repeaterLauncher.run(args.id as string, args.run as boolean);
     } catch (e) {
-      logger.error(e.message);
+      logger.error(e);
       await repeaterLauncher.close();
       process.exitCode = 1;
     }

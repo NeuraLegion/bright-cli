@@ -1,4 +1,4 @@
-import { captureMessage } from '@sentry/node';
+import { captureException, captureMessage } from '@sentry/node';
 import chalk from 'chalk';
 import { format } from 'util';
 
@@ -30,18 +30,38 @@ export class Logger {
     this._logLevel = logLevel;
   }
 
-  public error(message: string, ...args: any[]): void {
+  public error(error: Error, message?: string, ...args: any[]): void;
+  public error(message: string, ...args: any[]): void;
+  public error(
+    errorOrMessage: Error | string,
+    messageOrArg: any,
+    ...args: any[]
+  ): void {
     if (this.logLevel < LogLevel.ERROR) {
       return;
     }
 
-    captureMessage(message, {
-      fingerprint: [message],
-      level: 'error',
+    const captureContext = {
       contexts: {
-        errorArgs: Object.fromEntries(args.entries())
+        errorArgs: Object.fromEntries([messageOrArg, ...args].entries())
       }
-    });
+    };
+    let message: string;
+
+    if (typeof errorOrMessage === 'string') {
+      args.unshift(messageOrArg);
+      message = errorOrMessage;
+
+      captureMessage(message, {
+        ...captureContext,
+        fingerprint: [message],
+        level: 'error'
+      });
+    } else {
+      captureException(errorOrMessage, captureContext);
+
+      message = messageOrArg ?? errorOrMessage.message;
+    }
 
     this.write(message, LogLevel.ERROR, ...args);
   }
