@@ -57,7 +57,12 @@
     {
       "name": "next",
       "channel": "next",
-      "prerelease": "next"
+      "prerelease": true
+    },
+    {
+      "name": "alpha",
+      "channel": "alpha",
+      "prerelease": true
     }
   ],
   "ci": true

@@ -7,7 +7,6 @@ on:
 env:
   VERSION: ${{ github.event.release.tag_name }}
   TARGET_REF: ${{ github.event.release.target_commitish }}
-  TAG: ${{ github.event.release.target_commitish == 'master' && 'latest' || 'next' }}
 
 jobs:
   install-deps:
@@ -162,6 +161,18 @@ jobs:
 
       - name:  Setup node
         uses: ./.github/workflows/composite/npm
+
+      - name: Set TAG based on target_commitish
+        run: |
+          if [ "${{ github.event.release.target_commitish }}" == "next" ]; then
+            echo "TAG=next" >> $GITHUB_ENV
+          elif [ "${{ github.event.release.target_commitish }}" == "alpha" ]; then
+            echo "TAG=alpha" >> $GITHUB_ENV
+          elif [ "${{ github.event.release.target_commitish }}" == "master" ]; then
+            echo "TAG=latest" >> $GITHUB_ENV
+          else
+            exit 1
+          fi
 
       - run: npm publish --tag $TAG
         env:
