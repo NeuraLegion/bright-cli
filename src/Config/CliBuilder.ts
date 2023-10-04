@@ -1,8 +1,13 @@
 import { CliConfig, ConfigReader } from './ConfigReader';
 import { ClusterArgs, Helpers, logger, LogLevel } from '../Utils';
+import { SystemConfigReader } from './SystemConfigReader';
 import { CliInfo } from './CliInfo';
 import { Arguments, Argv, CommandModule } from 'yargs';
-import { runWithAsyncContext, setContext } from '@sentry/node';
+import {
+  init as initSentry,
+  runWithAsyncContext as runSentryWithAsyncContext,
+  setContext as setSentryContext
+} from '@sentry/node';
 
 export interface CliBuilderOptions {
   info: CliInfo;
@@ -89,12 +94,33 @@ export class CliBuilder {
       .reduce((acc: Argv, item: CommandModule) => {
         const handler = item.handler.bind(item);
 
-        item.handler = (args) =>
-          runWithAsyncContext(() => {
-            setContext('args', args);
+        item.handler = async (args: Arguments) => {
+          const systemConfigReader = new SystemConfigReader(args.api as string);
+          const systemConfig = await systemConfigReader.read();
 
-            handler(args);
+          initSentry({
+            attachStacktrace: true,
+            dsn: systemConfig.sentryDsn,
+            release: process.env.VERSION,
+            beforeSend: (event) => {
+              if (event.contexts.args) {
+                event.contexts.args = {
+                  ...event.contexts.args,
+                  t: event.contexts.args.t && '[Filtered]',
+                  token: event.contexts.args.token && '[Filtered]'
+                };
+              }
+
+              return event;
+            }
           });
+
+          return runSentryWithAsyncContext(() => {
+            setSentryContext('args', args);
+
+            return handler(args);
+          });
+        };
 
         acc.command(item);
 
