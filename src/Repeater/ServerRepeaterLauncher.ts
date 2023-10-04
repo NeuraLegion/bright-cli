@@ -14,6 +14,7 @@ import { Helpers, logger } from '../Utils';
 import { CliInfo } from '../Config';
 import { RepeaterCommandHub } from './RepeaterCommandHub';
 import { delay, inject, injectable } from 'tsyringe';
+import chalk from 'chalk';
 
 @injectable()
 export class ServerRepeaterLauncher implements RepeaterLauncher {
@@ -123,7 +124,7 @@ export class ServerRepeaterLauncher implements RepeaterLauncher {
       );
     });
     this.repeaterServer.errorOccurred(({ message }) => {
-      logger.error(message);
+      logger.error(`%s: %s`, chalk.red('(!) CRITICAL'), message);
     });
     this.repeaterServer.reconnectionFailed((payload) =>
       this.reconnectionFailed(payload)
@@ -139,7 +140,8 @@ export class ServerRepeaterLauncher implements RepeaterLauncher {
     );
     this.repeaterServer.upgradeAvailable((payload) =>
       logger.warn(
-        'A new Repeater version (%s) is available, please update Bright CLI',
+        '%s: A new Repeater version (%s) is available, for update instruction visit https://docs.brightsec.com/docs/installation-options',
+        chalk.yellow('(!) IMPORTANT'),
         payload.version
       )
     );
@@ -147,7 +149,7 @@ export class ServerRepeaterLauncher implements RepeaterLauncher {
       logger.warn('Failed to connect (attempt %d/%d)', attempt, maxAttempts)
     );
     this.repeaterServer.reconnectionSucceeded(() =>
-      logger.log('Repeater connected')
+      logger.log('The Repeater (%s) connected', this.info.version)
     );
   }
 
