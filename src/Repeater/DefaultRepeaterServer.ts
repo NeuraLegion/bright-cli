@@ -226,7 +226,7 @@ export class DefaultRepeaterServer implements RepeaterServer {
         payload,
         error
       );
-      logger.error('Error: %s', error.message);
+      logger.error(error);
     }
   }
 

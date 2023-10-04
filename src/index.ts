@@ -16,6 +16,9 @@ import {
   Integration
 } from './Commands';
 import { CliBuilder, container } from './Config';
+import { sentry } from './Utils';
+
+sentry();
 
 container.resolve(CliBuilder).build({
   commands: [
