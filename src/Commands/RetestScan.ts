@@ -10,11 +10,23 @@ export class RetestScan implements CommandModule {
 
   public builder(argv: Argv): Argv {
     return argv
+      .option('name', {
+        alias: 'n',
+        describe: 'Name of the scan.',
+        string: false,
+        demandOption: false
+      })
       .option('token', {
         alias: 't',
         describe: 'Bright API-key',
         requiresArg: true,
         demandOption: true
+      })
+      .option('template', {
+        alias: 'tp',
+        requiresArg: false,
+        string: true,
+        describe: 'ID of the template'
       })
       .positional('scan', {
         describe: 'ID of an existing scan which you want to re-run.',
@@ -35,8 +47,20 @@ export class RetestScan implements CommandModule {
 
   public async handler(args: Arguments): Promise<void> {
     try {
+      if (!args.name && args.template) {
+        throw Error('please make sure that name is specified.');
+      }
+
+      const body = args.name && {
+        templateId: args.template as string,
+        name: args.name as string
+      };
+
       const scanManager: Scans = container.resolve(Scans);
-      const scanId: string = await scanManager.retest(args.scan as string);
+      const scanId: string = await scanManager.retest(
+        args.scan as string,
+        body
+      );
 
       // eslint-disable-next-line no-console
       console.log(scanId);
