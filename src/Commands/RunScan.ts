@@ -94,6 +94,12 @@ export class RunScan implements CommandModule {
         string: true,
         describe: 'ID of the project'
       })
+      .option('template', {
+        alias: 'tp',
+        requiresArg: false,
+        string: true,
+        describe: 'ID of the template'
+      })
       .option('module', {
         default: Module.DAST,
         requiresArg: true,
@@ -178,6 +184,7 @@ export class RunScan implements CommandModule {
         module: args.module,
         authObjectId: args.auth,
         projectId: args.project,
+        templateId: args.template,
         buckets: args.bucket,
         hostsFilter: args.hostFilter,
         headers: Helpers.parseHeaders(args.header as string[]),

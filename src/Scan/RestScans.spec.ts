@@ -65,6 +65,7 @@ describe('RestScans', () => {
         const scanConfig: ScanConfig = {
           name: 'scan',
           module: Module.DAST,
+          buckets: [],
           tests: [],
           fileId: 'id'
         };
@@ -100,6 +101,7 @@ describe('RestScans', () => {
       const scanConfig: ScanConfig = {
         name: 'scan',
         module: Module.DAST,
+        buckets: [],
         tests: [],
         fileId: 'id'
       };

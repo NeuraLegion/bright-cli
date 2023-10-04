@@ -135,6 +135,7 @@ export interface ScanConfig {
   module: Module;
   authObjectId?: string;
   projectId?: string;
+  templateId?: string;
   discoveryTypes?: Discovery[];
   tests: TestType[];
   buckets: string[];
