@@ -1,13 +1,8 @@
 import { CliConfig, ConfigReader } from './ConfigReader';
-import { ClusterArgs, Helpers, logger, LogLevel } from '../Utils';
+import { ClusterArgs, Helpers, logger, LogLevel, Sentry } from '../Utils';
 import { SystemConfigReader } from './SystemConfigReader';
 import { CliInfo } from './CliInfo';
 import { Arguments, Argv, CommandModule } from 'yargs';
-import {
-  init as initSentry,
-  runWithAsyncContext as runSentryWithAsyncContext,
-  setContext as setSentryContext
-} from '@sentry/node';
 
 export interface CliBuilderOptions {
   info: CliInfo;
@@ -98,7 +93,7 @@ export class CliBuilder {
           const systemConfigReader = new SystemConfigReader(args.api as string);
           const systemConfig = await systemConfigReader.read();
 
-          initSentry({
+          Sentry.init({
             attachStacktrace: true,
             dsn: systemConfig.sentryDsn,
             release: process.env.VERSION,
@@ -115,8 +110,8 @@ export class CliBuilder {
             }
           });
 
-          return runSentryWithAsyncContext(() => {
-            setSentryContext('args', args);
+          return Sentry.runWithAsyncContext(() => {
+            Sentry.setContext('args', args);
 
             return handler(args);
           });
