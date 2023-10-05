@@ -39,28 +39,33 @@ export class SystemConfigReader {
     };
   }
 
-  private async rotateIfNecessary() {
+  private needsRotation(configFile: SystemConfigFile) {
     if (process.env.NODE_ENV !== 'production') {
       return;
     }
 
+    const lifeTime = Date.now() - configFile.updatedAt.getTime();
+
+    return lifeTime >= this.rotationInterval;
+  }
+
+  private async rotateIfNecessary() {
     logger.debug('Trying to rotate system config');
 
     const configFile = await this.getConfigFile();
-    const lifeTime = Date.now() - configFile.updatedAt.getTime();
 
-    if (lifeTime < this.rotationInterval) {
+    if (!this.needsRotation(configFile)) {
       logger.debug(
-        'Rotation is not needed, system config is fresh: %s ms',
-        lifeTime
+        'Rotation is not needed, last updated on: %s ms',
+        configFile.updatedAt
       );
 
       return;
     }
 
     logger.debug(
-      "Rotating system config because it's too old: %s ms",
-      lifeTime
+      'Rotating system config last updated on: %s ms',
+      configFile.updatedAt
     );
 
     const newConfig = await this.fetchNewConfig();
