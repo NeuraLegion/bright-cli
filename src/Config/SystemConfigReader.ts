@@ -105,9 +105,11 @@ export class SystemConfigReader {
 
       const file = await readFile(this.path);
       const fileConfig = JSON.parse(file.toString()) as SystemConfigFile;
-      fileConfig.updatedAt = new Date(fileConfig.updatedAt);
 
-      return fileConfig;
+      return {
+        ...fileConfig,
+        updatedAt: new Date(fileConfig.updatedAt)
+      };
     } catch (e) {
       logger.debug('Error during loading system config file', e);
       logger.debug('Using default system config file');
