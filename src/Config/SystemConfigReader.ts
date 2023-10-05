@@ -19,7 +19,7 @@ interface SystemConfigFile {
 export class SystemConfigReader {
   private readonly rotationInterval = 3600000;
   private readonly path = join(homedir(), '.brightclirc');
-  private client: RequestPromiseAPI;
+  private readonly client: RequestPromiseAPI;
 
   constructor(baseUrl: string) {
     this.client = request.defaults({
