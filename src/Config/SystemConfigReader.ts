@@ -110,11 +110,10 @@ export class SystemConfigReader {
       return fileConfig;
     } catch (e) {
       logger.debug('Error during loading system config file', e);
+      logger.debug('Using default system config file');
+
+      return defaultConfigFile;
     }
-
-    logger.debug('Using default system config file');
-
-    return defaultConfigFile;
   }
 
   private async updateConfigFile(configFile: SystemConfigFile) {
@@ -133,10 +132,8 @@ export class SystemConfigReader {
 
       return true;
     } catch (e) {
-      // pass
+      return false;
     }
-
-    return false;
   }
 
   private async fetchNewConfig(): Promise<SystemConfig | undefined> {
