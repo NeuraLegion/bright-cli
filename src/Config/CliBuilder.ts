@@ -97,7 +97,7 @@ export class CliBuilder {
             attachStacktrace: true,
             dsn: systemConfig.sentryDsn,
             release: process.env.VERSION,
-            beforeSend: (event) => {
+            beforeSend(event) {
               if (event.contexts.args) {
                 event.contexts.args = {
                   ...event.contexts.args,
