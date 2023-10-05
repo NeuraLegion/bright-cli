@@ -1,11 +1,10 @@
 import { logger } from '../Utils';
 import request, { RequestPromiseAPI } from 'request-promise';
-import { promises, constants } from 'fs';
+import { promises } from 'fs';
 import { join } from 'path';
 import { homedir } from 'os';
 
-const { readFile, writeFile, access } = promises;
-const { F_OK } = constants;
+const { readFile, writeFile } = promises;
 
 export interface SystemConfig {
   sentryDsn?: string;
@@ -98,16 +97,6 @@ export class SystemConfigReader {
     try {
       logger.debug('Loading system config file');
 
-      const configFileExists = await this.configFileExists();
-
-      if (!configFileExists) {
-        logger.debug(
-          "System config file doesn't exist. Creating a new one with default values"
-        );
-
-        await this.updateConfigFile(defaultConfigFile);
-      }
-
       const file = await readFile(this.path);
       const fileConfig = JSON.parse(file.toString()) as SystemConfigFile;
 
@@ -130,16 +119,6 @@ export class SystemConfigReader {
       await writeFile(this.path, JSON.stringify(configFile));
     } catch (e) {
       logger.debug('Error during updating system config file', e);
-    }
-  }
-
-  private async configFileExists(): Promise<boolean> {
-    try {
-      await access(this.path, F_OK);
-
-      return true;
-    } catch (e) {
-      return false;
     }
   }
 
