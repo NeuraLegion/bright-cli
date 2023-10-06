@@ -1,10 +1,14 @@
 import { Breakpoint } from '../Breakpoint';
 import { BreakpointException } from './BreakpointException';
-import { CountIssuesBySeverity, IssueCategory } from '../Scans';
+import { ScanIssues } from '../Scans';
+import { Severity, severityRanges } from '../Severity';
 
 export class OnSeverity extends Breakpoint {
-  constructor(private readonly severity: IssueCategory) {
+  private readonly breakSeverities: readonly Severity[];
+
+  constructor(private readonly severity: Severity) {
     super();
+    this.breakSeverities = severityRanges.get(severity);
   }
 
   protected breakOn(): never {
@@ -13,9 +17,9 @@ export class OnSeverity extends Breakpoint {
     );
   }
 
-  protected selectCriterion(
-    stats: CountIssuesBySeverity[]
-  ): CountIssuesBySeverity | undefined {
-    return stats.find((x: CountIssuesBySeverity) => x.type === this.severity);
+  protected isExcepted(stats: ScanIssues): boolean {
+    return this.breakSeverities.some(
+      (severity) => stats[`numberOf${severity}SeverityIssues`] > 0
+    );
   }
 }
