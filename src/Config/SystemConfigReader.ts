@@ -1,10 +1,9 @@
 import { logger } from '../Utils';
 import request, { RequestPromiseAPI } from 'request-promise';
-import { promises } from 'fs';
+import { readFile, writeFile } from 'fs';
 import { join } from 'path';
 import { homedir } from 'os';
-
-const { readFile, writeFile } = promises;
+import { promisify } from 'util';
 
 export interface SystemConfig {
   sentryDsn?: string;
@@ -97,7 +96,7 @@ export class SystemConfigReader {
     try {
       logger.debug('Loading system config file');
 
-      const file = await readFile(this.path);
+      const file = await promisify(readFile)(this.path);
       const fileConfig = JSON.parse(file.toString()) as SystemConfigFile;
 
       return {
@@ -116,7 +115,7 @@ export class SystemConfigReader {
     logger.debug('Updating system config file');
 
     try {
-      await writeFile(this.path, JSON.stringify(configFile));
+      await promisify(writeFile)(this.path, JSON.stringify(configFile));
     } catch (e) {
       logger.debug('Error during updating system config file', e);
     }
