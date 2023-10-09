@@ -3,6 +3,7 @@ import { Breakpoint } from './Breakpoint';
 import { Logger, logger } from '../Utils';
 import { BasePolling } from './BasePolling';
 import { Scans, ScanState, ScanStatus } from './Scans';
+import { PollingConfig } from './PollingFactory';
 import {
   instance,
   mock,
@@ -14,6 +15,15 @@ import {
 } from 'ts-mockito';
 
 describe('BasePolling', () => {
+  const firstResponse: ScanState = {
+    numberOfHighSeverityIssues: 0,
+    numberOfCriticalSeverityIssues: 0,
+    numberOfLowSeverityIssues: 0,
+    numberOfMediumSeverityIssues: 0,
+    status: ScanStatus.RUNNING
+  };
+  const scanId = 'hAXZjjahZqpvgK3yNEdp6t';
+
   const breakpointMock = mock<Breakpoint>();
   const scanManagerMock = mock<Scans>();
 
@@ -35,7 +45,7 @@ describe('BasePolling', () => {
     it('should warn if timeout is not specified', () => {
       // arrange
       const options = {
-        scanId: 'scanId'
+        scanId
       };
 
       // act
@@ -61,7 +71,7 @@ describe('BasePolling', () => {
     it('should warn if interval is less than 10s', () => {
       // arrange
       const options = {
-        scanId: 'scanId',
+        scanId,
         interval: 5000
       };
 
@@ -81,35 +91,37 @@ describe('BasePolling', () => {
   });
 
   describe('start', () => {
-    it('should start polling and stop on breakpoint exception', async () => {
-      // arrange
-      const scanId = 'scanId';
-      const sut = new BasePolling(
-        {
-          scanId,
-          interval: 1
-        },
+    const options: Omit<PollingConfig, 'breakpoint'> = { scanId, interval: 1 };
+    const spiedOptions = spy(options);
+
+    let sut!: BasePolling;
+
+    beforeEach(() => {
+      sut = new BasePolling(
+        options,
         instance(scanManagerMock),
         instance(breakpointMock)
       );
-      const response: ScanState = {
-        numberOfHighSeverityIssues: 0,
-        numberOfCriticalSeverityIssues: 0,
-        numberOfLowSeverityIssues: 0,
-        numberOfMediumSeverityIssues: 0,
-        status: ScanStatus.RUNNING
-      };
+    });
+
+    afterEach(() => reset(spiedOptions));
+
+    it('should start polling and stop on breakpoint exception', async () => {
+      // arrange
+
       when(scanManagerMock.status(scanId))
-        .thenResolve(response)
-        .thenResolve({ ...response, numberOfLowSeverityIssues: 1 });
+        .thenResolve(firstResponse)
+        .thenResolve({ ...firstResponse, numberOfLowSeverityIssues: 1 });
 
       when(
         breakpointMock.execute(
           objectContaining({ numberOfLowSeverityIssues: 1 })
         )
       ).thenReject(new Error('breakpoint error'));
+
       // act
       const act = sut.start();
+
       // assert
       await expect(act).rejects.toThrow('breakpoint error');
       verify(loggerSpy.log('Starting polling...')).once();
@@ -125,28 +137,13 @@ describe('BasePolling', () => {
       'should start polling and stop on scan status changed to "%s"',
       async (status) => {
         // arrange
-        const scanId = 'scanId';
-        const sut = new BasePolling(
-          {
-            scanId,
-            interval: 1
-          },
-          instance(scanManagerMock),
-          instance(breakpointMock)
-        );
-        const response: ScanState = {
-          numberOfHighSeverityIssues: 0,
-          numberOfCriticalSeverityIssues: 0,
-          numberOfLowSeverityIssues: 0,
-          numberOfMediumSeverityIssues: 0,
-          status: ScanStatus.RUNNING
-        };
         when(scanManagerMock.status(scanId))
-          .thenResolve(response)
-          .thenResolve({ ...response, status });
+          .thenResolve(firstResponse)
+          .thenResolve({ ...firstResponse, status });
 
         // act
         await sut.start();
+
         // assert
         verify(scanManagerMock.status(scanId)).twice();
       }
@@ -154,25 +151,10 @@ describe('BasePolling', () => {
 
     it('should start polling and stop on timeout', async () => {
       // arrange
-      const scanId = 'scanId';
       const timeout = 10000;
-      const sut = new BasePolling(
-        {
-          scanId,
-          timeout,
-          interval: 1
-        },
-        instance(scanManagerMock),
-        instance(breakpointMock)
-      );
-      const response: ScanState = {
-        numberOfHighSeverityIssues: 0,
-        numberOfCriticalSeverityIssues: 0,
-        numberOfLowSeverityIssues: 0,
-        numberOfMediumSeverityIssues: 0,
-        status: ScanStatus.RUNNING
-      };
-      when(scanManagerMock.status(scanId)).thenResolve(response);
+      when(spiedOptions.timeout).thenReturn(timeout);
+
+      when(scanManagerMock.status(scanId)).thenResolve(firstResponse);
 
       // act
       jest.useFakeTimers();
@@ -190,7 +172,6 @@ describe('BasePolling', () => {
   describe('stop', () => {
     it('should stop polling', async () => {
       // arrange
-      const scanId = 'scanId';
       const sut = new BasePolling(
         {
           scanId,
@@ -200,14 +181,7 @@ describe('BasePolling', () => {
         instance(breakpointMock)
       );
 
-      const response: ScanState = {
-        numberOfHighSeverityIssues: 0,
-        numberOfCriticalSeverityIssues: 0,
-        numberOfLowSeverityIssues: 0,
-        numberOfMediumSeverityIssues: 0,
-        status: ScanStatus.RUNNING
-      };
-      when(scanManagerMock.status(scanId)).thenResolve(response);
+      when(scanManagerMock.status(scanId)).thenResolve(firstResponse);
 
       // act
       const start = sut.start();

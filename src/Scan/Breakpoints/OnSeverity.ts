@@ -8,7 +8,7 @@ export class OnSeverity extends Breakpoint {
 
   constructor(private readonly severity: Severity) {
     super();
-    this.breakSeverities = severityRanges.get(severity);
+    this.breakSeverities = severityRanges.get(severity) ?? [];
   }
 
   protected breakOn(): never {

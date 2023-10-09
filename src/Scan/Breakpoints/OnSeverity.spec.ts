@@ -1,4 +1,4 @@
-import { Severity } from '../Severity';
+import { Severity, severityRanges } from '../Severity';
 import { OnSeverity } from './OnSeverity';
 import { ScanStatus } from '../Scans';
 import { BreakpointException } from './BreakpointException';
@@ -6,18 +6,19 @@ import { BreakpointException } from './BreakpointException';
 const createCases = (severity: Severity, breaks: Severity[]) =>
   breaks.map((breakOn) => ({
     severity,
-    breakOn
+    scanIssues: {
+      numberOfLowSeverityIssues: breakOn === Severity.LOW ? 1 : 0,
+      numberOfMediumSeverityIssues: breakOn === Severity.MEDIUM ? 1 : 0,
+      numberOfHighSeverityIssues: breakOn === Severity.HIGH ? 1 : 0,
+      numberOfCriticalSeverityIssues: breakOn === Severity.CRITICAL ? 1 : 0
+    }
   }));
 
 describe('OnSeverity', () => {
-  const severityLowBreak = Object.values(Severity);
-  const severityMediumBreak = [
-    Severity.MEDIUM,
-    Severity.HIGH,
-    Severity.CRITICAL
-  ];
-  const severityHighBreak = [Severity.HIGH, Severity.CRITICAL];
-  const severityCriticalBreak = [Severity.CRITICAL];
+  const severityLowBreak = severityRanges.get(Severity.LOW);
+  const severityMediumBreak = severityRanges.get(Severity.MEDIUM);
+  const severityHighBreak = severityRanges.get(Severity.HIGH);
+  const severityCriticalBreak = severityRanges.get(Severity.CRITICAL);
 
   describe('execute', () => {
     it.each([
@@ -27,16 +28,9 @@ describe('OnSeverity', () => {
       ...createCases(Severity.CRITICAL, severityCriticalBreak)
     ])(
       'should throw BreakPointException when created for $severity and scan has $breakOn issue',
-      async ({ severity, breakOn }) => {
+      async ({ severity, scanIssues }) => {
         // arrange
         const onSeverity = new OnSeverity(severity);
-
-        const scanIssues = {
-          numberOfLowSeverityIssues: breakOn === Severity.LOW ? 1 : 0,
-          numberOfMediumSeverityIssues: breakOn === Severity.MEDIUM ? 1 : 0,
-          numberOfHighSeverityIssues: breakOn === Severity.HIGH ? 1 : 0,
-          numberOfCriticalSeverityIssues: breakOn === Severity.CRITICAL ? 1 : 0
-        };
 
         // act
         const act = onSeverity.execute({
@@ -70,16 +64,9 @@ describe('OnSeverity', () => {
       )
     ])(
       'should do nothing when created for $severity and scan has $breakOn issue',
-      async ({ severity, breakOn }) => {
+      async ({ severity, scanIssues }) => {
         // arrange
         const onSeverity = new OnSeverity(severity);
-
-        const scanIssues = {
-          numberOfLowSeverityIssues: breakOn === Severity.LOW ? 1 : 0,
-          numberOfMediumSeverityIssues: breakOn === Severity.MEDIUM ? 1 : 0,
-          numberOfHighSeverityIssues: breakOn === Severity.HIGH ? 1 : 0,
-          numberOfCriticalSeverityIssues: breakOn === Severity.CRITICAL ? 1 : 0
-        };
 
         // act
         const result = await onSeverity.execute({

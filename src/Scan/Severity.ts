@@ -5,7 +5,7 @@ export enum Severity {
   CRITICAL = 'Critical'
 }
 
-export const severityRanges = new Map(
+export const severityRanges: ReadonlyMap<Severity, Severity[]> = new Map(
   Object.values(Severity).map((severity) => {
     switch (severity) {
       case Severity.CRITICAL:
