@@ -64,9 +64,11 @@ export class CliBuilder {
         describe: 'SOCKS4 or SOCKS5 URL to proxy internal traffic'
       })
       .middleware((args: Arguments) => {
-        ({ bus: args.bus, api: args.api } = Helpers.getClusterUrls(
-          args as ClusterArgs
-        ));
+        ({
+          bus: args.bus,
+          api: args.api,
+          repeaterServer: args.repeaterServer
+        } = Helpers.getClusterUrls(args as ClusterArgs));
       })
       // TODO: (victor.polyakov@brightsec.com) Write correct type checking
       .middleware(

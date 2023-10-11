@@ -6,4 +6,3 @@ export * from './IntegrationClient';
 export * from './IntegrationType';
 export * from './Project';
 export * from './IntegrationOptions';
-export * from './NetworkTestResult';

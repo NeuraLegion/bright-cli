@@ -13,6 +13,11 @@ inputs:
     description: 'Node.JS version'
     required: false
     default: "18"
+  cache:
+    description: 'Cache'
+    required: false
+    default: "npm"
+
 
 runs:
   using: 'composite'
@@ -21,7 +26,7 @@ runs:
       uses: actions/setup-node@v3
       with:
         node-version: ${{ inputs.version }}
-        cache: 'npm'
+        cache: ${{ inputs.cache }}
         registry-url: ${{ inputs.registry }}
         scope: ${{ inputs.scope }}
 

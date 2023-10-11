@@ -1,6 +1,6 @@
 {
   "name": "@brightsec/cli",
-  "version": "10.3.1",
+  "version": "11.0.0-next.27",
   "private": false,
   "repository": {
     "type": "git",
@@ -26,20 +26,24 @@
   },
   "dependencies": {
     "@neuralegion/capture-har": "^0.3.4",
-    "@neuralegion/os-service": "^1.0.0",
+    "@neuralegion/os-service": "^1.2.2",
+    "@neuralegion/raw-socket": "^1.8.2",
     "ajv": "^6.12.6",
     "amqplib": "~0.10.2",
+    "arch": "^2.2.0",
     "better-ajv-errors": "^1.2.0",
     "chalk": "^4.1.2",
+    "ci-info": "^3.8.0",
     "content-type": "^1.0.4",
     "find-up": "^5.0.0",
     "js-yaml": "^4.1.0",
     "ms": "^2.1.3",
-    "raw-socket": "^1.7.0",
     "reflect-metadata": "^0.1.13",
     "request": "~2.88.2",
     "request-promise": "~4.2.6",
     "semver": "^7.3.5",
+    "socket.io-client": "^4.7.1",
+    "socket.io-msgpack-parser": "^3.0.2",
     "socks": "~2.6.1",
     "socks-proxy-agent": "~5.0.0",
     "tslib": "^2.3.1",
@@ -55,7 +59,6 @@
     "@semantic-release/exec": "^6.0.3",
     "@semantic-release/git": "^10.0.1",
     "@types/amqplib": "~0.8.2",
-    "@types/concat-stream": "^1.6.1",
     "@types/content-type": "^1.1.5",
     "@types/har-format": "^1.2.7",
     "@types/jest": "^28.1.7",
@@ -70,7 +73,6 @@
     "@typescript-eslint/eslint-plugin": "^5.33.1",
     "@typescript-eslint/parser": "^5.33.1",
     "clean-webpack-plugin": "^4.0.0",
-    "concat-stream": "^2.0.0",
     "cross-env": "^7.0.3",
     "eslint": "^8.22.0",
     "eslint-config-prettier": "^8.5.0",
@@ -124,10 +126,11 @@
   "pkg": {
     "scripts": "dist/**/*.js",
     "assets": [
-      "./node_modules/@neuralegion/os-service/build/Release/service.node",
-      "./node_modules/raw-socket/build/Release/raw.node",
-      "./node_modules/win-ca/lib/crypt32-ia32.node",
-      "./node_modules/win-ca/lib/crypt32-x64.node"
+      "./node_modules/win-ca/lib/crypt32-*.node",
+      "./node_modules/@neuralegion/os-service/prebuilds/win32-*/node.abi108.node",
+      "./node_modules/@neuralegion/raw-socket/prebuilds/win32-*/node.abi108.node",
+      "./node_modules/@neuralegion/raw-socket/prebuilds/linux-x64/node.abi83.glibc.node",
+      "./node_modules/@neuralegion/raw-socket/prebuilds/darwin-x64+arm64/node.abi108.node"
     ],
     "targets": [
       "node14-linux-x64",
@@ -153,5 +156,8 @@
     "build:pkg": "pkg .",
     "prepare": "is-ci || husky install",
     "start": "node -r ts-node/register/transpile-only -r tsconfig-paths/register src/index.ts"
+  },
+  "brightCli": {
+    "distribution": "unknown"
   }
 }

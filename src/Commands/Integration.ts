@@ -7,7 +7,7 @@ import {
   IntegrationOptions
 } from '../Integrations';
 import { Helpers, logger } from '../Utils';
-import { StartupManagerFactory } from '../StartupScripts';
+import { StartupManager } from '../StartupScripts';
 import {
   RequestProjectsHandler,
   RegisterIssueHandler,
@@ -74,6 +74,16 @@ export class Integration implements CommandModule {
         alias: 'd',
         describe: 'Run integration in daemon mode'
       })
+      .option('remove-daemon', {
+        requiresArg: false,
+        alias: ['rm', 'remove'],
+        describe: 'Stop and remove integration daemon'
+      })
+      .option('run', {
+        requiresArg: false,
+        hidden: true
+      })
+      .conflicts('remove-daemon', 'daemon')
       .middleware((args: Arguments) => {
         container
           .register<IntegrationOptions>(IntegrationOptions, {
@@ -104,9 +114,7 @@ export class Integration implements CommandModule {
 
   public async handler(args: Arguments): Promise<void> {
     const bus: Bus = container.resolve(Bus);
-    const startupManagerFactory: StartupManagerFactory = container.resolve(
-      StartupManagerFactory
-    );
+    const startupManager: StartupManager = container.resolve(StartupManager);
     const pingTracers: IntegrationPingTracer[] =
       container.resolveAll(IntegrationClient);
     const pingTracer = pingTracers.find((p) => p.type === args.type);
@@ -122,6 +130,15 @@ export class Integration implements CommandModule {
       await bus.destroy();
     };
 
+    if (args.remove) {
+      await startupManager.uninstall(Integration.SERVICE_NAME);
+      logger.log(
+        'The Repeater daemon process (SERVICE: %s) was stopped and deleted successfully',
+        Integration.SERVICE_NAME
+      );
+      process.exit(0);
+    }
+
     if (args.daemon) {
       const { command, args: execArgs } = Helpers.getExecArgs({
         escape: false,
@@ -129,7 +146,6 @@ export class Integration implements CommandModule {
         exclude: ['--daemon', '-d']
       });
 
-      const startupManager = startupManagerFactory.create({ dispose });
       await startupManager.install({
         command,
         args: execArgs,
@@ -143,8 +159,6 @@ export class Integration implements CommandModule {
       );
 
       process.exit(0);
-
-      return;
     }
 
     const onError = (e: Error) => {
@@ -159,6 +173,10 @@ export class Integration implements CommandModule {
     };
 
     process.on('SIGTERM', stop).on('SIGINT', stop).on('SIGHUP', stop);
+
+    if (args.run) {
+      await startupManager.run(() => stop());
+    }
 
     const notify = (connectivity: ConnectivityStatus) =>
       bus?.publish(
