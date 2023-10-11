@@ -1,3 +1,5 @@
+import { Severity } from './Severity';
+
 export enum Discovery {
   CRAWLER = 'crawler',
   ARCHIVE = 'archive',
@@ -151,31 +153,21 @@ export interface ScanConfig {
   repeaters?: string[];
 }
 
-export enum IssueCategory {
-  MEDIUM = 'Medium',
-  HIGH = 'High',
-  LOW = 'Low',
-  CRITICAL = 'Critical'
-}
-
-export interface CountIssuesBySeverity {
-  number: number;
-  type: IssueCategory;
-}
-
 export enum ScanStatus {
   RUNNING = 'running',
   PENDING = 'pending',
   STOPPED = 'stopped',
   FAILED = 'failed',
   DONE = 'done',
+  DISRUPTED = 'disrupted',
   SCHEDULED = 'scheduled',
   QUEUED = 'queued'
 }
 
-export interface ScanState {
+export type ScanIssues = Record<`numberOf${Severity}SeverityIssues`, number>;
+
+export interface ScanState extends ScanIssues {
   status: ScanStatus;
-  issuesBySeverity: CountIssuesBySeverity[];
 }
 
 export enum SourceType {
