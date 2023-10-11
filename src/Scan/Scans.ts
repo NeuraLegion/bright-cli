@@ -151,11 +151,6 @@ export interface ScanConfig {
   repeaters?: string[];
 }
 
-export interface ScanRetestConfig {
-  name?: string;
-  templateId?: string;
-}
-
 export enum IssueCategory {
   MEDIUM = 'Medium',
   HIGH = 'High',
@@ -198,7 +193,7 @@ export interface StorageFile {
 export interface Scans {
   create(body: ScanConfig): Promise<string>;
 
-  retest(scanId: string, body?: ScanRetestConfig): Promise<string>;
+  retest(scanId: string): Promise<string>;
 
   stop(scanId: string): Promise<void>;
 

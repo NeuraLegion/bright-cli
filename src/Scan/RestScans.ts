@@ -2,7 +2,6 @@ import {
   Discovery,
   Header,
   ScanConfig,
-  ScanRetestConfig,
   Scans,
   ScanState,
   SourceType,
@@ -53,12 +52,8 @@ export class RestScans implements Scans {
     return id;
   }
 
-  public async retest(
-    scanId: string,
-    body?: ScanRetestConfig
-  ): Promise<string> {
+  public async retest(scanId: string): Promise<string> {
     const { id }: { id: string } = await this.client.post({
-      ...(body?.name && { body: { config: body } }),
       uri: `/api/v1/scans/${scanId}/retest`
     });
 
