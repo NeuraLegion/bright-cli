@@ -41,32 +41,36 @@ export class SystemConfigManager {
   public enableBackgroundRotation(onRotation: (config: SystemConfig) => void) {
     this.isBackgroundRotationEnabled = true;
 
-    (async () => {
-      while (this.isBackgroundRotationEnabled) {
-        logger.debug('Performing background rotation of system config file');
-
-        const isRotated = await this.rotateIfNecessary();
-
-        if (isRotated) {
-          const configFile = await this.getConfigFile();
-
-          onRotation(configFile.data);
-
-          logger.debug(
-            'Background rotation is done, sleeping for %s ms',
-            this.rotationInterval
-          );
-        }
-
-        await this.sleep(this.rotationInterval);
-      }
-    })().catch((e) => {
+    this.runBackgroundRotation(onRotation).catch((e) => {
       logger.debug('An error occurred during background rotation', e);
     });
   }
 
   public disableBackgroundRotation() {
     this.isBackgroundRotationEnabled = false;
+  }
+
+  private async runBackgroundRotation(
+    onRotation: (config: SystemConfig) => void
+  ) {
+    while (this.isBackgroundRotationEnabled) {
+      logger.debug('Performing background rotation of system config file');
+
+      const isRotated = await this.rotateIfNecessary();
+
+      if (isRotated) {
+        const configFile = await this.getConfigFile();
+
+        onRotation(configFile.data);
+
+        logger.debug(
+          'Background rotation is done, sleeping for %s ms',
+          this.rotationInterval
+        );
+      }
+
+      await this.sleep(this.rotationInterval);
+    }
   }
 
   private sleep(ms: number) {
