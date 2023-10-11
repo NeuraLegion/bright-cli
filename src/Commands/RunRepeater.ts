@@ -1,9 +1,15 @@
-import { RabbitMQBusOptions } from '../Bus';
 import { Cert, RequestExecutorOptions } from '../RequestExecutor';
 import { Helpers, logger } from '../Utils';
 import { container } from '../Config';
-import { RepeaterLauncher } from '../Repeater';
+import { RabbitMQBusOptions } from '../Bus';
+import {
+  DefaultRepeaterLauncher,
+  DefaultRepeaterServerOptions,
+  RepeaterLauncher,
+  ServerRepeaterLauncher
+} from '../Repeater';
 import { Arguments, Argv, CommandModule } from 'yargs';
+import { Lifecycle } from 'tsyringe';
 import { normalize } from 'path';
 
 export class RunRepeater implements CommandModule {
@@ -125,6 +131,11 @@ export class RunRepeater implements CommandModule {
         alias: ['rm', 'remove'],
         describe: 'Stop and remove repeater daemon'
       })
+      .option('rabbitmq', {
+        boolean: true,
+        describe:
+          'Enable legacy mode, utilizing the RabbitMQ connection for communication.'
+      })
       .conflicts('remove-daemon', 'daemon')
       .conflicts('experimental-connection-reuse', 'proxy')
       .conflicts('experimental-connection-reuse', 'proxy-external')
@@ -150,7 +161,7 @@ export class RunRepeater implements CommandModule {
 
         return true;
       })
-      .middleware((args: Arguments) =>
+      .middleware((args: Arguments) => {
         container
           .register<RequestExecutorOptions>(RequestExecutorOptions, {
             useValue: {
@@ -191,7 +202,27 @@ export class RunRepeater implements CommandModule {
               }
             }
           })
-      );
+          .register<DefaultRepeaterServerOptions>(
+            DefaultRepeaterServerOptions,
+            {
+              useValue: {
+                uri: args.repeaterServer as string,
+                token: args.token as string,
+                connectTimeout: 10000,
+                proxyUrl: (args.proxyExternal ?? args.proxy) as string
+              }
+            }
+          )
+          .register<RepeaterLauncher>(
+            RepeaterLauncher,
+            {
+              useClass: args.rabbitmq
+                ? DefaultRepeaterLauncher
+                : ServerRepeaterLauncher
+            },
+            { lifecycle: Lifecycle.Singleton }
+          );
+      });
   }
 
   // eslint-disable-next-line complexity
@@ -225,15 +256,15 @@ export class RunRepeater implements CommandModule {
       ['SIGTERM', 'SIGINT', 'SIGHUP'].forEach((event) =>
         process.on(event, async () => {
           await repeaterLauncher.close();
-          process.exit(0);
+          process.exitCode = 0;
         })
       );
 
       await repeaterLauncher.run(args.id as string, args.run as boolean);
     } catch (e) {
-      logger.error(e.message);
+      logger.error(e);
       await repeaterLauncher.close();
-      process.exit(1);
+      process.exitCode = 1;
     }
   }
 }

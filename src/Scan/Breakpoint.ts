@@ -1,26 +1,13 @@
-import { CountIssuesBySeverity } from './Scans';
+import { ScanState } from './Scans';
 
 export abstract class Breakpoint {
-  protected abstract breakOn(stat?: CountIssuesBySeverity): never | void;
-
-  protected abstract selectCriterion(
-    stats: CountIssuesBySeverity[]
-  ): CountIssuesBySeverity | undefined;
+  protected abstract breakOn(stat: ScanState): never | void;
+  protected abstract isExcepted(stats: ScanState): boolean;
 
   // eslint-disable-next-line @typescript-eslint/require-await
-  public async execute(
-    statsIssuesCategories: CountIssuesBySeverity[]
-  ): Promise<void> {
-    const stat: CountIssuesBySeverity | undefined = this.selectCriterion(
-      statsIssuesCategories
-    );
-
-    if (this.isExcepted(stat)) {
-      this.breakOn(stat);
+  public async execute(scanIssues: ScanState): Promise<void> {
+    if (this.isExcepted(scanIssues)) {
+      this.breakOn(scanIssues);
     }
-  }
-
-  protected isExcepted(stats?: CountIssuesBySeverity): boolean {
-    return !!stats?.number;
   }
 }

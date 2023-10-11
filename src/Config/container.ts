@@ -13,10 +13,7 @@ import {
   ScriptLoader,
   VirtualScripts
 } from '../Scripts';
-import {
-  DefaultStartupManagerFactory,
-  StartupManagerFactory
-} from '../StartupScripts';
+import { DefaultStartupManager, StartupManager } from '../StartupScripts';
 import {
   AMQConnectivity,
   Connectivity,
@@ -53,14 +50,23 @@ import { ConfigReader } from './ConfigReader';
 import { DefaultConfigReader } from './DefaultConfigReader';
 import { CliInfo } from './CliInfo';
 import { CliBuilder } from './CliBuilder';
-import { DefaultRepeaterLauncher, RepeaterLauncher } from '../Repeater';
+import {
+  RepeaterServer,
+  DefaultRepeaterServer,
+  RepeaterCommandHub,
+  DefaultRepeaterCommandHub,
+  RuntimeDetector,
+  DefaultRuntimeDetector
+} from '../Repeater';
 import { container, Lifecycle } from 'tsyringe';
 
 container
   .register('tsyringe', {
     useValue: container
   })
-  .register<CliInfo>(CliInfo, { useValue: new CliInfo(process.cwd()) })
+  .register<CliInfo>(CliInfo, {
+    useValue: new CliInfo(__dirname)
+  })
   .register(
     RequestExecutor,
     {
@@ -90,9 +96,9 @@ container
     { lifecycle: Lifecycle.Singleton }
   )
   .register(
-    StartupManagerFactory,
+    StartupManager,
     {
-      useClass: DefaultStartupManagerFactory
+      useClass: DefaultStartupManager
     },
     { lifecycle: Lifecycle.Singleton }
   )
@@ -100,6 +106,25 @@ container
     Bus,
     {
       useClass: RabbitMQBus
+    },
+    { lifecycle: Lifecycle.Singleton }
+  )
+  .register(
+    RuntimeDetector,
+    { useClass: DefaultRuntimeDetector },
+    { lifecycle: Lifecycle.Singleton }
+  )
+  .register(
+    RepeaterServer,
+    {
+      useClass: DefaultRepeaterServer
+    },
+    { lifecycle: Lifecycle.Singleton }
+  )
+  .register(
+    RepeaterCommandHub,
+    {
+      useClass: DefaultRepeaterCommandHub
     },
     { lifecycle: Lifecycle.Singleton }
   )
@@ -198,11 +223,6 @@ container
   .register<ConfigReader>(
     ConfigReader,
     { useClass: DefaultConfigReader },
-    { lifecycle: Lifecycle.Singleton }
-  )
-  .register<RepeaterLauncher>(
-    RepeaterLauncher,
-    { useClass: DefaultRepeaterLauncher },
     { lifecycle: Lifecycle.Singleton }
   )
   .register<CliBuilder>(CliBuilder, {

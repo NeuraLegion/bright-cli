@@ -1,7 +1,7 @@
 import { RepeaterLauncher } from './RepeaterLauncher';
 import { Bus } from '../Bus';
-import { ScriptLoader, VirtualScripts, VirtualScriptType } from '../Scripts';
-import { StartupManagerFactory } from '../StartupScripts';
+import { ScriptLoader, VirtualScripts } from '../Scripts';
+import { StartupManager } from '../StartupScripts';
 import { Certificates } from '../RequestExecutor';
 import { Helpers, logger } from '../Utils';
 import {
@@ -14,6 +14,8 @@ import {
   SendRequestHandler
 } from '../Handlers';
 import { CliInfo } from '../Config';
+import { RepeaterCommandHub } from './RepeaterCommandHub';
+import { RuntimeDetector } from './RuntimeDetector';
 import { gt } from 'semver';
 import chalk from 'chalk';
 import { delay, inject, injectable } from 'tsyringe';
@@ -27,16 +29,18 @@ export class DefaultRepeaterLauncher implements RepeaterLauncher {
   private repeaterStarted: boolean = false;
 
   constructor(
+    @inject(RuntimeDetector) private readonly runtimeDetector: RuntimeDetector,
     @inject(Bus) private readonly bus: Bus,
+    @inject(RepeaterCommandHub) private readonly commandHub: RepeaterCommandHub,
     @inject(VirtualScripts) private readonly virtualScripts: VirtualScripts,
-    @inject(StartupManagerFactory)
-    private readonly startupManagerFactory: StartupManagerFactory,
+    @inject(StartupManager)
+    private readonly startupManager: StartupManager,
     @inject(Certificates) private readonly certificates: Certificates,
     @inject(ScriptLoader) private readonly scriptLoader: ScriptLoader,
     @inject(delay(() => CliInfo)) private readonly info: CliInfo
   ) {
     this.bus.onReconnectionFailure(async (e: Error) => {
-      logger.error(e.message);
+      logger.error(e);
       await this.close();
       process.exit(1);
     });
@@ -60,11 +64,7 @@ export class DefaultRepeaterLauncher implements RepeaterLauncher {
       exclude: ['--daemon', '-d']
     });
 
-    const startupManager = this.startupManagerFactory.create({
-      dispose: this.close.bind(this)
-    });
-
-    await startupManager.install({
+    await this.startupManager.install({
       command,
       args: execArgs,
       name: DefaultRepeaterLauncher.SERVICE_NAME,
@@ -85,36 +85,8 @@ export class DefaultRepeaterLauncher implements RepeaterLauncher {
     return this.scriptLoader.load(scripts);
   }
 
-  public compileScripts(script: string | Record<string, string>): void {
-    if (!script) {
-      return;
-    }
-
-    this.virtualScripts.clear(VirtualScriptType.REMOTE);
-
-    if (this.virtualScripts.size) {
-      logger.warn(
-        'Error Loading Script: Cannot accept scripts from the cloud when a local script is already loaded'
-      );
-
-      return;
-    }
-
-    if (typeof script === 'string') {
-      this.virtualScripts.set('*', VirtualScriptType.REMOTE, script);
-    } else {
-      Object.entries(script).map(([wildcard, code]: [string, string]) =>
-        this.virtualScripts.set(wildcard, VirtualScriptType.REMOTE, code)
-      );
-    }
-  }
-
   public async uninstall(): Promise<void> {
-    const startupManager = this.startupManagerFactory.create({
-      dispose: this.close.bind(this)
-    });
-
-    await startupManager.uninstall(DefaultRepeaterLauncher.SERVICE_NAME);
+    await this.startupManager.uninstall(DefaultRepeaterLauncher.SERVICE_NAME);
 
     logger.log(
       'The Repeater daemon process (SERVICE: %s) was stopped and deleted successfully',
@@ -131,13 +103,13 @@ export class DefaultRepeaterLauncher implements RepeaterLauncher {
     }
 
     if (asDaemon) {
-      const startupManager = this.startupManagerFactory.create({
-        dispose: this.close.bind(this)
-      });
-      await startupManager.run();
+      await this.startupManager.run(() => this.close());
     }
 
     logger.log('Starting the Repeater (%s)...', this.info.version);
+    logger.warn(
+      'WARNING: You are using the legacy flow. Consider using the new repeater that utilizes standard ports.'
+    );
 
     this.repeaterId = repeaterId;
 
@@ -147,7 +119,16 @@ export class DefaultRepeaterLauncher implements RepeaterLauncher {
       payload: new RepeaterRegistering(
         repeaterId,
         this.info.version,
-        !!this.virtualScripts.size
+        !!this.virtualScripts.size,
+        {
+          transport: 'rabbitmq',
+          ci: this.runtimeDetector.ci(),
+          os: this.runtimeDetector.os(),
+          arch: this.runtimeDetector.arch(),
+          docker: this.runtimeDetector.isInsideDocker(),
+          distribution: this.runtimeDetector.distribution(),
+          nodeVersion: this.runtimeDetector.nodeVersion()
+        }
       )
     });
 
@@ -163,7 +144,7 @@ export class DefaultRepeaterLauncher implements RepeaterLauncher {
       }
 
       if (payload.script) {
-        this.compileScripts(payload.script);
+        this.commandHub.compileScripts(payload.script);
       }
     }
 

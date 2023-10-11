@@ -33,9 +33,14 @@ jobs:
       - name: Install deps
         uses: ./.github/workflows/composite/npm
 
+      - name: Set default distribution
+        run: npm pkg set brightCli.distribution=package
+
       - name: Build package
         run: npm run build
-
+        env:
+          SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
+          
       - name: Pack artifacts
         run: npm pack
 
@@ -63,18 +68,20 @@ jobs:
     strategy:
       matrix:
         include:
-          - os: windows-2022
+          - os: windows-2019
             target: win
             node: 18
-          - os: macos-latest
+          - os: macos-11
             target: macos
             node: 18
-          # Using the `ubuntu-18.04` runner instead of latest (i.e. `ubuntu-22.04`)
-          # because G++/GCC 4.8 is not in an official repository yet.
-          - os: ubuntu-22.04
+          # Using the `centos7-devtoolset7` runner instead of latest (i.e. `ubuntu-20.04`)
+          # with gcc 7 but glibc 2.17, so binaries are compatible for Ubuntu 14.04 and Debian 8.
+          - os: ubuntu-20.04
             target: linux
-            container: ubuntu:18.04
             node: 14
+            container:
+              image: centos/devtoolset-7-toolchain-centos7:7
+              options: "--user root"
     runs-on: ${{ matrix.os }}
     container: ${{ matrix.container }}
     steps:
@@ -90,46 +97,25 @@ jobs:
       - name: Install dev-deps
         if: startsWith(matrix.os, 'ubuntu')
         run: |
-          apt-get update -yq \
-            && apt-get install build-essential python python-dev python3-pip g++-4.8 gcc-4.8 -yq \
-            && apt-get clean \
-            && rm -rf /var/lib/apt/lists/*
-
-      - name: Configures aliases to GCC/G++
-        if: startsWith(matrix.os, 'ubuntu')
-        run: |
-          update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-4.8 10 \
-            --slave /usr/bin/g++ g++ /usr/bin/g++-4.8 \
-            --slave /usr/bin/gcov gcov /usr/bin/gcov-4.8
+          yum install build-essential python3 -y \
+            && yum clean all -y \
+            && rm -rf /var/cache/yum
 
       - name: Install deps
         uses: ./.github/workflows/composite/npm
         with:
           version: ${{ matrix.node }}
 
+      - name: Set distribution
+        run: npx json -I -f package.json -e "this.brightCli.distribution='${{ matrix.target }}-executable'"
+
       - name: Build executable file
         run: npm run build:pkg -- -t node${{ matrix.node }}-${{ matrix.target }}-x64
 
-      - name: Copy deps
-        if: startsWith(matrix.os, 'win')
-        run: |
-          Copy-Item ".\node_modules\@neuralegion\os-service\build\Release\service.node" -Destination ".\bin\service.node"
-          Copy-Item ".\node_modules\win-ca\lib\crypt32-ia32.node" -Destination ".\bin\crypt32-ia32.node"
-          Copy-Item ".\node_modules\win-ca\lib\crypt32-x64.node" -Destination ".\bin\crypt32-x64.node"
-          Copy-Item ".\node_modules\win-ca\lib\roots.exe" -Destination ".\bin\roots.exe"
-          Copy-Item ".\node_modules\raw-socket\build\Release\raw.node" -Destination ".\bin\raw.node"
-
-      - name: Install WIX
-        if: startsWith(matrix.os, 'win')
-        run: |
-          curl -OLS https://github.com/wixtoolset/wix3/releases/download/wix3111rtm/wix311.exe
-          .\wix311.exe /install /quiet /norestart
-
       - name: Build MSI
         if: startsWith(matrix.os, 'win')
-        run: .\tools\msi\build.ps1
+        run: .\tools\scripts\build-msi.ps1
         shell: pwsh
-        continue-on-error: true
 
       - uses: svenstaro/upload-release-action@v2
         with:
@@ -174,6 +160,9 @@ jobs:
             exit 1
           fi
 
+      - name: Set NPM distribution
+        run: npm pkg set brightCli.distribution=npm
+
       - run: npm publish --tag $TAG
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
@@ -181,7 +170,9 @@ jobs:
         # The scope does not align with the package name
         # FIXME: once GitHub organization name has been changed, we should prevent this behavior
       - name: Prepare GPR package
-        run: npm pkg set name='@neuralegion/bright-cli'
+        run: |
+          npm pkg set name='@neuralegion/bright-cli' \
+            && npm pkg set brightCli.distribution=gpr
 
       - name: Setup node
         uses: ./.github/workflows/composite/npm

@@ -1,0 +1,284 @@
+name: E2E Tests
+
+run-name: E2E Tests (${{ inputs.version }}, ${{ inputs.environment }})
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Bright CLI version (e.g.: v10.3.1)"
+        required: true
+      test-docker:
+        type: boolean
+        description: "Test Docker"
+        default: true
+      test-executables:
+        type: boolean
+        description: "Test Executables"
+        default: true
+      test-msi:
+        type: boolean
+        description: "Test MSI"
+        default: true
+      test-npm:
+        type: boolean
+        description: "Test NPM"
+        default: true
+      environment:
+        type: choice
+        default: staging
+        description: Environment
+        options:
+          - production
+          - staging
+          - development
+      test_timeout:
+        description: "Test timeout in seconds"
+        default: 3600
+
+jobs:
+  executables:
+    if: ${{ inputs.test-executables }}
+    runs-on: ${{ matrix.os }}
+    container: ${{ matrix.container }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            container: ubuntu:18.04
+            executable: bright-cli-linux-x64
+            node: 16
+          - os: ubuntu-latest
+            container: ubuntu:16.04
+            executable: bright-cli-linux-x64
+            node: 14
+          - os: ubuntu-latest
+            container: fedora:24
+            executable: bright-cli-linux-x64
+            node: 14
+          - os: ubuntu-latest
+            container: fedora:latest
+            executable: bright-cli-linux-x64
+            node: 18
+          - os: ubuntu-latest
+            executable: bright-cli-linux-x64
+            node: 18
+          - os: macos-latest
+            executable: bright-cli-macos-x64
+            node: 18
+          - os: windows-latest
+            executable: bright-cli-win-x64.exe
+            node: 18
+    steps:
+      - name: Install Packages (Fedora)
+        if: ${{ startsWith(matrix.container, 'fedora') }}
+        run: |
+          dnf -y update \
+            && dnf install -y curl tar \
+            && dnf clean all \
+            && rm -rf /var/cache/dnf/*
+
+      - name: Install Packages (Ubuntu)
+        if: startsWith(matrix.container, 'ubuntu')
+        run: |
+          apt-get update -yq \
+            && apt-get install curl -yq \
+            && apt-get clean \
+            && rm -rf /var/lib/apt/lists/*
+
+      - name: Checkout Repository
+        uses: actions/checkout@v2
+
+      - name: Download Executable
+        shell: bash
+        run: |
+          curl -fsSL https://github.com/NeuraLegion/bright-cli/releases/download/${{ inputs.version }}/${{ matrix.executable }} > ./${{ matrix.executable }}
+          chmod +x ./${{ matrix.executable }}
+
+      - name: Download Target
+        id: target
+        uses: ./.github/workflows/composite/todoapp
+
+      - name: Install Dependencies
+        uses: ./.github/workflows/composite/npm
+        with:
+          version: ${{ matrix.node }}
+          # https://github.com/actions/setup-node/issues/286#issuecomment-878865957
+          cache: ''
+
+      - name: Run Tests
+        run: npm run test:e2e
+        env:
+          E2E_CLI_VERSION: ${{ inputs.version }}
+          E2E_CLI_CMD: ${{ runner.os != 'windows' && format('./{0}', matrix.executable) || format('.\{0}', matrix.executable) }}
+          E2E_RUN_ID: ${{ format('{0}-{1}-{2}-{3}', github.run_number, github.run_attempt, github.job, strategy.job-index) }}
+          E2E_CLUSTER: ${{ secrets[format('E2E_{0}_HOST', inputs.environment )] }}
+          E2E_CLUSTER_API_KEY: ${{ secrets[format('E2E_{0}_API_KEY', inputs.environment )] }}
+          E2E_REPEATER_TARGET_URL: ${{ format('http://localhost:{0}', steps.target.outputs.port) }}
+          E2E_REPEATER_TARGET_CMD: ${{ steps.target.outputs.cmd }}
+          E2E_TEST_TIMEOUT: ${{ inputs.test_timeout }}
+  msi:
+    if: ${{ inputs.test-msi }}
+    runs-on: windows-latest
+    steps:
+      - name: Download and Install Bright CLI using MSI
+        shell: pwsh
+        run: |
+          Invoke-WebRequest -Uri https://github.com/NeuraLegion/bright-cli/releases/download/${{ inputs.version }}/bright-cli.msi -OutFile bright-cli.msi
+          $lastExitCode = (Start-Process msiexec.exe `
+            -ArgumentList "/i bright-cli.msi /qn /norestart /l*v `"$($pwd)\install.log`"" `
+            -PassThru `
+            -Wait `
+            -WorkingDirectory "$pwd").ExitCode
+          if ($lastExitCode -ne 0) {
+            Write-Error "Got exit code $lastExitCode."
+            Get-Content "$($pwd)\install.log"
+            exit 1
+          }
+          Write-Host "Bright CLI installation complete"
+          "C:\Program Files\BrightCLI" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+
+      - name: Get the version of Bright CLI after install
+        run: bright-cli.exe -v
+        shell: pwsh
+
+      - name: Checkout Repository
+        uses: actions/checkout@v2
+
+      - name: Download Target
+        id: target
+        uses: ./.github/workflows/composite/todoapp
+
+      - name: Install Dependencies
+        uses: ./.github/workflows/composite/npm
+        with:
+          # https://github.com/actions/setup-node/issues/286#issuecomment-878865957
+          cache: ''
+
+      - name: Run Tests
+        run: npm run test:e2e
+        env:
+          E2E_CLI_VERSION: ${{ inputs.version }}
+          E2E_CLI_CMD: ${{ 'bright-cli.exe' }}
+          E2E_RUN_ID: ${{ format('{0}-{1}-{2}-{3}', github.run_number, github.run_attempt, github.job, strategy.job-index) }}
+          E2E_CLUSTER: ${{ secrets[format('E2E_{0}_HOST', inputs.environment )] }}
+          E2E_CLUSTER_API_KEY: ${{ secrets[format('E2E_{0}_API_KEY', inputs.environment )] }}
+          E2E_REPEATER_TARGET_URL: ${{ format('http://localhost:{0}', steps.target.outputs.port) }}
+          E2E_REPEATER_TARGET_CMD: ${{ steps.target.outputs.cmd }}
+          E2E_TEST_TIMEOUT: ${{ inputs.test_timeout }}
+  docker:
+    if: ${{ inputs.test-docker }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        # Windows can't run linux docker images: https://github.com/actions/runner-images/issues/1143
+        os: [ubuntu-latest, macos-latest]
+    steps:
+      - name: Install Docker (MacOS)
+        if: ${{ startsWith(matrix.os, 'macos') }}
+        uses: docker-practice/actions-setup-docker@master
+        timeout-minutes: 12
+
+      - name: Pull Image
+        run: docker pull brightsec/cli:${{ inputs.version }}
+
+      - name: Checkout Repository
+        uses: actions/checkout@v2
+
+      - name: Download Target
+        id: target
+        uses: ./.github/workflows/composite/todoapp
+
+      - name: Install Dependencies
+        uses: ./.github/workflows/composite/npm
+        with:
+          # https://github.com/actions/setup-node/issues/286#issuecomment-878865957
+          cache: ''
+
+      - name: Run Tests
+        run: npm run test:e2e
+        env:
+          E2E_CLI_VERSION: ${{ inputs.version }}
+          E2E_CLI_CMD: docker run --add-host host.docker.internal:host-gateway --network host brightsec/cli:${{ inputs.version }}
+          E2E_RUN_ID: ${{ format('{0}-{1}-{2}-{3}', github.run_number, github.run_attempt, github.job, strategy.job-index) }}
+          E2E_CLUSTER: ${{ secrets[format('E2E_{0}_HOST', inputs.environment )] }}
+          E2E_CLUSTER_API_KEY: ${{ secrets[format('E2E_{0}_API_KEY', inputs.environment )] }}
+          E2E_REPEATER_TARGET_URL: ${{ format('http://host.docker.internal:{0}', steps.target.outputs.port) }}
+          E2E_REPEATER_TARGET_CMD: ${{ steps.target.outputs.cmd }}
+          E2E_TEST_TIMEOUT: ${{ inputs.test_timeout }}
+  npm:
+    if: ${{ inputs.test-npm }}
+    runs-on: ${{ matrix.os }}
+    container: ${{ matrix.container }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-latest, windows-latest]
+        node: [14, 16, 18]
+        include:
+          - os: ubuntu-latest
+            node: 14
+          - os: ubuntu-latest
+            node: 16
+          - os: ubuntu-latest
+            node: 18
+          - os: ubuntu-latest
+            container: ubuntu:16.04
+            node: 14
+          - os: ubuntu-latest
+            container: fedora:latest
+            node: 18
+          - os: ubuntu-latest
+            container: fedora:24
+            node: 14
+        exclude:
+          # TODO: Troubleshoot
+          - os: windows-latest
+            node: 14
+    steps:
+      - name: Install Packages (Fedora)
+        if: ${{ startsWith(matrix.container, 'fedora') }}
+        run: |
+          dnf -y update \
+            && dnf install -y curl tar \
+            && dnf clean all \
+            && rm -rf /var/cache/dnf/*
+
+      - name: Install Packages (Ubuntu)
+        if: startsWith(matrix.container, 'ubuntu')
+        run: |
+          apt-get update -yq \
+            && apt-get install curl -yq \
+            && apt-get clean \
+            && rm -rf /var/lib/apt/lists/*
+
+      - name: Checkout Repository
+        uses: actions/checkout@v2
+
+      - name: Download Target
+        id: target
+        uses: ./.github/workflows/composite/todoapp
+
+      - name: Install Dependencies
+        uses: ./.github/workflows/composite/npm
+        with:
+          version: ${{ matrix.node }}
+          # https://github.com/actions/setup-node/issues/286#issuecomment-878865957
+          cache: ''
+
+      - name: Install CLI
+        run: npm i -g @brightsec/cli@${{ inputs.version }}
+
+      - name: Run Tests
+        run: npm run test:e2e
+        env:
+          E2E_CLI_VERSION: ${{ inputs.version }}
+          E2E_CLI_CMD: bright-cli
+          E2E_RUN_ID: ${{ format('{0}-{1}-{2}-{3}', github.run_number, github.run_attempt, github.job, strategy.job-index) }}
+          E2E_CLUSTER: ${{ secrets[format('E2E_{0}_HOST', inputs.environment )] }}
+          E2E_CLUSTER_API_KEY: ${{ secrets[format('E2E_{0}_API_KEY', inputs.environment )] }}
+          E2E_REPEATER_TARGET_URL: ${{ format('http://localhost:{0}', steps.target.outputs.port) }}
+          E2E_REPEATER_TARGET_CMD: ${{ steps.target.outputs.cmd }}
+          E2E_TEST_TIMEOUT: ${{ inputs.test_timeout }}

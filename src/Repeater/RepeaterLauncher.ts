@@ -3,8 +3,6 @@ export interface RepeaterLauncher {
 
   loadScripts(scripts: Record<string, string>): Promise<void>;
 
-  compileScripts(scripts: string | Record<string, string>): void;
-
   run(repeaterId: string, asDaemon?: boolean): Promise<void>;
 
   close(): Promise<void>;
