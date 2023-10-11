@@ -154,7 +154,7 @@ export class ServerRepeaterLauncher implements RepeaterLauncher {
   }
 
   private reconnectionFailed({ error }: RepeaterServerReconnectionFailedEvent) {
-    logger.error(error.message);
+    logger.error(error);
     this.close().catch(logger.error);
     process.exit(1);
   }

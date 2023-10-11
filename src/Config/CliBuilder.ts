@@ -1,5 +1,6 @@
 import { CliConfig, ConfigReader } from './ConfigReader';
-import { ClusterArgs, Helpers, logger, LogLevel } from '../Utils';
+import { ClusterArgs, Helpers, logger, LogLevel, Sentry } from '../Utils';
+import { SystemConfigReader } from './SystemConfigReader';
 import { CliInfo } from './CliInfo';
 import { Arguments, Argv, CommandModule } from 'yargs';
 
@@ -85,7 +86,11 @@ export class CliBuilder {
       );
 
     return commands
-      .reduce((acc: Argv, item: CommandModule) => acc.command(item), cli)
+      .reduce(
+        (acc: Argv, item: CommandModule) =>
+          acc.command(this.wrapWithSentry(item)),
+        cli
+      )
       .recommendCommands()
       .demandCommand(1)
       .strict(true)
@@ -94,5 +99,39 @@ export class CliBuilder {
       .help('help')
       .alias('h', 'help')
       .wrap(null);
+  }
+
+  private wrapWithSentry(command: CommandModule) {
+    const handler = command.handler.bind(command);
+
+    command.handler = async (args: Arguments) => {
+      const systemConfigReader = new SystemConfigReader(args.api as string);
+      const systemConfig = await systemConfigReader.read();
+
+      Sentry.init({
+        attachStacktrace: true,
+        dsn: systemConfig.sentryDsn,
+        release: process.env.VERSION,
+        beforeSend(event) {
+          if (event.contexts.args) {
+            event.contexts.args = {
+              ...event.contexts.args,
+              t: event.contexts.args.t && '[Filtered]',
+              token: event.contexts.args.token && '[Filtered]'
+            };
+          }
+
+          return event;
+        }
+      });
+
+      return Sentry.runWithAsyncContext(() => {
+        Sentry.setContext('args', args);
+
+        return handler(args);
+      });
+    };
+
+    return command;
   }
 }
