@@ -51,12 +51,12 @@ export class SystemConfigManager {
           const configFile = await this.getConfigFile();
 
           onRotation(configFile.data);
-        }
 
-        logger.debug(
-          'Background rotation is done, sleeping for %s ms',
-          this.rotationInterval
-        );
+          logger.debug(
+            'Background rotation is done, sleeping for %s ms',
+            this.rotationInterval
+          );
+        }
 
         await this.sleep(this.rotationInterval);
       }
