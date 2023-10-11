@@ -8,3 +8,4 @@ export * from './BreakpointType';
 export * from './Breakpoint';
 export * from './Breakpoints';
 export * from './RestScans';
+export * from './Severity';

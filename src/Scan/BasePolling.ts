@@ -1,4 +1,4 @@
-import { CountIssuesBySeverity, Scans, ScanState, ScanStatus } from './Scans';
+import { Scans, ScanState, ScanStatus } from './Scans';
 import { Polling } from './Polling';
 import { Breakpoint } from './Breakpoint';
 import { Backoff, logger } from '../Utils';
@@ -78,21 +78,21 @@ export class BasePolling implements Polling {
     logger.debug(`The polling timeout has been set to %d ms.`, timeoutInMs);
   }
 
-  private async *poll(): AsyncIterableIterator<CountIssuesBySeverity[]> {
+  private async *poll(): AsyncIterableIterator<ScanState> {
     while (this.active) {
       await this.delay();
 
       const backoff = this.createBackoff();
 
-      const { status, issuesBySeverity }: ScanState = await backoff.execute(
-        () => this.scanManager.status(this.options.scanId)
+      const state: ScanState = await backoff.execute(() =>
+        this.scanManager.status(this.options.scanId)
       );
 
-      if (this.isRedundant(status)) {
+      if (this.isRedundant(state.status)) {
         break;
       }
 
-      yield issuesBySeverity;
+      yield state;
     }
   }
 
@@ -113,6 +113,7 @@ export class BasePolling implements Polling {
     return (
       status === ScanStatus.DONE ||
       status === ScanStatus.STOPPED ||
+      status === ScanStatus.DISRUPTED ||
       status === ScanStatus.FAILED
     );
   }
