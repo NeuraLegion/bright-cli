@@ -18,7 +18,7 @@ export class SystemConfigManager {
   private readonly rotationInterval = 3600000;
   private readonly path = join(homedir(), '.brightclirc');
   private readonly client: RequestPromiseAPI;
-  private isBackgroundRotationEnabled = false;
+  private backgroundRotationEnabled = false;
 
   constructor(baseUrl: string) {
     this.client = request.defaults({
@@ -39,7 +39,7 @@ export class SystemConfigManager {
   }
 
   public enableBackgroundRotation(onRotation: (config: SystemConfig) => void) {
-    this.isBackgroundRotationEnabled = true;
+    this.backgroundRotationEnabled = true;
 
     this.runBackgroundRotation(onRotation).catch((e) => {
       logger.debug('An error occurred during background rotation', e);
@@ -47,13 +47,13 @@ export class SystemConfigManager {
   }
 
   public disableBackgroundRotation() {
-    this.isBackgroundRotationEnabled = false;
+    this.backgroundRotationEnabled = false;
   }
 
   private async runBackgroundRotation(
     onRotation: (config: SystemConfig) => void
   ) {
-    while (this.isBackgroundRotationEnabled) {
+    while (this.backgroundRotationEnabled) {
       logger.debug('Performing background rotation of system config file');
 
       const isRotated = await this.rotateIfNecessary();
