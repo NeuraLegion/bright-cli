@@ -14,10 +14,11 @@ interface SystemConfigFile {
   updatedAt: Date;
 }
 
-export class SystemConfigReader {
+export class SystemConfigManager {
   private readonly rotationInterval = 3600000;
   private readonly path = join(homedir(), '.brightclirc');
   private readonly client: RequestPromiseAPI;
+  private backgroundRotationEnabled = false;
 
   constructor(baseUrl: string) {
     this.client = request.defaults({
@@ -35,6 +36,45 @@ export class SystemConfigReader {
       sentryDsn: process.env['SENTRY_DSN'],
       ...configFile.data
     };
+  }
+
+  public enableBackgroundRotation(onRotation: (config: SystemConfig) => void) {
+    this.backgroundRotationEnabled = true;
+
+    this.runBackgroundRotation(onRotation).catch((e) => {
+      logger.debug('An error occurred during background rotation', e);
+    });
+  }
+
+  public disableBackgroundRotation() {
+    this.backgroundRotationEnabled = false;
+  }
+
+  private async runBackgroundRotation(
+    onRotation: (config: SystemConfig) => void
+  ) {
+    while (this.backgroundRotationEnabled) {
+      logger.debug('Performing background rotation of system config file');
+
+      const isRotated = await this.rotateIfNecessary();
+
+      if (isRotated) {
+        const configFile = await this.getConfigFile();
+
+        onRotation(configFile.data);
+
+        logger.debug(
+          'Background rotation is done, sleeping for %s ms',
+          this.rotationInterval
+        );
+      }
+
+      await this.sleep(this.rotationInterval);
+    }
+  }
+
+  private sleep(ms: number) {
+    return new Promise((resolve) => setTimeout(resolve, ms).unref());
   }
 
   private needsRotation(configFile: SystemConfigFile) {
@@ -58,7 +98,7 @@ export class SystemConfigReader {
         configFile.updatedAt
       );
 
-      return;
+      return false;
     }
 
     logger.debug(
@@ -73,6 +113,8 @@ export class SystemConfigReader {
         data: newConfig,
         updatedAt: new Date()
       });
+
+      return true;
     } else {
       logger.debug('Rotation failed');
 
@@ -80,6 +122,8 @@ export class SystemConfigReader {
         ...configFile,
         updatedAt: new Date()
       });
+
+      return false;
     }
   }
 
