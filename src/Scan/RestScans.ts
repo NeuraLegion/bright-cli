@@ -5,7 +5,9 @@ import {
   Scans,
   ScanState,
   SourceType,
-  StorageFile
+  StorageFile,
+  SCAN_TESTS_TO_RUN_BY_DEFAULT,
+  ATTACK_PARAM_LOCATIONS_DEFAULT
 } from './Scans';
 import { CliInfo } from '../Config';
 import request, { RequestPromiseAPI } from 'request-promise';
@@ -87,11 +89,10 @@ export class RestScans implements Scans {
       };
     }
   > {
-    const discoveryTypes: Discovery[] = await this.exploreDiscovery(rest);
+    const config = await this.applyDefaultSettings(rest);
 
     return {
-      ...rest,
-      discoveryTypes,
+      ...config,
       info: {
         source: 'cli',
         client: {
@@ -134,5 +135,34 @@ export class RestScans implements Scans {
     }
 
     return discoveryTypes;
+  }
+
+  private async applyDefaultSettings(
+    scanConfig: Omit<ScanConfig, 'headers'>
+  ): Promise<Omit<ScanConfig, 'headers'>> {
+    const tests =
+      scanConfig.tests ??
+      (scanConfig.buckets ?? scanConfig.templateId
+        ? undefined
+        : [...SCAN_TESTS_TO_RUN_BY_DEFAULT]);
+    const attackParamLocations =
+      scanConfig.attackParamLocations ?? scanConfig.templateId
+        ? undefined
+        : [...ATTACK_PARAM_LOCATIONS_DEFAULT];
+    const exclusions =
+      scanConfig.exclusions?.params || scanConfig.exclusions.requests
+        ? scanConfig.exclusions
+        : undefined;
+
+    let discoveryTypes: Discovery[] = await this.exploreDiscovery(scanConfig);
+    discoveryTypes = discoveryTypes?.length ? discoveryTypes : undefined;
+
+    return {
+      ...scanConfig,
+      attackParamLocations,
+      discoveryTypes,
+      exclusions,
+      tests
+    };
   }
 }
