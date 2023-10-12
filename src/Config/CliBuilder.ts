@@ -1,6 +1,6 @@
 import { CliConfig, ConfigReader } from './ConfigReader';
 import { ClusterArgs, Helpers, logger, LogLevel, Sentry } from '../Utils';
-import { SystemConfigReader } from './SystemConfigReader';
+import { SystemConfigManager } from './SystemConfigManager';
 import { CliInfo } from './CliInfo';
 import { Arguments, Argv, CommandModule } from 'yargs';
 
@@ -105,33 +105,40 @@ export class CliBuilder {
     const handler = command.handler.bind(command);
 
     command.handler = async (args: Arguments) => {
-      const systemConfigReader = new SystemConfigReader(args.api as string);
-      const systemConfig = await systemConfigReader.read();
-
-      Sentry.init({
-        attachStacktrace: true,
-        dsn: systemConfig.sentryDsn,
-        release: process.env.VERSION,
-        beforeSend(event) {
-          if (event.contexts.args) {
-            event.contexts.args = {
-              ...event.contexts.args,
-              t: event.contexts.args.t && '[Filtered]',
-              token: event.contexts.args.token && '[Filtered]'
-            };
-          }
-
-          return event;
-        }
-      });
+      const systemConfigManager = new SystemConfigManager(args.api as string);
+      const systemConfig = await systemConfigManager.read();
 
       return Sentry.runWithAsyncContext(() => {
+        this.initSentry(systemConfig.sentryDsn);
         Sentry.setContext('args', args);
+
+        systemConfigManager.enableBackgroundRotation((rotatedSystemConfig) => {
+          this.initSentry(rotatedSystemConfig.sentryDsn);
+        });
 
         return handler(args);
       });
     };
 
     return command;
+  }
+
+  private initSentry(dsn: string) {
+    Sentry.init({
+      attachStacktrace: true,
+      dsn,
+      release: process.env.VERSION,
+      beforeSend(event) {
+        if (event.contexts.args) {
+          event.contexts.args = {
+            ...event.contexts.args,
+            t: event.contexts.args.t && '[Filtered]',
+            token: event.contexts.args.token && '[Filtered]'
+          };
+        }
+
+        return event;
+      }
+    });
   }
 }
