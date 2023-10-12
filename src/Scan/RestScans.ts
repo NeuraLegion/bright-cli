@@ -150,7 +150,7 @@ export class RestScans implements Scans {
         ? undefined
         : [...ATTACK_PARAM_LOCATIONS_DEFAULT];
     const exclusions =
-      scanConfig.exclusions?.params || scanConfig.exclusions.requests
+      scanConfig.exclusions?.params || scanConfig.exclusions?.requests
         ? scanConfig.exclusions
         : undefined;
 
