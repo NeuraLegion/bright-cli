@@ -51,10 +51,11 @@ export class Logger {
     if (typeof errorOrMessage === 'string') {
       args.unshift(messageOrArg);
       message = errorOrMessage;
+      const formattedMessage = format(message, ...args);
 
-      captureMessage(message, {
+      captureMessage(formattedMessage, {
         ...captureContext,
-        fingerprint: [message],
+        fingerprint: [formattedMessage],
         level: 'error'
       });
     } else {
