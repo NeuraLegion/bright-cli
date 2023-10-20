@@ -256,15 +256,15 @@ export class RunRepeater implements CommandModule {
       ['SIGTERM', 'SIGINT', 'SIGHUP'].forEach((event) =>
         process.on(event, async () => {
           await repeaterLauncher.close();
-          process.exit(0);
+          process.exitCode = 0;
         })
       );
 
       await repeaterLauncher.run(args.id as string, args.run as boolean);
     } catch (e) {
-      logger.error(e.message);
+      logger.error(e);
       await repeaterLauncher.close();
-      process.exit(1);
+      process.exitCode = 1;
     }
   }
 }

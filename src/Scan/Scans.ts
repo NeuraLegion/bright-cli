@@ -6,6 +6,16 @@ export enum Discovery {
   OAS = 'oas'
 }
 
+export enum AttackParamLocation {
+  ARTIFICAL_FRAGMENT = 'artifical-fragment',
+  ARTIFICAL_QUERY = 'artifical-query',
+  BODY = 'body',
+  FRAGMENT = 'fragment',
+  HEADER = 'header',
+  PATH = 'path',
+  QUERY = 'query'
+}
+
 export enum TestType {
   ANGULAR_CSTI = 'angular_csti',
   BACKUP_LOCATIONS = 'backup_locations',
@@ -102,19 +112,15 @@ export const SCAN_TESTS_TO_RUN_BY_DEFAULT: readonly TestType[] = Object.values(
     ].includes(x)
 );
 
+export const ATTACK_PARAM_LOCATIONS_DEFAULT: readonly AttackParamLocation[] = [
+  AttackParamLocation.BODY,
+  AttackParamLocation.FRAGMENT,
+  AttackParamLocation.QUERY
+];
+
 export enum Module {
   DAST = 'dast',
   FUZZER = 'fuzzer'
-}
-
-export enum AttackParamLocation {
-  ARTIFICAL_FRAGMENT = 'artifical-fragment',
-  ARTIFICAL_QUERY = 'artifical-query',
-  BODY = 'body',
-  FRAGMENT = 'fragment',
-  HEADER = 'header',
-  PATH = 'path',
-  QUERY = 'query'
 }
 
 export interface Header {
@@ -138,6 +144,7 @@ export interface ScanConfig {
   module: Module;
   authObjectId?: string;
   projectId?: string;
+  templateId?: string;
   discoveryTypes?: Discovery[];
   tests?: TestType[];
   buckets?: string[];

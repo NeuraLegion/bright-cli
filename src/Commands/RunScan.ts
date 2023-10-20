@@ -6,7 +6,8 @@ import {
   SCAN_TESTS_TO_RUN_BY_DEFAULT,
   ScanConfig,
   Scans,
-  TestType
+  TestType,
+  ATTACK_PARAM_LOCATIONS_DEFAULT
 } from '../Scan';
 import { Helpers, logger } from '../Utils';
 import { Arguments, Argv, CommandModule } from 'yargs';
@@ -94,6 +95,12 @@ export class RunScan implements CommandModule {
         string: true,
         describe: 'ID of the project'
       })
+      .option('template', {
+        alias: 'tp',
+        requiresArg: false,
+        string: true,
+        describe: 'ID of the template'
+      })
       .option('module', {
         default: Module.DAST,
         requiresArg: true,
@@ -139,11 +146,9 @@ export class RunScan implements CommandModule {
       })
       .option('param', {
         array: true,
-        default: [
-          AttackParamLocation.BODY,
-          AttackParamLocation.QUERY,
-          AttackParamLocation.FRAGMENT
-        ],
+        defaultDescription: `[${ATTACK_PARAM_LOCATIONS_DEFAULT.map(
+          (item) => `"${item}"`
+        ).join(',')}]`,
         requiresArg: true,
         choices: Helpers.toArray(AttackParamLocation),
         describe: 'Defines which part of the request to attack.'
@@ -169,15 +174,13 @@ export class RunScan implements CommandModule {
     try {
       const scanManager: Scans = container.resolve(Scans);
 
-      const tests =
-        args.test ?? (args.bucket ? undefined : SCAN_TESTS_TO_RUN_BY_DEFAULT);
-
       const scanId: string = await scanManager.create({
-        tests,
+        tests: args.tests,
         name: args.name,
         module: args.module,
         authObjectId: args.auth,
         projectId: args.project,
+        templateId: args.template,
         buckets: args.bucket,
         hostsFilter: args.hostFilter,
         headers: Helpers.parseHeaders(args.header as string[]),

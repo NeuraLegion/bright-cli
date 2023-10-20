@@ -40,7 +40,7 @@ export class DefaultRepeaterLauncher implements RepeaterLauncher {
     @inject(delay(() => CliInfo)) private readonly info: CliInfo
   ) {
     this.bus.onReconnectionFailure(async (e: Error) => {
-      logger.error(e.message);
+      logger.error(e);
       await this.close();
       process.exit(1);
     });
