@@ -19,6 +19,7 @@ export enum AttackParamLocation {
 export enum TestType {
   ANGULAR_CSTI = 'angular_csti',
   BACKUP_LOCATIONS = 'backup_locations',
+  BOLA = 'bola',
   BROKEN_SAML_AUTH = 'broken_saml_auth',
   BRUTE_FORCE_LOGIN = 'brute_force_login',
   BUSINESS_CONSTRAINT_BYPASS = 'business_constraint_bypass',
@@ -79,6 +80,7 @@ export enum TestType {
 
 export const EXPENSIVE_TESTS: readonly TestType[] = [
   TestType.BUSINESS_CONSTRAINT_BYPASS,
+  TestType.BOLA,
   TestType.CVE,
   TestType.DATE_MANIPULATION,
   TestType.EXCESSIVE_DATA_EXPOSURE,
