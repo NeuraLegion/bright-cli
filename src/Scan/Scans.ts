@@ -80,6 +80,7 @@ export enum TestType {
 
 export const EXPENSIVE_TESTS: readonly TestType[] = [
   TestType.BUSINESS_CONSTRAINT_BYPASS,
+  TestType.BOLA,
   TestType.CVE,
   TestType.DATE_MANIPULATION,
   TestType.EXCESSIVE_DATA_EXPOSURE,
