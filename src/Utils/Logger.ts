@@ -49,7 +49,10 @@ export class Logger {
     let message: string;
 
     if (typeof errorOrMessage === 'string') {
-      args.unshift(messageOrArg);
+      if (arguments.length > 1) {
+        args.unshift(messageOrArg);
+      }
+
       message = errorOrMessage;
       const formattedMessage = format(message, ...args);
 
