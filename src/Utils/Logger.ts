@@ -58,7 +58,6 @@ export class Logger {
 
       captureMessage(formattedMessage, {
         ...captureContext,
-        fingerprint: [formattedMessage],
         level: 'error'
       });
     } else {
