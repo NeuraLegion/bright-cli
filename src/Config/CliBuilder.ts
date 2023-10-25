@@ -3,6 +3,7 @@ import { ClusterArgs, Helpers, logger, LogLevel, Sentry } from '../Utils';
 import { SystemConfigManager } from './SystemConfigManager';
 import { CliInfo } from './CliInfo';
 import { Arguments, Argv, CommandModule } from 'yargs';
+import { captureException } from '@sentry/node';
 
 export interface CliBuilderOptions {
   info: CliInfo;
@@ -108,7 +109,7 @@ export class CliBuilder {
       const systemConfigManager = new SystemConfigManager(args.api as string);
       const systemConfig = await systemConfigManager.read();
 
-      return Sentry.runWithAsyncContext(() => {
+      return Sentry.runWithAsyncContext(async () => {
         this.initSentry(systemConfig.sentryDsn);
         Sentry.setContext('args', args);
 
@@ -116,7 +117,13 @@ export class CliBuilder {
           this.initSentry(rotatedSystemConfig.sentryDsn);
         });
 
-        return handler(args);
+        try {
+          return await Promise.resolve(handler(args));
+        } catch (e) {
+          captureException(e);
+
+          throw e;
+        }
       });
     };
 

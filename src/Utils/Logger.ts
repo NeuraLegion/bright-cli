@@ -41,11 +41,6 @@ export class Logger {
       return;
     }
 
-    const captureContext = {
-      contexts: {
-        errorArgs: Object.fromEntries([messageOrArg, ...args].entries())
-      }
-    };
     let message: string;
 
     if (typeof errorOrMessage === 'string') {
@@ -54,15 +49,7 @@ export class Logger {
       }
 
       message = errorOrMessage;
-      const formattedMessage = format(message, ...args);
-
-      captureMessage(formattedMessage, {
-        ...captureContext,
-        level: 'error'
-      });
     } else {
-      captureException(errorOrMessage, captureContext);
-
       message = messageOrArg ?? errorOrMessage.message;
     }
 

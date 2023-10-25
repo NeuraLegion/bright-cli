@@ -15,6 +15,7 @@ import { CliInfo } from '../Config';
 import { RepeaterCommandHub } from './RepeaterCommandHub';
 import { delay, inject, injectable } from 'tsyringe';
 import chalk from 'chalk';
+import { captureException } from '@sentry/node';
 
 @injectable()
 export class ServerRepeaterLauncher implements RepeaterLauncher {
@@ -161,9 +162,10 @@ export class ServerRepeaterLauncher implements RepeaterLauncher {
   }
 
   private reconnectionFailed({ error }: RepeaterServerReconnectionFailedEvent) {
+    captureException(error);
     logger.error(error);
     this.close().catch(logger.error);
-    process.exit(1);
+    process.exitCode = 1;
   }
 
   private async testingNetwork(event: RepeaterServerNetworkTestEvent) {
