@@ -18,6 +18,7 @@ import { inject, injectable } from 'tsyringe';
 import io, { Socket } from 'socket.io-client';
 import parser from 'socket.io-msgpack-parser';
 import { SocksProxyAgent } from 'socks-proxy-agent';
+import { captureException, captureMessage } from '@sentry/node';
 import { once } from 'events';
 import { parse } from 'url';
 import Timer = NodeJS.Timer;
@@ -170,9 +171,11 @@ export class DefaultRepeaterServer implements RepeaterServer {
   public errorOccurred(
     handler: (event: RepeaterServerErrorEvent) => void | Promise<void>
   ): void {
-    this.socket.on('error', (payload, callback) =>
-      this.processEventHandler('error', payload, handler, callback)
-    );
+    this.socket.on('error', (payload, callback) => {
+      captureMessage(payload.message);
+
+      return this.processEventHandler('error', payload, handler, callback);
+    });
   }
 
   public reconnectionAttempted(
@@ -220,6 +223,7 @@ export class DefaultRepeaterServer implements RepeaterServer {
 
       callback(response);
     } catch (error) {
+      captureException(error);
       logger.debug(
         'Error processing event "%s" with the following payload: %s. Details: %s',
         event,

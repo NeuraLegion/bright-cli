@@ -18,6 +18,7 @@ import { RepeaterCommandHub } from './RepeaterCommandHub';
 import { RuntimeDetector } from './RuntimeDetector';
 import { gt } from 'semver';
 import chalk from 'chalk';
+import { captureException } from '@sentry/node';
 import { delay, inject, injectable } from 'tsyringe';
 import Timer = NodeJS.Timer;
 
@@ -40,9 +41,10 @@ export class DefaultRepeaterLauncher implements RepeaterLauncher {
     @inject(delay(() => CliInfo)) private readonly info: CliInfo
   ) {
     this.bus.onReconnectionFailure(async (e: Error) => {
+      captureException(e);
       logger.error(e);
       await this.close();
-      process.exit(1);
+      process.exitCode = 1;
     });
   }
 
