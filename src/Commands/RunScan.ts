@@ -99,7 +99,7 @@ export class RunScan implements CommandModule {
         alias: 'tp',
         requiresArg: false,
         string: true,
-        describe: 'ID of the template'
+        describe: 'Scan template ID'
       })
       .option('module', {
         default: Module.DAST,
