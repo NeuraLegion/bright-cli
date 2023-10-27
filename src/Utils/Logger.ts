@@ -1,4 +1,3 @@
-import { captureException, captureMessage } from '@sentry/node';
 import chalk from 'chalk';
 import { format } from 'util';
 
