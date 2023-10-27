@@ -175,7 +175,7 @@ export class RunScan implements CommandModule {
       const scanManager: Scans = container.resolve(Scans);
 
       const scanId: string = await scanManager.create({
-        tests: args.tests,
+        tests: args.test,
         name: args.name,
         module: args.module,
         authObjectId: args.auth,
