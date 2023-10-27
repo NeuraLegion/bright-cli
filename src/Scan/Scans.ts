@@ -18,6 +18,7 @@ export enum AttackParamLocation {
 
 export enum TestType {
   ANGULAR_CSTI = 'angular_csti',
+  AZURE_BLOB_STORAGE = 'azure_blob_storage',
   BACKUP_LOCATIONS = 'backup_locations',
   BOLA = 'bola',
   BROKEN_SAML_AUTH = 'broken_saml_auth',
@@ -35,6 +36,7 @@ export enum TestType {
    * @deprecated Use TestType.XSS instead
    */
   DOM_XSS = 'dom_xss',
+  GOOGLE_CLOUD_STORAGE = 'google_cloud_storage',
   EMAIL_INJECTION = 'email_injection',
   EXCESSIVE_DATA_EXPOSURE = 'excessive_data_exposure',
   EXPOSED_COUCH_DB_APIS = 'exposed_couch_db_apis',
@@ -79,10 +81,12 @@ export enum TestType {
 }
 
 export const EXPENSIVE_TESTS: readonly TestType[] = [
+  TestType.AZURE_BLOB_STORAGE,
   TestType.BUSINESS_CONSTRAINT_BYPASS,
   TestType.BOLA,
   TestType.CVE,
   TestType.DATE_MANIPULATION,
+  TestType.GOOGLE_CLOUD_STORAGE,
   TestType.EXCESSIVE_DATA_EXPOSURE,
   TestType.ID_ENUMERATION,
   TestType.LRRL,
