@@ -1,4 +1,3 @@
-import { captureException, captureMessage } from '@sentry/node';
 import chalk from 'chalk';
 import { format } from 'util';
 
@@ -41,25 +40,15 @@ export class Logger {
       return;
     }
 
-    const captureContext = {
-      contexts: {
-        errorArgs: Object.fromEntries([messageOrArg, ...args].entries())
-      }
-    };
     let message: string;
 
     if (typeof errorOrMessage === 'string') {
-      args.unshift(messageOrArg);
+      if (arguments.length > 1) {
+        args.unshift(messageOrArg);
+      }
+
       message = errorOrMessage;
-
-      captureMessage(message, {
-        ...captureContext,
-        fingerprint: [message],
-        level: 'error'
-      });
     } else {
-      captureException(errorOrMessage, captureContext);
-
       message = messageOrArg ?? errorOrMessage.message;
     }
 

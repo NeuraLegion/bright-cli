@@ -10,6 +10,7 @@ import {
 } from '../Repeater';
 import { Arguments, Argv, CommandModule } from 'yargs';
 import { Lifecycle } from 'tsyringe';
+import { captureException } from '@sentry/node';
 import { normalize } from 'path';
 
 export class RunRepeater implements CommandModule {
@@ -244,12 +245,16 @@ export class RunRepeater implements CommandModule {
 
     if (args.remove) {
       await repeaterLauncher.uninstall();
-      process.exit(0);
+      process.exitCode = 0;
+
+      return;
     }
 
     if (args.daemon) {
       await repeaterLauncher.install();
-      process.exit(0);
+      process.exitCode = 0;
+
+      return;
     }
 
     try {
@@ -262,6 +267,7 @@ export class RunRepeater implements CommandModule {
 
       await repeaterLauncher.run(args.id as string, args.run as boolean);
     } catch (e) {
+      captureException(e);
       logger.error(e);
       await repeaterLauncher.close();
       process.exitCode = 1;

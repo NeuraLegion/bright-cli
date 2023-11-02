@@ -99,7 +99,7 @@ export class RunScan implements CommandModule {
         alias: 'tp',
         requiresArg: false,
         string: true,
-        describe: 'ID of the template'
+        describe: 'Scan template ID'
       })
       .option('module', {
         default: Module.DAST,
@@ -175,7 +175,7 @@ export class RunScan implements CommandModule {
       const scanManager: Scans = container.resolve(Scans);
 
       const scanId: string = await scanManager.create({
-        tests: args.tests,
+        tests: args.test,
         name: args.name,
         module: args.module,
         authObjectId: args.auth,

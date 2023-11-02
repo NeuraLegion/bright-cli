@@ -15,11 +15,13 @@ import { CliInfo } from '../Config';
 import { RepeaterCommandHub } from './RepeaterCommandHub';
 import { delay, inject, injectable } from 'tsyringe';
 import chalk from 'chalk';
+import { captureException } from '@sentry/node';
 
 @injectable()
 export class ServerRepeaterLauncher implements RepeaterLauncher {
   private static SERVICE_NAME = 'bright-repeater';
   private repeaterStarted: boolean = false;
+  private repeaterRunning: boolean = false;
   private repeaterId: string | undefined;
 
   constructor(
@@ -36,6 +38,7 @@ export class ServerRepeaterLauncher implements RepeaterLauncher {
   ) {}
 
   public close() {
+    this.repeaterRunning = false;
     this.repeaterStarted = false;
     this.repeaterServer.disconnect();
 
@@ -83,9 +86,11 @@ export class ServerRepeaterLauncher implements RepeaterLauncher {
     repeaterId: string,
     asDaemon: boolean = false
   ): Promise<void> {
-    if (this.repeaterStarted) {
+    if (this.repeaterRunning) {
       return;
     }
+
+    this.repeaterRunning = true;
 
     if (asDaemon) {
       await this.startupManager.run(() => this.close());
@@ -96,9 +101,6 @@ export class ServerRepeaterLauncher implements RepeaterLauncher {
     this.repeaterId = repeaterId;
     this.repeaterServer.connect(repeaterId);
     this.subscribeToEvents();
-    this.repeaterStarted = true;
-
-    logger.log(`The Repeater (%s) started`, this.info.version);
   }
 
   private getRuntime(): DeploymentRuntime {
@@ -122,6 +124,12 @@ export class ServerRepeaterLauncher implements RepeaterLauncher {
         },
         this.getRuntime()
       );
+
+      if (!this.repeaterStarted) {
+        this.repeaterStarted = true;
+
+        logger.log('The Repeater (%s) started', this.info.version);
+      }
     });
     this.repeaterServer.errorOccurred(({ message }) => {
       logger.error(`%s: %s`, chalk.red('(!) CRITICAL'), message);
@@ -154,9 +162,10 @@ export class ServerRepeaterLauncher implements RepeaterLauncher {
   }
 
   private reconnectionFailed({ error }: RepeaterServerReconnectionFailedEvent) {
+    captureException(error);
     logger.error(error);
     this.close().catch(logger.error);
-    process.exit(1);
+    process.exitCode = 1;
   }
 
   private async testingNetwork(event: RepeaterServerNetworkTestEvent) {
