@@ -123,16 +123,17 @@ export class Request {
       ...headers
     };
 
-    this._headers = Object.fromEntries(
-      Object.entries(mergedHeaders).map(
-        ([field, value]: [string, string | string[]]) => [
-          field,
+    this._headers = Object.entries(mergedHeaders).reduce(
+      (result, [field, value]: [string, string | string[]]) => {
+        result[field] =
           Array.isArray(value) &&
           Request.SINGLE_VALUE_HEADERS.has(field.toLowerCase())
             ? value.join(', ')
-            : value
-        ]
-      )
+            : value;
+
+        return result;
+      },
+      {}
     );
   }
 

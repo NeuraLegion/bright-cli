@@ -47,7 +47,7 @@ export class HarValidator implements Validator<Har> {
       .map(this.parseEntry, this)
       .filter((item: string) => !!item);
 
-    const targets: string[] = [...new Set(urls).values()];
+    const targets: string[] = [...new Set(urls)];
 
     return targets.length !== 0;
   }
