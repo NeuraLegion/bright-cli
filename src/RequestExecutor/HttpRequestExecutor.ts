@@ -136,7 +136,7 @@ export class HttpRequestExecutor implements RequestExecutor {
   }
 
   private createRequest(request: Request): ClientRequest {
-    const protocol = request.url.startsWith('https') ? https : http;
+    const protocol = request.secureEndpoint ? https : http;
     const outgoingMessage = protocol.request(
       this.createRequestOptions(request)
     );

@@ -96,7 +96,7 @@ export class Request {
     this._method = method?.toUpperCase() ?? 'GET';
 
     this.validateUrl(url);
-    this.url = url;
+    this.url = url.trim();
 
     this.precheckBody(body);
     this.body = body;
