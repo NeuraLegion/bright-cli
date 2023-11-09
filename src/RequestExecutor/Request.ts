@@ -16,6 +16,9 @@ export interface RequestOptions {
   body?: string;
   passphrase?: string;
   correlationIdRegex?: string | RegExp;
+  encoding?: 'base64';
+  maxContentSize?: number;
+  timeout?: number;
 }
 
 export interface Cert {
@@ -46,6 +49,9 @@ export class Request {
   public readonly url: string;
   public readonly body?: string;
   public readonly correlationIdRegex?: RegExp;
+  public readonly encoding?: 'base64';
+  public readonly maxContentSize?: number;
+  public readonly timeout?: number;
 
   private _method: string;
 
@@ -89,7 +95,10 @@ export class Request {
     ca,
     pfx,
     passphrase,
+    timeout,
     correlationIdRegex,
+    maxContentSize,
+    encoding,
     headers = {}
   }: RequestOptions) {
     this.protocol = protocol;
@@ -115,6 +124,9 @@ export class Request {
     }
 
     this._passphrase = passphrase;
+    this.encoding = encoding;
+    this.timeout = timeout;
+    this.maxContentSize = maxContentSize;
   }
 
   public setHeaders(headers: Record<string, string | string[]>): void {

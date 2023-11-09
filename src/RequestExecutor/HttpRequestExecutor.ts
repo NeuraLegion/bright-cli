@@ -8,7 +8,8 @@ import { RequestExecutorOptions } from './RequestExecutorOptions';
 import { NormalizeZlibDeflateTransformStream } from '../Utils/NormalizeZlibDeflateTransformStream';
 import { SocksProxyAgent } from 'socks-proxy-agent';
 import { inject, injectable } from 'tsyringe';
-import { parse as parseMimetype } from 'content-type';
+import iconv from 'iconv-lite';
+import { safeParse } from 'fast-content-type-parse';
 import { parse as parseUrl, URL } from 'url';
 import http, { ClientRequest, IncomingMessage, OutgoingMessage } from 'http';
 import https, {
@@ -27,8 +28,6 @@ import {
 type ScriptEntrypoint = (
   options: RequestOptions
 ) => Promise<RequestOptions> | RequestOptions;
-
-type IncomingResponse = IncomingMessage & { body?: string };
 
 @injectable()
 export class HttpRequestExecutor implements RequestExecutor {
@@ -78,26 +77,16 @@ export class HttpRequestExecutor implements RequestExecutor {
 
       logger.debug('Executing HTTP request with following params: %j', options);
 
-      const response = await this.request(options);
+      const { res, body } = await this.request(options);
 
       return new Response({
+        body,
         protocol: this.protocol,
-        statusCode: response.statusCode,
-        headers: response.headers,
-        body: response.body
+        statusCode: res.statusCode,
+        headers: res.headers,
+        encoding: options.encoding
       });
     } catch (err) {
-      if (err.response) {
-        const { response } = err;
-
-        return new Response({
-          protocol: this.protocol,
-          statusCode: response.statusCode,
-          headers: response.headers,
-          body: response.body
-        });
-      }
-
       const { cause } = err;
       const { message, code, syscall, name } = cause ?? err;
       const errorCode = code ?? syscall ?? name;
@@ -110,29 +99,35 @@ export class HttpRequestExecutor implements RequestExecutor {
       logger.error('Cause: %s', message);
 
       return new Response({
-        protocol: this.protocol,
         message,
-        errorCode
+        errorCode,
+        protocol: this.protocol
       });
     }
   }
 
-  private async request(options: Request): Promise<IncomingResponse> {
+  private async request(options: Request) {
     let timer: NodeJS.Timeout | undefined;
     let res!: IncomingMessage;
 
     try {
       const req = this.createRequest(options);
 
-      process.nextTick(() => req.end(options.body));
-      timer = this.setTimeout(req);
+      process.nextTick(() =>
+        req.end(
+          options.encoding
+            ? iconv.encode(options.body, options.encoding)
+            : options.body
+        )
+      );
+      timer = this.setTimeout(req, options.timeout);
 
       [res] = (await once(req, 'response')) as [IncomingMessage];
     } finally {
       clearTimeout(timer);
     }
 
-    return this.truncateResponse(res);
+    return this.truncateResponse(options, res);
   }
 
   private createRequest(request: Request): ClientRequest {
@@ -149,11 +144,15 @@ export class HttpRequestExecutor implements RequestExecutor {
     return outgoingMessage;
   }
 
-  private setTimeout(req: ClientRequest): NodeJS.Timeout | undefined {
-    if (typeof this.options.timeout === 'number') {
+  private setTimeout(
+    req: ClientRequest,
+    timeout?: number
+  ): NodeJS.Timeout | undefined {
+    timeout ??= this.options.timeout;
+    if (typeof timeout === 'number') {
       return setTimeout(
         () => req.destroy(new Error('Waiting response has timed out')),
-        this.options.timeout
+        timeout
       );
     }
   }
@@ -169,6 +168,7 @@ export class HttpRequestExecutor implements RequestExecutor {
     } = parseUrl(request.url);
     const path = `${pathname ?? '/'}${search ?? ''}${hash ?? ''}`;
     const agent = this.getRequestAgent(request);
+    const timeout = request.timeout ?? this.options.timeout;
 
     return {
       hostname,
@@ -176,11 +176,11 @@ export class HttpRequestExecutor implements RequestExecutor {
       path,
       auth,
       agent,
+      timeout,
       ca: request.ca,
       pfx: request.pfx,
       passphrase: request.passphrase,
       method: request.method,
-      timeout: this.options.timeout,
       rejectUnauthorized: false
     };
   }
@@ -191,41 +191,46 @@ export class HttpRequestExecutor implements RequestExecutor {
     );
   }
 
-  private async truncateResponse(
-    res: IncomingResponse
-  ): Promise<IncomingResponse> {
+  private async truncateResponse(req: Request, res: IncomingMessage) {
     if (this.responseHasNoBody(res)) {
       logger.debug('The response does not contain any body.');
 
-      res.body = '';
-
-      return res;
+      return { res, body: '' };
     }
 
-    const type = this.parseContentType(res);
-    const maxBodySize = this.options.maxContentLength * 1024;
+    const { type, encoding } = this.parseContentType(res);
     const requiresTruncating = !this.options.whitelistMimes?.some(
       (mime: string) => type.startsWith(mime)
     );
 
+    const maxBodySize =
+      (req.maxContentSize ?? this.options.maxContentLength) * 1024;
     const body = await this.parseBody(res, { maxBodySize, requiresTruncating });
 
-    res.body = body.toString();
-    res.headers['content-length'] = String(body.byteLength);
+    res.headers['content-length'] = body.byteLength.toFixed();
+    delete res.headers['content-encoding'];
 
-    return res;
+    return { res, body: iconv.decode(body, req.encoding ?? encoding) };
   }
 
-  private parseContentType(res: IncomingMessage): string {
-    let type = res.headers['content-type'] || 'text/plain';
+  private parseContentType(res: IncomingMessage): {
+    type: string;
+    encoding: string;
+  } {
+    const contentType =
+      res.headers['content-type'] || 'application/octet-stream';
+    const {
+      type,
+      parameters: { charset }
+    } = safeParse(contentType);
 
-    try {
-      ({ type } = parseMimetype(type));
-    } catch {
-      // noop
+    let encoding: string | undefined = charset;
+
+    if (!encoding || !iconv.encodingExists(encoding)) {
+      encoding = 'utf-8';
     }
 
-    return type;
+    return { type, encoding };
   }
 
   private unzipBody(response: IncomingMessage): Readable {
