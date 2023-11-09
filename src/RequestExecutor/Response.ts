@@ -5,6 +5,7 @@ export class Response {
   public readonly statusCode?: number;
   public readonly headers?: Record<string, string | string[]>;
   public readonly body?: string;
+  public readonly encoding?: 'base64';
   public readonly message?: string;
   public readonly errorCode?: string;
 
@@ -14,7 +15,8 @@ export class Response {
     headers,
     body,
     message,
-    errorCode
+    errorCode,
+    encoding
   }: {
     protocol: Protocol;
     statusCode?: number;
@@ -22,6 +24,7 @@ export class Response {
     errorCode?: string;
     headers?: Record<string, string | string[]>;
     body?: string;
+    encoding?: 'base64';
   }) {
     this.protocol = protocol;
     this.statusCode = statusCode;
@@ -29,5 +32,6 @@ export class Response {
     this.body = body;
     this.errorCode = errorCode;
     this.message = message;
+    this.encoding = encoding;
   }
 }

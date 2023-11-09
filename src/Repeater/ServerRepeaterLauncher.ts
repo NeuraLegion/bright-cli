@@ -187,8 +187,15 @@ export class ServerRepeaterLauncher implements RepeaterLauncher {
       new Request({ ...event })
     );
 
-    const { statusCode, message, errorCode, body, headers, protocol } =
-      response;
+    const {
+      statusCode,
+      message,
+      errorCode,
+      body,
+      headers,
+      protocol,
+      encoding
+    } = response;
 
     return {
       protocol,
@@ -196,7 +203,8 @@ export class ServerRepeaterLauncher implements RepeaterLauncher {
       headers,
       statusCode,
       errorCode,
-      message
+      message,
+      encoding
     };
   }
 }

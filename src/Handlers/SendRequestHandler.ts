@@ -19,8 +19,15 @@ export class SendRequestHandler
       new Request({ ...event, correlationIdRegex: event.correlation_id_regex })
     );
 
-    const { statusCode, message, errorCode, body, headers, protocol } =
-      response;
+    const {
+      statusCode,
+      message,
+      errorCode,
+      body,
+      headers,
+      protocol,
+      encoding
+    } = response;
 
     return new ForwardResponse(
       protocol,
@@ -28,7 +35,8 @@ export class SendRequestHandler
       headers,
       statusCode,
       errorCode,
-      message
+      message,
+      encoding
     );
   }
 }
