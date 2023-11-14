@@ -12,6 +12,9 @@ export interface RepeaterServerRequestEvent {
   headers?: Record<string, string | string[]>;
   correlationIdRegex?: string;
   body?: string;
+  encoding?: 'base64';
+  maxContentSize?: number;
+  timeout?: number;
 }
 
 export type RepeaterServerNetworkTestEvent =

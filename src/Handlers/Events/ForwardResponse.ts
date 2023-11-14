@@ -10,6 +10,7 @@ export class ForwardResponse implements Event {
   public readonly protocol?: Protocol;
   public readonly headers?: Record<string, string | string[]>;
   public readonly body?: string;
+  public readonly encoding?: 'base64';
 
   constructor(
     protocol: Protocol,
@@ -17,7 +18,8 @@ export class ForwardResponse implements Event {
     headers: Record<string, string | string[]>,
     statusCode?: number,
     errorCode?: string,
-    message?: string
+    message?: string,
+    encoding?: 'base64'
   ) {
     this.protocol = protocol;
     this.body = body;
@@ -25,5 +27,6 @@ export class ForwardResponse implements Event {
     this.status_code = statusCode;
     this.error_code = errorCode;
     this.message = message;
+    this.encoding = encoding;
   }
 }
