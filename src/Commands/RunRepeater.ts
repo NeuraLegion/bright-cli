@@ -114,7 +114,7 @@ export class RunRepeater implements CommandModule {
             });
         }
       })
-      .option('experimental-connection-reuse', {
+      .option('ntlm', {
         boolean: true,
         describe: 'Configure experimental support for TCP connections reuse'
       })
@@ -138,9 +138,9 @@ export class RunRepeater implements CommandModule {
           'Enable legacy mode, utilizing the RabbitMQ connection for communication.'
       })
       .conflicts('remove-daemon', 'daemon')
-      .conflicts('experimental-connection-reuse', 'proxy')
-      .conflicts('experimental-connection-reuse', 'proxy-external')
-      .conflicts('experimental-connection-reuse', 'proxy-internal')
+      .conflicts('ntlm', 'proxy')
+      .conflicts('ntlm', 'proxy-external')
+      .conflicts('ntlm', 'proxy-internal')
       .conflicts('proxy-external', 'proxy')
       .conflicts('proxy-internal', 'proxy')
       .env('REPEATER')
