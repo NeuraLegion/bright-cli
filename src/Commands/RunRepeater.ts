@@ -179,7 +179,8 @@ export class RunRepeater implements CommandModule {
               proxyUrl: (args.proxyInternal ?? args.proxy) as string,
               certs: args.cert as Cert[],
               maxContentLength: 100,
-              reuseConnection: !!args.experimentalConnectionReuse,
+              reuseConnection:
+                !!args.ntlm || !!args.experimentalConnectionReuse,
               whitelistMimes: [
                 'text/html',
                 'text/plain',
