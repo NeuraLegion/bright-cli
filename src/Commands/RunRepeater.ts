@@ -118,8 +118,7 @@ export class RunRepeater implements CommandModule {
         alias: 'ntlm',
         deprecate: 'Use --ntlm instead',
         boolean: true,
-        describe: 'Configure experimental support for TCP connections reuse',
-        deprecate: 'Use --ntlm instead'
+        describe: 'Configure experimental support for TCP connections reuse'
       })
       .option('ntlm', {
         boolean: true,
