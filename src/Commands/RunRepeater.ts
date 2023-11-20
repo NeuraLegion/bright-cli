@@ -121,7 +121,7 @@ export class RunRepeater implements CommandModule {
       })
       .option('ntlm', {
         boolean: true,
-        describe: 'Configure experimental support for TCP connections reuse'
+        describe: 'Configure ntlm support (enables TCP connection reuse)'
       })
       .option('daemon', {
         requiresArg: false,
