@@ -115,8 +115,13 @@ export class RunRepeater implements CommandModule {
         }
       })
       .option('experimental-connection-reuse', {
+        deprecate: 'Use --ntlm instead',
         boolean: true,
         describe: 'Configure experimental support for TCP connections reuse'
+      })
+      .option('ntlm', {
+        boolean: true,
+        describe: 'Configure ntlm support (enables TCP connection reuse)'
       })
       .option('daemon', {
         requiresArg: false,
@@ -141,6 +146,9 @@ export class RunRepeater implements CommandModule {
       .conflicts('experimental-connection-reuse', 'proxy')
       .conflicts('experimental-connection-reuse', 'proxy-external')
       .conflicts('experimental-connection-reuse', 'proxy-internal')
+      .conflicts('ntlm', 'proxy')
+      .conflicts('ntlm', 'proxy-external')
+      .conflicts('ntlm', 'proxy-internal')
       .conflicts('proxy-external', 'proxy')
       .conflicts('proxy-internal', 'proxy')
       .env('REPEATER')
@@ -171,7 +179,8 @@ export class RunRepeater implements CommandModule {
               proxyUrl: (args.proxyInternal ?? args.proxy) as string,
               certs: args.cert as Cert[],
               maxContentLength: 100,
-              reuseConnection: !!args.experimentalConnectionReuse,
+              reuseConnection:
+                !!args.ntlm || !!args.experimentalConnectionReuse,
               whitelistMimes: [
                 'text/html',
                 'text/plain',
