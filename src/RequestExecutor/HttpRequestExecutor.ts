@@ -191,26 +191,37 @@ export class HttpRequestExecutor implements RequestExecutor {
     );
   }
 
-  private async truncateResponse(req: Request, res: IncomingMessage) {
+  private async truncateResponse(
+    { decompress, encoding, maxContentSize }: Request,
+    res: IncomingMessage
+  ) {
     if (this.responseHasNoBody(res)) {
       logger.debug('The response does not contain any body.');
 
       return { res, body: '' };
     }
 
-    const { type, encoding } = this.parseContentType(res);
+    const contentType = this.parseContentType(res);
+    const { type } = contentType;
     const requiresTruncating = !this.options.whitelistMimes?.some(
       (mime: string) => type.startsWith(mime)
     );
 
     const maxBodySize =
-      (req.maxContentSize ?? this.options.maxContentLength) * 1024;
-    const body = await this.parseBody(res, { maxBodySize, requiresTruncating });
+      (maxContentSize ?? this.options.maxContentLength) * 1024;
+    const body = await this.parseBody(res, {
+      maxBodySize,
+      requiresTruncating,
+      decompress
+    });
 
     res.headers['content-length'] = body.byteLength.toFixed();
-    delete res.headers['content-encoding'];
 
-    return { res, body: iconv.decode(body, req.encoding ?? encoding) };
+    if (decompress) {
+      delete res.headers['content-encoding'];
+    }
+
+    return { res, body: iconv.decode(body, encoding ?? contentType.encoding) };
   }
 
   private parseContentType(res: IncomingMessage): {
@@ -276,11 +287,16 @@ export class HttpRequestExecutor implements RequestExecutor {
 
   private async parseBody(
     res: IncomingMessage,
-    options: { maxBodySize: number; requiresTruncating: boolean }
+    options: {
+      maxBodySize: number;
+      requiresTruncating: boolean;
+      decompress: boolean;
+    }
   ): Promise<Buffer> {
     const chunks: Buffer[] = [];
+    const stream = options.decompress ? this.unzipBody(res) : res;
 
-    for await (const chuck of this.unzipBody(res)) {
+    for await (const chuck of stream) {
       chunks.push(chuck);
     }
 
