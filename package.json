@@ -28,7 +28,7 @@
     "@neuralegion/capture-har": "^0.3.4",
     "@neuralegion/os-service": "^1.2.2",
     "@neuralegion/raw-socket": "^1.8.2",
-    "@sentry/node": "^7.70.0",
+    "@sentry/node": "^7.93.0",
     "ajv": "^6.12.6",
     "amqplib": "~0.10.2",
     "arch": "^2.2.0",
