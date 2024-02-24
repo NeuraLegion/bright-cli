@@ -60,6 +60,7 @@ export interface RepeaterServerReconnectionAttemptedEvent {
 }
 
 export interface RepeaterServerErrorEvent {
+  eventName: string;
   message: string;
 }
 
@@ -89,7 +90,7 @@ export interface DeploymentRuntime {
 export interface RepeaterServer {
   disconnect(): void;
 
-  connect(hostname: string): void;
+  connect(hostname: string): Promise<void>;
 
   deploy(
     options: DeployCommandOptions,
@@ -131,8 +132,6 @@ export interface RepeaterServer {
   ): void;
 
   reconnectionSucceeded(handler: () => void | Promise<void>): void;
-
-  connected(handler: () => void | Promise<void>): void;
 
   errorOccurred(
     handler: (event: RepeaterServerErrorEvent) => void | Promise<void>
