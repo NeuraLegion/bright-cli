@@ -55,15 +55,15 @@ export class CliBuilder {
       })
       .option('proxy', {
         requiresArg: true,
-        describe: 'SOCKS4 or SOCKS5 URL to proxy all traffic'
+        describe: 'HTTP, SOCKS4 or SOCKS5 URL to proxy all traffic'
       })
       .option('proxy-external', {
         requiresArg: true,
-        describe: 'SOCKS4 or SOCKS5 URL to proxy external traffic'
+        describe: 'HTTP, SOCKS4 or SOCKS5 URL to proxy external traffic'
       })
       .option('proxy-internal', {
         requiresArg: true,
-        describe: 'SOCKS4 or SOCKS5 URL to proxy internal traffic'
+        describe: 'HTTP, SOCKS4 or SOCKS5 URL to proxy internal traffic'
       })
       .middleware((args: Arguments) => {
         ({

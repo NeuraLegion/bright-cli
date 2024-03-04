@@ -4,6 +4,7 @@ import { VirtualScript, VirtualScripts, VirtualScriptType } from '../Scripts';
 import { Protocol } from './Protocol';
 import { Request, RequestOptions } from './Request';
 import { RequestExecutorOptions } from './RequestExecutorOptions';
+import { ProxyFactory } from '../Utils';
 import nock from 'nock';
 import {
   anyString,
@@ -35,6 +36,7 @@ const createRequest = (options?: Partial<RequestOptions>) => {
 
 describe('HttpRequestExecutor', () => {
   const virtualScriptsMock = mock<VirtualScripts>();
+  const proxyFactoryMock = mock<ProxyFactory>();
   let spiedExecutorOptions!: RequestExecutorOptions;
 
   let executor!: HttpRequestExecutor;
@@ -45,14 +47,16 @@ describe('HttpRequestExecutor', () => {
 
     executor = new HttpRequestExecutor(
       instance(virtualScriptsMock),
+      instance(proxyFactoryMock),
       executorOptions
     );
   });
 
   afterEach(() =>
-    reset<VirtualScripts | RequestExecutorOptions>(
+    reset<VirtualScripts | RequestExecutorOptions | ProxyFactory>(
       virtualScriptsMock,
-      spiedExecutorOptions
+      spiedExecutorOptions,
+      proxyFactoryMock
     )
   );
 

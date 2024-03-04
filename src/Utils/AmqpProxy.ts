@@ -6,7 +6,7 @@ import dns from 'dns';
 
 const lookup = promisify(dns.lookup);
 
-export class Proxy {
+export class AmqpProxy {
   private _options: SocksProxy;
 
   get options(): Readonly<SocksProxy> {

@@ -1,26 +1,24 @@
-import { logger } from '../Utils';
+import { logger, ProxyFactory } from '../Utils';
 import {
+  DeployCommandOptions,
+  DeploymentRuntime,
   RepeaterServer,
   RepeaterServerDeployedEvent,
+  RepeaterServerErrorEvent,
+  RepeaterServerNetworkTestEvent,
+  RepeaterServerNetworkTestResult,
+  RepeaterServerReconnectionAttemptedEvent,
   RepeaterServerReconnectionFailedEvent,
   RepeaterServerRequestEvent,
   RepeaterServerRequestResponse,
-  RepeaterServerErrorEvent,
-  RepeaterServerReconnectionAttemptedEvent,
-  RepeaterServerNetworkTestEvent,
-  RepeaterServerNetworkTestResult,
   RepeaterServerScriptsUpdatedEvent,
-  DeployCommandOptions,
-  DeploymentRuntime,
   RepeaterUpgradeAvailableEvent
 } from './RepeaterServer';
 import { inject, injectable } from 'tsyringe';
 import io, { Socket } from 'socket.io-client';
 import parser from 'socket.io-msgpack-parser';
-import { SocksProxyAgent } from 'socks-proxy-agent';
 import { captureException, captureMessage } from '@sentry/node';
 import { once } from 'events';
-import { parse } from 'url';
 import Timer = NodeJS.Timer;
 
 export interface DefaultRepeaterServerOptions {
@@ -28,6 +26,7 @@ export interface DefaultRepeaterServerOptions {
   readonly token: string;
   readonly connectTimeout?: number;
   readonly proxyUrl?: string;
+  readonly insecure?: boolean;
 }
 
 export const DefaultRepeaterServerOptions: unique symbol = Symbol(
@@ -43,6 +42,7 @@ export class DefaultRepeaterServer implements RepeaterServer {
   private timer?: Timer;
 
   constructor(
+    @inject(ProxyFactory) private readonly proxyFactory: ProxyFactory,
     @inject(DefaultRepeaterServerOptions)
     private readonly options: DefaultRepeaterServerOptions
   ) {}
@@ -81,10 +81,12 @@ export class DefaultRepeaterServer implements RepeaterServer {
       // @ts-expect-error Type is wrong.
       // Agent is passed directly to "ws" package, which accepts http.Agent
       agent: this.options.proxyUrl
-        ? new SocksProxyAgent({
-            ...parse(this.options.proxyUrl)
+        ? this.proxyFactory.createProxyForClient({
+            proxyUrl: this.options.proxyUrl,
+            targetUrl: this.options.uri,
+            rejectUnauthorized: !this.options.insecure
           })
-        : false,
+        : undefined,
       reconnectionAttempts: this.MAX_RECONNECTION_ATTEMPTS,
       auth: {
         token: this.options.token,
