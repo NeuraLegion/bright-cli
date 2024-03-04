@@ -58,6 +58,7 @@ import {
   RuntimeDetector,
   DefaultRuntimeDetector
 } from '../Repeater';
+import { ProxyFactory, DefaultProxyFactory } from '../Utils';
 import { container, Lifecycle } from 'tsyringe';
 
 container
@@ -231,6 +232,9 @@ container
         info: deps.resolve(CliInfo),
         configReader: deps.resolve(ConfigReader)
       })
+  })
+  .register<ProxyFactory>(ProxyFactory, {
+    useClass: DefaultProxyFactory
   });
 
 export default container;

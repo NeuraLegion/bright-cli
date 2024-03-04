@@ -1,8 +1,7 @@
 import { ExecutionResult, Handler, HandlerType } from '../Handler';
 import { Event, EventType } from '../Event';
 import { Bus } from '../Bus';
-import { Proxy } from '../Proxy';
-import { Backoff, logger } from '../../Utils';
+import { Backoff, logger, ProxyFactory } from '../../Utils';
 import { Message } from '../Message';
 import { ConfirmChannel, connect, Connection, ConsumeMessage } from 'amqplib';
 import { DependencyContainer, inject, injectable } from 'tsyringe';
@@ -53,6 +52,7 @@ export class RabbitMQBus implements Bus {
   private _onReconnectionFailure?: (err: Error) => unknown;
 
   constructor(
+    @inject(ProxyFactory) private readonly proxyFactory: ProxyFactory,
     @inject(RabbitMQBusOptions) private readonly options: RabbitMQBusOptions,
     @inject('tsyringe') private readonly container: DependencyContainer
   ) {
@@ -302,8 +302,8 @@ export class RabbitMQBus implements Bus {
   }
 
   private async connect(): Promise<void> {
-    const proxy: Proxy | undefined = this.options.proxyUrl
-      ? new Proxy(this.options.proxyUrl)
+    const proxy = this.options.proxyUrl
+      ? this.proxyFactory.createAmqpProxy(this.options.proxyUrl)
       : undefined;
 
     // eslint-disable-next-line @typescript-eslint/no-var-requires

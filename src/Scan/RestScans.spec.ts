@@ -7,12 +7,14 @@ import {
   StorageFile
 } from './Scans';
 import { RestScans } from './RestScans';
+import { ProxyFactory } from '../Utils';
 import { instance, mock, reset } from 'ts-mockito';
 import nock from 'nock';
 
 describe('RestScans', () => {
   let restScans!: RestScans;
   const cliInfoMock = mock<CliInfo>();
+  const proxyFactoryMock = mock<ProxyFactory>();
 
   beforeAll(() => {
     nock.disableNetConnect();
@@ -24,10 +26,14 @@ describe('RestScans', () => {
       nock.activate();
     }
 
-    restScans = new RestScans(instance(cliInfoMock), {
-      baseUrl: 'https://example.com/',
-      apiKey: 'key'
-    });
+    restScans = new RestScans(
+      instance(cliInfoMock),
+      instance(proxyFactoryMock),
+      {
+        baseUrl: 'https://example.com/',
+        apiKey: 'key'
+      }
+    );
   });
 
   afterEach(() => {

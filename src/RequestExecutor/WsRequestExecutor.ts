@@ -2,15 +2,14 @@ import { RequestExecutor } from './RequestExecutor';
 import { Response } from './Response';
 import { Request } from './Request';
 import { Protocol } from './Protocol';
-import { logger } from '../Utils';
+import { logger, ProxyFactory } from '../Utils';
 import { RequestExecutorOptions } from './RequestExecutorOptions';
 import { inject, injectable } from 'tsyringe';
 import WebSocket from 'ws';
-import { SocksProxyAgent } from 'socks-proxy-agent';
-import { parse } from 'url';
 import { once } from 'events';
 import { promisify } from 'util';
-import { IncomingMessage } from 'http';
+import http, { IncomingMessage } from 'http';
+import https from 'https';
 
 interface WSMessage {
   body: string;
@@ -24,17 +23,18 @@ export class WsRequestExecutor implements RequestExecutor {
     'sec-websocket-key'
   ]);
 
-  private readonly agent?: SocksProxyAgent;
+  private readonly httpProxyAgent?: http.Agent;
+  private readonly httpsProxyAgent?: https.Agent;
 
   constructor(
+    @inject(ProxyFactory) private readonly proxyFactory: ProxyFactory,
     @inject(RequestExecutorOptions)
     private readonly options: RequestExecutorOptions
   ) {
-    this.agent = this.options.proxyUrl
-      ? new SocksProxyAgent({
-          ...parse(this.options.proxyUrl)
-        })
-      : undefined;
+    if (this.options.proxyUrl) {
+      ({ https: this.httpsProxyAgent, http: this.httpProxyAgent } =
+        this.proxyFactory.createProxy({ proxyUrl: this.options.proxyUrl }));
+    }
   }
 
   get protocol(): Protocol {
@@ -53,7 +53,9 @@ export class WsRequestExecutor implements RequestExecutor {
       }
 
       client = new WebSocket(options.url, {
-        agent: this.agent,
+        agent: options.secureEndpoint
+          ? this.httpsProxyAgent
+          : this.httpProxyAgent,
         rejectUnauthorized: false,
         handshakeTimeout: this.options.timeout,
         headers: this.normalizeHeaders(options.headers),

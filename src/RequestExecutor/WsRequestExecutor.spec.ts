@@ -3,13 +3,15 @@ import { Protocol } from './Protocol';
 import { WsRequestExecutor } from './WsRequestExecutor';
 import { RequestExecutorOptions } from './RequestExecutorOptions';
 import { Request } from './Request';
-import { anything, reset, spy, verify, when } from 'ts-mockito';
+import { ProxyFactory } from '../Utils';
+import { anything, instance, mock, reset, spy, verify, when } from 'ts-mockito';
 import { Server } from 'ws';
 import { once } from 'events';
 
 describe('WsRequestExecutor', () => {
   const executorOptions: RequestExecutorOptions = { timeout: 2000 };
   const spiedExecutorOptions = spy<RequestExecutorOptions>(executorOptions);
+  const proxyFactoryMock = mock<ProxyFactory>();
 
   // TODO: discuss renaming such kind of variables to `SUT` or `UUT`
   let executor!: WsRequestExecutor;
@@ -17,10 +19,18 @@ describe('WsRequestExecutor', () => {
   beforeEach(() => {
     // ADHOC: ts-mockito resets object's property descriptor as well
     Object.assign(executorOptions, { timeout: 2000 });
-    executor = new WsRequestExecutor(executorOptions);
+    executor = new WsRequestExecutor(
+      instance(proxyFactoryMock),
+      executorOptions
+    );
   });
 
-  afterEach(() => reset<RequestExecutorOptions>(spiedExecutorOptions));
+  afterEach(() =>
+    reset<RequestExecutorOptions | ProxyFactory>(
+      proxyFactoryMock,
+      spiedExecutorOptions
+    )
+  );
 
   describe('protocol', () => {
     it('should use WS protocol', () => {
@@ -51,7 +61,11 @@ describe('WsRequestExecutor', () => {
     });
 
     it('should call setCerts on the provided request if there were certificates configured globally', async () => {
-      const request = new Request({ url: 'wss://foo.bar', headers: {} });
+      const request = new Request({
+        protocol: Protocol.WS,
+        url: 'wss://foo.bar',
+        headers: {}
+      });
       const spiedRequest = spy(request);
       when(spiedExecutorOptions.certs).thenReturn([]);
       await executor.execute(request);
@@ -60,7 +74,11 @@ describe('WsRequestExecutor', () => {
     });
 
     it('should not call setCerts on the provided request if there were no globally configured certificates', async () => {
-      const request = new Request({ url: 'wss://foo.bar', headers: {} });
+      const request = new Request({
+        protocol: Protocol.WS,
+        url: 'wss://foo.bar',
+        headers: {}
+      });
       const spiedRequest = spy(request);
 
       await executor.execute(request);
@@ -72,7 +90,12 @@ describe('WsRequestExecutor', () => {
       const url = `ws://localhost:${wsPort}`;
       const headers = {};
       const body = 'test request body';
-      const request = new Request({ url, headers, body });
+      const request = new Request({
+        url,
+        headers,
+        body,
+        protocol: Protocol.WS
+      });
 
       server.on('connection', (socket) => {
         socket.on('message', (data) => {
@@ -93,7 +116,7 @@ describe('WsRequestExecutor', () => {
       when(spiedExecutorOptions.timeout).thenReturn(100);
 
       const url = `ws://localhost:${wsPort}`;
-      const request = new Request({ url, headers: {} });
+      const request = new Request({ url, headers: {}, protocol: Protocol.WS });
 
       const response = await executor.execute(request);
 
@@ -113,7 +136,7 @@ describe('WsRequestExecutor', () => {
       WsRequestExecutor.FORBIDDEN_HEADERS.forEach(
         (headerName) => (headers[headerName] = 'forbidden-header-value')
       );
-      const request = new Request({ url, headers });
+      const request = new Request({ url, headers, protocol: Protocol.WS });
 
       server.on('connection', (socket, req) => {
         const test = req.headers;
@@ -140,7 +163,7 @@ describe('WsRequestExecutor', () => {
 
     it('should get the response from server', async () => {
       const url = `ws://localhost:${wsPort}`;
-      const request = new Request({ url, headers: {} });
+      const request = new Request({ url, headers: {}, protocol: Protocol.WS });
 
       server.on('connection', (socket) => {
         socket.on('message', () => {
