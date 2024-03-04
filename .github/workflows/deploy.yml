@@ -40,11 +40,11 @@ jobs:
         run: npm run build
         env:
           SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
-          
+
       - name: Pack artifacts
         run: npm pack
 
-      - uses: svenstaro/upload-release-action@v2
+      - uses: svenstaro/upload-release-action@2.7.0
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           file: ./brightsec-cli-*
@@ -117,14 +117,14 @@ jobs:
         run: .\tools\scripts\build-msi.ps1
         shell: pwsh
 
-      - uses: svenstaro/upload-release-action@v2
+      - uses: svenstaro/upload-release-action@2.7.0
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           file: ${{ startsWith(matrix.os, 'win') && '.\bin\cli.exe' || './bin/cli' }}
           asset_name: ${{ format('bright-cli-{0}-x64{1}', matrix.target, startsWith(matrix.os, 'win') && '.exe' || '') }}
           tag: ${{ github.ref }}
 
-      - uses: svenstaro/upload-release-action@v2
+      - uses: svenstaro/upload-release-action@2.7.0
         if: startsWith(matrix.os, 'win')
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
