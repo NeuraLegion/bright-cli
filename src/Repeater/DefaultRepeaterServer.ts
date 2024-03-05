@@ -78,6 +78,7 @@ export class DefaultRepeaterServer implements RepeaterServer {
       transports: ['websocket'],
       reconnectionDelayMax: this.MAX_RECONNECTION_DELAY,
       timeout: this.options?.connectTimeout,
+      rejectUnauthorized: !this.options.insecure,
       // @ts-expect-error Type is wrong.
       // Agent is passed directly to "ws" package, which accepts http.Agent
       agent: this.options.proxyUrl
