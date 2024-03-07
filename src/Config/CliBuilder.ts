@@ -129,8 +129,8 @@ export class CliBuilder {
 
   private initSentry(dsn: string) {
     init({
-      dsn,
       attachStacktrace: true,
+      dsn,
       release: process.env.VERSION,
       beforeSend(event) {
         if (event.contexts.args) {

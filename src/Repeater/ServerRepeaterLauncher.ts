@@ -99,23 +99,8 @@ export class ServerRepeaterLauncher implements RepeaterLauncher {
     logger.log('Starting the Repeater (%s)...', this.info.version);
 
     this.repeaterId = repeaterId;
-
-    process.nextTick(() => this.subscribeToEvents());
-
-    await this.repeaterServer.connect(repeaterId);
-
-    await this.repeaterServer.deploy(
-      {
-        repeaterId: this.repeaterId
-      },
-      this.getRuntime()
-    );
-
-    if (!this.repeaterStarted) {
-      this.repeaterStarted = true;
-
-      logger.log('The Repeater (%s) started', this.info.version);
-    }
+    this.repeaterServer.connect(repeaterId);
+    this.subscribeToEvents();
   }
 
   private getRuntime(): DeploymentRuntime {
@@ -132,12 +117,22 @@ export class ServerRepeaterLauncher implements RepeaterLauncher {
   }
 
   private subscribeToEvents() {
-    this.repeaterServer.errorOccurred(({ eventName, message }) => {
-      if (['deploy', 'undeploy'].includes(eventName)) {
-        logger.error(`%s: %s`, chalk.red('(!) CRITICAL'), message);
-        this.close().catch(logger.error);
-        process.exitCode = 1;
+    this.repeaterServer.connected(async () => {
+      await this.repeaterServer.deploy(
+        {
+          repeaterId: this.repeaterId
+        },
+        this.getRuntime()
+      );
+
+      if (!this.repeaterStarted) {
+        this.repeaterStarted = true;
+
+        logger.log('The Repeater (%s) started', this.info.version);
       }
+    });
+    this.repeaterServer.errorOccurred(({ message }) => {
+      logger.error(`%s: %s`, chalk.red('(!) CRITICAL'), message);
     });
     this.repeaterServer.reconnectionFailed((payload) =>
       this.reconnectionFailed(payload)

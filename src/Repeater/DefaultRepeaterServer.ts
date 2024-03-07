@@ -66,12 +66,10 @@ export class DefaultRepeaterServer implements RepeaterServer {
       'deployed'
     );
 
-    this.createPingTimer();
-
     return result;
   }
 
-  public async connect(hostname: string) {
+  public connect(hostname: string) {
     this._socket = io(this.options.uri, {
       parser,
       path: '/api/ws/v1',
@@ -95,21 +93,19 @@ export class DefaultRepeaterServer implements RepeaterServer {
       }
     });
 
-    this.socket.on('disconnect', (reason) => {
-      if (reason === 'io server disconnect') {
-        // the disconnection was initiated by the server, you need to reconnect manually
-        this.socket.connect();
-      }
-    });
+    this.socket.on('connect_error', (error: Error) =>
+      logger.debug(`Unable to connect to the %s host`, this.options.uri, error)
+    );
 
-    await Promise.race([
-      once(this.socket, 'connect'),
-      once(this.socket, 'connect_error').then(([error]: Error[]) => {
-        throw error;
-      })
-    ]);
+    this.createPingTimer();
 
     logger.debug('Event bus connected to %s', this.options.uri);
+  }
+
+  public connected(handler: () => void | Promise<void>): void {
+    this.socket.on('connect', () =>
+      this.processEventHandler('connect', undefined, handler)
+    );
   }
 
   public requestReceived(
