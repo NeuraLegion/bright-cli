@@ -5,6 +5,9 @@ import {
   RepeaterServer,
   RepeaterServerDeployedEvent,
   RepeaterServerErrorEvent,
+  RepeaterServerEventHandler,
+  RepeaterServerEvents,
+  RepeaterServerEventsMap,
   RepeaterServerNetworkTestEvent,
   RepeaterServerNetworkTestResult,
   RepeaterServerReconnectionAttemptedEvent,
@@ -18,7 +21,7 @@ import { inject, injectable } from 'tsyringe';
 import io, { Socket } from 'socket.io-client';
 import parser from 'socket.io-msgpack-parser';
 import { captureException, captureMessage } from '@sentry/node';
-import { once } from 'events';
+import { EventEmitter, once } from 'events';
 import Timer = NodeJS.Timer;
 
 export interface DefaultRepeaterServerOptions {
@@ -33,13 +36,75 @@ export const DefaultRepeaterServerOptions: unique symbol = Symbol(
   'DefaultRepeaterServerOptions'
 );
 
+type CallbackFunction<T = unknown> = (arg: T) => unknown;
+type HandlerFunction = (args: unknown[]) => unknown;
+
+const enum SocketEvents {
+  DEPLOYED = 'deployed',
+  DEPLOY = 'deploy',
+  UNDEPLOY = 'undeploy',
+  UNDEPLOYED = 'undeployed',
+  TEST_NETWORK = 'test-network',
+  ERROR = 'error',
+  UPDATE_AVAILABLE = 'update-available',
+  SCRIPT_UPDATED = 'scripts-updated',
+  PING = 'ping',
+  REQUEST = 'request'
+}
+
+interface SocketListeningEventMap {
+  [SocketEvents.DEPLOYED]: (event: RepeaterServerDeployedEvent) => void;
+  [SocketEvents.UNDEPLOYED]: () => void;
+  [SocketEvents.ERROR]: (event: RepeaterServerErrorEvent) => void;
+  [SocketEvents.TEST_NETWORK]: (
+    event: RepeaterServerNetworkTestEvent,
+    callback: CallbackFunction<RepeaterServerNetworkTestResult>
+  ) => void;
+  [SocketEvents.UPDATE_AVAILABLE]: (
+    event: RepeaterUpgradeAvailableEvent
+  ) => void;
+  [SocketEvents.SCRIPT_UPDATED]: (
+    event: RepeaterServerScriptsUpdatedEvent
+  ) => void;
+  [SocketEvents.REQUEST]: (
+    request: RepeaterServerRequestEvent,
+    callback: CallbackFunction<RepeaterServerRequestResponse>
+  ) => void;
+}
+
+interface SocketEmitEventMap {
+  [SocketEvents.DEPLOY]: (
+    options: DeployCommandOptions,
+    runtime?: DeploymentRuntime
+  ) => void;
+  [SocketEvents.UNDEPLOY]: () => void;
+  [SocketEvents.PING]: () => void;
+}
+
 @injectable()
 export class DefaultRepeaterServer implements RepeaterServer {
-  private latestReconnectionError?: Error;
+  private readonly MAX_DEPLOYMENT_TIMEOUT = 60_000;
+  private readonly MAX_PING_INTERVAL = 10_000;
   private readonly MAX_RECONNECTION_ATTEMPTS = 20;
-  private readonly MAX_RECONNECTION_DELAY = 86400000;
-  private _socket?: Socket;
+  private readonly MAX_RECONNECTION_DELAY = 86_400_000;
+  private readonly events = new EventEmitter();
+  private readonly handlerMap = new WeakMap<
+    RepeaterServerEventHandler<any>,
+    HandlerFunction
+  >();
+  private latestReconnectionError?: Error;
   private timer?: Timer;
+  private _socket?: Socket<SocketListeningEventMap, SocketEmitEventMap>;
+
+  private get socket() {
+    if (!this._socket) {
+      throw new Error(
+        'Please make sure that repeater established a connection with host.'
+      );
+    }
+
+    return this._socket;
+  }
 
   constructor(
     @inject(ProxyFactory) private readonly proxyFactory: ProxyFactory,
@@ -48,6 +113,7 @@ export class DefaultRepeaterServer implements RepeaterServer {
   ) {}
 
   public disconnect() {
+    this.events.removeAllListeners();
     this.clearPingTimer();
 
     this._socket?.disconnect();
@@ -59,17 +125,27 @@ export class DefaultRepeaterServer implements RepeaterServer {
     options: DeployCommandOptions,
     runtime: DeploymentRuntime
   ): Promise<RepeaterServerDeployedEvent> {
-    process.nextTick(() => this.socket.emit('deploy', options, runtime));
-
-    const [result]: RepeaterServerDeployedEvent[] = await once(
-      this.socket,
-      'deployed'
+    process.nextTick(() =>
+      this.socket.emit(SocketEvents.DEPLOY, options, runtime)
     );
+
+    const [result]: RepeaterServerDeployedEvent[] = await Promise.race([
+      once(this.socket, SocketEvents.DEPLOYED),
+      new Promise<never>((_, reject) =>
+        setTimeout(
+          reject,
+          this.MAX_DEPLOYMENT_TIMEOUT,
+          new Error('No response.')
+        ).unref()
+      )
+    ]);
+
+    this.createPingTimer();
 
     return result;
   }
 
-  public connect(hostname: string) {
+  public async connect(hostname: string) {
     this._socket = io(this.options.uri, {
       parser,
       path: '/api/ws/v1',
@@ -93,156 +169,144 @@ export class DefaultRepeaterServer implements RepeaterServer {
       }
     });
 
-    this.socket.on('connect_error', (error: Error) =>
-      logger.debug(`Unable to connect to the %s host`, this.options.uri, error)
-    );
+    this.listenToReservedEvents();
+    this.listenToApplicationEvents();
 
-    this.createPingTimer();
+    await Promise.race([
+      once(this.socket, 'connect'),
+      once(this.socket, 'connect_error').then(([error]: Error[]) => {
+        throw error;
+      })
+    ]);
 
-    logger.debug('Event bus connected to %s', this.options.uri);
+    logger.debug('Repeater connected to %s', this.options.uri);
   }
 
-  public connected(handler: () => void | Promise<void>): void {
+  public off<K extends keyof RepeaterServerEventsMap>(
+    event: K,
+    handler?: RepeaterServerEventHandler<K>
+  ): void {
+    const wrappedHandler = this.handlerMap.get(handler);
+    if (wrappedHandler) {
+      this.events.off(event, wrappedHandler);
+      this.handlerMap.delete(handler);
+    }
+  }
+
+  public on<K extends keyof RepeaterServerEventsMap>(
+    event: K,
+    handler: RepeaterServerEventHandler<K>
+  ): void {
+    const wrappedHandler = (...args: unknown[]) =>
+      this.wrapEventListener(event, handler, ...args);
+    this.handlerMap.set(handler, wrappedHandler);
+    this.events.on(event, wrappedHandler);
+  }
+
+  private listenToApplicationEvents() {
+    this.socket.on(SocketEvents.DEPLOYED, (event) =>
+      this.events.emit(RepeaterServerEvents.DEPLOY, event)
+    );
+    this.socket.on(SocketEvents.REQUEST, (event, callback) =>
+      this.events.emit(RepeaterServerEvents.REQUEST, event, callback)
+    );
+    this.socket.on(SocketEvents.TEST_NETWORK, (event, callback) =>
+      this.events.emit(RepeaterServerEvents.TEST_NETWORK, event, callback)
+    );
+    this.socket.on(SocketEvents.ERROR, (event) => {
+      captureMessage(event.message);
+      this.events.emit(RepeaterServerEvents.ERROR, event);
+    });
+    this.socket.on(SocketEvents.UPDATE_AVAILABLE, (event) =>
+      this.events.emit(RepeaterServerEvents.UPDATE_AVAILABLE, event)
+    );
+    this.socket.on(SocketEvents.SCRIPT_UPDATED, (event) =>
+      this.events.emit(RepeaterServerEvents.SCRIPTS_UPDATED, event)
+    );
+  }
+
+  private listenToReservedEvents() {
     this.socket.on('connect', () =>
-      this.processEventHandler('connect', undefined, handler)
+      this.events.emit(RepeaterServerEvents.CONNECTED)
     );
-  }
+    this.socket.on('disconnect', (reason) => {
+      if (reason !== 'io client disconnect') {
+        this.events.emit(RepeaterServerEvents.DISCONNECTED);
+      }
 
-  public requestReceived(
-    handler: (
-      event: RepeaterServerRequestEvent
-    ) => RepeaterServerRequestResponse | Promise<RepeaterServerRequestResponse>
-  ): void {
-    this.socket.on('request', (payload, callback) =>
-      this.processEventHandler('request', payload, handler, callback)
-    );
-  }
-
-  public networkTesting(
-    handler: (
-      event: RepeaterServerNetworkTestEvent
-    ) =>
-      | RepeaterServerNetworkTestResult
-      | Promise<RepeaterServerNetworkTestResult>
-  ): void {
-    this.socket.on('test-network', (payload, callback) =>
-      this.processEventHandler('test-network', payload, handler, callback)
-    );
-  }
-
-  public upgradeAvailable(
-    handler: (event: RepeaterUpgradeAvailableEvent) => Promise<void> | void
-  ): void {
-    this.socket.on('update-available', (payload, callback) =>
-      this.processEventHandler('update-available', payload, handler, callback)
-    );
-  }
-
-  public scriptsUpdated(
-    handler: (event: RepeaterServerScriptsUpdatedEvent) => Promise<void> | void
-  ): void {
-    this.socket.on('scripts-updated', (payload, callback) =>
-      this.processEventHandler('scripts-updated', payload, handler, callback)
-    );
-  }
-
-  public reconnectionFailed(
-    handler: (
-      event: RepeaterServerReconnectionFailedEvent
-    ) => void | Promise<void>
-  ): void {
+      // the disconnection was initiated by the server, you need to reconnect manually
+      if (reason === 'io server disconnect') {
+        this.socket.connect();
+      }
+    });
     this.socket.io.on('reconnect', () => {
       this.latestReconnectionError = undefined;
     });
-
     this.socket.io.on(
       'reconnect_error',
       (error) => (this.latestReconnectionError = error)
     );
-
     this.socket.io.on('reconnect_failed', () =>
-      this.processEventHandler(
-        'reconnection_failed',
-        {
-          error: this.latestReconnectionError
-        },
-        handler
-      )
+      this.events.emit(RepeaterServerEvents.RECONNECTION_FAILED, {
+        error: this.latestReconnectionError
+      } as RepeaterServerReconnectionFailedEvent)
     );
-  }
-
-  public errorOccurred(
-    handler: (event: RepeaterServerErrorEvent) => void | Promise<void>
-  ): void {
-    this.socket.on('error', (payload, callback) => {
-      captureMessage(payload.message);
-
-      return this.processEventHandler('error', payload, handler, callback);
-    });
-  }
-
-  public reconnectionAttempted(
-    handler: (
-      event: RepeaterServerReconnectionAttemptedEvent
-    ) => void | Promise<void>
-  ): void {
     this.socket.io.on('reconnect_attempt', (attempt) =>
-      this.processEventHandler(
-        'reconnect_attempt',
-        { attempt, maxAttempts: this.MAX_RECONNECTION_ATTEMPTS },
-        handler
-      )
+      this.events.emit(RepeaterServerEvents.RECONNECT_ATTEMPT, {
+        attempt,
+        maxAttempts: this.MAX_RECONNECTION_ATTEMPTS
+      } as RepeaterServerReconnectionAttemptedEvent)
     );
-  }
-
-  public reconnectionSucceeded(handler: () => void | Promise<void>): void {
     this.socket.io.on('reconnect', () =>
-      this.processEventHandler('reconnect', undefined, handler)
+      this.events.emit(RepeaterServerEvents.RECONNECTION_SUCCEEDED)
     );
   }
 
-  private get socket() {
-    if (!this._socket) {
-      throw new Error(
-        'Please make sure that repeater established a connection with host.'
-      );
-    }
-
-    return this._socket;
-  }
-
-  private async processEventHandler<P>(
+  private async wrapEventListener<TArgs extends TArg[], TArg>(
     event: string,
-    payload: P,
-    handler: (payload: P) => unknown,
-    callback?: unknown
+    handler: (...payload: TArgs) => unknown,
+    ...args: unknown[]
   ) {
     try {
-      const response = await handler(payload);
+      const callback = this.extractLastArgument(args);
 
-      if (typeof callback !== 'function') {
-        return;
-      }
+      // eslint-disable-next-line @typescript-eslint/return-await
+      const response = await handler(...(args as TArgs));
 
-      callback(response);
-    } catch (error) {
-      captureException(error);
-      logger.debug(
-        'Error processing event "%s" with the following payload: %s. Details: %s',
-        event,
-        payload,
-        error
-      );
-      logger.error(error);
+      callback?.(response);
+    } catch (err) {
+      this.handleEventError(err, event, args);
     }
+  }
+
+  private extractLastArgument(args: unknown[]): CallbackFunction | undefined {
+    const lastArg = args.pop();
+    if (typeof lastArg === 'function') {
+      return lastArg as CallbackFunction;
+    } else {
+      // If the last argument is not a function, add it back to the args array
+      args.push(lastArg);
+
+      return undefined;
+    }
+  }
+
+  private handleEventError(error: Error, event: string, args: unknown[]): void {
+    captureException(error);
+    logger.debug(
+      'An error occurred while processing the %s event with the following payload: %j',
+      event,
+      args
+    );
+    logger.error(error);
   }
 
   private createPingTimer() {
     this.clearPingTimer();
 
     this.timer = setInterval(
-      () => this.socket.volatile.emit('ping'),
-      10000
+      () => this.socket.volatile.emit(SocketEvents.PING),
+      this.MAX_PING_INTERVAL
     ).unref();
   }
 
