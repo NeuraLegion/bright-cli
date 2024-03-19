@@ -1,6 +1,6 @@
 import { Archives, Spec, SpecType } from './Archives';
+import { ProxyFactory } from '../Utils';
 import request, { RequestPromiseAPI } from 'request-promise';
-import { SocksProxyAgent } from 'socks-proxy-agent';
 import { inject, injectable } from 'tsyringe';
 import { ok } from 'assert';
 
@@ -24,6 +24,7 @@ export class RestArchives implements Archives {
   ];
 
   constructor(
+    @inject(ProxyFactory) private readonly proxyFactory: ProxyFactory,
     @inject(RestArchivesOptions)
     {
       baseUrl,
@@ -38,7 +39,13 @@ export class RestArchives implements Archives {
       timeout,
       json: true,
       rejectUnauthorized: !insecure,
-      agent: proxyUrl ? new SocksProxyAgent(proxyUrl) : undefined,
+      agent: proxyUrl
+        ? this.proxyFactory.createProxyForClient({
+            proxyUrl,
+            targetUrl: baseUrl,
+            rejectUnauthorized: !insecure
+          })
+        : undefined,
       headers: { authorization: `Api-Key ${apiKey}` }
     });
   }

@@ -19,6 +19,7 @@ export interface RequestOptions {
   encoding?: 'base64';
   maxContentSize?: number;
   timeout?: number;
+  decompress?: boolean;
 }
 
 export interface Cert {
@@ -51,6 +52,7 @@ export class Request {
   public readonly correlationIdRegex?: RegExp;
   public readonly encoding?: 'base64';
   public readonly maxContentSize?: number;
+  public readonly decompress?: boolean;
   public readonly timeout?: number;
 
   private _method: string;
@@ -99,6 +101,7 @@ export class Request {
     correlationIdRegex,
     maxContentSize,
     encoding,
+    decompress = true,
     headers = {}
   }: RequestOptions) {
     this.protocol = protocol;
@@ -127,6 +130,7 @@ export class Request {
     this.encoding = encoding;
     this.timeout = timeout;
     this.maxContentSize = maxContentSize;
+    this.decompress = !!decompress;
   }
 
   public setHeaders(headers: Record<string, string | string[]>): void {

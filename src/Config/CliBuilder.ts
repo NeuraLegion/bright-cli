@@ -55,15 +55,18 @@ export class CliBuilder {
       })
       .option('proxy', {
         requiresArg: true,
-        describe: 'SOCKS4 or SOCKS5 URL to proxy all traffic'
+        describe:
+          'Specify a proxy URL to route all traffic through. This should be an HTTP(S), SOCKS4, or SOCKS5 URL. By default, if you specify SOCKS://<URL>, then SOCKS5h is applied.'
       })
       .option('proxy-external', {
         requiresArg: true,
-        describe: 'SOCKS4 or SOCKS5 URL to proxy external traffic'
+        describe:
+          "Specify a proxy URL to route all outbound traffic through. For more information, see the '--proxy' option."
       })
       .option('proxy-internal', {
         requiresArg: true,
-        describe: 'SOCKS4 or SOCKS5 URL to proxy internal traffic'
+        describe:
+          "Specify a proxy URL to route all inbound traffic through. For more information, see the '--proxy' option."
       })
       .middleware((args: Arguments) => {
         ({
@@ -126,8 +129,8 @@ export class CliBuilder {
 
   private initSentry(dsn: string) {
     init({
-      attachStacktrace: true,
       dsn,
+      attachStacktrace: true,
       release: process.env.VERSION,
       beforeSend(event) {
         if (event.contexts.args) {

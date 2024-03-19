@@ -10,8 +10,8 @@ import {
   ATTACK_PARAM_LOCATIONS_DEFAULT
 } from './Scans';
 import { CliInfo } from '../Config';
+import { ProxyFactory } from '../Utils';
 import request, { RequestPromiseAPI } from 'request-promise';
-import { SocksProxyAgent } from 'socks-proxy-agent';
 import { delay, inject, injectable } from 'tsyringe';
 
 export interface RestScansOptions {
@@ -30,6 +30,7 @@ export class RestScans implements Scans {
 
   constructor(
     @inject(delay(() => CliInfo)) private readonly info: CliInfo,
+    @inject(ProxyFactory) private readonly proxyFactory: ProxyFactory,
     @inject(RestScansOptions)
     { baseUrl, apiKey, insecure, proxyUrl, timeout = 10000 }: RestScansOptions
   ) {
@@ -38,7 +39,13 @@ export class RestScans implements Scans {
       timeout,
       json: true,
       rejectUnauthorized: !insecure,
-      agent: proxyUrl ? new SocksProxyAgent(proxyUrl) : undefined,
+      agent: proxyUrl
+        ? this.proxyFactory.createProxyForClient({
+            proxyUrl,
+            targetUrl: baseUrl,
+            rejectUnauthorized: !insecure
+          })
+        : undefined,
       headers: { authorization: `Api-Key ${apiKey}` }
     });
   }

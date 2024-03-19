@@ -1,12 +1,11 @@
 import { RequestExecutor } from './RequestExecutor';
 import { Response } from './Response';
 import { Request, RequestOptions } from './Request';
-import { logger } from '../Utils';
+import { logger, ProxyFactory } from '../Utils';
 import { VirtualScripts } from '../Scripts';
 import { Protocol } from './Protocol';
 import { RequestExecutorOptions } from './RequestExecutorOptions';
 import { NormalizeZlibDeflateTransformStream } from '../Utils/NormalizeZlibDeflateTransformStream';
-import { SocksProxyAgent } from 'socks-proxy-agent';
 import { inject, injectable } from 'tsyringe';
 import iconv from 'iconv-lite';
 import { safeParse } from 'fast-content-type-parse';
@@ -32,7 +31,8 @@ type ScriptEntrypoint = (
 @injectable()
 export class HttpRequestExecutor implements RequestExecutor {
   private readonly DEFAULT_SCRIPT_ENTRYPOINT = 'handle';
-  private readonly proxy?: SocksProxyAgent;
+  private readonly httpProxyAgent?: http.Agent;
+  private readonly httpsProxyAgent?: https.Agent;
   private readonly httpAgent?: http.Agent;
   private readonly httpsAgent?: https.Agent;
 
@@ -42,13 +42,13 @@ export class HttpRequestExecutor implements RequestExecutor {
 
   constructor(
     @inject(VirtualScripts) private readonly virtualScripts: VirtualScripts,
+    @inject(ProxyFactory) private readonly proxyFactory: ProxyFactory,
     @inject(RequestExecutorOptions)
     private readonly options: RequestExecutorOptions
   ) {
     if (this.options.proxyUrl) {
-      this.proxy = new SocksProxyAgent({
-        ...parseUrl(this.options.proxyUrl)
-      });
+      ({ https: this.httpsProxyAgent, http: this.httpProxyAgent } =
+        this.proxyFactory.createProxy({ proxyUrl: this.options.proxyUrl }));
     }
 
     if (this.options.reuseConnection) {
@@ -186,31 +186,42 @@ export class HttpRequestExecutor implements RequestExecutor {
   }
 
   private getRequestAgent(options: Request) {
-    return (
-      this.proxy ?? (options.secureEndpoint ? this.httpsAgent : this.httpAgent)
-    );
+    return options.secureEndpoint
+      ? this.httpsProxyAgent ?? this.httpsAgent
+      : this.httpProxyAgent ?? this.httpAgent;
   }
 
-  private async truncateResponse(req: Request, res: IncomingMessage) {
+  private async truncateResponse(
+    { decompress, encoding, maxContentSize }: Request,
+    res: IncomingMessage
+  ) {
     if (this.responseHasNoBody(res)) {
       logger.debug('The response does not contain any body.');
 
       return { res, body: '' };
     }
 
-    const { type, encoding } = this.parseContentType(res);
+    const contentType = this.parseContentType(res);
+    const { type } = contentType;
     const requiresTruncating = !this.options.whitelistMimes?.some(
       (mime: string) => type.startsWith(mime)
     );
 
     const maxBodySize =
-      (req.maxContentSize ?? this.options.maxContentLength) * 1024;
-    const body = await this.parseBody(res, { maxBodySize, requiresTruncating });
+      (maxContentSize ?? this.options.maxContentLength) * 1024;
+    const body = await this.parseBody(res, {
+      maxBodySize,
+      requiresTruncating,
+      decompress
+    });
 
     res.headers['content-length'] = body.byteLength.toFixed();
-    delete res.headers['content-encoding'];
 
-    return { res, body: iconv.decode(body, req.encoding ?? encoding) };
+    if (decompress) {
+      delete res.headers['content-encoding'];
+    }
+
+    return { res, body: iconv.decode(body, encoding ?? contentType.encoding) };
   }
 
   private parseContentType(res: IncomingMessage): {
@@ -276,11 +287,16 @@ export class HttpRequestExecutor implements RequestExecutor {
 
   private async parseBody(
     res: IncomingMessage,
-    options: { maxBodySize: number; requiresTruncating: boolean }
+    options: {
+      maxBodySize: number;
+      requiresTruncating: boolean;
+      decompress: boolean;
+    }
   ): Promise<Buffer> {
     const chunks: Buffer[] = [];
+    const stream = options.decompress ? this.unzipBody(res) : res;
 
-    for await (const chuck of this.unzipBody(res)) {
+    for await (const chuck of stream) {
       chunks.push(chuck);
     }
 

@@ -59,8 +59,21 @@ export interface RepeaterServerReconnectionAttemptedEvent {
   maxAttempts: number;
 }
 
+export enum RepeaterErrorCodes {
+  REPEATER_NOT_PERMITTED = 'repeater_not_permitted',
+  REPEATER_ALREADY_STARTED = 'repeater_already_started',
+  REPEATER_DEACTIVATED = 'repeater_deactivated',
+  REPEATER_UNAUTHORIZED = 'repeater_unauthorized',
+  REPEATER_NO_LONGER_SUPPORTED = 'repeater_no_longer_supported',
+  UNKNOWN_ERROR = 'unknown_error',
+  UNEXPECTED_ERROR = 'unexpected_error'
+}
+
 export interface RepeaterServerErrorEvent {
   message: string;
+  code: RepeaterErrorCodes;
+  transaction?: string;
+  remediation?: string;
 }
 
 export interface RepeaterUpgradeAvailableEvent {
@@ -86,56 +99,64 @@ export interface DeploymentRuntime {
   nodeVersion?: string;
 }
 
+export const enum RepeaterServerEvents {
+  DEPLOYED = 'deployed',
+  DEPLOY = 'deploy',
+  CONNECTED = 'connected',
+  DISCONNECTED = 'disconnected',
+  REQUEST = 'request',
+  TEST_NETWORK = 'test_network',
+  UPDATE_AVAILABLE = 'update_available',
+  SCRIPTS_UPDATED = 'scripts_updated',
+  RECONNECTION_FAILED = 'reconnection_failed',
+  RECONNECT_ATTEMPT = 'reconnect_attempt',
+  RECONNECTION_SUCCEEDED = 'reconnection_succeeded',
+  ERROR = 'error',
+  PING = 'ping'
+}
+
+export interface RepeaterServerEventsMap {
+  [RepeaterServerEvents.DEPLOY]: [DeployCommandOptions, DeploymentRuntime?];
+  [RepeaterServerEvents.DEPLOYED]: RepeaterServerDeployedEvent;
+  [RepeaterServerEvents.CONNECTED]: void;
+  [RepeaterServerEvents.DISCONNECTED]: void;
+  [RepeaterServerEvents.REQUEST]: RepeaterServerRequestEvent;
+  [RepeaterServerEvents.TEST_NETWORK]: RepeaterServerNetworkTestEvent;
+  [RepeaterServerEvents.UPDATE_AVAILABLE]: RepeaterUpgradeAvailableEvent;
+  [RepeaterServerEvents.SCRIPTS_UPDATED]: RepeaterServerScriptsUpdatedEvent;
+  [RepeaterServerEvents.RECONNECTION_FAILED]: RepeaterServerReconnectionFailedEvent;
+  [RepeaterServerEvents.RECONNECT_ATTEMPT]: RepeaterServerReconnectionAttemptedEvent;
+  [RepeaterServerEvents.RECONNECTION_SUCCEEDED]: void;
+  [RepeaterServerEvents.ERROR]: RepeaterServerErrorEvent;
+  [RepeaterServerEvents.PING]: void;
+}
+
+export type RepeaterServerEventHandler<
+  K extends keyof RepeaterServerEventsMap
+> = (
+  ...args: RepeaterServerEventsMap[K] extends (infer U)[]
+    ? U[]
+    : [RepeaterServerEventsMap[K]]
+) => unknown;
+
 export interface RepeaterServer {
   disconnect(): void;
 
-  connect(hostname: string): void;
+  connect(hostname: string): Promise<void>;
 
   deploy(
     options: DeployCommandOptions,
     runtime?: DeploymentRuntime
   ): Promise<RepeaterServerDeployedEvent>;
 
-  scriptsUpdated(
-    handler: (event: RepeaterServerScriptsUpdatedEvent) => Promise<void> | void
+  on<K extends keyof RepeaterServerEventsMap>(
+    event: K,
+    handler: RepeaterServerEventHandler<K>
   ): void;
 
-  upgradeAvailable(
-    handler: (event: RepeaterUpgradeAvailableEvent) => Promise<void> | void
-  ): void;
-
-  networkTesting(
-    handler: (
-      event: RepeaterServerNetworkTestEvent
-    ) =>
-      | RepeaterServerNetworkTestResult
-      | Promise<RepeaterServerNetworkTestResult>
-  ): void;
-
-  requestReceived(
-    handler: (
-      event: RepeaterServerRequestEvent
-    ) => RepeaterServerRequestResponse | Promise<RepeaterServerRequestResponse>
-  ): void;
-
-  reconnectionFailed(
-    handler: (
-      event: RepeaterServerReconnectionFailedEvent
-    ) => void | Promise<void>
-  ): void;
-
-  reconnectionAttempted(
-    handler: (
-      event: RepeaterServerReconnectionAttemptedEvent
-    ) => void | Promise<void>
-  ): void;
-
-  reconnectionSucceeded(handler: () => void | Promise<void>): void;
-
-  connected(handler: () => void | Promise<void>): void;
-
-  errorOccurred(
-    handler: (event: RepeaterServerErrorEvent) => void | Promise<void>
+  off<K extends keyof RepeaterServerEventsMap>(
+    event: K,
+    handler?: RepeaterServerEventHandler<K>
   ): void;
 }
 

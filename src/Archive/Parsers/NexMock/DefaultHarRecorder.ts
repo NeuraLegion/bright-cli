@@ -2,7 +2,6 @@ import { HarRecorder } from './HarRecorder';
 import { Helpers } from '../../../Utils';
 import { CaptureHar } from '@neuralegion/capture-har';
 import request, { Options, OptionsWithUrl } from 'request';
-import { SocksProxyAgent } from 'socks-proxy-agent';
 import { inject, injectable } from 'tsyringe';
 import { Stream } from 'stream';
 
@@ -15,6 +14,8 @@ export interface HarRecorderOptions {
 
 export const HarRecorderOptions: unique symbol = Symbol('HarRecorderOptions');
 
+// TODO: nexmock is not supported anymore.
+//  We need to remove this class and all its dependencies
 @injectable()
 export class DefaultHarRecorder implements HarRecorder {
   private readonly proxy: CaptureHar;
@@ -22,20 +23,14 @@ export class DefaultHarRecorder implements HarRecorder {
 
   constructor(
     @inject(HarRecorderOptions)
-    {
-      pool = 250,
-      timeout = 5000,
-      proxyUrl,
-      maxRedirects = 20
-    }: HarRecorderOptions
+    { pool = 250, timeout = 5000, maxRedirects = 20 }: HarRecorderOptions
   ) {
     this.pool = pool;
     this.proxy = new CaptureHar(
       request.defaults({
         timeout,
         maxRedirects,
-        rejectUnauthorized: false,
-        agent: proxyUrl ? new SocksProxyAgent(proxyUrl) : undefined
+        rejectUnauthorized: false
       })
     );
   }

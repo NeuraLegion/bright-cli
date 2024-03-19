@@ -1,7 +1,10 @@
 import { RepeaterLauncher } from './RepeaterLauncher';
 import {
   DeploymentRuntime,
+  RepeaterErrorCodes,
   RepeaterServer,
+  RepeaterServerErrorEvent,
+  RepeaterServerEvents,
   RepeaterServerNetworkTestEvent,
   RepeaterServerReconnectionFailedEvent,
   RepeaterServerRequestEvent
@@ -19,8 +22,7 @@ import { captureException } from '@sentry/node';
 
 @injectable()
 export class ServerRepeaterLauncher implements RepeaterLauncher {
-  private static SERVICE_NAME = 'bright-repeater';
-  private repeaterStarted: boolean = false;
+  private static readonly SERVICE_NAME = 'bright-repeater';
   private repeaterRunning: boolean = false;
   private repeaterId: string | undefined;
 
@@ -39,7 +41,7 @@ export class ServerRepeaterLauncher implements RepeaterLauncher {
 
   public close() {
     this.repeaterRunning = false;
-    this.repeaterStarted = false;
+
     this.repeaterServer.disconnect();
 
     return Promise.resolve();
@@ -99,8 +101,12 @@ export class ServerRepeaterLauncher implements RepeaterLauncher {
     logger.log('Starting the Repeater (%s)...', this.info.version);
 
     this.repeaterId = repeaterId;
-    this.repeaterServer.connect(repeaterId);
+
     this.subscribeToEvents();
+
+    await this.repeaterServer.connect(this.repeaterId);
+
+    logger.log('The Repeater (%s) started', this.info.version);
   }
 
   private getRuntime(): DeploymentRuntime {
@@ -117,62 +123,100 @@ export class ServerRepeaterLauncher implements RepeaterLauncher {
   }
 
   private subscribeToEvents() {
-    this.repeaterServer.connected(async () => {
-      await this.repeaterServer.deploy(
-        {
-          repeaterId: this.repeaterId
-        },
-        this.getRuntime()
-      );
-
-      if (!this.repeaterStarted) {
-        this.repeaterStarted = true;
-
-        logger.log('The Repeater (%s) started', this.info.version);
-      }
-    });
-    this.repeaterServer.errorOccurred(({ message }) => {
-      logger.error(`%s: %s`, chalk.red('(!) CRITICAL'), message);
-    });
-    this.repeaterServer.reconnectionFailed((payload) =>
-      this.reconnectionFailed(payload)
+    this.repeaterServer.on(RepeaterServerEvents.CONNECTED, this.deployRepeater);
+    this.repeaterServer.on(RepeaterServerEvents.ERROR, this.handleError);
+    this.repeaterServer.on(
+      RepeaterServerEvents.RECONNECTION_FAILED,
+      this.reconnectionFailed
     );
-    this.repeaterServer.requestReceived((payload) =>
-      this.requestReceived(payload)
+    this.repeaterServer.on(RepeaterServerEvents.REQUEST, this.requestReceived);
+    this.repeaterServer.on(
+      RepeaterServerEvents.TEST_NETWORK,
+      this.testingNetwork
     );
-    this.repeaterServer.networkTesting((payload) =>
-      this.testingNetwork(payload)
-    );
-    this.repeaterServer.scriptsUpdated((payload) =>
+    this.repeaterServer.on(RepeaterServerEvents.SCRIPTS_UPDATED, (payload) =>
       this.commandHub.compileScripts(payload.script)
     );
-    this.repeaterServer.upgradeAvailable((payload) =>
+    this.repeaterServer.on(RepeaterServerEvents.UPDATE_AVAILABLE, (payload) =>
       logger.warn(
         '%s: A new Repeater version (%s) is available, for update instruction visit https://docs.brightsec.com/docs/installation-options',
         chalk.yellow('(!) IMPORTANT'),
         payload.version
       )
     );
-    this.repeaterServer.reconnectionAttempted(({ attempt, maxAttempts }) =>
-      logger.warn(
-        'Failed to connect to Bright cloud (attempt %d/%d)',
-        attempt,
-        maxAttempts
-      )
+    this.repeaterServer.on(
+      RepeaterServerEvents.RECONNECT_ATTEMPT,
+      ({ attempt, maxAttempts }) =>
+        logger.warn(
+          'Failed to connect to Bright cloud (attempt %d/%d)',
+          attempt,
+          maxAttempts
+        )
     );
-    this.repeaterServer.reconnectionSucceeded(() =>
+    this.repeaterServer.on(RepeaterServerEvents.RECONNECTION_SUCCEEDED, () =>
       logger.log('The Repeater (%s) connected', this.info.version)
     );
   }
 
-  private reconnectionFailed({ error }: RepeaterServerReconnectionFailedEvent) {
-    captureException(error);
-    logger.error(error);
+  private handleError = ({
+    code,
+    message,
+    remediation
+  }: RepeaterServerErrorEvent) => {
+    const normalizedMessage = this.normalizeMessage(message);
+    const normalizedRemediation = this.normalizeMessage(remediation ?? '');
+
+    if (this.isCriticalError(code)) {
+      this.handleCriticalError(normalizedMessage, normalizedRemediation);
+    } else {
+      logger.error(normalizedMessage);
+    }
+  };
+
+  private normalizeMessage(message: string): string {
+    return message.replace(/\.$/, '');
+  }
+
+  private isCriticalError(code: RepeaterErrorCodes): boolean {
+    return [
+      RepeaterErrorCodes.REPEATER_DEACTIVATED,
+      RepeaterErrorCodes.REPEATER_NO_LONGER_SUPPORTED,
+      RepeaterErrorCodes.REPEATER_UNAUTHORIZED,
+      RepeaterErrorCodes.REPEATER_ALREADY_STARTED,
+      RepeaterErrorCodes.REPEATER_NOT_PERMITTED,
+      RepeaterErrorCodes.UNEXPECTED_ERROR
+    ].includes(code);
+  }
+
+  private handleCriticalError(message: string, remediation: string): void {
+    logger.error('%s: %s. %s', chalk.red('(!) CRITICAL'), message, remediation);
     this.close().catch(logger.error);
     process.exitCode = 1;
   }
 
-  private async testingNetwork(event: RepeaterServerNetworkTestEvent) {
+  private deployRepeater = async () => {
+    try {
+      await this.repeaterServer.deploy(
+        {
+          repeaterId: this.repeaterId
+        },
+        this.getRuntime()
+      );
+    } catch {
+      // noop
+    }
+  };
+
+  private reconnectionFailed = ({
+    error
+  }: RepeaterServerReconnectionFailedEvent) => {
+    captureException(error);
+    logger.error(error);
+    this.close().catch(logger.error);
+    process.exitCode = 1;
+  };
+
+  private testingNetwork = async (event: RepeaterServerNetworkTestEvent) => {
     try {
       const output = await this.commandHub.testNetwork(event.type, event.input);
 
@@ -184,9 +228,9 @@ export class ServerRepeaterLauncher implements RepeaterLauncher {
         error: typeof e === 'string' ? e : (e as Error).message
       };
     }
-  }
+  };
 
-  private async requestReceived(event: RepeaterServerRequestEvent) {
+  private requestReceived = async (event: RepeaterServerRequestEvent) => {
     const response = await this.commandHub.sendRequest(
       new Request({ ...event })
     );
@@ -210,5 +254,5 @@ export class ServerRepeaterLauncher implements RepeaterLauncher {
       message,
       encoding
     };
-  }
+  };
 }

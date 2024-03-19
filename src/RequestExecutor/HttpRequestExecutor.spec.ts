@@ -4,6 +4,7 @@ import { VirtualScript, VirtualScripts, VirtualScriptType } from '../Scripts';
 import { Protocol } from './Protocol';
 import { Request, RequestOptions } from './Request';
 import { RequestExecutorOptions } from './RequestExecutorOptions';
+import { ProxyFactory } from '../Utils';
 import nock from 'nock';
 import {
   anyString,
@@ -35,6 +36,7 @@ const createRequest = (options?: Partial<RequestOptions>) => {
 
 describe('HttpRequestExecutor', () => {
   const virtualScriptsMock = mock<VirtualScripts>();
+  const proxyFactoryMock = mock<ProxyFactory>();
   let spiedExecutorOptions!: RequestExecutorOptions;
 
   let executor!: HttpRequestExecutor;
@@ -45,14 +47,16 @@ describe('HttpRequestExecutor', () => {
 
     executor = new HttpRequestExecutor(
       instance(virtualScriptsMock),
+      instance(proxyFactoryMock),
       executorOptions
     );
   });
 
   afterEach(() =>
-    reset<VirtualScripts | RequestExecutorOptions>(
+    reset<VirtualScripts | RequestExecutorOptions | ProxyFactory>(
       virtualScriptsMock,
-      spiedExecutorOptions
+      spiedExecutorOptions,
+      proxyFactoryMock
     )
   );
 
@@ -232,6 +236,29 @@ describe('HttpRequestExecutor', () => {
       const response = await executor.execute(request);
 
       expect(response.body).toEqual(expected);
+    });
+
+    it('should prevent decoding response body if decompress option is disabled', async () => {
+      when(spiedExecutorOptions.maxContentLength).thenReturn(1);
+      when(spiedExecutorOptions.whitelistMimes).thenReturn(['text/plain']);
+      const { request, requestOptions } = createRequest({
+        decompress: false,
+        encoding: 'base64'
+      });
+      const expected = 'x'.repeat(100);
+      const body = await promisify(gzip)(expected, {
+        flush: constants.Z_SYNC_FLUSH,
+        finishFlush: constants.Z_SYNC_FLUSH
+      });
+      nock(requestOptions.url).get('/').reply(200, body, {
+        'content-type': 'text/plain',
+        'content-encoding': 'gzip'
+      });
+
+      const response = await executor.execute(request);
+
+      expect(response.body).toEqual(body.toString('base64'));
+      expect(response.headers).toMatchObject({ 'content-encoding': 'gzip' });
     });
 
     it('should decode response body if content-encoding is gzip', async () => {
