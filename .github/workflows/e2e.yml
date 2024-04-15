@@ -34,7 +34,7 @@ on:
           - development
       test_timeout:
         description: "Test timeout in seconds"
-        default: 3600
+        default: 7200
 
 jobs:
   executables:

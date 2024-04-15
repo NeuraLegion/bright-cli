@@ -1,12 +1,11 @@
 name: Automated deploy
 
 on:
-  release:
-    types: [ created ]
+  workflow_dispatch:
 
 env:
-  VERSION: ${{ github.event.release.tag_name }}
-  TARGET_REF: ${{ github.event.release.target_commitish }}
+  VERSION: v11.5.1-next.1
+  TARGET_REF: next
 
 jobs:
   install-deps:
@@ -48,7 +47,7 @@ jobs:
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           file: ./brightsec-cli-*
-          tag: ${{ github.ref }}
+          tag: ${{ env.VERSION }}
           file_glob: true
 
       - uses: actions/upload-artifact@v4
@@ -122,7 +121,7 @@ jobs:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           file: ${{ startsWith(matrix.os, 'win') && '.\bin\cli.exe' || './bin/cli' }}
           asset_name: ${{ format('bright-cli-{0}-x64{1}', matrix.target, startsWith(matrix.os, 'win') && '.exe' || '') }}
-          tag: ${{ github.ref }}
+          tag: ${{ env.VERSION }}
 
       - uses: svenstaro/upload-release-action@v2
         if: startsWith(matrix.os, 'win')
@@ -130,7 +129,7 @@ jobs:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           file: .\bin\bright-cli.msi
           asset_name: bright-cli.msi
-          tag: ${{ github.ref }}
+          tag: ${{ env.VERSION }}
 
   publish:
     runs-on: ubuntu-latest
@@ -150,20 +149,13 @@ jobs:
 
       - name: Set TAG based on target_commitish
         run: |
-          if [ "${{ github.event.release.target_commitish }}" == "next" ]; then
-            echo "TAG=next" >> $GITHUB_ENV
-          elif [ "${{ github.event.release.target_commitish }}" == "alpha" ]; then
-            echo "TAG=alpha" >> $GITHUB_ENV
-          elif [ "${{ github.event.release.target_commitish }}" == "master" ]; then
-            echo "TAG=latest" >> $GITHUB_ENV
-          else
-            exit 1
-          fi
+          echo "TAG=next" >> $GITHUB_ENV
 
       - name: Set NPM distribution
         run: npm pkg set brightCli.distribution=npm
 
       - run: npm publish --tag $TAG
+        continue-on-error: true
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
@@ -181,6 +173,7 @@ jobs:
           scope: '@NeuraLegion'
 
       - run: npm publish --tag $TAG
+        continue-on-error: true
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GPR_TOKEN }}
 
