@@ -144,7 +144,7 @@ jobs:
         shell: pwsh
 
       - name: Checkout Repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
 
       - name: Download Target
         id: target
@@ -185,7 +185,7 @@ jobs:
         run: docker pull brightsec/cli:${{ inputs.version }}
 
       - name: Checkout Repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
 
       - name: Download Target
         id: target

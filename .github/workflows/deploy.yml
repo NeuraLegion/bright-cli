@@ -13,7 +13,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           ref: ${{ env.TARGET_REF }}
           token: ${{ secrets.GPR_TOKEN }}
@@ -25,7 +25,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: install-deps
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           ref: ${{ env.TARGET_REF }}
           token: ${{ secrets.GPR_TOKEN }}
@@ -44,7 +44,7 @@ jobs:
       - name: Pack artifacts
         run: npm pack
 
-      - uses: svenstaro/upload-release-action@2.7.0
+      - uses: svenstaro/upload-release-action@v2
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           file: ./brightsec-cli-*
@@ -117,14 +117,14 @@ jobs:
         run: .\tools\scripts\build-msi.ps1
         shell: pwsh
 
-      - uses: svenstaro/upload-release-action@2.7.0
+      - uses: svenstaro/upload-release-action@v2
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           file: ${{ startsWith(matrix.os, 'win') && '.\bin\cli.exe' || './bin/cli' }}
           asset_name: ${{ format('bright-cli-{0}-x64{1}', matrix.target, startsWith(matrix.os, 'win') && '.exe' || '') }}
           tag: ${{ github.ref }}
 
-      - uses: svenstaro/upload-release-action@2.7.0
+      - uses: svenstaro/upload-release-action@v2
         if: startsWith(matrix.os, 'win')
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
@@ -136,7 +136,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: build
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           ref: ${{ env.TARGET_REF }}
           token: ${{ secrets.GPR_TOKEN }}
@@ -151,7 +151,7 @@ jobs:
       - name: Set TAG based on target_commitish
         run: |
           if [ "${{ github.event.release.target_commitish }}" == "next" ]; then
-            echo "TAG=next" >> $GITHUB_ENV
+          echo "TAG=next" >> $GITHUB_ENV
           elif [ "${{ github.event.release.target_commitish }}" == "alpha" ]; then
             echo "TAG=alpha" >> $GITHUB_ENV
           elif [ "${{ github.event.release.target_commitish }}" == "master" ]; then
