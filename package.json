@@ -58,8 +58,8 @@
   },
   "description": "Bright CLI is a CLI tool that can initialize, stop, polling and maintain scans in Bright solutions.",
   "devDependencies": {
-    "@commitlint/cli": "^17.0.3",
-    "@commitlint/config-conventional": "^17.0.3",
+    "@commitlint/cli": "^19.2.2",
+    "@commitlint/config-conventional": "^19.2.2",
     "@semantic-release/exec": "^6.0.3",
     "@semantic-release/git": "^10.0.1",
     "@types/amqplib": "~0.8.2",
