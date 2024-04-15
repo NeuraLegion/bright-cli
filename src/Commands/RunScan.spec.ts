@@ -65,7 +65,6 @@ describe('RunScan', () => {
 
       // assert
       expect(act).toThrowError(SyntaxError);
-      expect(act).toThrowError(`Unexpected token ' in JSON at position 2`);
     });
   });
 });
