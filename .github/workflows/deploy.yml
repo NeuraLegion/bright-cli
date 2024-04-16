@@ -9,21 +9,8 @@ env:
   TARGET_REF: ${{ github.event.release.target_commitish }}
 
 jobs:
-  install-deps:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-        with:
-          ref: ${{ env.TARGET_REF }}
-          token: ${{ secrets.GPR_TOKEN }}
-
-      - name: Install deps
-        uses: ./.github/workflows/composite/npm
-
   build:
     runs-on: ubuntu-latest
-    needs: install-deps
     steps:
       - uses: actions/checkout@v4
         with:
@@ -163,16 +150,7 @@ jobs:
       - name: Set NPM distribution
         run: npm pkg set brightCli.distribution=npm
 
-      - name: Get current NPM version --tag $TAG
-        id: npm
-        run: |
-          PACKAGE_NAME=$(npm pkg get name)
-          PACKAGE_NAME=${PACKAGE_NAME//\"/}
-          VERSION=$(npm view $PACKAGE_NAME version --tag $TAG)
-          echo "version=v$version" >> "$GITHUB_OUTPUT"
-
       - run: npm publish --tag $TAG
-        if: ${{ env.VERSION != steps.npm.outputs.version }}
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
@@ -189,16 +167,7 @@ jobs:
           registry: 'https://npm.pkg.github.com'
           scope: '@NeuraLegion'
 
-      - name: Get current GPR version --tag $TAG
-        id: gpr
-        run: |
-          PACKAGE_NAME=$(npm pkg get name)
-          PACKAGE_NAME=${PACKAGE_NAME//\"/}
-          VERSION=$(npm view $PACKAGE_NAME version --tag $TAG)
-          echo "version=v$version" >> "$GITHUB_OUTPUT"
-
       - run: npm publish --tag $TAG
-        if: ${{ env.VERSION != steps.gpr.outputs.version }}
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GPR_TOKEN }}
 
