@@ -1,5 +1,5 @@
 import { logger } from '../Utils';
-import request, { RequestPromiseAPI } from 'request-promise';
+import axios, { Axios } from 'axios';
 import { readFile, writeFile } from 'fs';
 import { join } from 'path';
 import { homedir } from 'os';
@@ -17,14 +17,17 @@ interface SystemConfigFile {
 export class SystemConfigManager {
   private readonly rotationInterval = 3600000;
   private readonly path = join(homedir(), '.brightclirc');
-  private readonly client: RequestPromiseAPI;
+  private readonly client: Axios;
   private backgroundRotationEnabled = false;
 
-  constructor(baseUrl: string) {
-    this.client = request.defaults({
-      baseUrl,
+  constructor(baseURL: string) {
+    this.client = axios.create({
+      baseURL,
       timeout: 1500,
-      json: true
+      responseType: 'json',
+      transitional: {
+        clarifyTimeoutError: true
+      }
     });
   }
 
@@ -169,9 +172,11 @@ export class SystemConfigManager {
     logger.debug('Fetching new system config');
 
     try {
-      return await this.client.get({
-        uri: '/api/v1/cli/config'
-      });
+      const { data } = await this.client.get<SystemConfig | undefined>(
+        '/api/v1/cli/config'
+      );
+
+      return data;
     } catch (e) {
       logger.debug('Error during fetching new system config: ', e);
     }

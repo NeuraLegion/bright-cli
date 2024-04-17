@@ -4,7 +4,6 @@ process.env.NODE_OPTIONS = `${
 } --max-http-header-size=40960`.trim();
 import 'reflect-metadata';
 import {
-  GenerateArchive,
   PollingScanStatus,
   RetestScan,
   RunRepeater,
@@ -21,7 +20,6 @@ container.resolve(CliBuilder).build({
   commands: [
     new RunRepeater(),
     new VersionCommand(),
-    new GenerateArchive(),
     new PollingScanStatus(),
     new RunScan(),
     new RetestScan(),

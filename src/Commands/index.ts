@@ -1,4 +1,3 @@
-export { GenerateArchive } from './GenerateArchive';
 export { VersionCommand } from './VersionCommand';
 export { RunScan } from './RunScan';
 export { UploadArchive } from './UploadArchive';

@@ -37,11 +37,7 @@ import {
 } from '../Scan';
 import {
   Archives,
-  BaseNexMockConverter,
-  DefaultHarRecorder,
   DefaultParserFactory,
-  HarRecorder,
-  NexMockConverter,
   ParserFactory,
   RestArchives
 } from '../Archive';
@@ -185,16 +181,6 @@ container
   .register(
     ParserFactory,
     { useClass: DefaultParserFactory },
-    { lifecycle: Lifecycle.Singleton }
-  )
-  .register(
-    NexMockConverter,
-    { useClass: BaseNexMockConverter },
-    { lifecycle: Lifecycle.Singleton }
-  )
-  .register(
-    HarRecorder,
-    { useClass: DefaultHarRecorder },
     { lifecycle: Lifecycle.Singleton }
   )
   .register(

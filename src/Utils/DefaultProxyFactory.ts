@@ -55,10 +55,10 @@ export class DefaultProxyFactory implements ProxyFactory {
     switch (protocol) {
       case 'http:':
       case 'ws:':
-        return proxies.http;
+        return proxies.httpAgent;
       case 'https:':
       case 'wss:':
-        return proxies.https;
+        return proxies.httpsAgent;
       default:
         throw new Error(
           `Proxy not supported for protocol '${protocol}'. Please contact support at support@brightsec.com`
@@ -72,16 +72,16 @@ export class DefaultProxyFactory implements ProxyFactory {
 
   private createHttpProxy(proxyUrl: string, rejectUnauthorized?: boolean) {
     return {
-      https: new HttpsProxyAgent(proxyUrl, {
+      httpsAgent: new HttpsProxyAgent(proxyUrl, {
         rejectUnauthorized
       }),
-      http: new HttpProxyAgent(proxyUrl)
+      httpAgent: new HttpProxyAgent(proxyUrl)
     };
   }
 
   private createSocksProxy(proxyUrl: string) {
     const common = new SocksProxyAgent(proxyUrl);
 
-    return { http: common, https: common };
+    return { httpAgent: common, httpsAgent: common };
   }
 }

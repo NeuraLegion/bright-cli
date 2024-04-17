@@ -47,7 +47,7 @@ export class HttpRequestExecutor implements RequestExecutor {
     private readonly options: RequestExecutorOptions
   ) {
     if (this.options.proxyUrl) {
-      ({ https: this.httpsProxyAgent, http: this.httpProxyAgent } =
+      ({ httpsAgent: this.httpsProxyAgent, httpAgent: this.httpProxyAgent } =
         this.proxyFactory.createProxy({ proxyUrl: this.options.proxyUrl }));
     }
 

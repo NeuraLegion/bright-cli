@@ -4,7 +4,7 @@ import { Breakpoint } from './Breakpoint';
 import { Backoff, logger } from '../Utils';
 import { PollingConfig } from './PollingFactory';
 import ms from 'ms';
-import { RequestError, StatusCodeError } from 'request-promise/errors';
+import axios from 'axios';
 import { ok } from 'assert';
 
 export class BasePolling implements Polling {
@@ -129,7 +129,7 @@ export class BasePolling implements Polling {
     return new Backoff(
       this.DEFAULT_RECONNECT_TIMES,
       (err: unknown) =>
-        (err as StatusCodeError).statusCode > 500 ||
+        (axios.isAxiosError(err) && err.status > 500) ||
         [
           'ECONNRESET',
           'ENETDOWN',
@@ -139,7 +139,7 @@ export class BasePolling implements Polling {
           'ENOTFOUND',
           'EAI_AGAIN',
           'ESOCKETTIMEDOUT'
-        ].includes((err as RequestError).cause?.code)
+        ].includes((err as NodeJS.ErrnoException).code)
     );
   }
 }

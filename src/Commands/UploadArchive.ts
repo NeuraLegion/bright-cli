@@ -1,7 +1,5 @@
 import {
   Archives,
-  HarRecorderOptions,
-  NexMockConverterOptions,
   ParserFactory,
   RestArchivesOptions,
   Spec,
@@ -83,29 +81,14 @@ export class UploadArchive implements CommandModule {
       .group(['header'], 'OAS Options')
       .group(['header', 'variable'], 'Postman Options')
       .middleware((args: Arguments) => {
-        container
-          .register<HarRecorderOptions>(HarRecorderOptions, {
-            useValue: {
-              timeout: 10000,
-              maxRedirects: 20,
-              pool: args.pool as number,
-              proxyUrl: (args.proxyInternal ?? args.proxy) as string
-            } as HarRecorderOptions
-          })
-          .register<NexMockConverterOptions>(NexMockConverterOptions, {
-            useValue: {
-              headers: args.header as Record<string, string>,
-              url: args.target as string
-            } as NexMockConverterOptions
-          })
-          .register<RestArchivesOptions>(RestArchivesOptions, {
-            useValue: {
-              insecure: args.insecure as boolean,
-              baseUrl: args.api as string,
-              apiKey: args.token as string,
-              proxyUrl: (args.proxyExternal ?? args.proxy) as string
-            }
-          });
+        container.register<RestArchivesOptions>(RestArchivesOptions, {
+          useValue: {
+            insecure: args.insecure as boolean,
+            baseURL: args.api as string,
+            apiKey: args.token as string,
+            proxyURL: (args.proxyExternal ?? args.proxy) as string
+          }
+        });
       });
   }
 

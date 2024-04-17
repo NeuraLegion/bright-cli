@@ -13,8 +13,8 @@ export interface TargetProxyOptions extends ProxyOptions {
 
 export interface ProxyFactory {
   createProxy(options: ProxyOptions): {
-    https: https.Agent;
-    http: http.Agent;
+    httpsAgent: https.Agent;
+    httpAgent: http.Agent;
   };
 
   createProxyForClient(options: TargetProxyOptions): https.Agent | http.Agent;

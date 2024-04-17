@@ -23,8 +23,8 @@ describe('DefaultProxyFactory', () => {
       const result = defaultProxyFactory.createProxy(proxyOptions);
 
       // assert
-      expect(result.http).toBeInstanceOf(HttpProxyAgent);
-      expect(result.https).toBeInstanceOf(HttpsProxyAgent);
+      expect(result.httpAgent).toBeInstanceOf(HttpProxyAgent);
+      expect(result.httpsAgent).toBeInstanceOf(HttpsProxyAgent);
     });
 
     it('should create socks proxy agents for socks protocol', () => {
@@ -38,8 +38,8 @@ describe('DefaultProxyFactory', () => {
       const result = defaultProxyFactory.createProxy(proxyOptions);
 
       // assert
-      expect(result.http).toBeInstanceOf(SocksProxyAgent);
-      expect(result.https).toBeInstanceOf(SocksProxyAgent);
+      expect(result.httpAgent).toBeInstanceOf(SocksProxyAgent);
+      expect(result.httpsAgent).toBeInstanceOf(SocksProxyAgent);
     });
 
     it('should throw error for unsupported protocol', () => {
