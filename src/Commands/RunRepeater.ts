@@ -63,6 +63,7 @@ export class RunRepeater implements CommandModule {
       })
       .option('headers', {
         requiresArg: true,
+        deprecated: 'Use --header instead.',
         string: true,
         conflicts: ['header'],
         describe:
@@ -115,9 +116,9 @@ export class RunRepeater implements CommandModule {
         }
       })
       .option('experimental-connection-reuse', {
-        deprecate: 'Use --ntlm instead',
+        deprecated: 'Use --ntlm instead',
         boolean: true,
-        describe: 'Configure experimental support for TCP connections reuse'
+        describe: 'Configure ntlm support (enables TCP connection reuse)'
       })
       .option('ntlm', {
         boolean: true,
@@ -138,19 +139,20 @@ export class RunRepeater implements CommandModule {
         describe: 'Stop and remove repeater daemon'
       })
       .option('rabbitmq', {
+        deprecated: true,
         boolean: true,
         describe:
           'Enable legacy mode, utilizing the RabbitMQ connection for communication.'
       })
-      .conflicts('remove-daemon', 'daemon')
-      .conflicts('experimental-connection-reuse', 'proxy')
-      .conflicts('experimental-connection-reuse', 'proxy-external')
-      .conflicts('experimental-connection-reuse', 'proxy-internal')
-      .conflicts('ntlm', 'proxy')
-      .conflicts('ntlm', 'proxy-external')
-      .conflicts('ntlm', 'proxy-internal')
-      .conflicts('proxy-external', 'proxy')
-      .conflicts('proxy-internal', 'proxy')
+      .conflicts({
+        daemon: 'remove-daemon',
+        ntlm: [
+          'proxy',
+          'proxy-external',
+          'proxy-internal',
+          'experimental-connection-reuse'
+        ]
+      })
       .env('REPEATER')
       .middleware((args: Arguments) => {
         if (Object.hasOwnProperty.call(args, '')) {
