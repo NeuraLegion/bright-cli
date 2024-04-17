@@ -1,4 +1,4 @@
-import request, { RequestPromiseAPI } from 'request-promise';
+import axios, { Axios } from 'axios';
 
 export interface ApiOptions {
   baseUrl: string;
@@ -18,48 +18,49 @@ export interface CreateScanProps {
 }
 
 export class Api {
-  private readonly client: RequestPromiseAPI;
+  private readonly client: Axios;
 
   constructor(options: ApiOptions) {
-    this.client = request.defaults({
-      baseUrl: options.baseUrl,
-      json: true,
+    this.client = axios.create({
+      baseURL: options.baseUrl,
+      responseType: 'json',
+      transitional: {
+        clarifyTimeoutError: true
+      },
       headers: { authorization: `api-key ${options.apiKey}` }
     });
   }
 
   public async getScanEntryPointsConnectivity(scanId: string) {
-    const response: { ok: number } = await this.client.get({
-      uri: `/api/v2/scans/${scanId}/entry-points/connectivity`
-    });
+    const { data } = await this.client.get<{ ok: number }>(
+      `/api/v2/scans/${scanId}/entry-points/connectivity`
+    );
 
-    return response;
+    return data;
   }
 
   public async createRepeater(name: string): Promise<string> {
-    const { id }: { id: string } = await this.client.post({
-      body: {
+    const { data } = await this.client.post<{ id: string }>(
+      '/api/v1/repeaters',
+      {
         name
-      },
-      uri: `/api/v1/repeaters`
-    });
+      }
+    );
 
-    return id;
+    return data.id;
   }
 
   public async deleteRepeater(id: string) {
-    await this.client.delete({
-      uri: `/api/v1/repeaters/${id}`
-    });
+    await this.client.delete(`/api/v1/repeaters/${id}`);
   }
 
   public async createScan(props: CreateScanProps): Promise<string> {
-    const { id }: { id: string } = await this.client.post({
-      body: props,
-      uri: `/api/v1/scans`
-    });
+    const { data } = await this.client.post<{ id: string }>(
+      '/api/v1/scans',
+      props
+    );
 
-    return id;
+    return data.id;
   }
 
   public async waitForRepeaterToConnect(
@@ -70,11 +71,11 @@ export class Api {
     const timeout = options?.timeout ?? 10000;
 
     for (let attempt = 1; attempt <= maxAttempts; attempt++) {
-      const { status }: { status: string } = await this.client.get({
-        uri: `/api/v1/repeaters/${repeaterId}`
-      });
+      const { data } = await this.client.get<{ status: string }>(
+        `/api/v1/repeaters/${repeaterId}`
+      );
 
-      if (status === 'connected') {
+      if (data.status === 'connected') {
         return;
       }
 
@@ -93,17 +94,15 @@ export class Api {
     const timeout = options?.timeout ?? 60000;
 
     for (let attempt = 1; attempt <= maxAttempts; attempt++) {
-      const scan: {
+      const { data } = await this.client.get<{
         status: string;
         targets: string[];
         requests: number;
         entryPoints: number;
-      } = await this.client.get({
-        uri: `/api/v1/scans/${scanId}`
-      });
+      }>(`/api/v1/scans/${scanId}`);
 
-      if (!['pending', 'running'].includes(scan.status)) {
-        return scan;
+      if (!['pending', 'running'].includes(data.status)) {
+        return data;
       }
 
       if (attempt === maxAttempts) {
