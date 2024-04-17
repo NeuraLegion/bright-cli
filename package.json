@@ -72,6 +72,7 @@
     "@types/yargs": "~16.0.1",
     "@typescript-eslint/eslint-plugin": "^5.33.1",
     "@typescript-eslint/parser": "^5.33.1",
+    "@yao-pkg/pkg": "^5.11.5",
     "clean-webpack-plugin": "^4.0.0",
     "conventional-changelog-conventionalcommits": "^7.0.2",
     "cross-env": "^7.0.3",
@@ -85,7 +86,6 @@
     "lint-staged": "^13.0.3",
     "nock": "^13.2.9",
     "nodemon": "^3.1.0",
-    "pkg": "^5.8.0",
     "prettier": "^2.7.1",
     "semantic-release": "^22.0.12",
     "terser-webpack-plugin": "^5.3.5",
@@ -127,6 +127,7 @@
   "pkg": {
     "scripts": "dist/**/*.js",
     "assets": [
+      "./node_modules/axios/**",
       "./node_modules/win-ca/lib/crypt32-*.node",
       "./node_modules/@neuralegion/os-service/prebuilds/win32-*/node.abi108.node",
       "./node_modules/@neuralegion/raw-socket/prebuilds/win32-*/node.abi108.node",
