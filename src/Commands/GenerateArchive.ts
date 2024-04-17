@@ -13,6 +13,8 @@ import { Har } from 'har-format';
 import { basename } from 'path';
 
 export class GenerateArchive implements CommandModule {
+  public readonly deprecated =
+    'Use "archive:upload" with HAR, OAS or Postman collections';
   public readonly command = 'archive:generate [options] <mockfile>';
   public readonly describe = 'Generates a new archive on base unit-tests.';
 

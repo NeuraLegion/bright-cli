@@ -83,7 +83,7 @@ export class Integration implements CommandModule {
         requiresArg: false,
         hidden: true
       })
-      .conflicts('remove-daemon', 'daemon')
+      .conflicts({ daemon: 'remove-daemon' })
       .middleware((args: Arguments) => {
         container
           .register<IntegrationOptions>(IntegrationOptions, {

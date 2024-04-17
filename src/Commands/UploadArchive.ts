@@ -49,6 +49,8 @@ export class UploadArchive implements CommandModule {
       .option('header', {
         alias: 'H',
         default: [],
+        deprecated:
+          'Use --header when running a scan using the scan:run command.',
         requiresArg: true,
         array: true,
         describe:
@@ -60,6 +62,8 @@ export class UploadArchive implements CommandModule {
       .option('variable', {
         alias: 'V',
         default: [],
+        deprecated:
+          'Directly integrate variables into the file. For updated guidelines on managing variables effectively, refer to https://learning.postman.com/docs/sending-requests/variables/variables/#variable-scopes',
         requiresArg: true,
         array: true,
         describe:

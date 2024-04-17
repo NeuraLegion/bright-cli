@@ -43,6 +43,12 @@ export class CliBuilder {
           'What level of logs to report. Any logs of a higher level than the setting are shown.'
       })
       .option('cluster', {
+        deprecated: 'Use --hostname instead',
+        requiresArg: true,
+        describe:
+          'Bright application name (domain name). [default: app.brightsec.com]'
+      })
+      .option('hostname', {
         requiresArg: true,
         describe:
           'Bright application name (domain name). [default: app.brightsec.com]'
@@ -61,12 +67,16 @@ export class CliBuilder {
       .option('proxy-external', {
         requiresArg: true,
         describe:
-          "Specify a proxy URL to route all outbound traffic through. For more information, see the '--proxy' option."
+          'Specify a proxy URL to route all outbound traffic through. For more information, see the --proxy option.'
       })
       .option('proxy-internal', {
         requiresArg: true,
         describe:
-          "Specify a proxy URL to route all inbound traffic through. For more information, see the '--proxy' option."
+          'Specify a proxy URL to route all inbound traffic through. For more information, see the --proxy option.'
+      })
+      .conflicts({
+        proxy: ['proxy-internal', 'proxy-external'],
+        hostname: 'cluster'
       })
       .middleware((args: Arguments) => {
         ({
