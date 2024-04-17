@@ -1,8 +1,9 @@
 {
   "plugins": [
-    [
+[
       "@semantic-release/commit-analyzer",
       {
+        "releaseRules": [{ "type": "docs", "release": "patch" }],
         "parserOpts": {
           "noteKeywords": ["BREAKING CHANGE", "BREAKING CHANGES"]
         }
@@ -11,12 +12,35 @@
     [
       "@semantic-release/release-notes-generator",
       {
-        "preset": "angular",
+        "preset": "conventionalcommits",
         "parserOpts": {
-          "noteKeywords": ["BREAKING CHANGE", "BREAKING CHANGES"]
+          "noteKeywords": ["BREAKING CHANGE", "BREAKING CHANGES", "BREAKING"]
+        },
+        "presetConfig": {
+          "types": [
+            { "type": "feat", "section": "Features" },
+            { "type": "perf", "section": "Performance Improvements" },
+            { "type": "fix", "section": "Bug Fixes" },
+            { "type": "docs", "section": "Documentation" },
+            { "type": "revert", "section": "Reverts" },
+            { "type": "build", "section": "Build System", "hidden": true },
+            { "type": "chore", "section": "Build System", "hidden": true },
+            {
+              "type": "ci",
+              "section": "Continuous Integration",
+              "hidden": true
+            },
+            {
+              "type": "refactor",
+              "section": "Code Refactoring",
+              "hidden": true
+            },
+            { "type": "style", "section": "Styles", "hidden": true },
+            { "type": "test", "section": "Tests", "hidden": true }
+          ]
         },
         "writerOpts": {
-          "commitsSort": ["subject", "scope"]
+          "commitsSort": ["scope", "subject"]
         }
       }
     ],
@@ -57,11 +81,6 @@
     {
       "name": "next",
       "channel": "next",
-      "prerelease": true
-    },
-    {
-      "name": "alpha",
-      "channel": "alpha",
       "prerelease": true
     }
   ],
