@@ -23,6 +23,7 @@ export interface CommandArgs {
 
 export interface ClusterArgs {
   cluster?: string;
+  hostname?: string;
 }
 
 export interface ClusterUrls {
@@ -54,11 +55,13 @@ export class Helpers {
     let bus: string;
     let api: string;
 
-    if (args.cluster) {
-      let host = args.cluster;
+    const hostname = args.cluster ?? args.hostname;
+
+    if (hostname) {
+      let host = hostname;
 
       try {
-        ({ host } = new URL(args.cluster as string));
+        ({ host } = new URL(hostname));
       } catch {
         // noop
       }
