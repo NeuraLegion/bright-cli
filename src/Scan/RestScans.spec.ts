@@ -12,9 +12,10 @@ import { instance, mock, reset } from 'ts-mockito';
 import nock from 'nock';
 
 describe('RestScans', () => {
-  let restScans!: RestScans;
   const cliInfoMock = mock<CliInfo>();
   const proxyFactoryMock = mock<ProxyFactory>();
+
+  let restScans!: RestScans;
 
   beforeAll(() => {
     nock.disableNetConnect();
@@ -30,7 +31,7 @@ describe('RestScans', () => {
       instance(cliInfoMock),
       instance(proxyFactoryMock),
       {
-        baseUrl: 'https://example.com/',
+        baseURL: 'https://example.com/',
         apiKey: 'key'
       }
     );
@@ -117,6 +118,68 @@ describe('RestScans', () => {
       await expect(result).rejects.toThrowError(
         `Error loading file with id "${scanConfig.fileId}": No such file or you do not have permissions.`
       );
+    });
+  });
+
+  describe('retest', () => {
+    it('should retest a scan and return the id', async () => {
+      const res = { id: 'string' };
+
+      nock('https://example.com/')
+        .post('/api/v1/scans/scanId/retest')
+        .reply(200, res, {
+          'content-type': 'application/json'
+        });
+
+      const result = await restScans.retest('scanId');
+
+      expect(result).toEqual(res.id);
+    });
+  });
+
+  describe('status', () => {
+    it('should return the status of a scan', async () => {
+      const res = { state: 'running' };
+
+      nock('https://example.com/').get('/api/v1/scans/scanId').reply(200, res, {
+        'content-type': 'application/json'
+      });
+
+      const result = await restScans.status('scanId');
+
+      expect(result).toEqual(res);
+    });
+  });
+
+  describe('stop', () => {
+    it('should stop a scan', async () => {
+      nock('https://example.com/').get('/api/v1/scans/scanId/stop').reply(
+        200,
+        {},
+        {
+          'content-type': 'application/json'
+        }
+      );
+
+      await restScans.stop('scanId');
+
+      expect(nock.isDone()).toBeTruthy();
+    });
+  });
+
+  describe('delete', () => {
+    it('should delete a scan', async () => {
+      nock('https://example.com/').delete('/api/v1/scans/scanId').reply(
+        200,
+        {},
+        {
+          'content-type': 'application/json'
+        }
+      );
+
+      await restScans.delete('scanId');
+
+      expect(nock.isDone()).toBeTruthy();
     });
   });
 });

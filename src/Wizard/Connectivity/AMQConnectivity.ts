@@ -3,9 +3,10 @@ import { Connectivity } from './Connectivity';
 import { logger } from '../../Utils';
 import { Credentials } from '../Credentials';
 import { Tokens } from '../Tokens';
-import { post } from 'request-promise';
+import axios from 'axios';
 import { inject, injectable } from 'tsyringe';
 import { URL } from 'url';
+import { stringify } from 'querystring';
 
 @injectable()
 export class AMQConnectivity implements Connectivity {
@@ -21,26 +22,30 @@ export class AMQConnectivity implements Connectivity {
     }: Credentials | undefined = this.tokens.readTokens();
 
     try {
-      const body = await post({
-        url,
-        timeout: this.CONNECTION_TIMEOUT,
-        form: {
+      const { data } = await axios.post(
+        url.toString(),
+        stringify({
           username,
           password
+        }),
+        {
+          timeout: this.CONNECTION_TIMEOUT,
+          responseType: 'text'
         }
-      });
+      );
 
-      logger.debug('AMQ connectivity test returned: %s', body);
+      logger.debug('AMQ connectivity test returned: %s', data);
 
-      return body === 'allow';
-    } catch (res) {
-      if (res.error) {
-        logger.debug('AMQ connectivity failed: %s', res.error.message);
-      } else {
+      return data === 'allow';
+    } catch (err) {
+      if (axios.isAxiosError(err) && err.response) {
         logger.debug(
-          'AMQ connectivity failed with status code %d',
-          res.response.statusCode
+          'AMQ connectivity failed with the status code: %s',
+          err.response.status,
+          err.response.data
         );
+      } else {
+        logger.debug('AMQ connectivity failed: %s', err.message);
       }
 
       return false;

@@ -93,7 +93,8 @@ export class Integration implements CommandModule {
               apiKey: args.password as string,
               user: args.user as string,
               baseUrl: args.baseUrl as string,
-              insecure: args.insecure as boolean
+              insecure: args.insecure as boolean,
+              proxyUrl: (args.proxyInternal ?? args.proxy) as string
             }
           })
           .register<RabbitMQBusOptions>(RabbitMQBusOptions, {

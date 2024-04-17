@@ -11,41 +11,47 @@ import {
 } from './Scans';
 import { CliInfo } from '../Config';
 import { ProxyFactory } from '../Utils';
-import request, { RequestPromiseAPI } from 'request-promise';
 import { delay, inject, injectable } from 'tsyringe';
+import axios, { Axios } from 'axios';
+import http from 'http';
+import https from 'https';
 
 export interface RestScansOptions {
+  baseURL: string;
+  apiKey: string;
   timeout?: number;
   insecure?: boolean;
-  baseUrl: string;
-  apiKey: string;
-  proxyUrl?: string;
+  proxyURL?: string;
 }
 
 export const RestScansOptions: unique symbol = Symbol('RestScansOptions');
 
 @injectable()
 export class RestScans implements Scans {
-  private readonly client: RequestPromiseAPI;
+  private readonly client: Axios;
 
   constructor(
     @inject(delay(() => CliInfo)) private readonly info: CliInfo,
     @inject(ProxyFactory) private readonly proxyFactory: ProxyFactory,
     @inject(RestScansOptions)
-    { baseUrl, apiKey, insecure, proxyUrl, timeout = 10000 }: RestScansOptions
+    { baseURL, apiKey, insecure, proxyURL, timeout = 10000 }: RestScansOptions
   ) {
-    this.client = request.defaults({
-      baseUrl,
+    const {
+      httpAgent = new http.Agent(),
+      httpsAgent = new https.Agent({ rejectUnauthorized: !insecure })
+    } = proxyURL
+      ? this.proxyFactory.createProxy({
+          proxyUrl: proxyURL,
+          rejectUnauthorized: !insecure
+        })
+      : {};
+
+    this.client = axios.create({
+      baseURL,
       timeout,
-      json: true,
-      rejectUnauthorized: !insecure,
-      agent: proxyUrl
-        ? this.proxyFactory.createProxyForClient({
-            proxyUrl,
-            targetUrl: baseUrl,
-            rejectUnauthorized: !insecure
-          })
-        : undefined,
+      httpAgent,
+      httpsAgent,
+      responseType: 'json',
       headers: { authorization: `Api-Key ${apiKey}` }
     });
   }
@@ -53,38 +59,34 @@ export class RestScans implements Scans {
   public async create(body: ScanConfig): Promise<string> {
     const scanConfig = await this.prepareScanConfig({ ...body });
 
-    const { id }: { id: string } = await this.client.post({
-      body: scanConfig,
-      uri: `/api/v1/scans`
-    });
+    const res = await this.client.post<{ id: string }>(
+      '/api/v1/scans',
+      scanConfig
+    );
 
-    return id;
+    return res.data.id;
   }
 
   public async retest(scanId: string): Promise<string> {
-    const { id }: { id: string } = await this.client.post({
-      uri: `/api/v1/scans/${scanId}/retest`
-    });
+    const res = await this.client.post<{ id: string }>(
+      `/api/v1/scans/${scanId}/retest`
+    );
 
-    return id;
+    return res.data.id;
   }
 
   public async status(scanId: string): Promise<ScanState> {
-    return this.client.get({
-      uri: `/api/v1/scans/${scanId}`
-    });
+    const res = await this.client.get<ScanState>(`/api/v1/scans/${scanId}`);
+
+    return res.data;
   }
 
   public async stop(scanId: string): Promise<void> {
-    await this.client.get({
-      uri: `/api/v1/scans/${scanId}/stop`
-    });
+    await this.client.get(`/api/v1/scans/${scanId}/stop`);
   }
 
   public async delete(scanId: string): Promise<void> {
-    await this.client.delete({
-      uri: `/api/v1/scans/${scanId}`
-    });
+    await this.client.delete(`/api/v1/scans/${scanId}`);
   }
 
   private async prepareScanConfig({ headers, ...rest }: ScanConfig): Promise<
@@ -127,12 +129,12 @@ export class RestScans implements Scans {
 
     if (fileId) {
       try {
-        const file: StorageFile = await this.client.get({
-          uri: `/api/v2/files/${fileId}`
-        });
+        const { data } = await this.client.get<StorageFile>(
+          `/api/v2/files/${fileId}`
+        );
 
         discoveryTypes.push(
-          file.type === SourceType.HAR ? Discovery.ARCHIVE : Discovery.OAS
+          data.type === SourceType.HAR ? Discovery.ARCHIVE : Discovery.OAS
         );
       } catch (error) {
         throw new Error(

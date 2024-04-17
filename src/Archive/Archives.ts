@@ -10,7 +10,6 @@ export interface Spec {
 }
 
 export enum SpecType {
-  NEXMOCK = 'NexMock',
   HAR = 'HAR',
   OPENAPI = 'OpenAPI',
   POSTMAN = 'Postman'

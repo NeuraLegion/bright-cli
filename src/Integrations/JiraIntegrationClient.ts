@@ -1,28 +1,44 @@
 import { JiraIssue, JiraProject } from './JiraClient';
 import { ConnectivityStatus } from './ConnectivityStatus';
-import { logger } from '../Utils';
+import { logger, ProxyFactory } from '../Utils';
 import { IntegrationClient } from './IntegrationClient';
 import { IntegrationType } from './IntegrationType';
 import { IntegrationOptions } from './IntegrationOptions';
-import request, { RequestPromiseAPI } from 'request-promise';
 import { inject, injectable } from 'tsyringe';
+import axios, { Axios } from 'axios';
+import http from 'http';
+import https from 'https';
 
 @injectable()
 export class JiraIntegrationClient implements IntegrationClient<JiraIssue> {
-  private readonly client: RequestPromiseAPI;
+  private readonly client: Axios;
 
   get type(): IntegrationType {
     return IntegrationType.JIRA;
   }
 
   constructor(
+    @inject(ProxyFactory) private readonly proxyFactory: ProxyFactory,
     @inject(IntegrationOptions) private readonly options: IntegrationOptions
   ) {
-    this.client = request.defaults({
-      json: true,
-      rejectUnauthorized: !this.options.insecure,
-      baseUrl: this.options.baseUrl,
+    const {
+      httpAgent = new http.Agent(),
+      httpsAgent = new https.Agent({
+        rejectUnauthorized: !this.options.insecure
+      })
+    } = this.options.proxyUrl
+      ? this.proxyFactory.createProxy({
+          proxyUrl: this.options.proxyUrl,
+          rejectUnauthorized: !this.options.insecure
+        })
+      : {};
+
+    this.client = axios.create({
+      httpAgent,
+      httpsAgent,
+      baseURL: this.options.baseUrl,
       timeout: this.options.timeout,
+      responseType: 'json',
       headers: {
         authorization: `Basic ${this.createToken(
           this.options.user,
@@ -33,18 +49,13 @@ export class JiraIntegrationClient implements IntegrationClient<JiraIssue> {
   }
 
   public async createTicket(issue: JiraIssue): Promise<void> {
-    await this.client.post({
-      body: issue,
-      uri: '/rest/api/2/issue'
-    });
+    await this.client.post('/rest/api/2/issue', issue);
   }
 
   public async getProjects(): Promise<JiraProject[]> {
-    const projects: JiraProject[] = await this.client.get({
-      uri: '/rest/api/2/project'
-    });
+    const res = await this.client.get<JiraProject[]>('/rest/api/2/project');
 
-    return projects;
+    return res.data;
   }
 
   public async ping(): Promise<ConnectivityStatus> {

@@ -3,6 +3,7 @@ export interface IntegrationOptions {
   readonly apiKey?: string;
   readonly user?: string;
   readonly baseUrl?: string;
+  readonly proxyUrl?: string;
   readonly insecure?: boolean;
 }
 
