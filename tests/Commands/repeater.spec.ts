@@ -117,9 +117,13 @@ describe('Repeater Command', () => {
         });
 
       // assert
-      await expect(act).rejects.toThrow(
-        '429 - "The repeater used for the scan is not connected. Connect the repeater and restart the scan."'
-      );
+      await expect(act).rejects.toThrow('Request failed with status code 429');
+      await expect(act).rejects.toMatchObject({
+        response: {
+          status: 429,
+          data: 'The repeater used for the scan is not connected. Connect the repeater and restart the scan.'
+        }
+      });
     }, 10000);
   });
 
