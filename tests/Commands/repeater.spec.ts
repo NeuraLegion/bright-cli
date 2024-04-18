@@ -32,7 +32,15 @@ describe('Repeater Command', () => {
       baseUrl: `https://${config.cluster}`,
       apiKey: config.apiKey
     });
+  });
 
+  afterAll(() => {
+    targetProcess.stderr.destroy();
+    targetProcess.stdout.destroy();
+    targetProcess.kill('SIGTERM');
+  });
+
+  beforeEach(async () => {
     const [targetCmd, ...targetArgs]: string[] = config.targetCmd.split(' ');
     targetProcess = spawn(targetCmd, targetArgs, {
       shell: true,
@@ -44,15 +52,7 @@ describe('Repeater Command', () => {
 
     targetProcess.stdout.pipe(process.stdout);
     targetProcess.stderr.pipe(process.stderr);
-  });
 
-  afterAll(() => {
-    targetProcess.stderr.destroy();
-    targetProcess.stdout.destroy();
-    targetProcess.kill('SIGTERM');
-  });
-
-  beforeEach(async () => {
     repeaterId = await api.createRepeater(name);
   }, 10000);
 
@@ -61,6 +61,12 @@ describe('Repeater Command', () => {
       commandProcess.stderr.destroy();
       commandProcess.stdout.destroy();
       commandProcess.kill('SIGTERM');
+    }
+
+    if (targetProcess) {
+      targetProcess.stderr.destroy();
+      targetProcess.stdout.destroy();
+      targetProcess.kill('SIGTERM');
     }
 
     await api.deleteRepeater(repeaterId);
