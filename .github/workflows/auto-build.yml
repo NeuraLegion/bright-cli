@@ -6,7 +6,7 @@ on:
       - '**'
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
+  group: '${{ github.workflow }}-${{ github.ref }}'
   cancel-in-progress: true
 
 jobs:
@@ -20,6 +20,53 @@ jobs:
 
       - name: Install deps
         uses: ./.github/workflows/composite/npm
+
+  build-binary:
+    needs: install-deps
+    strategy:
+      matrix:
+        include:
+          - os: windows-2019
+            target: win
+            node: 20
+          - os: macos-11
+            target: macos
+            node: 20
+          # Using the `centos7-devtoolset7` runner instead of latest (i.e. `ubuntu-20.04`)
+          # with gcc 7 but glibc 2.17, so binaries are compatible for Ubuntu 14.04 and Debian 8.
+          - os: ubuntu-20.04
+            target: linux
+            node: 16
+            container:
+              image: centos/devtoolset-7-toolchain-centos7:7
+              options: "--user root"
+    runs-on: ${{ matrix.os }}
+    container: ${{ matrix.container }}
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Install dev-deps
+        if: startsWith(matrix.os, 'ubuntu')
+        run: |
+          yum install build-essential python3 -y \
+            && yum clean all -y \
+            && rm -rf /var/cache/yum
+
+      - name: Install deps
+        uses: ./.github/workflows/composite/npm
+        with:
+          version: ${{ matrix.node }}
+
+      - name: Build
+        run: npm run build
+
+      - name: Build executable file
+        run: npm run build:pkg -- -t node${{ matrix.node }}-${{ matrix.target }}-x64
+
+      - name: Build MSI
+        if: startsWith(matrix.os, 'win')
+        run: .\tools\scripts\build-msi.ps1
+        shell: pwsh
 
   test:
     runs-on: ubuntu-latest
