@@ -48,25 +48,34 @@ jobs:
           - os: ubuntu-latest
             container: ubuntu:18.04
             executable: bright-cli-linux-x64
+            node: 16
           - os: ubuntu-latest
             container: ubuntu:16.04
             executable: bright-cli-linux-x64
+            node: 16
           - os: ubuntu-latest
             container: fedora:24
             executable: bright-cli-linux-x64
+            node: 16
           - os: ubuntu-latest
             container: fedora:latest
             executable: bright-cli-linux-x64
+            node: 20
           - os: ubuntu-latest
             executable: bright-cli-linux-x64
+            node: 20
           - os: macos-11
             executable: bright-cli-macos-x64
+            node: 20
           - os: macos-latest
             executable: bright-cli-macos-x64
+            node: 20
           - os: windows-latest
             executable: bright-cli-win-x64.exe
+            node: 20
           - os: windows-2019
             executable: bright-cli-win-x64.exe
+            node: 20
     steps:
       - name: Install Packages (Fedora)
         if: ${{ startsWith(matrix.container, 'fedora') }}
@@ -227,10 +236,6 @@ jobs:
           - os: ubuntu-latest
             container: fedora:latest
             node: 20
-        exclude:
-          # TODO: Troubleshoot
-          - os: windows-latest
-            node: 14
     steps:
       - name: Install Packages (Fedora)
         if: ${{ startsWith(matrix.container, 'fedora') }}
