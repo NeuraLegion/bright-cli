@@ -5,8 +5,7 @@ import { Credentials } from '../Credentials';
 import { Tokens } from '../Tokens';
 import axios from 'axios';
 import { inject, injectable } from 'tsyringe';
-import { URL } from 'url';
-import { stringify } from 'querystring';
+import { stringify } from 'node:querystring';
 
 @injectable()
 export class AMQConnectivity implements Connectivity {

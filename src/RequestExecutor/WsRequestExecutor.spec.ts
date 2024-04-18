@@ -6,7 +6,7 @@ import { Request } from './Request';
 import { ProxyFactory } from '../Utils';
 import { anything, instance, mock, reset, spy, verify, when } from 'ts-mockito';
 import { Server } from 'ws';
-import { once } from 'events';
+import { once } from 'node:events';
 
 describe('WsRequestExecutor', () => {
   const executorOptions: RequestExecutorOptions = { timeout: 2000 };

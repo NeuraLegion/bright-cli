@@ -4,9 +4,8 @@ import { VirtualScriptType } from './VirtualScript';
 import { Logger, logger } from '../Utils';
 import { VirtualScripts } from './VirtualScripts';
 import {
-  anyFunction,
   anyString,
-  anything,
+  deepEqual,
   instance,
   mock,
   reset,
@@ -14,7 +13,7 @@ import {
   verify,
   when
 } from 'ts-mockito';
-import fs from 'fs';
+import fs from 'node:fs/promises';
 
 describe('FSScriptLoader', () => {
   const mockedVirtualScripts = mock<VirtualScripts>();
@@ -35,9 +34,9 @@ describe('FSScriptLoader', () => {
       // arrange
       const code = 'let a = 1;';
 
-      when(spiedFs.readFile(anyString(), anything(), anyFunction())).thenCall(
-        (_path, _opts, callback) => callback(null, code)
-      );
+      when(
+        spiedFs.readFile(anyString(), deepEqual({ encoding: 'utf8' as const }))
+      ).thenResolve(code);
 
       const path1 = 'test.js';
       const path2 = 'test1.js';
@@ -58,9 +57,9 @@ describe('FSScriptLoader', () => {
 
     it('should log with debug level and throw if cannot read file', async () => {
       // arrange
-      when(spiedFs.readFile(anyString(), anything(), anyFunction())).thenCall(
-        (_path, _opts, callback) => callback(new Error('msg'), null)
-      );
+      when(
+        spiedFs.readFile(anyString(), deepEqual({ encoding: 'utf8' as const }))
+      ).thenReject(new Error('msg'));
 
       // act
       const loadPromise = scriptLoader.load({

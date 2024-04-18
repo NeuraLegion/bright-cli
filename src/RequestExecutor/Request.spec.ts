@@ -1,17 +1,16 @@
 import 'reflect-metadata';
 import type { Request as RequestInterface } from './Request';
 import { Protocol } from './Protocol';
-import fs from 'fs';
+import fs from 'node:fs';
 
 describe('Request', () => {
   let readFileMock!: jest.Mock;
   let Request!: typeof RequestInterface;
-  const noError: NodeJS.ErrnoException | null = null;
   const certContent = Buffer.from([]);
 
   beforeEach(async () => {
     readFileMock = jest.fn();
-    jest.doMock('fs', () => ({ ...fs, readFile: readFileMock }));
+    jest.doMock('node:fs/promises', () => ({ ...fs, readFile: readFileMock }));
     // ADHOC: `jest.doMock` must be called before importing SUT
     Request = (await import('./Request')).Request;
   });
@@ -36,10 +35,10 @@ describe('Request', () => {
           protocol: Protocol.HTTP
         });
         //arrange:mock
-        readFileMock.mockImplementation((filePath, callback) =>
+        readFileMock.mockImplementation((filePath) =>
           filePath === cert.path
-            ? callback(noError, certContent)
-            : callback(new Error('no such file'))
+            ? Promise.resolve(certContent)
+            : Promise.reject(new Error('no such file'))
         );
         //act
         await request.setCerts([cert]);
@@ -62,10 +61,10 @@ describe('Request', () => {
           protocol: Protocol.HTTP
         });
         //arrange:mock
-        readFileMock.mockImplementation((filePath, callback) =>
+        readFileMock.mockImplementation((filePath) =>
           filePath === cert.path
-            ? callback(noError, certContent)
-            : callback(new Error('no such file'))
+            ? Promise.resolve(certContent)
+            : Promise.reject(new Error('no such file'))
         );
         //act
         await request.setCerts([cert]);
@@ -91,10 +90,10 @@ describe('Request', () => {
           protocol: Protocol.HTTP
         });
         //arrange:mock
-        readFileMock.mockImplementation((filePath, callback) =>
+        readFileMock.mockImplementation((filePath) =>
           filePath === cert.path
-            ? callback(noError, certContent)
-            : callback(new Error('no such file'))
+            ? Promise.resolve(certContent)
+            : Promise.reject(new Error('no such file'))
         );
         //act
         await request.setCerts([cert]);

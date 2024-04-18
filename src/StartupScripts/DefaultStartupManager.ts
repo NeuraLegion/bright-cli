@@ -9,7 +9,7 @@ import {
   enable,
   disable
 } from '@neuralegion/os-service';
-import { promisify } from 'util';
+import { promisify } from 'node:util';
 
 export class DefaultStartupManager implements StartupManager {
   public async install({ name, ...options }: StartupOptions): Promise<void> {

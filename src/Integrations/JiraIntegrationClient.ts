@@ -6,8 +6,8 @@ import { IntegrationType } from './IntegrationType';
 import { IntegrationOptions } from './IntegrationOptions';
 import { inject, injectable } from 'tsyringe';
 import axios, { Axios } from 'axios';
-import http from 'http';
-import https from 'https';
+import http from 'node:http';
+import https from 'node:https';
 
 @injectable()
 export class JiraIntegrationClient implements IntegrationClient<JiraIssue> {

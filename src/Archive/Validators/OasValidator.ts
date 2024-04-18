@@ -10,7 +10,7 @@ import betterAjvErrors from 'better-ajv-errors';
 import ajvFormats from 'ajv/lib/compile/formats';
 import draft4 from 'ajv/lib/refs/json-schema-draft-04.json';
 import { injectable } from 'tsyringe';
-import { ok } from 'assert';
+import { ok } from 'node:assert';
 
 @injectable()
 export class OasValidator implements Validator<any> {

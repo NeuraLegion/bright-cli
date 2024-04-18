@@ -3,9 +3,8 @@ import { AmqpProxy } from './AmqpProxy';
 import { HttpsProxyAgent } from 'https-proxy-agent';
 import { HttpProxyAgent } from 'http-proxy-agent';
 import { SocksProxyAgent } from 'socks-proxy-agent';
-import { URL } from 'url';
-import https from 'https';
-import http from 'http';
+import https from 'node:https';
+import http from 'node:http';
 
 export class DefaultProxyFactory implements ProxyFactory {
   public createProxy({ proxyUrl, rejectUnauthorized = false }: ProxyOptions) {

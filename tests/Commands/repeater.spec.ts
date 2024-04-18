@@ -1,7 +1,7 @@
 import { Cli, Api } from '../Setup';
 import { gt } from 'semver';
-import { URL } from 'url';
-import { ChildProcess, spawn } from 'child_process';
+import { URL } from 'node:url';
+import { ChildProcess, spawn } from 'node:child_process';
 
 const config = {
   version: process.env.E2E_CLI_VERSION,

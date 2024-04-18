@@ -1,5 +1,5 @@
 import { VirtualScript, VirtualScriptType } from './VirtualScript';
-import Module from 'module';
+import Module from 'node:module';
 
 describe('VirtualScript', () => {
   const identityScript = `

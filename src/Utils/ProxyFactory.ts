@@ -1,6 +1,6 @@
 import { AmqpProxy } from './AmqpProxy';
-import https from 'https';
-import http from 'http';
+import https from 'node:https';
+import http from 'node:http';
 
 export interface ProxyOptions {
   proxyUrl: string;

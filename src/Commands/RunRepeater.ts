@@ -11,7 +11,7 @@ import {
 import { Arguments, Argv, CommandModule } from 'yargs';
 import { Lifecycle } from 'tsyringe';
 import { captureException } from '@sentry/node';
-import { normalize } from 'path';
+import { normalize } from 'node:path';
 
 export class RunRepeater implements CommandModule {
   public readonly command = 'repeater [options]';

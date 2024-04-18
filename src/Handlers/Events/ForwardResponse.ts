@@ -1,4 +1,4 @@
-import { Event } from '../../Bus/Event';
+import { Event } from '../../Bus';
 import { Protocol } from '../../RequestExecutor';
 
 export class ForwardResponse implements Event {

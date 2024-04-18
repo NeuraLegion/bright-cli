@@ -5,8 +5,7 @@ import { Helpers, logger } from '../Utils';
 import { ReadlinePlatform } from '../Wizard';
 import { Request, RequestExecutor, Response } from '../RequestExecutor';
 import { inject, injectable, injectAll } from 'tsyringe';
-import { EOL } from 'os';
-import { URL } from 'url';
+import { EOL } from 'node:os';
 
 @injectable()
 export class DefaultRepeaterCommandHub implements RepeaterCommandHub {

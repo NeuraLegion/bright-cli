@@ -2,9 +2,8 @@ import { Connectivity } from './Connectivity';
 import { logger } from '../../Utils';
 import { TestType } from '../TestType';
 import { injectable } from 'tsyringe';
-import { Socket } from 'net';
-import { URL } from 'url';
-import { once } from 'events';
+import { Socket } from 'node:net';
+import { once } from 'node:events';
 
 @injectable()
 export class TCPConnectivity implements Connectivity {

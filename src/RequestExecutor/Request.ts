@@ -1,10 +1,8 @@
 import { Helpers, logger } from '../Utils';
 import { Protocol } from './Protocol';
-import { URL } from 'url';
-import { readFile } from 'fs';
-import { basename, extname } from 'path';
-import { promisify } from 'util';
-import { createSecureContext } from 'tls';
+import { readFile } from 'node:fs/promises';
+import { basename, extname } from 'node:path';
+import { createSecureContext } from 'node:tls';
 
 export interface RequestOptions {
   protocol: Protocol;
@@ -213,7 +211,7 @@ export class Request {
     let cert: Buffer | undefined;
 
     try {
-      cert = await promisify(readFile)(path);
+      cert = await readFile(path);
     } catch (e) {
       logger.warn(`Warning: certificate ${path} not found.`);
     }

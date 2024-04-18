@@ -1,9 +1,9 @@
 import { logger } from '../Utils';
 import axios, { Axios } from 'axios';
-import { readFile, writeFile } from 'fs';
-import { join } from 'path';
-import { homedir } from 'os';
-import { promisify } from 'util';
+import { readFile, writeFile } from 'node:fs/promises';
+import { join } from 'node:path';
+import { homedir } from 'node:os';
+import { setTimeout } from 'node:timers/promises';
 
 export interface SystemConfig {
   sentryDsn?: string;
@@ -72,12 +72,8 @@ export class SystemConfigManager {
         );
       }
 
-      await this.sleep(this.rotationInterval);
+      await setTimeout(this.rotationInterval, undefined, { ref: false });
     }
-  }
-
-  private sleep(ms: number) {
-    return new Promise((resolve) => setTimeout(resolve, ms).unref());
   }
 
   private needsRotation(configFile: SystemConfigFile) {
@@ -143,7 +139,7 @@ export class SystemConfigManager {
     try {
       logger.debug('Loading system config file');
 
-      const file = await promisify(readFile)(this.path);
+      const file = await readFile(this.path);
       const fileConfig = JSON.parse(file.toString()) as SystemConfigFile;
 
       return {
@@ -162,7 +158,7 @@ export class SystemConfigManager {
     logger.debug('Updating system config file');
 
     try {
-      await promisify(writeFile)(this.path, JSON.stringify(configFile));
+      await writeFile(this.path, JSON.stringify(configFile));
     } catch (e) {
       logger.debug('Error during updating system config file', e);
     }

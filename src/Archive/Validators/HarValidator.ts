@@ -5,7 +5,6 @@ import { Entry, Har } from 'har-format';
 import Ajv, { ValidateFunction } from 'ajv';
 import betterAjvErrors from 'better-ajv-errors';
 import { injectable } from 'tsyringe';
-import { parse, Url } from 'url';
 
 @injectable()
 export class HarValidator implements Validator<Har> {
@@ -53,7 +52,7 @@ export class HarValidator implements Validator<Har> {
   }
 
   private parseEntry(entry: Entry): string | undefined {
-    const { host, protocol }: Url = parse(entry.request.url);
+    const { host, protocol } = new URL(entry.request.url);
 
     if (!host || !protocol) {
       return;

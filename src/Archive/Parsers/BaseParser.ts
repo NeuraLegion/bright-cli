@@ -1,13 +1,8 @@
 import { Validator } from '../Validators';
 import { File, Parser } from './Parser';
-import { promisify } from 'util';
-import { access as exists, constants, readFile as read, stat } from 'fs';
+import { access, constants, readFile, stat } from 'node:fs/promises';
 import { ok } from 'assert';
 import { basename, extname } from 'path';
-
-const readFile = promisify(read);
-const access = promisify(exists);
-const statAsync = promisify(stat);
 
 export class BaseParser<T> implements Parser {
   private readonly FILE_SIZE_LIMIT = 500 * 1024 ** 2;
@@ -17,7 +12,7 @@ export class BaseParser<T> implements Parser {
   public async parse(path: string): Promise<File> {
     await this.access(path);
 
-    const fileStat = await statAsync(path);
+    const fileStat = await stat(path);
 
     if (fileStat.size > this.FILE_SIZE_LIMIT) {
       throw new Error('There is not enough storage space to save this file');

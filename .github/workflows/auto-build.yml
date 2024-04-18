@@ -6,7 +6,7 @@ on:
       - '**'
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
+  group: '${{ github.workflow }}-${{ github.ref }}'
   cancel-in-progress: true
 
 jobs:
@@ -27,7 +27,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        target: [ 'lint', 'format', 'test:unit' ]
+        target: [ 'lint', 'format', 'test:unit', 'build' ]
     steps:
       - name: Checkout
         uses: actions/checkout@v3

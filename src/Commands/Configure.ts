@@ -2,7 +2,6 @@ import { logger } from '../Utils';
 import { ConnectivityUrls, Platform, TestType, Options } from '../Wizard';
 import { container } from '../Config';
 import { Arguments, Argv, CommandModule } from 'yargs';
-import { URL } from 'url';
 
 export class Configure implements CommandModule {
   public readonly command = 'configure [options]';
