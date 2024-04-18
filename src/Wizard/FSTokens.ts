@@ -2,9 +2,9 @@ import { Credentials } from './Credentials';
 import { logger } from '../Utils';
 import { Tokens } from './Tokens';
 import { injectable } from 'tsyringe';
-import { homedir } from 'os';
-import { existsSync, readFileSync, writeFileSync } from 'fs';
-import { join } from 'path';
+import { homedir } from 'node:os';
+import { existsSync, readFileSync, writeFileSync } from 'node:fs';
+import { join } from 'node:path';
 
 @injectable()
 export class FSTokens implements Tokens {

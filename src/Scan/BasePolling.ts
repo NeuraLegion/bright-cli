@@ -5,7 +5,7 @@ import { Backoff, logger } from '../Utils';
 import { PollingConfig } from './PollingFactory';
 import ms from 'ms';
 import axios from 'axios';
-import { ok } from 'assert';
+import { ok } from 'node:assert';
 
 export class BasePolling implements Polling {
   private timeoutDescriptor?: NodeJS.Timeout;

@@ -1,7 +1,6 @@
-import { ok } from 'assert';
-import { ChildProcess, spawn } from 'child_process';
-import { URL } from 'url';
-import { normalize } from 'path';
+import { ok } from 'node:assert';
+import { ChildProcess, spawn } from 'node:child_process';
+import { normalize } from 'node:path';
 
 declare global {
   // eslint-disable-next-line @typescript-eslint/no-namespace

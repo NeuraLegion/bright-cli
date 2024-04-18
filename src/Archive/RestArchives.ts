@@ -3,9 +3,9 @@ import { ProxyFactory } from '../Utils';
 import { inject, injectable } from 'tsyringe';
 import axios, { Axios } from 'axios';
 import FormData from 'form-data';
-import { ok } from 'assert';
-import https from 'https';
-import http from 'http';
+import { ok } from 'node:assert';
+import https from 'node:https';
+import http from 'node:http';
 
 export interface RestArchivesOptions {
   insecure?: boolean;

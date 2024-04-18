@@ -22,7 +22,7 @@
     ]
   },
   "engines": {
-    "node": ">=10 <=18"
+    "node": ">=16 <=20"
   },
   "dependencies": {
     "@neuralegion/os-service": "1.2.2",
@@ -66,7 +66,7 @@
     "@types/jest": "^29.5.12",
     "@types/js-yaml": "^4.0.2",
     "@types/ms": "^0.7.31",
-    "@types/node": "^10.17.59",
+    "@types/node": "^16.18.96",
     "@types/semver": "^7.5.8",
     "@types/ws": "^7.4.7",
     "@types/yargs": "~16.0.1",
@@ -129,15 +129,15 @@
     "assets": [
       "./node_modules/axios/**",
       "./node_modules/win-ca/lib/crypt32-*.node",
-      "./node_modules/@neuralegion/os-service/prebuilds/win32-*/node.abi108.node",
-      "./node_modules/@neuralegion/raw-socket/prebuilds/win32-*/node.abi108.node",
-      "./node_modules/@neuralegion/raw-socket/prebuilds/linux-x64/node.abi83.glibc.node",
-      "./node_modules/@neuralegion/raw-socket/prebuilds/darwin-x64+arm64/node.abi108.node"
+      "./node_modules/@neuralegion/os-service/prebuilds/win32-*/node.abi115.node",
+      "./node_modules/@neuralegion/raw-socket/prebuilds/win32-*/node.abi115.node",
+      "./node_modules/@neuralegion/raw-socket/prebuilds/linux-x64/node.abi93.glibc.node",
+      "./node_modules/@neuralegion/raw-socket/prebuilds/darwin-x64+arm64/node.abi115.node"
     ],
     "targets": [
-      "node14-linux-x64",
-      "node18-macos-x64",
-      "node18-windows-x64"
+      "node16-linux-x64",
+      "node20-macos-x64",
+      "node20-windows-x64"
     ],
     "outputPath": "bin",
     "compress": "Brotli"

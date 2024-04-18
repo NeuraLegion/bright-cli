@@ -6,10 +6,10 @@ import { logger, ProxyFactory } from '../Utils';
 import { RequestExecutorOptions } from './RequestExecutorOptions';
 import { inject, injectable } from 'tsyringe';
 import WebSocket from 'ws';
-import { once } from 'events';
-import { promisify } from 'util';
-import http, { IncomingMessage } from 'http';
-import https from 'https';
+import { once } from 'node:events';
+import { promisify } from 'node:util';
+import http, { IncomingMessage } from 'node:http';
+import https from 'node:https';
 
 interface WSMessage {
   body: string;

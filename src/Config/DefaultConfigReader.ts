@@ -2,9 +2,9 @@ import { CliConfig, ConfigReader } from './ConfigReader';
 import { Helpers } from '../Utils';
 import { sync } from 'find-up';
 import { load } from 'js-yaml';
-import { extname } from 'path';
-import { readFileSync } from 'fs';
-import { Context, createContext, Script } from 'vm';
+import { extname } from 'node:path';
+import { readFileSync } from 'node:fs';
+import { Context, createContext, Script } from 'node:vm';
 
 export class DefaultConfigReader implements ConfigReader {
   private readonly rcOptions: string[] = [

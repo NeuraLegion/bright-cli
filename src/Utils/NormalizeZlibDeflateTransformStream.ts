@@ -1,4 +1,4 @@
-import { Transform, TransformCallback } from 'stream';
+import { Transform, TransformCallback } from 'node:stream';
 
 export class NormalizeZlibDeflateTransformStream extends Transform {
   private hasCheckedHead = false;

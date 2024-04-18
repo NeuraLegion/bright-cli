@@ -16,9 +16,14 @@ import {
   verify,
   when
 } from 'ts-mockito';
-import { URL } from 'url';
-import { promisify } from 'util';
-import { brotliCompress, constants, gzip, deflate, deflateRaw } from 'zlib';
+import { promisify } from 'node:util';
+import {
+  brotliCompress,
+  constants,
+  gzip,
+  deflate,
+  deflateRaw
+} from 'node:zlib';
 
 const createRequest = (options?: Partial<RequestOptions>) => {
   const requestOptions = {

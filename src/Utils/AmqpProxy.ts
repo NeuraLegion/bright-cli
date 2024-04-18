@@ -1,10 +1,6 @@
 import { SocksClient, SocksProxy } from 'socks';
-import { URL } from 'url';
-import { Socket } from 'net';
-import { promisify } from 'util';
-import dns from 'dns';
-
-const lookup = promisify(dns.lookup);
+import { Socket } from 'node:net';
+import { lookup } from 'node:dns/promises';
 
 export class AmqpProxy {
   private _options: SocksProxy;

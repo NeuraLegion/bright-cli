@@ -13,8 +13,8 @@ import { CliInfo } from '../Config';
 import { ProxyFactory } from '../Utils';
 import { delay, inject, injectable } from 'tsyringe';
 import axios, { Axios } from 'axios';
-import http from 'http';
-import https from 'https';
+import http from 'node:http';
+import https from 'node:https';
 
 export interface RestScansOptions {
   baseURL: string;

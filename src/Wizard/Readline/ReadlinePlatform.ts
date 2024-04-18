@@ -5,9 +5,8 @@ import { Helpers, logger } from '../../Utils';
 import { TestType } from '../TestType';
 import { Tokens } from '../Tokens';
 import { inject, injectable } from 'tsyringe';
-import readline from 'readline';
-import { URL } from 'url';
-import { EOL } from 'os';
+import readline from 'node:readline';
+import { EOL } from 'node:os';
 
 @injectable()
 export class ReadlinePlatform implements Platform {

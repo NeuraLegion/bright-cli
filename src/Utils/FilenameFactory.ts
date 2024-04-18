@@ -1,5 +1,5 @@
 import { injectable } from 'tsyringe';
-import { basename, extname, resolve } from 'path';
+import { basename, extname, resolve } from 'node:path';
 
 @injectable()
 export class FilenameFactory {

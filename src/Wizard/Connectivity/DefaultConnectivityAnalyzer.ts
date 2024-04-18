@@ -4,7 +4,6 @@ import { logger } from '../../Utils';
 import { TestType } from '../TestType';
 import { Options } from '../Options';
 import { inject, injectable, injectAll } from 'tsyringe';
-import { URL } from 'url';
 
 export const ConnectivityUrls = Symbol('ConnectivityUrls');
 

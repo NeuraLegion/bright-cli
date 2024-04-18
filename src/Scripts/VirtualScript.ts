@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/naming-convention */
-import { Context, createContext, Script } from 'vm';
-import Module from 'module';
-import { join } from 'path';
+import { Context, createContext, Script } from 'node:vm';
+import Module from 'node:module';
+import { join } from 'node:path';
 
 interface VirtualScriptContext extends Context {
   module: Module;

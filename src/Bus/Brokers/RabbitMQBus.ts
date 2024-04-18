@@ -5,10 +5,9 @@ import { Backoff, logger, ProxyFactory } from '../../Utils';
 import { Message } from '../Message';
 import { ConfirmChannel, connect, Connection, ConsumeMessage } from 'amqplib';
 import { DependencyContainer, inject, injectable } from 'tsyringe';
-import { ok } from 'assert';
-import { format, parse, UrlWithParsedQuery } from 'url';
-import { EventEmitter, once } from 'events';
-import { randomBytes } from 'crypto';
+import { ok } from 'node:assert';
+import { EventEmitter, once } from 'node:events';
+import { randomBytes } from 'node:crypto';
 import ErrnoException = NodeJS.ErrnoException;
 
 export interface RabbitMQBusOptions {
@@ -326,21 +325,19 @@ export class RabbitMQBus implements Bus {
   }
 
   private prepareUrl(): string {
-    const url: UrlWithParsedQuery = parse(this.options.url, true);
+    const url = new URL(this.options.url);
 
     if (this.options.credentials) {
       const { username, password } = this.options.credentials;
 
-      url.auth = `${username}:${password}`;
+      url.username = username;
+      url.password = password;
     }
 
-    url.query = {
-      ...url.query,
-      frameMax: '0',
-      heartbeat: `${this.DEFAULT_HEARTBEAT_INTERVAL}`
-    };
+    url.searchParams.append('frameMax', '0');
+    url.searchParams.append('heartbeat', `${this.DEFAULT_HEARTBEAT_INTERVAL}`);
 
-    return format(url);
+    return url.toString();
   }
 
   private getEventName(event: Event): string {

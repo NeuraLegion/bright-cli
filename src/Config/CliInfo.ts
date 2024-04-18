@@ -1,6 +1,6 @@
 import { sync } from 'find-up';
-import path from 'path';
-import { readFileSync } from 'fs';
+import path from 'node:path';
+import { readFileSync } from 'node:fs';
 
 export class CliInfo {
   public readonly cwd: string;

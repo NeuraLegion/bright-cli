@@ -3,7 +3,6 @@ import { AMQConnectivity } from './AMQConnectivity';
 import { Tokens } from '../Tokens';
 import { instance, mock, reset, when } from 'ts-mockito';
 import nock from 'nock';
-import { URL } from 'url';
 
 describe('AMQConnectivity', () => {
   const tokensMock = mock<Tokens>();

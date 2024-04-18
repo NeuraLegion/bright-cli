@@ -9,8 +9,8 @@ import betterAjvErrors from 'better-ajv-errors';
 import schemaDraft04 from 'ajv/lib/refs/json-schema-draft-04.json';
 import schemaDraft07 from 'ajv/lib/refs/json-schema-draft-07.json';
 import { injectable } from 'tsyringe';
-import { ok } from 'assert';
-import { parse } from 'path';
+import { ok } from 'node:assert';
+import { parse } from 'node:path';
 
 @injectable()
 export class PostmanValidator implements Validator<any> {
