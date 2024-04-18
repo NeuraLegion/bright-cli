@@ -1,4 +1,5 @@
 import axios, { Axios } from 'axios';
+import { setTimeout } from 'node:timers/promises';
 
 export interface ApiOptions {
   baseUrl: string;
@@ -30,56 +31,54 @@ export class Api {
       headers: { authorization: `api-key ${options.apiKey}` }
     });
 
-    this.client.interceptors.request.use((request) => {
-      // eslint-disable-next-line no-console
-      console.log('Request:', {
-        method: request.method,
-        url: request.url,
-        headers: request.headers,
-        body: request.data
-      });
-
-      return request;
-    });
-
-    this.client.interceptors.response.use(
-      (response) => {
-        // eslint-disable-next-line no-console
-        console.log('Response:', {
-          status: response.status,
-          statusText: response.statusText,
-          headers: response.headers,
-          body: response.data
-        });
-
-        return response;
-      },
-      (error) => {
-        if (axios.isAxiosError(error)) {
-          if (error.response) {
-            // eslint-disable-next-line no-console
-            console.log('Response:', {
-              status: error.response.status,
-              statusText: error.response.statusText,
-              headers: error.response.headers,
-              body: error.response.data
-            });
-          }
-        } else {
-          // eslint-disable-next-line no-console
-          console.log('Response Error:', error);
-        }
-
-        return Promise.reject(error);
-      }
-    );
-
     const isGithubRunnerDebugMode =
       process.env.ACTIONS_STEP_DEBUG === 'true' ||
       process.env.ACTIONS_RUNNER_DEBUG === 'true';
 
-    if (!isGithubRunnerDebugMode) {
-      this.client.interceptors.request.clear();
+    if (isGithubRunnerDebugMode) {
+      this.client.interceptors.request.use((request) => {
+        // eslint-disable-next-line no-console
+        console.log('Request:', {
+          method: request.method,
+          url: request.url,
+          headers: request.headers,
+          body: request.data
+        });
+
+        return request;
+      });
+
+      this.client.interceptors.response.use(
+        (response) => {
+          // eslint-disable-next-line no-console
+          console.log('Response:', {
+            status: response.status,
+            statusText: response.statusText,
+            headers: response.headers,
+            body: response.data
+          });
+
+          return response;
+        },
+        (error) => {
+          if (axios.isAxiosError(error)) {
+            if (error.response) {
+              // eslint-disable-next-line no-console
+              console.log('Response:', {
+                status: error.response.status,
+                statusText: error.response.statusText,
+                headers: error.response.headers,
+                body: error.response.data
+              });
+            }
+          } else {
+            // eslint-disable-next-line no-console
+            console.log('Response Error:', error);
+          }
+
+          return Promise.reject(error);
+        }
+      );
     }
   }
 
@@ -136,7 +135,7 @@ export class Api {
           `Repeater ${repeaterId} is not connected after ${maxAttempts} checks`
         );
       } else {
-        await this.sleep(timeout);
+        await setTimeout(timeout);
       }
     }
   }
@@ -162,12 +161,8 @@ export class Api {
           `Scan ${scanId} couldn't finish after ${maxAttempts} checks`
         );
       } else {
-        await this.sleep(timeout);
+        await setTimeout(timeout);
       }
     }
-  }
-
-  private async sleep(time: number) {
-    return new Promise((resolve) => setTimeout(resolve, time));
   }
 }
