@@ -195,8 +195,16 @@ export interface StorageFile {
   type: SourceType;
 }
 
+export interface ScanCreateResponse {
+  id: string;
+  warnings?: {
+    code: string;
+    message: string;
+  }[];
+}
+
 export interface Scans {
-  create(body: ScanConfig): Promise<string>;
+  create(body: ScanConfig): Promise<ScanCreateResponse>;
 
   retest(scanId: string): Promise<string>;
 

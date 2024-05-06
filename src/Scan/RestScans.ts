@@ -7,7 +7,8 @@ import {
   SourceType,
   StorageFile,
   SCAN_TESTS_TO_RUN_BY_DEFAULT,
-  ATTACK_PARAM_LOCATIONS_DEFAULT
+  ATTACK_PARAM_LOCATIONS_DEFAULT,
+  ScanCreateResponse
 } from './Scans';
 import { CliInfo } from '../Config';
 import { ProxyFactory } from '../Utils';
@@ -56,15 +57,15 @@ export class RestScans implements Scans {
     });
   }
 
-  public async create(body: ScanConfig): Promise<string> {
+  public async create(body: ScanConfig): Promise<ScanCreateResponse> {
     const scanConfig = await this.prepareScanConfig({ ...body });
 
-    const res = await this.client.post<{ id: string }>(
+    const res = await this.client.post<ScanCreateResponse>(
       '/api/v1/scans',
       scanConfig
     );
 
-    return res.data.id;
+    return res.data;
   }
 
   public async retest(scanId: string): Promise<string> {

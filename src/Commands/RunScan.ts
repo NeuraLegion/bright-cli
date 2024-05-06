@@ -174,7 +174,7 @@ export class RunScan implements CommandModule {
     try {
       const scanManager: Scans = container.resolve(Scans);
 
-      const scanId: string = await scanManager.create({
+      const { id: scanId, warnings = [] } = await scanManager.create({
         tests: args.test,
         name: args.name,
         module: args.module,
@@ -197,6 +197,12 @@ export class RunScan implements CommandModule {
 
       // eslint-disable-next-line no-console
       console.log(scanId);
+
+      if (warnings.length) {
+        logger.warn(
+          `Scan has been started with warnings: ${warnings.join(', ')}`
+        );
+      }
 
       process.exit(0);
     } catch (e) {
