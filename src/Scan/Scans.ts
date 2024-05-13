@@ -195,12 +195,14 @@ export interface StorageFile {
   type: SourceType;
 }
 
+export interface ScanWarning {
+  code: string;
+  message: string;
+}
+
 export interface ScanCreateResponse {
   id: string;
-  warnings?: {
-    code: string;
-    message: string;
-  }[];
+  warnings: ScanWarning[];
 }
 
 export interface Scans {

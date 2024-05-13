@@ -7,7 +7,8 @@ import {
   ScanConfig,
   Scans,
   TestType,
-  ATTACK_PARAM_LOCATIONS_DEFAULT
+  ATTACK_PARAM_LOCATIONS_DEFAULT,
+  ScanWarning
 } from '../Scan';
 import { Helpers, logger } from '../Utils';
 import { Arguments, Argv, CommandModule } from 'yargs';
@@ -35,6 +36,10 @@ export class RunScan implements CommandModule {
           patterns: [...new Set(nonEmptyPatterns)]
         };
       });
+  }
+
+  public static serializeWarnings(warnings: ScanWarning[]): string {
+    return `${warnings.map((warning) => warning.message).join('\n')}`;
   }
 
   public builder(argv: Argv): Argv {
@@ -199,9 +204,7 @@ export class RunScan implements CommandModule {
       console.log(scanId);
 
       if (warnings.length) {
-        logger.warn(
-          `Scan has been started with warnings: ${warnings.join(', ')}`
-        );
+        logger.warn(RunScan.serializeWarnings(warnings));
       }
 
       process.exit(0);

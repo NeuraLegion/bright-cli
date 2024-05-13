@@ -67,4 +67,26 @@ describe('RunScan', () => {
       expect(act).toThrowError(SyntaxError);
     });
   });
+
+  describe('serializeWarnings', () => {
+    it('should print warnings correctly', () => {
+      // arrange
+      const input = [
+        {
+          message: 'Notice: Warning 1',
+          code: '1'
+        },
+        {
+          message: 'Notice: Warning 2',
+          code: '2'
+        }
+      ];
+
+      // act
+      const result = RunScan.serializeWarnings(input);
+
+      // assert
+      expect(result).toEqual('Notice: Warning 1\nNotice: Warning 2');
+    });
+  });
 });
