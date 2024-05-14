@@ -95,7 +95,7 @@ describe('RestScans', () => {
         const result = await restScans.create(scanConfig);
 
         // assert
-        expect(result).toEqual(postResponse.id);
+        expect(result).toEqual({ id: postResponse.id });
         expect(parsedBody).toMatchObject({
           discoveryTypes: expect.arrayContaining<Discovery>([expected])
         });
