@@ -88,16 +88,17 @@ describe('RunScan', () => {
   });
 
   describe('handler', () => {
-    const runScan = new RunScan();
-    const mockedRestScans = mock<Scans>();
+    let runScan!: RunScan;
+    const mockedScans = mock<Scans>();
 
     beforeEach(() => {
-      container.registerInstance(Scans, instance(mockedRestScans));
+      container.registerInstance(Scans, instance(mockedScans));
+      runScan = new RunScan();
     });
 
     afterEach(() => {
       container.clearInstances();
-      reset(mockedRestScans);
+      reset(mockedScans);
     });
 
     it('should correctly pass scan config from args', async () => {
@@ -125,7 +126,7 @@ describe('RunScan', () => {
 
       when(processSpy.exit(anything())).thenReturn(undefined);
       when(
-        mockedRestScans.create(
+        mockedScans.create(
           objectContaining({
             tests: args.test as TestType[],
             name: args.name as string,
@@ -168,7 +169,7 @@ describe('RunScan', () => {
 
       when(processSpy.exit(anything())).thenReturn(undefined);
       when(
-        mockedRestScans.create(
+        mockedScans.create(
           objectContaining({
             name: args.name as string
           })
@@ -197,7 +198,7 @@ describe('RunScan', () => {
       ];
 
       when(processSpy.exit(anything())).thenReturn(undefined);
-      when(mockedRestScans.create(anything())).thenResolve({
+      when(mockedScans.create(anything())).thenResolve({
         id: 'test-scan-id',
         warnings
       });
