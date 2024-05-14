@@ -5,7 +5,6 @@ import {
   AttackParamLocation,
   Exclusions,
   Module,
-  RestScans,
   Scans,
   ScanWarning,
   TestType
@@ -16,7 +15,6 @@ import {
   mock,
   objectContaining,
   reset,
-  resetCalls,
   spy,
   verify,
   when
@@ -90,14 +88,11 @@ describe('RunScan', () => {
   });
 
   describe('handler', () => {
-    let runScan: RunScan;
-    let mockedRestScans: RestScans;
+    const runScan = new RunScan();
+    const mockedRestScans = mock<Scans>();
 
     beforeEach(() => {
-      mockedRestScans = mock(RestScans);
       container.registerInstance(Scans, instance(mockedRestScans));
-      resetCalls(mockedRestScans);
-      runScan = new RunScan();
     });
 
     afterEach(() => {
@@ -106,6 +101,7 @@ describe('RunScan', () => {
     });
 
     it('should correctly pass scan config from args', async () => {
+      // arrange
       const args = {
         test: ['test1', 'test2'],
         name: 'test-scan',
@@ -152,19 +148,23 @@ describe('RunScan', () => {
         )
       ).thenResolve({ id: 'test-scan-id', warnings: [] });
 
+      // act
       await runScan.handler(args);
 
+      // assert
       verify(processSpy.exit(0)).once();
       verify(loggerSpy.error(anything())).never();
       verify(loggerSpy.warn(anything())).never();
     });
 
     it('should throw an error on create request fall', async () => {
+      // arrange
       const args = {
         name: 'test-scan',
         _: [],
         $0: ''
       } as Arguments;
+      const errMessage = 'request error';
 
       when(processSpy.exit(anything())).thenReturn(undefined);
       when(
@@ -173,17 +173,18 @@ describe('RunScan', () => {
             name: args.name as string
           })
         )
-      ).thenReject(new Error('request error'));
+      ).thenReject(new Error(errMessage));
 
+      // act
       await runScan.handler(args);
 
+      // assert
       verify(processSpy.exit(1)).once();
-      verify(
-        loggerSpy.error(objectContaining('Error during "scan:run": '))
-      ).once();
+      verify(loggerSpy.error(`Error during "scan:run": ${errMessage}`)).once();
     });
 
     it('should display warnings when present', async () => {
+      // arrange
       const args = {
         name: 'test-scan',
         _: [],
@@ -201,8 +202,10 @@ describe('RunScan', () => {
         warnings
       });
 
+      // act
       await runScan.handler(args);
 
+      // assert
       verify(processSpy.exit(0)).once();
       verify(loggerSpy.warn('Warning message 1\nWarning message 2\n')).once();
     });
