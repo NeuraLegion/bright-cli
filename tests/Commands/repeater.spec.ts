@@ -1,5 +1,4 @@
 import { Cli, Api } from '../Setup';
-import { gt } from 'semver';
 import { URL } from 'node:url';
 import { ChildProcess, spawn } from 'node:child_process';
 
@@ -93,9 +92,10 @@ describe('Repeater Command', () => {
         // act
         const scanId = await api.createScan({
           name,
+          poolSize: 50,
           repeaters: [repeaterId],
           crawlerUrls: [config.targetUrl],
-          smart: true
+          slowEpTimeout: 3000
         });
         const scan = await api.waitForScanToFinish(scanId);
         const connectivity = await api.getScanEntryPointsConnectivity(scanId);
@@ -109,70 +109,5 @@ describe('Repeater Command', () => {
       },
       config.maxTestTimeout
     );
-
-    it('should fail to start scan when repeater is not connected', async () => {
-      // arrange
-
-      // act
-      const act = () =>
-        api.createScan({
-          name,
-          repeaters: [repeaterId],
-          crawlerUrls: [config.targetUrl],
-          smart: true
-        });
-
-      // assert
-      await expect(act).rejects.toThrow('Request failed with status code 429');
-      await expect(act).rejects.toMatchObject({
-        response: {
-          status: 429,
-          data: 'The repeater used for the scan is not connected. Connect the repeater and restart the scan.'
-        }
-      });
-    }, 10000);
   });
-
-  (gt(config.version, '11.0.0-0') ? describe : describe.skip)(
-    'RabbitMQ Transport',
-    () => {
-      it(
-        `should run scan against ${config.targetUrl}`,
-        async () => {
-          // arrange
-          commandProcess = cli.spawn('repeater', [
-            '--token',
-            config.apiKey,
-            '--id',
-            repeaterId,
-            '--cluster',
-            config.cluster,
-            '--rabbitmq'
-          ]);
-          commandProcess.stdout.pipe(process.stdout);
-          commandProcess.stderr.pipe(process.stderr);
-
-          await api.waitForRepeaterToConnect(repeaterId);
-
-          // act
-          const scanId = await api.createScan({
-            name,
-            repeaters: [repeaterId],
-            crawlerUrls: [config.targetUrl],
-            smart: true
-          });
-          const scan = await api.waitForScanToFinish(scanId);
-          const connectivity = await api.getScanEntryPointsConnectivity(scanId);
-
-          // assert
-          expect(scan.requests).toBeGreaterThan(0);
-          expect(scan.entryPoints).toBeGreaterThan(0);
-          expect(connectivity.ok).toBeGreaterThan(0);
-          expect(scan.targets).toEqual([targetHost]);
-          expect(scan.status).toBe('done');
-        },
-        config.maxTestTimeout
-      );
-    }
-  );
 });

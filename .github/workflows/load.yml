@@ -1,0 +1,60 @@
+name: Load testing
+
+on:
+  pull_request:
+    branches:
+      - '**'
+
+  schedule:
+    - cron: '*/2 * * * *' # Runs every 2 minutes
+
+concurrency:
+  group: '${{ github.workflow }}-${{ github.ref }}'
+  cancel-in-progress: true
+
+jobs:
+  test-job:
+    runs-on: ubuntu-24.04
+    continue-on-error: true
+    strategy:
+      fail-fast: false
+      matrix:
+        job-id: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Install packages
+        run: sudo apt-get install curl -yq
+
+      - name: Download Target
+        id: target
+        uses: ./.github/workflows/composite/todoapp
+
+      - name: Install Dependencies
+        uses: ./.github/workflows/composite/npm
+        with:
+          version: 20
+          # https://github.com/actions/setup-node/issues/286#issuecomment-878865957
+          cache: ''
+
+      - name: Get version
+        id: version
+        run: |
+          VERSION=$(npm show @brightsec/cli version --tag next)
+          echo "value=$VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: Install CLI
+        run: npm i -g @brightsec/cli@${{ steps.version.outputs.value }}
+
+      - name: Run ${{ matrix.job-id }} suite
+        run: npm run test:e2e
+        env:
+          E2E_CLI_VERSION: ${{ steps.version.outputs.value }}
+          E2E_CLI_CMD: bright-cli
+          E2E_RUN_ID: ${{ format('{0}-{1}-{2}-{3}', github.run_number, github.run_attempt, github.job, strategy.job-index) }}
+          E2E_CLUSTER: ${{ secrets.E2E_DEVELOPMENT_HOST }}
+          E2E_CLUSTER_API_KEY: ${{ secrets.E2E_DEVELOPMENT_API_KEY }}
+          E2E_REPEATER_TARGET_URL: ${{ format('http://localhost:{0}', steps.target.outputs.port) }}
+          E2E_REPEATER_TARGET_CMD: ${{ steps.target.outputs.cmd }}
+          E2E_TEST_TIMEOUT: 7200

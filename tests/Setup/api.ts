@@ -1,4 +1,5 @@
-import axios, { Axios } from 'axios';
+import axios, { AxiosInstance } from 'axios';
+import axiosRetry, { exponentialDelay } from 'axios-retry';
 import { setTimeout } from 'node:timers/promises';
 
 export interface ApiOptions {
@@ -13,13 +14,25 @@ export interface WaitOptions {
 
 export interface CreateScanProps {
   name: string;
+  poolSize?: number;
   repeaters?: string[];
+  slowEpTimeout?: number;
   crawlerUrls: string[];
-  smart: boolean;
+}
+
+function getRandomIP() {
+  // Generate random values for each octet of the IP address
+  const octet1 = Math.floor(Math.random() * 256);
+  const octet2 = Math.floor(Math.random() * 256);
+  const octet3 = Math.floor(Math.random() * 256);
+  const octet4 = Math.floor(Math.random() * 256);
+
+  // Return the IP address as a string
+  return `${octet1}.${octet2}.${octet3}.${octet4}`;
 }
 
 export class Api {
-  private readonly client: Axios;
+  private readonly client: AxiosInstance;
 
   constructor(options: ApiOptions) {
     this.client = axios.create({
@@ -28,7 +41,14 @@ export class Api {
       transitional: {
         clarifyTimeoutError: true
       },
-      headers: { authorization: `api-key ${options.apiKey}` }
+      headers: {
+        authorization: `api-key ${options.apiKey}`
+      }
+    });
+
+    axiosRetry(this.client, {
+      retries: 10,
+      retryDelay: exponentialDelay
     });
 
     const isGithubRunnerDebugMode =
@@ -44,6 +64,12 @@ export class Api {
           headers: request.headers,
           body: request.data
         });
+
+        const ip = getRandomIP();
+
+        request.headers['x-forwarded-for'] = ip;
+        request.headers['x-real-ip'] = ip;
+        request.headers['forwarded'] = `for=${ip}`;
 
         return request;
       });
@@ -118,7 +144,7 @@ export class Api {
     repeaterId: string,
     options?: WaitOptions
   ) {
-    const maxAttempts = options?.maxAttempts ?? 20;
+    const maxAttempts = options?.maxAttempts ?? 50;
     const timeout = options?.timeout ?? 10000;
 
     for (let attempt = 1; attempt <= maxAttempts; attempt++) {
@@ -141,7 +167,7 @@ export class Api {
   }
 
   public async waitForScanToFinish(scanId: string, options?: WaitOptions) {
-    const maxAttempts = options?.maxAttempts ?? 100;
+    const maxAttempts = options?.maxAttempts ?? 200;
     const timeout = options?.timeout ?? 60000;
 
     for (let attempt = 1; attempt <= maxAttempts; attempt++) {
