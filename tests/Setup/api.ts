@@ -1,9 +1,12 @@
-import axios, { Axios } from 'axios';
+import axios, { AxiosInstance } from 'axios';
+import axiosRetry, { exponentialDelay } from 'axios-retry';
 import { setTimeout } from 'node:timers/promises';
 
 export interface ApiOptions {
   baseUrl: string;
   apiKey: string;
+  timeout?: number;
+  spoofIP?: boolean;
 }
 
 export interface WaitOptions {
@@ -13,22 +16,33 @@ export interface WaitOptions {
 
 export interface CreateScanProps {
   name: string;
-  repeaters?: string[];
   crawlerUrls: string[];
-  smart: boolean;
+  repeaters?: string[];
+  slowEpTimeout?: number;
+  targetTimeout?: number;
+  poolSize?: number;
+  projectId?: string;
 }
 
 export class Api {
-  private readonly client: Axios;
+  private readonly client: AxiosInstance;
 
   constructor(options: ApiOptions) {
     this.client = axios.create({
       baseURL: options.baseUrl,
       responseType: 'json',
+      timeout: options.timeout,
       transitional: {
         clarifyTimeoutError: true
       },
-      headers: { authorization: `api-key ${options.apiKey}` }
+      headers: {
+        authorization: `api-key ${options.apiKey}`
+      }
+    });
+
+    axiosRetry(this.client, {
+      retries: 10,
+      retryDelay: exponentialDelay
     });
 
     const isGithubRunnerDebugMode =
@@ -44,6 +58,14 @@ export class Api {
           headers: request.headers,
           body: request.data
         });
+
+        if (options.spoofIP) {
+          const ip = this.getRandomIP();
+
+          request.headers['x-forwarded-for'] = ip;
+          request.headers['x-real-ip'] = ip;
+          request.headers['forwarded'] = `for=${ip}`;
+        }
 
         return request;
       });
@@ -90,11 +112,15 @@ export class Api {
     return data;
   }
 
-  public async createRepeater(name: string): Promise<string> {
+  public async createRepeater(
+    name: string,
+    projectId?: string
+  ): Promise<string> {
     const { data } = await this.client.post<{ id: string }>(
       '/api/v1/repeaters',
       {
-        name
+        name,
+        ...(projectId ? { projectIds: [projectId] } : {})
       }
     );
 
@@ -118,8 +144,8 @@ export class Api {
     repeaterId: string,
     options?: WaitOptions
   ) {
-    const maxAttempts = options?.maxAttempts ?? 20;
-    const timeout = options?.timeout ?? 10000;
+    const maxAttempts = options?.maxAttempts ?? 25;
+    const timeout = options?.timeout ?? 10_000;
 
     for (let attempt = 1; attempt <= maxAttempts; attempt++) {
       const { data } = await this.client.get<{ status: string }>(
@@ -141,8 +167,8 @@ export class Api {
   }
 
   public async waitForScanToFinish(scanId: string, options?: WaitOptions) {
-    const maxAttempts = options?.maxAttempts ?? 100;
-    const timeout = options?.timeout ?? 60000;
+    const maxAttempts = options?.maxAttempts ?? 50;
+    const timeout = options?.timeout ?? 30_000;
 
     for (let attempt = 1; attempt <= maxAttempts; attempt++) {
       const { data } = await this.client.get<{
@@ -164,5 +190,14 @@ export class Api {
         await setTimeout(timeout);
       }
     }
+  }
+
+  private getRandomIP() {
+    const octet1 = Math.floor(Math.random() * 256);
+    const octet2 = Math.floor(Math.random() * 256);
+    const octet3 = Math.floor(Math.random() * 256);
+    const octet4 = Math.floor(Math.random() * 256);
+
+    return `${octet1}.${octet2}.${octet3}.${octet4}`;
   }
 }
