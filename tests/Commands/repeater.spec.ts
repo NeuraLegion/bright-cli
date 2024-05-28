@@ -9,6 +9,7 @@ const config = {
   cluster: process.env.E2E_CLUSTER,
   apiKey: process.env.E2E_CLUSTER_API_KEY,
   runId: process.env.E2E_RUN_ID,
+  projectId: process.env.E2E_PROJECT_ID,
   targetUrl: process.env['E2E_REPEATER_TARGET_URL'],
   targetCmd: process.env['E2E_REPEATER_TARGET_CMD'],
   maxTestTimeout: parseInt(process.env.E2E_TEST_TIMEOUT, 10) * 1000
@@ -30,14 +31,10 @@ describe('Repeater Command', () => {
     targetHost = new URL(config.targetUrl).host;
     api = new Api({
       baseUrl: `https://${config.cluster}`,
-      apiKey: config.apiKey
+      apiKey: config.apiKey,
+      timeout: 60_000,
+      spoofIP: true
     });
-  });
-
-  afterAll(() => {
-    targetProcess.stderr.destroy();
-    targetProcess.stdout.destroy();
-    targetProcess.kill('SIGTERM');
   });
 
   beforeEach(async () => {
@@ -53,7 +50,7 @@ describe('Repeater Command', () => {
     targetProcess.stdout.pipe(process.stdout);
     targetProcess.stderr.pipe(process.stderr);
 
-    repeaterId = await api.createRepeater(name);
+    repeaterId = await api.createRepeater(name, config.projectId);
   }, 10000);
 
   afterEach(async () => {
@@ -95,7 +92,10 @@ describe('Repeater Command', () => {
           name,
           repeaters: [repeaterId],
           crawlerUrls: [config.targetUrl],
-          smart: true
+          slowEpTimeout: 5_000,
+          targetTimeout: 3,
+          poolSize: 50,
+          projectId: config.projectId
         });
         const scan = await api.waitForScanToFinish(scanId);
         const connectivity = await api.getScanEntryPointsConnectivity(scanId);
@@ -119,7 +119,10 @@ describe('Repeater Command', () => {
           name,
           repeaters: [repeaterId],
           crawlerUrls: [config.targetUrl],
-          smart: true
+          slowEpTimeout: 5_000,
+          targetTimeout: 3,
+          poolSize: 50,
+          projectId: config.projectId
         });
 
       // assert
@@ -159,7 +162,10 @@ describe('Repeater Command', () => {
             name,
             repeaters: [repeaterId],
             crawlerUrls: [config.targetUrl],
-            smart: true
+            slowEpTimeout: 5_000,
+            targetTimeout: 3,
+            poolSize: 50,
+            projectId: config.projectId
           });
           const scan = await api.waitForScanToFinish(scanId);
           const connectivity = await api.getScanEntryPointsConnectivity(scanId);
