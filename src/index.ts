@@ -11,8 +11,7 @@ import {
   StopScan,
   UploadArchive,
   VersionCommand,
-  Configure,
-  Integration
+  Configure
 } from './Commands';
 import { CliBuilder, container } from './Config';
 
@@ -25,7 +24,6 @@ container.resolve(CliBuilder).build({
     new RetestScan(),
     new StopScan(),
     new UploadArchive(),
-    new Configure(),
-    new Integration()
+    new Configure()
   ]
 }).argv;
