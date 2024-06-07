@@ -41,7 +41,6 @@ import {
   ParserFactory,
   RestArchives
 } from '../Archive';
-import { IntegrationClient, JiraIntegrationClient } from '../Integrations';
 import { ConfigReader } from './ConfigReader';
 import { DefaultConfigReader } from './DefaultConfigReader';
 import { CliInfo } from './CliInfo';
@@ -195,11 +194,6 @@ container
     {
       useClass: DefaultConnectivityAnalyzer
     },
-    { lifecycle: Lifecycle.Singleton }
-  )
-  .register(
-    IntegrationClient,
-    { useClass: JiraIntegrationClient },
     { lifecycle: Lifecycle.Singleton }
   )
   .register<Platform>(
