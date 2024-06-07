@@ -79,11 +79,8 @@ export class CliBuilder {
         hostname: 'cluster'
       })
       .middleware((args: Arguments) => {
-        ({
-          bus: args.bus,
-          api: args.api,
-          repeaterServer: args.repeaterServer
-        } = Helpers.getClusterUrls(args as ClusterArgs));
+        ({ api: args.api, repeaterServer: args.repeaterServer } =
+          Helpers.getClusterUrls(args as ClusterArgs));
       })
       // TODO: (victor.polyakov@brightsec.com) Write correct type checking
       .middleware(

@@ -2,7 +2,7 @@ export interface CliConfig {
   token?: string;
   api?: string;
   proxy?: string;
-  bus?: string;
+  repeaterServer?: string;
   id?: string;
 }
 

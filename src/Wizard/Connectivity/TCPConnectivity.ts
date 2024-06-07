@@ -9,8 +9,19 @@ import { once } from 'node:events';
 export class TCPConnectivity implements Connectivity {
   public readonly type = TestType.TCP;
   private readonly CONNECTION_TIMEOUT = 10 * 1000; // 10 seconds
+  private readonly PROTOCOL_DEFAULT_PORTS = {
+    'http:': 80,
+    'https:': 443,
+    'ftp:': 21,
+    'sftp:': 22,
+    'smtp:': 25,
+    'ldap:': 389,
+    'ldaps:': 636
+  } as const;
 
-  public async test({ hostname, port }: URL): Promise<boolean> {
+  public async test({ hostname, port, protocol }: URL): Promise<boolean> {
+    port ??= this.PROTOCOL_DEFAULT_PORTS[protocol] ?? 0;
+
     const socket: Socket = new Socket();
 
     socket.setNoDelay(false);

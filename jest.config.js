@@ -3,15 +3,16 @@ module.exports = {
   preset: 'ts-jest',
   testEnvironment: 'node',
   testPathIgnorePatterns: ['<rootDir>/node_modules/'],
-  globals: {
-    'ts-jest': {
-      tsconfig: '<rootDir>/tsconfig.json',
-      isolatedModules: true
-    }
+  transform: {
+    '^.+\\.[tj]sx?$': [
+      'ts-jest',
+      {
+        tsconfig: '<rootDir>/tsconfig.json',
+        diagnostics: false,
+        isolatedModules: true
+      }
+    ]
   },
   maxWorkers: '25%',
-  transform: {
-    '^.+\\.[tj]s$': 'ts-jest'
-  },
   moduleFileExtensions: ['ts', 'js', 'json']
 };

@@ -1,6 +1,5 @@
 import { ProxyFactory, ProxyOptions, TargetProxyOptions } from './ProxyFactory';
-import { AmqpProxy } from './AmqpProxy';
-import { HttpsProxyAgent } from 'https-proxy-agent';
+import { PatchedHttpsProxyAgent } from './PatchedHttpsProxyAgent';
 import { HttpProxyAgent } from 'http-proxy-agent';
 import { SocksProxyAgent } from 'socks-proxy-agent';
 import https from 'node:https';
@@ -65,16 +64,14 @@ export class DefaultProxyFactory implements ProxyFactory {
     }
   }
 
-  public createAmqpProxy(url: string): AmqpProxy {
-    return new AmqpProxy(url);
-  }
-
   private createHttpProxy(proxyUrl: string, rejectUnauthorized?: boolean) {
     return {
-      httpsAgent: new HttpsProxyAgent(proxyUrl, {
+      httpsAgent: new PatchedHttpsProxyAgent(proxyUrl, {
         rejectUnauthorized
       }),
-      httpAgent: new HttpProxyAgent(proxyUrl)
+      httpAgent: new HttpProxyAgent(proxyUrl, {
+        rejectUnauthorized
+      })
     };
   }
 

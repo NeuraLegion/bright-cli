@@ -1,5 +1,4 @@
 import { Cli, Api } from '../Setup';
-import { gt } from 'semver';
 import { URL } from 'node:url';
 import { ChildProcess, spawn } from 'node:child_process';
 
@@ -135,50 +134,4 @@ describe('Repeater Command', () => {
       });
     }, 10000);
   });
-
-  (gt(config.version, '11.0.0-0') ? describe : describe.skip)(
-    'RabbitMQ Transport',
-    () => {
-      it(
-        `should run scan against ${config.targetUrl}`,
-        async () => {
-          // arrange
-          commandProcess = cli.spawn('repeater', [
-            '--token',
-            config.apiKey,
-            '--id',
-            repeaterId,
-            '--cluster',
-            config.cluster,
-            '--rabbitmq'
-          ]);
-          commandProcess.stdout.pipe(process.stdout);
-          commandProcess.stderr.pipe(process.stderr);
-
-          await api.waitForRepeaterToConnect(repeaterId);
-
-          // act
-          const scanId = await api.createScan({
-            name,
-            repeaters: [repeaterId],
-            crawlerUrls: [config.targetUrl],
-            slowEpTimeout: 5_000,
-            targetTimeout: 3,
-            poolSize: 50,
-            projectId: config.projectId
-          });
-          const scan = await api.waitForScanToFinish(scanId);
-          const connectivity = await api.getScanEntryPointsConnectivity(scanId);
-
-          // assert
-          expect(scan.requests).toBeGreaterThan(0);
-          expect(scan.entryPoints).toBeGreaterThan(0);
-          expect(connectivity.ok).toBeGreaterThan(0);
-          expect(scan.targets).toEqual([targetHost]);
-          expect(scan.status).toBe('done');
-        },
-        config.maxTestTimeout
-      );
-    }
-  );
 });
