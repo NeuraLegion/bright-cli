@@ -4,7 +4,4 @@ export * from './RepeaterRegistering';
 export * from './RepeaterStatusUpdated';
 export * from './RegisterScripts';
 export * from './RepeaterRegistered';
-export * from './IntegrationConnected';
-export * from './RegisterIssue';
-export * from './RequestProjects';
 export * from './NetworkTest';
