@@ -1,5 +1,4 @@
 import 'reflect-metadata';
-import { Bus, RabbitMQBus } from '../Bus';
 import {
   Certificates,
   CertificatesLoader,
@@ -15,7 +14,7 @@ import {
 } from '../Scripts';
 import { DefaultStartupManager, StartupManager } from '../StartupScripts';
 import {
-  AMQConnectivity,
+  AuthConnectivity,
   Connectivity,
   ConnectivityAnalyzer,
   DefaultConnectivityAnalyzer,
@@ -51,7 +50,9 @@ import {
   RepeaterCommandHub,
   DefaultRepeaterCommandHub,
   RuntimeDetector,
-  DefaultRuntimeDetector
+  DefaultRuntimeDetector,
+  RepeaterLauncher,
+  ServerRepeaterLauncher
 } from '../Repeater';
 import { ProxyFactory, DefaultProxyFactory } from '../Utils';
 import { container, Lifecycle } from 'tsyringe';
@@ -95,13 +96,6 @@ container
     StartupManager,
     {
       useClass: DefaultStartupManager
-    },
-    { lifecycle: Lifecycle.Singleton }
-  )
-  .register(
-    Bus,
-    {
-      useClass: RabbitMQBus
     },
     { lifecycle: Lifecycle.Singleton }
   )
@@ -153,7 +147,7 @@ container
   .register(
     Connectivity,
     {
-      useClass: AMQConnectivity
+      useClass: AuthConnectivity
     },
     { lifecycle: Lifecycle.Singleton }
   )
@@ -215,6 +209,13 @@ container
   })
   .register<ProxyFactory>(ProxyFactory, {
     useClass: DefaultProxyFactory
-  });
+  })
+  .register<RepeaterLauncher>(
+    RepeaterLauncher,
+    {
+      useClass: ServerRepeaterLauncher
+    },
+    { lifecycle: Lifecycle.Singleton }
+  );
 
 export default container;

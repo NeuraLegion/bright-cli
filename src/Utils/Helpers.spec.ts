@@ -8,10 +8,10 @@ enum TestEnum {
 
 describe('Helpers', () => {
   describe('getClusterUrls', () => {
-    it('should returns localhost api and bus if --cluster is localhost', () => {
+    it('should returns localhost api and repeater server if --hostname is localhost', () => {
       // arrange
       const args = {
-        cluster: 'localhost'
+        hostname: 'localhost'
       };
       // act
       const result = Helpers.getClusterUrls(args);
@@ -19,12 +19,11 @@ describe('Helpers', () => {
 
       expect(result).toEqual({
         api: 'http://localhost:8000',
-        bus: 'amqp://localhost:5672',
         repeaterServer: 'ws://localhost:8000/workstations'
       });
     });
 
-    it('should returns default values if --cluster, --bus and --api not used', () => {
+    it('should returns default values if --hostname, and --api not used', () => {
       // arrange
       const args = {};
       // act
@@ -32,8 +31,21 @@ describe('Helpers', () => {
       // assert
       expect(result).toEqual({
         api: 'https://app.brightsec.com',
-        bus: 'amqps://amq.app.brightsec.com:5672',
         repeaterServer: 'wss://app.brightsec.com/workstations'
+      });
+    });
+
+    it('should returns values with --hostname option', () => {
+      // arrange
+      const args = {
+        hostname: 'test.com'
+      };
+      // act
+      const result = Helpers.getClusterUrls(args);
+      // assert
+      expect(result).toEqual({
+        api: 'https://test.com',
+        repeaterServer: 'wss://test.com/workstations'
       });
     });
 
@@ -47,7 +59,6 @@ describe('Helpers', () => {
       // assert
       expect(result).toEqual({
         api: 'https://test.com',
-        bus: 'amqps://amq.test.com:5672',
         repeaterServer: 'wss://test.com/workstations'
       });
     });

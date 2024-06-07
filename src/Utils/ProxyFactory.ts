@@ -1,4 +1,3 @@
-import { AmqpProxy } from './AmqpProxy';
 import https from 'node:https';
 import http from 'node:http';
 
@@ -18,8 +17,6 @@ export interface ProxyFactory {
   };
 
   createProxyForClient(options: TargetProxyOptions): https.Agent | http.Agent;
-
-  createAmqpProxy(url: string): AmqpProxy;
 }
 
 export const ProxyFactory: unique symbol = Symbol('ProxyFactory');
