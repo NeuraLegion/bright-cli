@@ -359,7 +359,12 @@ export class HttpRequestExecutor implements RequestExecutor {
 
     const result = await vm.exec<ScriptEntrypoint>(
       this.DEFAULT_SCRIPT_ENTRYPOINT,
-      script.toJSON()
+      {
+        ...script.toJSON(),
+        body: script.encoding
+          ? iconv.encode(script.body, script.encoding).toString()
+          : script.body
+      }
     );
 
     return new Request(result);
