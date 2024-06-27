@@ -4,7 +4,7 @@ import { Arguments, Argv, CommandModule } from 'yargs';
 import { container } from 'tsyringe';
 
 export class GetEntryPoints implements CommandModule {
-  public readonly command = 'get-entrypoints [options]';
+  public readonly command = 'entrypoints:list [options]';
   public readonly describe = 'get all entrypoints of the project.';
 
   public builder(argv: Argv): Argv {
@@ -48,10 +48,11 @@ export class GetEntryPoints implements CommandModule {
 
       if (args.verbose) {
         // eslint-disable-next-line no-console
-        console.log(entryPoints);
+        console.log('%j', entryPoints);
       } else {
         // eslint-disable-next-line no-console
         console.log(
+          '%j',
           entryPoints.map((entryPoint) => ({
             id: entryPoint.id,
             method: entryPoint.method,
@@ -60,10 +61,10 @@ export class GetEntryPoints implements CommandModule {
         );
       }
 
-      process.exit(0);
+      process.exitCode = 0;
     } catch (e) {
-      logger.error(`Error during "get-entrypoints": ${e.error || e.message}`);
-      process.exit(1);
+      logger.error(`Error during "entrypoints:list": ${e.error || e.message}`);
+      process.exitCode = 1;
     }
   }
 }
