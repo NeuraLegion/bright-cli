@@ -34,6 +34,7 @@ import {
   RestScans,
   Scans
 } from '../Scan';
+import { EntryPoints, RestEntryPoints } from '../EntryPoint';
 import {
   Archives,
   DefaultParserFactory,
@@ -166,6 +167,11 @@ container
     { lifecycle: Lifecycle.Singleton }
   )
   .register(Scans, { useClass: RestScans }, { lifecycle: Lifecycle.Singleton })
+  .register(
+    EntryPoints,
+    { useClass: RestEntryPoints },
+    { lifecycle: Lifecycle.Singleton }
+  )
   .register(
     Archives,
     { useClass: RestArchives },
