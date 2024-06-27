@@ -53,7 +53,7 @@
     "tsyringe": "~4.6.0",
     "win-ca": "^3.5.0",
     "ws": "~8.1.0",
-    "yargs": "~16.2.0"
+    "yargs": "^17.7.2"
   },
   "description": "Bright CLI is a CLI tool that can initialize, stop, polling and maintain scans in Bright solutions.",
   "devDependencies": {
