@@ -6,12 +6,12 @@ import {
   SCAN_TESTS_TO_RUN_BY_DEFAULT,
   ScanConfig,
   Scans,
-  TestType,
   ATTACK_PARAM_LOCATIONS_DEFAULT
 } from '../Scan';
 import { Helpers, logger } from '../Utils';
 import { Arguments, Argv, CommandModule } from 'yargs';
 import { container } from 'tsyringe';
+import axios, { Axios } from 'axios';
 
 export class RunScan implements CommandModule {
   public readonly command = 'scan:run [options]';
@@ -37,7 +37,9 @@ export class RunScan implements CommandModule {
       });
   }
 
-  public builder(argv: Argv): Argv {
+  public async builder(argv: Argv): Promise<Argv> {
+    const apiBaseUrl: string = argv.argv.api as string;
+
     return argv
       .option('token', {
         alias: 't',
@@ -78,7 +80,7 @@ export class RunScan implements CommandModule {
           'A list of specific urls that should be included into crawler.'
       })
       .option('test', {
-        choices: Helpers.toArray(TestType),
+        choices: await fetchTestTypes(apiBaseUrl),
         defaultDescription: `[${SCAN_TESTS_TO_RUN_BY_DEFAULT.map(
           (item) => `"${item}"`
         ).join(',')}]`,
@@ -210,4 +212,16 @@ export class RunScan implements CommandModule {
       process.exit(1);
     }
   }
+}
+
+async function fetchTestTypes(baseURL: any): Promise<string[]> {
+  const client: Axios = axios.create({
+    baseURL,
+    timeout: 10000,
+    responseType: 'json'
+  });
+
+  const response = await client.get('/api/v1/scans/tests');
+
+  return response.data.map((item: any) => item.tag);
 }
