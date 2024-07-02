@@ -3,10 +3,8 @@ import {
   Module,
   RequestExclusion,
   RestScansOptions,
-  SCAN_TESTS_TO_RUN_BY_DEFAULT,
   ScanConfig,
   Scans,
-  TestType,
   ATTACK_PARAM_LOCATIONS_DEFAULT
 } from '../Scan';
 import { Helpers, logger } from '../Utils';
@@ -78,12 +76,11 @@ export class RunScan implements CommandModule {
           'A list of specific urls that should be included into crawler.'
       })
       .option('test', {
-        choices: Helpers.toArray(TestType),
-        defaultDescription: `[${SCAN_TESTS_TO_RUN_BY_DEFAULT.map(
-          (item) => `"${item}"`
-        ).join(',')}]`,
         array: true,
-        describe: 'A list of tests which you want to run during a scan.'
+        describe:
+          'A list of tests which you want to run during a scan.' +
+          'Default tests are run if not set any' +
+          'See default tests in a documentation: https://docs.brightsec.com/docs/running-a-scan'
       })
       .option('bucket', {
         array: true,
