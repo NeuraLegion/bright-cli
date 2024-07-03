@@ -14,7 +14,8 @@ import {
   Configure,
   GetEntryPoints
 } from './Commands';
-import { CliBuilder, container } from './Config';
+import { CliBuilder } from './Config';
+import container from './container';
 
 container.resolve(CliBuilder).build({
   commands: [

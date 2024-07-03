@@ -1,3 +1,4 @@
+import 'reflect-metadata';
 import { CliInfo } from '../Config';
 import {
   Discovery,
