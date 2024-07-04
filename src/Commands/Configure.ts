@@ -1,6 +1,6 @@
 import { logger } from '../Utils';
 import { ConnectivityUrls, Platform, TestType, Options } from '../Wizard';
-import { container } from '../Config';
+import container from '../container';
 import { Arguments, Argv, CommandModule } from 'yargs';
 
 export class Configure implements CommandModule {

@@ -5,14 +5,14 @@ import {
   HttpRequestExecutor,
   RequestExecutor,
   WsRequestExecutor
-} from '../RequestExecutor';
+} from './RequestExecutor';
 import {
   DefaultVirtualScripts,
   FSScriptLoader,
   ScriptLoader,
   VirtualScripts
-} from '../Scripts';
-import { DefaultStartupManager, StartupManager } from '../StartupScripts';
+} from './Scripts';
+import { DefaultStartupManager, StartupManager } from './StartupScripts';
 import {
   AuthConnectivity,
   Connectivity,
@@ -25,7 +25,7 @@ import {
   TCPConnectivity,
   TracerouteConnectivity,
   Tokens
-} from '../Wizard';
+} from './Wizard';
 import {
   BreakpointFactory,
   DefaultBreakpointFactory,
@@ -33,18 +33,18 @@ import {
   PollingFactory,
   RestScans,
   Scans
-} from '../Scan';
-import { EntryPoints, RestEntryPoints } from '../EntryPoint';
+} from './Scan';
+import { EntryPoints, RestEntryPoints } from './EntryPoint';
 import {
   Archives,
   DefaultParserFactory,
   ParserFactory,
   RestArchives
-} from '../Archive';
-import { ConfigReader } from './ConfigReader';
-import { DefaultConfigReader } from './DefaultConfigReader';
-import { CliInfo } from './CliInfo';
-import { CliBuilder } from './CliBuilder';
+} from './Archive';
+import { ConfigReader } from './Config/ConfigReader';
+import { DefaultConfigReader } from './Config/DefaultConfigReader';
+import { CliInfo } from './Config/CliInfo';
+import { CliBuilder } from './Config/CliBuilder';
 import {
   RepeaterServer,
   DefaultRepeaterServer,
@@ -54,8 +54,8 @@ import {
   DefaultRuntimeDetector,
   RepeaterLauncher,
   ServerRepeaterLauncher
-} from '../Repeater';
-import { ProxyFactory, DefaultProxyFactory } from '../Utils';
+} from './Repeater';
+import { ProxyFactory, DefaultProxyFactory } from './Utils';
 import { container, Lifecycle } from 'tsyringe';
 
 container

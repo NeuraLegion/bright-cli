@@ -6,7 +6,7 @@ import {
   SpecType
 } from '../Archive';
 import { Helpers, logger } from '../Utils';
-import { container } from '../Config';
+import container from '../container';
 import { Arguments, Argv, CommandModule } from 'yargs';
 
 export class UploadArchive implements CommandModule {

@@ -1,6 +1,6 @@
 import { Cert, RequestExecutorOptions } from '../RequestExecutor';
 import { Helpers, logger } from '../Utils';
-import { container } from '../Config';
+import container from '../container';
 import { DefaultRepeaterServerOptions, RepeaterLauncher } from '../Repeater';
 import { Arguments, Argv, CommandModule } from 'yargs';
 import { captureException } from '@sentry/node';
