@@ -1,8 +1,12 @@
-import request, { RequestPromiseAPI } from 'request-promise';
+import axios, { AxiosInstance } from 'axios';
+import axiosRetry, { exponentialDelay } from 'axios-retry';
+import { setTimeout } from 'node:timers/promises';
 
 export interface ApiOptions {
   baseUrl: string;
   apiKey: string;
+  timeout?: number;
+  spoofIP?: boolean;
 }
 
 export interface WaitOptions {
@@ -12,69 +16,143 @@ export interface WaitOptions {
 
 export interface CreateScanProps {
   name: string;
-  repeaters?: string[];
   crawlerUrls: string[];
-  smart: boolean;
+  repeaters?: string[];
+  slowEpTimeout?: number;
+  targetTimeout?: number;
+  poolSize?: number;
+  projectId?: string;
 }
 
 export class Api {
-  private readonly client: RequestPromiseAPI;
+  private readonly client: AxiosInstance;
 
   constructor(options: ApiOptions) {
-    this.client = request.defaults({
-      baseUrl: options.baseUrl,
-      json: true,
-      headers: { authorization: `api-key ${options.apiKey}` }
+    this.client = axios.create({
+      baseURL: options.baseUrl,
+      responseType: 'json',
+      timeout: options.timeout,
+      transitional: {
+        clarifyTimeoutError: true
+      },
+      headers: {
+        authorization: `api-key ${options.apiKey}`
+      }
     });
+
+    axiosRetry(this.client, {
+      retries: 10,
+      retryDelay: exponentialDelay
+    });
+
+    const isGithubRunnerDebugMode =
+      process.env.ACTIONS_STEP_DEBUG === 'true' ||
+      process.env.ACTIONS_RUNNER_DEBUG === 'true';
+
+    if (isGithubRunnerDebugMode) {
+      this.client.interceptors.request.use((request) => {
+        // eslint-disable-next-line no-console
+        console.log('Request:', {
+          method: request.method,
+          url: request.url,
+          headers: request.headers,
+          body: request.data
+        });
+
+        if (options.spoofIP) {
+          const ip = this.getRandomIP();
+
+          request.headers['x-forwarded-for'] = ip;
+          request.headers['x-real-ip'] = ip;
+          request.headers['forwarded'] = `for=${ip}`;
+        }
+
+        return request;
+      });
+
+      this.client.interceptors.response.use(
+        (response) => {
+          // eslint-disable-next-line no-console
+          console.log('Response:', {
+            status: response.status,
+            statusText: response.statusText,
+            headers: response.headers,
+            body: response.data
+          });
+
+          return response;
+        },
+        (error) => {
+          if (axios.isAxiosError(error)) {
+            if (error.response) {
+              // eslint-disable-next-line no-console
+              console.log('Response:', {
+                status: error.response.status,
+                statusText: error.response.statusText,
+                headers: error.response.headers,
+                body: error.response.data
+              });
+            }
+          } else {
+            // eslint-disable-next-line no-console
+            console.log('Response Error:', error);
+          }
+
+          return Promise.reject(error);
+        }
+      );
+    }
   }
 
   public async getScanEntryPointsConnectivity(scanId: string) {
-    const response: { ok: number } = await this.client.get({
-      uri: `/api/v2/scans/${scanId}/entry-points/connectivity`
-    });
+    const { data } = await this.client.get<{ ok: number }>(
+      `/api/v2/scans/${scanId}/entry-points/connectivity`
+    );
 
-    return response;
+    return data;
   }
 
-  public async createRepeater(name: string): Promise<string> {
-    const { id }: { id: string } = await this.client.post({
-      body: {
-        name
-      },
-      uri: `/api/v1/repeaters`
-    });
+  public async createRepeater(
+    name: string,
+    projectId?: string
+  ): Promise<string> {
+    const { data } = await this.client.post<{ id: string }>(
+      '/api/v1/repeaters',
+      {
+        name,
+        ...(projectId ? { projectIds: [projectId] } : {})
+      }
+    );
 
-    return id;
+    return data.id;
   }
 
   public async deleteRepeater(id: string) {
-    await this.client.delete({
-      uri: `/api/v1/repeaters/${id}`
-    });
+    await this.client.delete(`/api/v1/repeaters/${id}`);
   }
 
   public async createScan(props: CreateScanProps): Promise<string> {
-    const { id }: { id: string } = await this.client.post({
-      body: props,
-      uri: `/api/v1/scans`
-    });
+    const { data } = await this.client.post<{ id: string }>(
+      '/api/v1/scans',
+      props
+    );
 
-    return id;
+    return data.id;
   }
 
   public async waitForRepeaterToConnect(
     repeaterId: string,
     options?: WaitOptions
   ) {
-    const maxAttempts = options?.maxAttempts ?? 20;
-    const timeout = options?.timeout ?? 10000;
+    const maxAttempts = options?.maxAttempts ?? 25;
+    const timeout = options?.timeout ?? 10_000;
 
     for (let attempt = 1; attempt <= maxAttempts; attempt++) {
-      const { status }: { status: string } = await this.client.get({
-        uri: `/api/v1/repeaters/${repeaterId}`
-      });
+      const { data } = await this.client.get<{ status: string }>(
+        `/api/v1/repeaters/${repeaterId}`
+      );
 
-      if (status === 'connected') {
+      if (data.status === 'connected') {
         return;
       }
 
@@ -83,27 +161,25 @@ export class Api {
           `Repeater ${repeaterId} is not connected after ${maxAttempts} checks`
         );
       } else {
-        await this.sleep(timeout);
+        await setTimeout(timeout);
       }
     }
   }
 
   public async waitForScanToFinish(scanId: string, options?: WaitOptions) {
-    const maxAttempts = options?.maxAttempts ?? 100;
-    const timeout = options?.timeout ?? 60000;
+    const maxAttempts = options?.maxAttempts ?? 50;
+    const timeout = options?.timeout ?? 30_000;
 
     for (let attempt = 1; attempt <= maxAttempts; attempt++) {
-      const scan: {
+      const { data } = await this.client.get<{
         status: string;
         targets: string[];
         requests: number;
         entryPoints: number;
-      } = await this.client.get({
-        uri: `/api/v1/scans/${scanId}`
-      });
+      }>(`/api/v1/scans/${scanId}`);
 
-      if (!['pending', 'running'].includes(scan.status)) {
-        return scan;
+      if (!['pending', 'running'].includes(data.status)) {
+        return data;
       }
 
       if (attempt === maxAttempts) {
@@ -111,12 +187,17 @@ export class Api {
           `Scan ${scanId} couldn't finish after ${maxAttempts} checks`
         );
       } else {
-        await this.sleep(timeout);
+        await setTimeout(timeout);
       }
     }
   }
 
-  private async sleep(time: number) {
-    return new Promise((resolve) => setTimeout(resolve, time));
+  private getRandomIP() {
+    const octet1 = Math.floor(Math.random() * 256);
+    const octet2 = Math.floor(Math.random() * 256);
+    const octet3 = Math.floor(Math.random() * 256);
+    const octet4 = Math.floor(Math.random() * 256);
+
+    return `${octet1}.${octet2}.${octet3}.${octet4}`;
   }
 }

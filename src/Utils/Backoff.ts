@@ -1,9 +1,8 @@
 import { logger } from './Logger';
-import { promisify } from 'util';
+import { setTimeout } from 'node:timers/promises';
 
 export class Backoff {
   private depth: number = 0;
-  private readonly delay = promisify(setTimeout);
 
   constructor(
     private readonly maxDepth: number,
@@ -37,7 +36,7 @@ export class Backoff {
       this.maxDepth
     );
 
-    await this.delay(delay);
+    await setTimeout(delay);
 
     this.depth++;
 

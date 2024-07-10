@@ -2,10 +2,9 @@ import { Connectivity } from './Connectivity';
 import { logger } from '../../Utils';
 import { TestType } from '../TestType';
 import { injectable } from 'tsyringe';
-import https, { RequestOptions } from 'https';
-import http, { ClientRequest } from 'http';
-import { URL } from 'url';
-import { once } from 'events';
+import https, { RequestOptions } from 'node:https';
+import http, { ClientRequest } from 'node:http';
+import { once } from 'node:events';
 
 interface ReqFactory {
   request(options: RequestOptions): ClientRequest;
@@ -53,7 +52,7 @@ export class HTTPConnectivity implements Connectivity {
       return false;
     } finally {
       if (!req.aborted) {
-        req.abort();
+        req.destroy();
       }
     }
   }

@@ -162,9 +162,9 @@ export class RunScan implements CommandModule {
         container.register<RestScansOptions>(RestScansOptions, {
           useValue: {
             insecure: args.insecure as boolean,
-            baseUrl: args.api as string,
+            baseURL: args.api as string,
             apiKey: args.token as string,
-            proxyUrl: (args.proxyExternal ?? args.proxy) as string
+            proxyURL: (args.proxyExternal ?? args.proxy) as string
           }
         })
       );
@@ -174,7 +174,7 @@ export class RunScan implements CommandModule {
     try {
       const scanManager: Scans = container.resolve(Scans);
 
-      const scanId: string = await scanManager.create({
+      const { id: scanId, warnings = [] } = await scanManager.create({
         tests: args.test,
         name: args.name,
         module: args.module,
@@ -197,6 +197,12 @@ export class RunScan implements CommandModule {
 
       // eslint-disable-next-line no-console
       console.log(scanId);
+
+      if (warnings.length) {
+        logger.warn(
+          `${warnings.map((warning) => warning.message).join('\n')}\n`
+        );
+      }
 
       process.exit(0);
     } catch (e) {

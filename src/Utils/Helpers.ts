@@ -1,7 +1,6 @@
-import { ok } from 'assert';
-import { ChildProcess, spawn } from 'child_process';
-import { URL } from 'url';
-import { normalize } from 'path';
+import { ok } from 'node:assert';
+import { ChildProcess, spawn } from 'node:child_process';
+import { normalize } from 'node:path';
 
 declare global {
   // eslint-disable-next-line @typescript-eslint/no-namespace
@@ -28,7 +27,6 @@ export interface ClusterArgs {
 
 export interface ClusterUrls {
   api: string;
-  bus: string;
   repeaterServer: string;
 }
 
@@ -52,7 +50,6 @@ export class Helpers {
 
   public static getClusterUrls(args: ClusterArgs): ClusterUrls {
     let repeaterServer: string;
-    let bus: string;
     let api: string;
 
     const hostname = args.cluster ?? args.hostname;
@@ -67,21 +64,18 @@ export class Helpers {
       }
 
       if (['localhost', '127.0.0.1'].includes(host)) {
-        bus = `amqp://${host}:5672`;
         api = `http://${host}:8000`;
         repeaterServer = `ws://${host}:8000/workstations`;
       } else {
-        bus = `amqps://amq.${host}:5672`;
         api = `https://${host}`;
         repeaterServer = `wss://${host}/workstations`;
       }
     } else {
       api = 'https://app.brightsec.com';
-      bus = 'amqps://amq.app.brightsec.com:5672';
       repeaterServer = `wss://app.brightsec.com/workstations`;
     }
 
-    return { api, bus, repeaterServer };
+    return { api, repeaterServer };
   }
 
   public static spawn(

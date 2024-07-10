@@ -1,5 +1,5 @@
 import chalk from 'chalk';
-import { format } from 'util';
+import { format } from 'node:util';
 
 export enum LogLevel {
   SILENT,

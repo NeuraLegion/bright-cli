@@ -1,21 +1,20 @@
 import 'reflect-metadata';
-import { Bus, RabbitMQBus } from '../Bus';
 import {
   Certificates,
   CertificatesLoader,
   HttpRequestExecutor,
   RequestExecutor,
   WsRequestExecutor
-} from '../RequestExecutor';
+} from './RequestExecutor';
 import {
   DefaultVirtualScripts,
   FSScriptLoader,
   ScriptLoader,
   VirtualScripts
-} from '../Scripts';
-import { DefaultStartupManager, StartupManager } from '../StartupScripts';
+} from './Scripts';
+import { DefaultStartupManager, StartupManager } from './StartupScripts';
 import {
-  AMQConnectivity,
+  AuthConnectivity,
   Connectivity,
   ConnectivityAnalyzer,
   DefaultConnectivityAnalyzer,
@@ -26,7 +25,7 @@ import {
   TCPConnectivity,
   TracerouteConnectivity,
   Tokens
-} from '../Wizard';
+} from './Wizard';
 import {
   BreakpointFactory,
   DefaultBreakpointFactory,
@@ -34,31 +33,29 @@ import {
   PollingFactory,
   RestScans,
   Scans
-} from '../Scan';
+} from './Scan';
+import { EntryPoints, RestEntryPoints } from './EntryPoint';
 import {
   Archives,
-  BaseNexMockConverter,
-  DefaultHarRecorder,
   DefaultParserFactory,
-  HarRecorder,
-  NexMockConverter,
   ParserFactory,
   RestArchives
-} from '../Archive';
-import { IntegrationClient, JiraIntegrationClient } from '../Integrations';
-import { ConfigReader } from './ConfigReader';
-import { DefaultConfigReader } from './DefaultConfigReader';
-import { CliInfo } from './CliInfo';
-import { CliBuilder } from './CliBuilder';
+} from './Archive';
+import { ConfigReader } from './Config/ConfigReader';
+import { DefaultConfigReader } from './Config/DefaultConfigReader';
+import { CliInfo } from './Config/CliInfo';
+import { CliBuilder } from './Config/CliBuilder';
 import {
   RepeaterServer,
   DefaultRepeaterServer,
   RepeaterCommandHub,
   DefaultRepeaterCommandHub,
   RuntimeDetector,
-  DefaultRuntimeDetector
-} from '../Repeater';
-import { ProxyFactory, DefaultProxyFactory } from '../Utils';
+  DefaultRuntimeDetector,
+  RepeaterLauncher,
+  ServerRepeaterLauncher
+} from './Repeater';
+import { ProxyFactory, DefaultProxyFactory } from './Utils';
 import { container, Lifecycle } from 'tsyringe';
 
 container
@@ -100,13 +97,6 @@ container
     StartupManager,
     {
       useClass: DefaultStartupManager
-    },
-    { lifecycle: Lifecycle.Singleton }
-  )
-  .register(
-    Bus,
-    {
-      useClass: RabbitMQBus
     },
     { lifecycle: Lifecycle.Singleton }
   )
@@ -158,7 +148,7 @@ container
   .register(
     Connectivity,
     {
-      useClass: AMQConnectivity
+      useClass: AuthConnectivity
     },
     { lifecycle: Lifecycle.Singleton }
   )
@@ -178,6 +168,11 @@ container
   )
   .register(Scans, { useClass: RestScans }, { lifecycle: Lifecycle.Singleton })
   .register(
+    EntryPoints,
+    { useClass: RestEntryPoints },
+    { lifecycle: Lifecycle.Singleton }
+  )
+  .register(
     Archives,
     { useClass: RestArchives },
     { lifecycle: Lifecycle.Singleton }
@@ -185,16 +180,6 @@ container
   .register(
     ParserFactory,
     { useClass: DefaultParserFactory },
-    { lifecycle: Lifecycle.Singleton }
-  )
-  .register(
-    NexMockConverter,
-    { useClass: BaseNexMockConverter },
-    { lifecycle: Lifecycle.Singleton }
-  )
-  .register(
-    HarRecorder,
-    { useClass: DefaultHarRecorder },
     { lifecycle: Lifecycle.Singleton }
   )
   .register(
@@ -209,11 +194,6 @@ container
     {
       useClass: DefaultConnectivityAnalyzer
     },
-    { lifecycle: Lifecycle.Singleton }
-  )
-  .register(
-    IntegrationClient,
-    { useClass: JiraIntegrationClient },
     { lifecycle: Lifecycle.Singleton }
   )
   .register<Platform>(
@@ -235,6 +215,13 @@ container
   })
   .register<ProxyFactory>(ProxyFactory, {
     useClass: DefaultProxyFactory
-  });
+  })
+  .register<RepeaterLauncher>(
+    RepeaterLauncher,
+    {
+      useClass: ServerRepeaterLauncher
+    },
+    { lifecycle: Lifecycle.Singleton }
+  );
 
 export default container;

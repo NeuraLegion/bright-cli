@@ -1,6 +1,5 @@
-import { AmqpProxy } from './AmqpProxy';
-import https from 'https';
-import http from 'http';
+import https from 'node:https';
+import http from 'node:http';
 
 export interface ProxyOptions {
   proxyUrl: string;
@@ -13,13 +12,11 @@ export interface TargetProxyOptions extends ProxyOptions {
 
 export interface ProxyFactory {
   createProxy(options: ProxyOptions): {
-    https: https.Agent;
-    http: http.Agent;
+    httpsAgent: https.Agent;
+    httpAgent: http.Agent;
   };
 
   createProxyForClient(options: TargetProxyOptions): https.Agent | http.Agent;
-
-  createAmqpProxy(url: string): AmqpProxy;
 }
 
 export const ProxyFactory: unique symbol = Symbol('ProxyFactory');

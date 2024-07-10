@@ -1,17 +1,10 @@
 import { Cert, RequestExecutorOptions } from '../RequestExecutor';
 import { Helpers, logger } from '../Utils';
-import { container } from '../Config';
-import { RabbitMQBusOptions } from '../Bus';
-import {
-  DefaultRepeaterLauncher,
-  DefaultRepeaterServerOptions,
-  RepeaterLauncher,
-  ServerRepeaterLauncher
-} from '../Repeater';
+import container from '../container';
+import { DefaultRepeaterServerOptions, RepeaterLauncher } from '../Repeater';
 import { Arguments, Argv, CommandModule } from 'yargs';
-import { Lifecycle } from 'tsyringe';
 import { captureException } from '@sentry/node';
-import { normalize } from 'path';
+import { normalize } from 'node:path';
 
 export class RunRepeater implements CommandModule {
   public readonly command = 'repeater [options]';
@@ -138,12 +131,6 @@ export class RunRepeater implements CommandModule {
         alias: ['rm', 'remove'],
         describe: 'Stop and remove repeater daemon'
       })
-      .option('rabbitmq', {
-        deprecated: true,
-        boolean: true,
-        describe:
-          'Enable legacy mode, utilizing the RabbitMQ connection for communication.'
-      })
       .conflicts({
         daemon: 'remove-daemon',
         ntlm: [
@@ -201,19 +188,6 @@ export class RunRepeater implements CommandModule {
               ]
             }
           })
-          .register<RabbitMQBusOptions>(RabbitMQBusOptions, {
-            useValue: {
-              exchange: 'EventBus',
-              clientQueue: `agent:${args.id as string}`,
-              connectTimeout: 10000,
-              url: args.bus as string,
-              proxyUrl: (args.proxyExternal ?? args.proxy) as string,
-              credentials: {
-                username: 'bot',
-                password: args.token as string
-              }
-            }
-          })
           .register<DefaultRepeaterServerOptions>(
             DefaultRepeaterServerOptions,
             {
@@ -225,15 +199,6 @@ export class RunRepeater implements CommandModule {
                 insecure: args.insecure as boolean
               }
             }
-          )
-          .register<RepeaterLauncher>(
-            RepeaterLauncher,
-            {
-              useClass: args.rabbitmq
-                ? DefaultRepeaterLauncher
-                : ServerRepeaterLauncher
-            },
-            { lifecycle: Lifecycle.Singleton }
           );
       });
   }

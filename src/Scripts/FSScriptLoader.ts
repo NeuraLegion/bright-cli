@@ -3,8 +3,7 @@ import { VirtualScripts } from './VirtualScripts';
 import { logger } from '../Utils';
 import { VirtualScriptType } from './VirtualScript';
 import { inject, injectable } from 'tsyringe';
-import { readFile } from 'fs';
-import { promisify } from 'util';
+import { readFile } from 'node:fs/promises';
 
 @injectable()
 export class FSScriptLoader implements ScriptLoader {
@@ -24,7 +23,7 @@ export class FSScriptLoader implements ScriptLoader {
     let code: string;
 
     try {
-      code = await promisify(readFile)(path, { encoding: 'utf8' });
+      code = await readFile(path, { encoding: 'utf8' });
     } catch (e) {
       logger.debug(`Cannot load ${path}. Error: ${e.message}`);
       throw new Error(`Error Loading Script: Cannot load ${path}`);

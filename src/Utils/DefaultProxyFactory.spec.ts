@@ -1,5 +1,4 @@
 import { DefaultProxyFactory } from './DefaultProxyFactory';
-import { AmqpProxy } from './AmqpProxy';
 import { HttpsProxyAgent } from 'https-proxy-agent';
 import { HttpProxyAgent } from 'http-proxy-agent';
 import { SocksProxyAgent } from 'socks-proxy-agent';
@@ -23,8 +22,8 @@ describe('DefaultProxyFactory', () => {
       const result = defaultProxyFactory.createProxy(proxyOptions);
 
       // assert
-      expect(result.http).toBeInstanceOf(HttpProxyAgent);
-      expect(result.https).toBeInstanceOf(HttpsProxyAgent);
+      expect(result.httpAgent).toBeInstanceOf(HttpProxyAgent);
+      expect(result.httpsAgent).toBeInstanceOf(HttpsProxyAgent);
     });
 
     it('should create socks proxy agents for socks protocol', () => {
@@ -38,8 +37,8 @@ describe('DefaultProxyFactory', () => {
       const result = defaultProxyFactory.createProxy(proxyOptions);
 
       // assert
-      expect(result.http).toBeInstanceOf(SocksProxyAgent);
-      expect(result.https).toBeInstanceOf(SocksProxyAgent);
+      expect(result.httpAgent).toBeInstanceOf(SocksProxyAgent);
+      expect(result.httpsAgent).toBeInstanceOf(SocksProxyAgent);
     });
 
     it('should throw error for unsupported protocol', () => {
@@ -101,19 +100,6 @@ describe('DefaultProxyFactory', () => {
       expect(() =>
         defaultProxyFactory.createProxyForClient(targetProxyOptions)
       ).toThrowError('Proxy not supported for protocol');
-    });
-  });
-
-  describe('createAmqpProxy', () => {
-    it('should create an AmqpProxy', () => {
-      // arrange
-      const url = 'socks://example.com';
-
-      // act
-      const result = defaultProxyFactory.createAmqpProxy(url);
-
-      // assert
-      expect(result).toBeInstanceOf(AmqpProxy);
     });
   });
 });

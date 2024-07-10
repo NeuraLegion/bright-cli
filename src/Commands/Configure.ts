@@ -1,8 +1,7 @@
 import { logger } from '../Utils';
 import { ConnectivityUrls, Platform, TestType, Options } from '../Wizard';
-import { container } from '../Config';
+import container from '../container';
 import { Arguments, Argv, CommandModule } from 'yargs';
-import { URL } from 'url';
 
 export class Configure implements CommandModule {
   public readonly command = 'configure [options]';
@@ -24,7 +23,7 @@ export class Configure implements CommandModule {
       .option(TestType.TCP, {
         hidden: true,
         requiresArg: true,
-        describe: `Bright Event Bus base URL`
+        describe: `Bright application base URL`
       })
       .option(TestType.HTTP, {
         hidden: true,
@@ -73,7 +72,7 @@ export class Configure implements CommandModule {
             useValue: new Map([
               Configure.getMapEntryOrThrow(
                 TestType.TCP,
-                (args[TestType.TCP] ?? args.bus) as string
+                (args[TestType.TCP] ?? args.api) as string
               ),
               Configure.getMapEntryOrThrow(
                 TestType.HTTP,
@@ -81,8 +80,7 @@ export class Configure implements CommandModule {
               ),
               Configure.getMapEntryOrThrow(
                 TestType.AUTH,
-                (args[TestType.AUTH] ??
-                  `${args.api}/api/v1/repeaters/user`) as string
+                (args[TestType.AUTH] ?? args.api) as string
               )
             ])
           });

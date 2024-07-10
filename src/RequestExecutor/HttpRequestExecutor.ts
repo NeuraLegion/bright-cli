@@ -9,20 +9,24 @@ import { NormalizeZlibDeflateTransformStream } from '../Utils/NormalizeZlibDefla
 import { inject, injectable } from 'tsyringe';
 import iconv from 'iconv-lite';
 import { safeParse } from 'fast-content-type-parse';
-import { parse as parseUrl, URL } from 'url';
-import http, { ClientRequest, IncomingMessage, OutgoingMessage } from 'http';
+import { parse as parseUrl } from 'node:url';
+import http, {
+  ClientRequest,
+  IncomingMessage,
+  OutgoingMessage
+} from 'node:http';
 import https, {
   AgentOptions,
   RequestOptions as ClientRequestOptions
-} from 'https';
-import { once } from 'events';
-import { Readable } from 'stream';
+} from 'node:https';
+import { once } from 'node:events';
+import { Readable } from 'node:stream';
 import {
   constants,
   createBrotliDecompress,
   createGunzip,
   createInflate
-} from 'zlib';
+} from 'node:zlib';
 
 type ScriptEntrypoint = (
   options: RequestOptions
@@ -47,7 +51,7 @@ export class HttpRequestExecutor implements RequestExecutor {
     private readonly options: RequestExecutorOptions
   ) {
     if (this.options.proxyUrl) {
-      ({ https: this.httpsProxyAgent, http: this.httpProxyAgent } =
+      ({ httpsAgent: this.httpsProxyAgent, httpAgent: this.httpProxyAgent } =
         this.proxyFactory.createProxy({ proxyUrl: this.options.proxyUrl }));
     }
 
@@ -313,7 +317,7 @@ export class HttpRequestExecutor implements RequestExecutor {
         options.maxBodySize
       );
 
-      body = body.slice(0, options.maxBodySize);
+      body = body.subarray(0, options.maxBodySize);
     }
 
     return body;

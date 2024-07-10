@@ -1,7 +1,7 @@
 import { NormalizeZlibDeflateTransformStream } from './NormalizeZlibDeflateTransformStream';
-import { promisify } from 'util';
-import { constants, createInflate, deflate, deflateRaw } from 'zlib';
-import { Readable } from 'stream';
+import { promisify } from 'node:util';
+import { constants, createInflate, deflate, deflateRaw } from 'node:zlib';
+import { Readable } from 'node:stream';
 
 const zOpts = {
   flush: constants.Z_SYNC_FLUSH,

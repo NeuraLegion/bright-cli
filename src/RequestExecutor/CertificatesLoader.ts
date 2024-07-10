@@ -1,9 +1,8 @@
 import { logger } from '../Utils';
 import { Certificates } from './Certificates';
 import loadWinCertificates from 'win-ca';
-import https from 'https';
-import { readFile } from 'fs';
-import { promisify } from 'util';
+import https from 'node:https';
+import { readFile } from 'node:fs/promises';
 
 export class CertificatesLoader implements Certificates {
   private readonly CERT_FILES = [
@@ -61,7 +60,7 @@ export class CertificatesLoader implements Certificates {
    * use update-ca-certificates to update '/etc/ssl/certs/ca-certificates.crt'
    */
   private async loadCertsFromFile(path: string): Promise<void> {
-    const ca: string = await promisify(readFile)(path, 'utf8');
+    const ca: string = await readFile(path, 'utf8');
 
     https.globalAgent.options.ca = ca
       .split(/-----END CERTIFICATE-----\n?/)

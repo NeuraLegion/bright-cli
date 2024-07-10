@@ -1,11 +1,9 @@
 import { ProxyFactory, ProxyOptions, TargetProxyOptions } from './ProxyFactory';
-import { AmqpProxy } from './AmqpProxy';
-import { HttpsProxyAgent } from 'https-proxy-agent';
+import { PatchedHttpsProxyAgent } from './PatchedHttpsProxyAgent';
 import { HttpProxyAgent } from 'http-proxy-agent';
 import { SocksProxyAgent } from 'socks-proxy-agent';
-import { URL } from 'url';
-import https from 'https';
-import http from 'http';
+import https from 'node:https';
+import http from 'node:http';
 
 export class DefaultProxyFactory implements ProxyFactory {
   public createProxy({ proxyUrl, rejectUnauthorized = false }: ProxyOptions) {
@@ -55,10 +53,10 @@ export class DefaultProxyFactory implements ProxyFactory {
     switch (protocol) {
       case 'http:':
       case 'ws:':
-        return proxies.http;
+        return proxies.httpAgent;
       case 'https:':
       case 'wss:':
-        return proxies.https;
+        return proxies.httpsAgent;
       default:
         throw new Error(
           `Proxy not supported for protocol '${protocol}'. Please contact support at support@brightsec.com`
@@ -66,22 +64,20 @@ export class DefaultProxyFactory implements ProxyFactory {
     }
   }
 
-  public createAmqpProxy(url: string): AmqpProxy {
-    return new AmqpProxy(url);
-  }
-
   private createHttpProxy(proxyUrl: string, rejectUnauthorized?: boolean) {
     return {
-      https: new HttpsProxyAgent(proxyUrl, {
+      httpsAgent: new PatchedHttpsProxyAgent(proxyUrl, {
         rejectUnauthorized
       }),
-      http: new HttpProxyAgent(proxyUrl)
+      httpAgent: new HttpProxyAgent(proxyUrl, {
+        rejectUnauthorized
+      })
     };
   }
 
   private createSocksProxy(proxyUrl: string) {
     const common = new SocksProxyAgent(proxyUrl);
 
-    return { http: common, https: common };
+    return { httpAgent: common, httpsAgent: common };
   }
 }

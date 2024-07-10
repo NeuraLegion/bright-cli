@@ -52,24 +52,30 @@ jobs:
           - os: ubuntu-latest
             container: ubuntu:16.04
             executable: bright-cli-linux-x64
-            node: 14
+            node: 16
           - os: ubuntu-latest
             container: fedora:24
             executable: bright-cli-linux-x64
-            node: 14
+            node: 16
           - os: ubuntu-latest
             container: fedora:latest
             executable: bright-cli-linux-x64
-            node: 18
+            node: 20
           - os: ubuntu-latest
             executable: bright-cli-linux-x64
-            node: 18
+            node: 20
+          - os: macos-11
+            executable: bright-cli-macos-x64
+            node: 20
           - os: macos-latest
             executable: bright-cli-macos-x64
-            node: 18
+            node: 20
           - os: windows-latest
             executable: bright-cli-win-x64.exe
-            node: 18
+            node: 20
+          - os: windows-2019
+            executable: bright-cli-win-x64.exe
+            node: 20
     steps:
       - name: Install Packages (Fedora)
         if: ${{ startsWith(matrix.container, 'fedora') }}
@@ -113,7 +119,8 @@ jobs:
           E2E_CLI_VERSION: ${{ inputs.version }}
           E2E_CLI_CMD: ${{ runner.os != 'windows' && format('./{0}', matrix.executable) || format('.\{0}', matrix.executable) }}
           E2E_RUN_ID: ${{ format('{0}-{1}-{2}-{3}', github.run_number, github.run_attempt, github.job, strategy.job-index) }}
-          E2E_CLUSTER: ${{ secrets[format('E2E_{0}_HOST', inputs.environment )] }}
+          E2E_CLUSTER: ${{ vars[format('E2E_{0}_HOST', inputs.environment )] }}
+          E2E_PROJECT_ID: ${{ vars[format('E2E_{0}_PROJECT_ID', inputs.environment )] }}
           E2E_CLUSTER_API_KEY: ${{ secrets[format('E2E_{0}_API_KEY', inputs.environment )] }}
           E2E_REPEATER_TARGET_URL: ${{ format('http://localhost:{0}', steps.target.outputs.port) }}
           E2E_REPEATER_TARGET_CMD: ${{ steps.target.outputs.cmd }}
@@ -162,7 +169,8 @@ jobs:
           E2E_CLI_VERSION: ${{ inputs.version }}
           E2E_CLI_CMD: ${{ 'bright-cli.exe' }}
           E2E_RUN_ID: ${{ format('{0}-{1}-{2}-{3}', github.run_number, github.run_attempt, github.job, strategy.job-index) }}
-          E2E_CLUSTER: ${{ secrets[format('E2E_{0}_HOST', inputs.environment )] }}
+          E2E_CLUSTER: ${{ vars[format('E2E_{0}_HOST', inputs.environment )] }}
+          E2E_PROJECT_ID: ${{ vars[format('E2E_{0}_PROJECT_ID', inputs.environment )] }}
           E2E_CLUSTER_API_KEY: ${{ secrets[format('E2E_{0}_API_KEY', inputs.environment )] }}
           E2E_REPEATER_TARGET_URL: ${{ format('http://localhost:{0}', steps.target.outputs.port) }}
           E2E_REPEATER_TARGET_CMD: ${{ steps.target.outputs.cmd }}
@@ -203,7 +211,8 @@ jobs:
           E2E_CLI_VERSION: ${{ inputs.version }}
           E2E_CLI_CMD: docker run --add-host host.docker.internal:host-gateway --network host brightsec/cli:${{ inputs.version }}
           E2E_RUN_ID: ${{ format('{0}-{1}-{2}-{3}', github.run_number, github.run_attempt, github.job, strategy.job-index) }}
-          E2E_CLUSTER: ${{ secrets[format('E2E_{0}_HOST', inputs.environment )] }}
+          E2E_CLUSTER: ${{ vars[format('E2E_{0}_HOST', inputs.environment )] }}
+          E2E_PROJECT_ID: ${{ vars[format('E2E_{0}_PROJECT_ID', inputs.environment )] }}
           E2E_CLUSTER_API_KEY: ${{ secrets[format('E2E_{0}_API_KEY', inputs.environment )] }}
           E2E_REPEATER_TARGET_URL: ${{ format('http://host.docker.internal:{0}', steps.target.outputs.port) }}
           E2E_REPEATER_TARGET_CMD: ${{ steps.target.outputs.cmd }}
@@ -215,28 +224,21 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [macos-latest, windows-latest]
-        node: [14, 16, 18]
+        os: [macos-latest, windows-latest, ubuntu-latest]
+        node: [16, 18, 20]
         include:
           - os: ubuntu-latest
-            node: 14
-          - os: ubuntu-latest
+            container: ubuntu:16.04
             node: 16
           - os: ubuntu-latest
-            node: 18
-          - os: ubuntu-latest
-            container: ubuntu:16.04
-            node: 14
+            container: fedora:24
+            node: 16
           - os: ubuntu-latest
             container: fedora:latest
             node: 18
           - os: ubuntu-latest
-            container: fedora:24
-            node: 14
-        exclude:
-          # TODO: Troubleshoot
-          - os: windows-latest
-            node: 14
+            container: fedora:latest
+            node: 20
     steps:
       - name: Install Packages (Fedora)
         if: ${{ startsWith(matrix.container, 'fedora') }}
@@ -277,7 +279,8 @@ jobs:
           E2E_CLI_VERSION: ${{ inputs.version }}
           E2E_CLI_CMD: bright-cli
           E2E_RUN_ID: ${{ format('{0}-{1}-{2}-{3}', github.run_number, github.run_attempt, github.job, strategy.job-index) }}
-          E2E_CLUSTER: ${{ secrets[format('E2E_{0}_HOST', inputs.environment )] }}
+          E2E_CLUSTER: ${{ vars[format('E2E_{0}_HOST', inputs.environment )] }}
+          E2E_PROJECT_ID: ${{ vars[format('E2E_{0}_PROJECT_ID', inputs.environment )] }}
           E2E_CLUSTER_API_KEY: ${{ secrets[format('E2E_{0}_API_KEY', inputs.environment )] }}
           E2E_REPEATER_TARGET_URL: ${{ format('http://localhost:{0}', steps.target.outputs.port) }}
           E2E_REPEATER_TARGET_CMD: ${{ steps.target.outputs.cmd }}

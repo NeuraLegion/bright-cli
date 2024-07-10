@@ -1,9 +1,9 @@
 import { logger } from '../Utils';
-import request, { RequestPromiseAPI } from 'request-promise';
-import { readFile, writeFile } from 'fs';
-import { join } from 'path';
-import { homedir } from 'os';
-import { promisify } from 'util';
+import axios, { Axios } from 'axios';
+import { readFile, writeFile } from 'node:fs/promises';
+import { join } from 'node:path';
+import { homedir } from 'node:os';
+import { setTimeout } from 'node:timers/promises';
 
 export interface SystemConfig {
   sentryDsn?: string;
@@ -17,14 +17,17 @@ interface SystemConfigFile {
 export class SystemConfigManager {
   private readonly rotationInterval = 3600000;
   private readonly path = join(homedir(), '.brightclirc');
-  private readonly client: RequestPromiseAPI;
+  private readonly client: Axios;
   private backgroundRotationEnabled = false;
 
-  constructor(baseUrl: string) {
-    this.client = request.defaults({
-      baseUrl,
+  constructor(baseURL: string) {
+    this.client = axios.create({
+      baseURL,
       timeout: 1500,
-      json: true
+      responseType: 'json',
+      transitional: {
+        clarifyTimeoutError: true
+      }
     });
   }
 
@@ -69,12 +72,8 @@ export class SystemConfigManager {
         );
       }
 
-      await this.sleep(this.rotationInterval);
+      await setTimeout(this.rotationInterval, undefined, { ref: false });
     }
-  }
-
-  private sleep(ms: number) {
-    return new Promise((resolve) => setTimeout(resolve, ms).unref());
   }
 
   private needsRotation(configFile: SystemConfigFile) {
@@ -140,7 +139,7 @@ export class SystemConfigManager {
     try {
       logger.debug('Loading system config file');
 
-      const file = await promisify(readFile)(this.path);
+      const file = await readFile(this.path);
       const fileConfig = JSON.parse(file.toString()) as SystemConfigFile;
 
       return {
@@ -159,7 +158,7 @@ export class SystemConfigManager {
     logger.debug('Updating system config file');
 
     try {
-      await promisify(writeFile)(this.path, JSON.stringify(configFile));
+      await writeFile(this.path, JSON.stringify(configFile));
     } catch (e) {
       logger.debug('Error during updating system config file', e);
     }
@@ -169,9 +168,11 @@ export class SystemConfigManager {
     logger.debug('Fetching new system config');
 
     try {
-      return await this.client.get({
-        uri: '/api/v1/cli/config'
-      });
+      const { data } = await this.client.get<SystemConfig | undefined>(
+        '/api/v1/cli/config'
+      );
+
+      return data;
     } catch (e) {
       logger.debug('Error during fetching new system config: ', e);
     }

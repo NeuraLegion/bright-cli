@@ -1,10 +1,10 @@
 import { Helpers } from './Helpers';
 import { logger } from './Logger';
 import raw from '@neuralegion/raw-socket';
-import dgram from 'dgram';
-import { promises as dns } from 'dns';
-import { EventEmitter, once } from 'events';
-import { isIP } from 'net';
+import dgram from 'node:dgram';
+import { Resolver } from 'node:dns/promises';
+import { EventEmitter, once } from 'node:events';
+import { isIP } from 'node:net';
 
 export { Protocol } from '@neuralegion/raw-socket';
 
@@ -38,7 +38,7 @@ export class Traceroute {
   private readonly icmpSocket = raw.createSocket({
     protocol: raw.Protocol.ICMP
   });
-  private readonly resolver = new dns.Resolver();
+  private readonly resolver = new Resolver();
   private readonly options: Options;
   private readonly subject = new EventEmitter();
   private port = 33433;
