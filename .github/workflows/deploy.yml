@@ -7,6 +7,7 @@ on:
 env:
   VERSION: ${{ github.event.release.tag_name }}
   TARGET_REF: ${{ github.event.release.target_commitish }}
+  ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION: true
 
 jobs:
   install-deps:
