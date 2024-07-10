@@ -67,6 +67,7 @@ jobs:
   generate-binary:
     needs: build
     strategy:
+      fail-fast: false
       matrix:
         include:
           - os: windows-2019
