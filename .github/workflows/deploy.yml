@@ -73,7 +73,7 @@ jobs:
           - os: windows-2019
             target: win
             node: 20
-          - os: macos-11
+          - os: macos-14-large
             target: macos
             node: 20
           # Using the `centos7-devtoolset7` runner instead of latest (i.e. `ubuntu-20.04`)
