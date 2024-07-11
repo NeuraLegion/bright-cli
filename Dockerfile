@@ -44,6 +44,8 @@ RUN set -eux; \
     chmod -R g+rwX /home/node; \
     chown -R 1000 /home/node
 
+RUN apk add --no-cache libcap && setcap 'cap_net_raw+ep' $(which node)
+
 # change workgin dir
 WORKDIR $HOME/
 
