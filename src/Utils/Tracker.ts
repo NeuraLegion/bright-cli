@@ -2,7 +2,7 @@ import axios from 'axios';
 import { Arguments } from 'yargs';
 
 export class Tracker {
-  public static trackCommandUsage(args: Arguments) {
+  public static async trackCommandUsage(args: Arguments) {
     const baseUrl = args.api as string;
     // TODO: replace with final analytics endpoint
     const url = `${baseUrl}/analytics/events`;
@@ -16,16 +16,12 @@ export class Tracker {
     };
 
     // Send CLI-command event
-    axios
-      .post(url, data)
-      .then((_) => {
-        // eslint-disable-next-line no-console
-        console.log('CLI-command tracked successfully');
-      })
-      .catch((error) => {
-        // eslint-disable-next-line no-console
-        console.error('CLI-command error tracking event:', error);
-      });
+    try {
+      await axios.post(url, data);
+    } catch (e) {
+      // eslint-disable-next-line no-console
+      console.error('CLI-command error tracking event:', e.message);
+    }
   }
 
   // Blacklist function to filter out arguments
