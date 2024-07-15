@@ -10,6 +10,7 @@ import {
 import { Helpers, logger } from '../Utils';
 import { Arguments, Argv, CommandModule } from 'yargs';
 import { container } from 'tsyringe';
+import { EOL } from 'node:os';
 
 export class RunScan implements CommandModule {
   public readonly command = 'scan:run [options]';
@@ -79,8 +80,8 @@ export class RunScan implements CommandModule {
         array: true,
         describe:
           'A list of tests to run during a scan. ' +
-          'If no tests are specified, the default tests will be run.' +
-          'For more information on the default tests, refer to the documentation: https://docs.brightsec.com/docs/running-a-scan' +
+          `If no tests are specified, the default tests will be run.${EOL}` +
+          `For more information on the default tests, refer to the documentation: https://docs.brightsec.com/docs/running-a-scan${EOL}` +
           'Additional details about available tests can be found here: ' +
           'https://docs.brightsec.com/docs/vulnerability-guide'
       })
