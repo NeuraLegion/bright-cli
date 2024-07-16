@@ -1,3 +1,4 @@
+import 'reflect-metadata';
 import { Logger, logger } from '../Utils';
 import { GetEntryPoints } from './GetEntryPoints';
 import { EntryPoints } from '../EntryPoint';

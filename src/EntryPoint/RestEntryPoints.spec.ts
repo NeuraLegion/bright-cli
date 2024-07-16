@@ -1,3 +1,4 @@
+import 'reflect-metadata';
 import { RestEntryPoints } from './RestEntryPoints';
 import { ProxyFactory } from '../Utils';
 import { instance, mock } from 'ts-mockito';
