@@ -34,15 +34,12 @@ describe('RestEntryPoints', () => {
 
   describe('entrypoints', () => {
     it('should return entrypoints', async () => {
-      // arrange
       nock('https://example.com')
         .get('/api/v2/projects/1/entry-points')
         .reply(200, { items: [{ id: 1, name: 'entrypoint1' }] });
 
-      // act
       const result = await restEntryPoints.entrypoints('1');
 
-      // assert
       expect(result).toEqual([{ id: 1, name: 'entrypoint1' }]);
     });
   });

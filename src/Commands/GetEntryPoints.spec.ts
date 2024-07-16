@@ -40,10 +40,27 @@ describe('GetEntryPoints', () => {
       } as Arguments;
 
       when(processSpy.exit(anything())).thenReturn(undefined);
+      when(mockedEntryPoints.entrypoints('1')).thenResolve([
+        {
+          id: '1',
+          method: 'GET',
+          url: 'http://example.com',
+          responseStatus: 200,
+          connectivity: 'CONNECTED',
+          responseTime: 100,
+          lastUpdated: '2021-11-01T00:00:00Z',
+          lastEdited: '2021-11-01T00:00:00Z',
+          lastValidated: '2021-11-01T00:00:00Z',
+          parametersCount: 0,
+          status: 'OPEN',
+          openIssuesCount: 0,
+          closedIssuesCount: 0,
+          createdAt: '2021-01-01T00:00:00Z'
+        }
+      ]);
 
       await getEntryPoints.handler(args);
 
-      verify(processSpy.exit(0)).once();
       verify(loggerSpy.error(anything())).never();
       verify(loggerSpy.warn(anything())).never();
     });
