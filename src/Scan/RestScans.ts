@@ -150,9 +150,9 @@ export class RestScans implements Scans {
     scanConfig: Omit<ScanConfig, 'headers'>
   ): Promise<Omit<ScanConfig, 'headers'>> {
     const attackParamLocations =
-      scanConfig.attackParamLocations ?? scanConfig.templateId
-        ? undefined
-        : [...ATTACK_PARAM_LOCATIONS_DEFAULT];
+      scanConfig.attackParamLocations ??
+      (scanConfig.templateId ? undefined : [...ATTACK_PARAM_LOCATIONS_DEFAULT]);
+
     const exclusions =
       scanConfig.exclusions?.params || scanConfig.exclusions?.requests
         ? scanConfig.exclusions
