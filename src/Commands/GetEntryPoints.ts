@@ -4,7 +4,7 @@ import { Arguments, Argv, CommandModule } from 'yargs';
 import { container } from 'tsyringe';
 
 export class GetEntryPoints implements CommandModule {
-  public readonly command = 'entrypoints:list [options]';
+  public readonly command = 'entrypoints:list [options] <project>';
   public readonly describe = 'get all entrypoints of the project.';
 
   public builder(argv: Argv): Argv {
@@ -15,16 +15,15 @@ export class GetEntryPoints implements CommandModule {
         requiresArg: true,
         demandOption: true
       })
-      .option('project', {
-        alias: 'p',
-        describe: 'ID of the project',
-        requiresArg: true,
-        demandOption: true
-      })
       .option('verbose', {
         describe: 'Enable verbose mode',
         boolean: true,
         default: false
+      })
+      .positional('project', {
+        describe: 'ID of the project',
+        type: 'string',
+        demandOption: true
       })
       .middleware((args: Arguments) =>
         container.register<RestProjectsOptions>(RestProjectsOptions, {
