@@ -29,7 +29,7 @@
     "@neuralegion/raw-socket": "1.8.2",
     "@sentry/node": "^7.70.0",
     "ajv": "^6.12.6",
-    "amqplib": "~0.10.2",
+    "amqplib": "~0.10.4",
     "arch": "^2.2.0",
     "axios": "^1.6.8",
     "better-ajv-errors": "^1.2.0",
