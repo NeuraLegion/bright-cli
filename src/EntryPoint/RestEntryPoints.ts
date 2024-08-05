@@ -1,4 +1,8 @@
-import { EntryPoints, EntryPoint } from './EntryPoints';
+import {
+  EntryPoints,
+  EntryPoint,
+  GetEntryPointDetailsResponse
+} from './EntryPoints';
 import { ProxyFactory } from '../Utils';
 import axios, { Axios } from 'axios';
 import { inject, injectable } from 'tsyringe';
@@ -56,5 +60,20 @@ export class RestEntryPoints implements EntryPoints {
     );
 
     return res.data.items;
+  }
+
+  public async getEntryPointDetails(
+    projectId: string,
+    entryPointId: string
+  ): Promise<GetEntryPointDetailsResponse> {
+    try {
+      const res = await this.client.get<GetEntryPointDetailsResponse>(
+        `api/v2/projects/${projectId}/entry-points/${entryPointId}`
+      );
+
+      return res.data;
+    } catch (_) {
+      return undefined;
+    }
   }
 }

@@ -89,6 +89,16 @@ export class RestScans implements Scans {
     await this.client.delete(`/api/v1/scans/${scanId}`);
   }
 
+  public async isProjectExist(projectId: string): Promise<boolean> {
+    try {
+      await this.client.get(`/api/v1/projects/${projectId}`);
+    } catch (error) {
+      return false;
+    }
+
+    return true;
+  }
+
   private async prepareScanConfig({ headers, ...rest }: ScanConfig): Promise<
     Omit<ScanConfig, 'headers'> & {
       headers: Header[];

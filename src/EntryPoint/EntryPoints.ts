@@ -20,3 +20,21 @@ export interface EntryPoint {
   closedIssuesCount: number;
   createdAt: string;
 }
+
+export interface GetEntryPointDetailsResponse {
+  id: string;
+  request: EntryPointDetailsRequest;
+  connectivity: string;
+  lastUpdated: string;
+  parametersCount: number;
+  responseTime: string;
+  projectId: string;
+  authObjectId: string;
+  progress: number;
+  duration: number;
+}
+
+type EntryPointDetailsRequest = {
+  readonly url: string;
+  readonly method: string;
+};
