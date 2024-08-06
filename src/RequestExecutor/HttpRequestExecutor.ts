@@ -199,7 +199,7 @@ export class HttpRequestExecutor implements RequestExecutor {
   private getRequestAgent(options: Request) {
     if (
       this.proxyDomains &&
-      this.proxyDomains.some((domain) =>
+      !this.proxyDomains.some((domain) =>
         domain.test(parseUrl(options.url).hostname)
       )
     ) {
