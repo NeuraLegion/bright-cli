@@ -84,7 +84,7 @@ export class CliBuilder {
         requiresArg: true,
         array: true,
         describe:
-          'Comma-separated list of domains that should be routed through the proxy. This option is only applicable when using the --proxy option'
+          'Comma-separated list of domains that should be routed through the proxy. This option is only applicable when using the --proxy or --proxy-target option'
       })
       .middleware((args: Arguments) => {
         ({ api: args.api, repeaterServer: args.repeaterServer } =
