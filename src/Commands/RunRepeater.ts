@@ -131,6 +131,12 @@ export class RunRepeater implements CommandModule {
         alias: ['rm', 'remove'],
         describe: 'Stop and remove repeater daemon'
       })
+      .option('proxy-domains', {
+        requiresArg: true,
+        array: true,
+        describe:
+          'Comma-separated list of domains that should be routed through the proxy. This option is only applicable when using the --proxy option'
+      })
       .conflicts({
         daemon: 'remove-daemon',
         ntlm: [
