@@ -62,6 +62,7 @@ export interface ScanConfig {
   crawlerUrls?: string[];
   hostsFilter?: string[];
   repeaters?: string[];
+  entryPointIds?: string[];
 }
 
 export enum ScanStatus {

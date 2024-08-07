@@ -131,6 +131,12 @@ export class RunRepeater implements CommandModule {
         alias: ['rm', 'remove'],
         describe: 'Stop and remove repeater daemon'
       })
+      .option('proxy-domains', {
+        requiresArg: true,
+        array: true,
+        describe:
+          'Comma-separated list of domains that should be routed through the proxy. This option is only applicable when using the --proxy option'
+      })
       .conflicts({
         daemon: 'remove-daemon',
         ntlm: [
@@ -165,7 +171,7 @@ export class RunRepeater implements CommandModule {
             useValue: {
               headers: (args.header ?? args.headers) as Record<string, string>,
               timeout: args.timeout as number,
-              proxyUrl: (args.proxyInternal ?? args.proxy) as string,
+              proxyUrl: (args.proxyTarget ?? args.proxy) as string,
               certs: args.cert as Cert[],
               maxContentLength: 100,
               reuseConnection:
@@ -185,7 +191,8 @@ export class RunRepeater implements CommandModule {
                 'application/msgpack',
                 'application/ld+json',
                 'application/graphql'
-              ]
+              ],
+              proxyDomains: args.proxyDomains as string[]
             }
           })
           .register<DefaultRepeaterServerOptions>(
@@ -195,7 +202,7 @@ export class RunRepeater implements CommandModule {
                 uri: args.repeaterServer as string,
                 token: args.token as string,
                 connectTimeout: 10000,
-                proxyUrl: (args.proxyExternal ?? args.proxy) as string,
+                proxyUrl: (args.proxyBright ?? args.proxy) as string,
                 insecure: args.insecure as boolean
               }
             }

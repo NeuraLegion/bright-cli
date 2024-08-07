@@ -11,6 +11,7 @@ export interface RestProjectsOptions {
   timeout?: number;
   insecure?: boolean;
   proxyURL?: string;
+  proxyDomains?: string[];
 }
 
 export const RestProjectsOptions: unique symbol = Symbol('RestProjectsOptions');

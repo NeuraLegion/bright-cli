@@ -22,6 +22,7 @@ export interface RestScansOptions {
   timeout?: number;
   insecure?: boolean;
   proxyURL?: string;
+  proxyDomains?: string[];
 }
 
 export const RestScansOptions: unique symbol = Symbol('RestScansOptions');
