@@ -1,6 +1,7 @@
 import { RepeaterLauncher } from './RepeaterLauncher';
 import {
   DeploymentRuntime,
+  RepeaterCommunicateLimitsEvent,
   RepeaterErrorCodes,
   RepeaterServer,
   RepeaterServerErrorEvent,
@@ -12,7 +13,11 @@ import {
 import { RuntimeDetector } from './RuntimeDetector';
 import { ScriptLoader, VirtualScripts } from '../Scripts';
 import { StartupManager } from '../StartupScripts';
-import { Certificates, Request } from '../RequestExecutor';
+import {
+  Certificates,
+  Request,
+  RequestExecutorOptions
+} from '../RequestExecutor';
 import { Helpers, logger } from '../Utils';
 import { CliInfo } from '../Config';
 import { RepeaterCommandHub } from './RepeaterCommandHub';
@@ -36,6 +41,8 @@ export class ServerRepeaterLauncher implements RepeaterLauncher {
     private readonly commandHub: RepeaterCommandHub,
     @inject(Certificates) private readonly certificates: Certificates,
     @inject(ScriptLoader) private readonly scriptLoader: ScriptLoader,
+    @inject(RequestExecutorOptions)
+    private readonly requestExecutorOptions: RequestExecutorOptions,
     @inject(delay(() => CliInfo)) private readonly info: CliInfo
   ) {}
 
@@ -130,6 +137,10 @@ export class ServerRepeaterLauncher implements RepeaterLauncher {
       this.reconnectionFailed
     );
     this.repeaterServer.on(RepeaterServerEvents.REQUEST, this.requestReceived);
+    this.repeaterServer.on(
+      RepeaterServerEvents.COMMUNICATE_LIMITS,
+      this.limitsReceived
+    );
     this.repeaterServer.on(
       RepeaterServerEvents.TEST_NETWORK,
       this.testingNetwork
@@ -228,6 +239,11 @@ export class ServerRepeaterLauncher implements RepeaterLauncher {
         error: typeof e === 'string' ? e : (e as Error).message
       };
     }
+  };
+
+  private limitsReceived = (event: RepeaterCommunicateLimitsEvent) => {
+    logger.debug('Limits received: %i', event.maxBodySize);
+    this.requestExecutorOptions.maxBodySize = event.maxBodySize;
   };
 
   private requestReceived = async (event: RepeaterServerRequestEvent) => {

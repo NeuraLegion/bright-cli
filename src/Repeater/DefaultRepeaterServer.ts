@@ -16,7 +16,8 @@ import {
   RepeaterServerRequestEvent,
   RepeaterServerRequestResponse,
   RepeaterServerScriptsUpdatedEvent,
-  RepeaterUpgradeAvailableEvent
+  RepeaterUpgradeAvailableEvent,
+  RepeaterCommunicateLimitsEvent
 } from './RepeaterServer';
 import { inject, injectable } from 'tsyringe';
 import io, { Socket } from 'socket.io-client';
@@ -51,7 +52,8 @@ const enum SocketEvents {
   UPDATE_AVAILABLE = 'update-available',
   SCRIPT_UPDATED = 'scripts-updated',
   PING = 'ping',
-  REQUEST = 'request'
+  REQUEST = 'request',
+  COMMUNICATE_LIMITS = 'communicate-limits'
 }
 
 interface SocketListeningEventMap {
@@ -71,6 +73,9 @@ interface SocketListeningEventMap {
   [SocketEvents.REQUEST]: (
     request: RepeaterServerRequestEvent,
     callback: CallbackFunction<RepeaterServerRequestResponse>
+  ) => void;
+  [SocketEvents.COMMUNICATE_LIMITS]: (
+    request: RepeaterCommunicateLimitsEvent
   ) => void;
 }
 
@@ -224,6 +229,9 @@ export class DefaultRepeaterServer implements RepeaterServer {
     );
     this.socket.on(SocketEvents.SCRIPT_UPDATED, (event) =>
       this.events.emit(RepeaterServerEvents.SCRIPTS_UPDATED, event)
+    );
+    this.socket.on(SocketEvents.COMMUNICATE_LIMITS, (event) =>
+      this.events.emit(RepeaterServerEvents.COMMUNICATE_LIMITS, event)
     );
   }
 

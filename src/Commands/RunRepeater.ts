@@ -167,24 +167,28 @@ export class RunRepeater implements CommandModule {
               timeout: args.timeout as number,
               proxyUrl: (args.proxyInternal ?? args.proxy) as string,
               certs: args.cert as Cert[],
+              maxBodySize: 100 * 1024,
               maxContentLength: 100,
               reuseConnection:
                 !!args.ntlm || !!args.experimentalConnectionReuse,
               whitelistMimes: [
-                'text/html',
-                'text/plain',
-                'text/css',
-                'text/javascript',
-                'text/markdown',
-                'text/xml',
-                'application/javascript',
-                'application/x-javascript',
-                'application/json',
-                'application/xml',
-                'application/x-www-form-urlencoded',
-                'application/msgpack',
-                'application/ld+json',
-                'application/graphql'
+                { type: 'text/html', allowTruncation: false },
+                { type: 'text/plain', allowTruncation: true },
+                { type: 'text/css', allowTruncation: false },
+                { type: 'text/javascript', allowTruncation: false },
+                { type: 'text/markdown', allowTruncation: true },
+                { type: 'text/xml', allowTruncation: false },
+                { type: 'application/javascript', allowTruncation: false },
+                { type: 'application/x-javascript', allowTruncation: false },
+                { type: 'application/json', allowTruncation: false },
+                { type: 'application/xml', allowTruncation: false },
+                {
+                  type: 'application/x-www-form-urlencoded',
+                  allowTruncation: false
+                },
+                { type: 'application/msgpack', allowTruncation: false },
+                { type: 'application/ld+json', allowTruncation: false },
+                { type: 'application/graphql', allowTruncation: false }
               ]
             }
           })
