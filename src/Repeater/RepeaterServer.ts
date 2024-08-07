@@ -128,6 +128,7 @@ export interface RepeaterServerEventsMap {
   [RepeaterServerEvents.REQUEST]: RepeaterServerRequestEvent;
   [RepeaterServerEvents.TEST_NETWORK]: RepeaterServerNetworkTestEvent;
   [RepeaterServerEvents.UPDATE_AVAILABLE]: RepeaterUpgradeAvailableEvent;
+  [RepeaterServerEvents.COMMUNICATE_LIMITS]: RepeaterCommunicateLimitsEvent;
   [RepeaterServerEvents.SCRIPTS_UPDATED]: RepeaterServerScriptsUpdatedEvent;
   [RepeaterServerEvents.RECONNECTION_FAILED]: RepeaterServerReconnectionFailedEvent;
   [RepeaterServerEvents.RECONNECT_ATTEMPT]: RepeaterServerReconnectionAttemptedEvent;
