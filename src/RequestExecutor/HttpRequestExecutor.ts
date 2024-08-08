@@ -207,19 +207,17 @@ export class HttpRequestExecutor implements RequestExecutor {
 
     const contentType = this.parseContentType(res);
     const { type } = contentType;
-    const mimeType = this.options.whitelistMimes?.find((mime) =>
+    const whiteListedMimeType = this.options.whitelistMimes?.find((mime) =>
       type.startsWith(mime.type)
     );
-    const whiteListed = mimeType !== undefined;
 
     const body = await this.parseBody(res, {
       decompress,
-      type,
-      whiteListed,
-      allowTruncation: mimeType?.allowTruncation,
-      maxSizeWhitelistedMimes: this.options.maxBodySize,
-      maxSizeNonWhitelistedMimes:
-        (maxContentSize ?? this.options.maxContentLength) * 1024
+      allowTruncation:
+        !whiteListedMimeType || whiteListedMimeType.allowTruncation,
+      maxSize: whiteListedMimeType
+        ? this.options.maxBodySize
+        : (maxContentSize ?? this.options.maxContentLength) * 1024
     });
 
     res.headers['content-length'] = body.byteLength.toFixed();
@@ -295,10 +293,7 @@ export class HttpRequestExecutor implements RequestExecutor {
   private async parseBody(
     res: IncomingMessage,
     options: {
-      maxSizeWhitelistedMimes: number;
-      maxSizeNonWhitelistedMimes: number;
-      type: string;
-      whiteListed: boolean;
+      maxSize: number;
       allowTruncation: boolean;
       decompress: boolean;
     }
@@ -312,65 +307,34 @@ export class HttpRequestExecutor implements RequestExecutor {
 
     let body = Buffer.concat(chunks);
 
-    if (this.shouldTruncate(body, options)) {
+    if (body.byteLength > options.maxSize) {
       body = this.truncateBody(body, options);
     }
 
     return body;
   }
 
-  private shouldTruncate(
-    body: Buffer,
-    options: {
-      maxSizeWhitelistedMimes: number;
-      maxSizeNonWhitelistedMimes: number;
-      whiteListed: boolean;
-    }
-  ): boolean {
-    return (
-      (options.whiteListed &&
-        body.byteLength > options.maxSizeWhitelistedMimes) ||
-      (!options.whiteListed &&
-        body.byteLength > options.maxSizeNonWhitelistedMimes)
-    );
-  }
-
   private truncateBody(
     body: Buffer,
     options: {
-      maxSizeWhitelistedMimes: number;
-      maxSizeNonWhitelistedMimes: number;
-      type: string;
-      whiteListed: boolean;
+      maxSize: number;
       allowTruncation: boolean;
     }
   ): Buffer {
-    if (options.whiteListed) {
-      if (options.allowTruncation) {
-        logger.debug(
-          'Truncate original response body of type %s to %i bytes',
-          options.type,
-          options.maxSizeWhitelistedMimes
-        );
-
-        return body.subarray(0, options.maxSizeWhitelistedMimes);
-      } else {
-        logger.debug(
-          'Omit original response body of type %s because body is bigger than %i',
-          options.type,
-          options.maxSizeWhitelistedMimes
-        );
-
-        return Buffer.alloc(0);
-      }
-    } else {
+    if (options.allowTruncation) {
       logger.debug(
-        'Truncate original response body of type %s to %i bytes',
-        options.type,
-        options.maxSizeNonWhitelistedMimes
+        'Truncate original response body to %i bytes',
+        options.maxSize
       );
 
-      return body.subarray(0, options.maxSizeNonWhitelistedMimes);
+      return body.subarray(0, options.maxSize);
+    } else {
+      logger.debug(
+        'Omit original response body because body is bigger than %i',
+        options.maxSize
+      );
+
+      return Buffer.alloc(0);
     }
   }
 

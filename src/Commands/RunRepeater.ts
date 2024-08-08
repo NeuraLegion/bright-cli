@@ -167,7 +167,7 @@ export class RunRepeater implements CommandModule {
               timeout: args.timeout as number,
               proxyUrl: (args.proxyInternal ?? args.proxy) as string,
               certs: args.cert as Cert[],
-              maxBodySize: 100 * 1024,
+              maxBodySize: Infinity,
               maxContentLength: 100,
               reuseConnection:
                 !!args.ntlm || !!args.experimentalConnectionReuse,

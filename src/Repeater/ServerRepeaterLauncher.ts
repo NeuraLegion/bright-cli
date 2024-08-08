@@ -1,7 +1,7 @@
 import { RepeaterLauncher } from './RepeaterLauncher';
 import {
   DeploymentRuntime,
-  RepeaterCommunicateLimitsEvent,
+  RepeaterLimitsEvent,
   RepeaterErrorCodes,
   RepeaterServer,
   RepeaterServerErrorEvent,
@@ -137,10 +137,7 @@ export class ServerRepeaterLauncher implements RepeaterLauncher {
       this.reconnectionFailed
     );
     this.repeaterServer.on(RepeaterServerEvents.REQUEST, this.requestReceived);
-    this.repeaterServer.on(
-      RepeaterServerEvents.COMMUNICATE_LIMITS,
-      this.limitsReceived
-    );
+    this.repeaterServer.on(RepeaterServerEvents.LIMITS, this.limitsReceived);
     this.repeaterServer.on(
       RepeaterServerEvents.TEST_NETWORK,
       this.testingNetwork
@@ -241,7 +238,7 @@ export class ServerRepeaterLauncher implements RepeaterLauncher {
     }
   };
 
-  private limitsReceived = (event: RepeaterCommunicateLimitsEvent) => {
+  private limitsReceived = (event: RepeaterLimitsEvent) => {
     logger.debug('Limits received: %i', event.maxBodySize);
     this.requestExecutorOptions.maxBodySize = event.maxBodySize;
   };
