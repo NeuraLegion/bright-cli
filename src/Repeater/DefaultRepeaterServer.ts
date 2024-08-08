@@ -33,6 +33,7 @@ export interface DefaultRepeaterServerOptions {
   readonly connectTimeout?: number;
   readonly proxyUrl?: string;
   readonly insecure?: boolean;
+  readonly proxyDomains?: string[];
 }
 
 export const DefaultRepeaterServerOptions: unique symbol = Symbol(

@@ -153,6 +153,14 @@ export class RunScan implements CommandModule {
         choices: Helpers.toArray(AttackParamLocation),
         describe: 'Defines which part of the request to attack.'
       })
+      .option('entrypoint', {
+        array: true,
+        alias: 'e',
+        describe:
+          'A list of entry points to start the scan from' +
+          'The maximum number of entry points allowed is 2000' +
+          'Pass an empty list to use the first 2000 entry points of project'
+      })
       .group(['archive', 'crawler'], 'Discovery Options')
       .group(
         ['host-filter', 'header', 'module', 'repeater', 'test', 'smart'],
@@ -164,7 +172,7 @@ export class RunScan implements CommandModule {
             insecure: args.insecure as boolean,
             baseURL: args.api as string,
             apiKey: args.token as string,
-            proxyURL: (args.proxyExternal ?? args.proxy) as string
+            proxyURL: (args.proxyBright ?? args.proxy) as string
           }
         })
       );
@@ -192,7 +200,8 @@ export class RunScan implements CommandModule {
         exclusions: {
           requests: args.excludeEntryPoint,
           params: args.excludeParam
-        }
+        },
+        entryPointIds: args.entrypoint
       } as ScanConfig);
 
       // eslint-disable-next-line no-console

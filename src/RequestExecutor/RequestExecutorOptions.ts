@@ -14,6 +14,7 @@ export interface RequestExecutorOptions {
   maxBodySize?: number;
   maxContentLength?: number;
   reuseConnection?: boolean;
+  proxyDomains?: string[];
 }
 
 export const RequestExecutorOptions: unique symbol = Symbol(
