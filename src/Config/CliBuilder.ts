@@ -1,5 +1,5 @@
 import { CliConfig, ConfigReader } from './ConfigReader';
-import { ClusterArgs, Helpers, logger, LogLevel } from '../Utils';
+import { ClusterArgs, Helpers, logger, LogLevel, Tracker } from '../Utils';
 import { SystemConfigManager } from './SystemConfigManager';
 import { CliInfo } from './CliInfo';
 import { Arguments, Argv, CommandModule } from 'yargs';
@@ -91,6 +91,7 @@ export class CliBuilder {
             ? (+args.logLevel as unknown as LogLevel)
             : LogLevel[args.logLevel.toString().toUpperCase()])
       )
+      .middleware(async (args: Arguments) => Tracker.trackCommandUsage(args))
       .usage('Usage: $0 <command> [options] [<file | scan>]')
       .pkgConf('bright', info.cwd)
       .example(
