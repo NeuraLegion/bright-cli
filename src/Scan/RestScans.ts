@@ -6,7 +6,6 @@ import {
   ScanState,
   SourceType,
   StorageFile,
-  SCAN_TESTS_TO_RUN_BY_DEFAULT,
   ATTACK_PARAM_LOCATIONS_DEFAULT,
   ScanCreateResponse
 } from './Scans';
@@ -23,6 +22,7 @@ export interface RestScansOptions {
   timeout?: number;
   insecure?: boolean;
   proxyURL?: string;
+  proxyDomains?: string[];
 }
 
 export const RestScansOptions: unique symbol = Symbol('RestScansOptions');
@@ -150,15 +150,10 @@ export class RestScans implements Scans {
   private async applyDefaultSettings(
     scanConfig: Omit<ScanConfig, 'headers'>
   ): Promise<Omit<ScanConfig, 'headers'>> {
-    const tests =
-      scanConfig.tests ??
-      (scanConfig.buckets ?? scanConfig.templateId
-        ? undefined
-        : [...SCAN_TESTS_TO_RUN_BY_DEFAULT]);
     const attackParamLocations =
-      scanConfig.attackParamLocations ?? scanConfig.templateId
-        ? undefined
-        : [...ATTACK_PARAM_LOCATIONS_DEFAULT];
+      scanConfig.attackParamLocations ??
+      (scanConfig.templateId ? undefined : [...ATTACK_PARAM_LOCATIONS_DEFAULT]);
+
     const exclusions =
       scanConfig.exclusions?.params || scanConfig.exclusions?.requests
         ? scanConfig.exclusions
@@ -171,8 +166,7 @@ export class RestScans implements Scans {
       ...scanConfig,
       attackParamLocations,
       discoveryTypes,
-      exclusions,
-      tests
+      exclusions
     };
   }
 }

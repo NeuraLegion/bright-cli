@@ -3,15 +3,14 @@ import {
   Module,
   RequestExclusion,
   RestScansOptions,
-  SCAN_TESTS_TO_RUN_BY_DEFAULT,
   ScanConfig,
   Scans,
-  TestType,
   ATTACK_PARAM_LOCATIONS_DEFAULT
 } from '../Scan';
 import { Helpers, logger } from '../Utils';
 import { Arguments, Argv, CommandModule } from 'yargs';
 import { container } from 'tsyringe';
+import { EOL } from 'node:os';
 
 export class RunScan implements CommandModule {
   public readonly command = 'scan:run [options]';
@@ -78,12 +77,13 @@ export class RunScan implements CommandModule {
           'A list of specific urls that should be included into crawler.'
       })
       .option('test', {
-        choices: Helpers.toArray(TestType),
-        defaultDescription: `[${SCAN_TESTS_TO_RUN_BY_DEFAULT.map(
-          (item) => `"${item}"`
-        ).join(',')}]`,
         array: true,
-        describe: 'A list of tests which you want to run during a scan.'
+        describe:
+          'A list of tests to run during a scan. ' +
+          `If no tests are specified, the default tests will be run.${EOL}` +
+          `For more information on the default tests, refer to the documentation: https://docs.brightsec.com/docs/running-a-scan${EOL}` +
+          'Additional details about available tests can be found here: ' +
+          'https://docs.brightsec.com/docs/vulnerability-guide'
       })
       .option('bucket', {
         array: true,
@@ -153,6 +153,14 @@ export class RunScan implements CommandModule {
         choices: Helpers.toArray(AttackParamLocation),
         describe: 'Defines which part of the request to attack.'
       })
+      .option('entrypoint', {
+        array: true,
+        alias: 'e',
+        describe:
+          'A list of entry points to start the scan from' +
+          'The maximum number of entry points allowed is 2000' +
+          'Pass an empty list to use the first 2000 entry points of project'
+      })
       .group(['archive', 'crawler'], 'Discovery Options')
       .group(
         ['host-filter', 'header', 'module', 'repeater', 'test', 'smart'],
@@ -164,7 +172,7 @@ export class RunScan implements CommandModule {
             insecure: args.insecure as boolean,
             baseURL: args.api as string,
             apiKey: args.token as string,
-            proxyURL: (args.proxyExternal ?? args.proxy) as string
+            proxyURL: (args.proxyBright ?? args.proxy) as string
           }
         })
       );
@@ -192,7 +200,8 @@ export class RunScan implements CommandModule {
         exclusions: {
           requests: args.excludeEntryPoint,
           params: args.excludeParam
-        }
+        },
+        entryPointIds: args.entrypoint
       } as ScanConfig);
 
       // eslint-disable-next-line no-console

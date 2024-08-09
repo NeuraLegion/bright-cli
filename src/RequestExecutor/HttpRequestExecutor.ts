@@ -1,7 +1,7 @@
 import { RequestExecutor } from './RequestExecutor';
 import { Response } from './Response';
 import { Request, RequestOptions } from './Request';
-import { logger, ProxyFactory } from '../Utils';
+import { Helpers, logger, ProxyFactory } from '../Utils';
 import { VirtualScripts } from '../Scripts';
 import { Protocol } from './Protocol';
 import { RequestExecutorOptions } from './RequestExecutorOptions';
@@ -39,6 +39,7 @@ export class HttpRequestExecutor implements RequestExecutor {
   private readonly httpsProxyAgent?: https.Agent;
   private readonly httpAgent?: http.Agent;
   private readonly httpsAgent?: https.Agent;
+  private readonly proxyDomains?: RegExp[];
 
   get protocol(): Protocol {
     return Protocol.HTTP;
@@ -64,6 +65,12 @@ export class HttpRequestExecutor implements RequestExecutor {
 
       this.httpsAgent = new https.Agent(agentOptions);
       this.httpAgent = new http.Agent(agentOptions);
+    }
+
+    if (this.options.proxyDomains) {
+      this.proxyDomains = this.options.proxyDomains.map((domain) =>
+        Helpers.wildcardToRegExp(domain)
+      );
     }
   }
 
@@ -190,6 +197,15 @@ export class HttpRequestExecutor implements RequestExecutor {
   }
 
   private getRequestAgent(options: Request) {
+    if (
+      this.proxyDomains &&
+      !this.proxyDomains.some((domain) =>
+        domain.test(parseUrl(options.url).hostname)
+      )
+    ) {
+      return options.secureEndpoint ? this.httpsAgent : this.httpAgent;
+    }
+
     return options.secureEndpoint
       ? this.httpsProxyAgent ?? this.httpsAgent
       : this.httpProxyAgent ?? this.httpAgent;
