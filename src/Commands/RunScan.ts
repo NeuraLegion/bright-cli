@@ -8,9 +8,9 @@ import {
   ATTACK_PARAM_LOCATIONS_DEFAULT
 } from '../Scan';
 import { Helpers, logger } from '../Utils';
-import { RestEntryPoints, RestProjectsOptions } from '../EntryPoint';
 import { Arguments, Argv, CommandModule } from 'yargs';
 import { container } from 'tsyringe';
+import { isAxiosError } from 'axios';
 import { EOL } from 'node:os';
 
 export class RunScan implements CommandModule {
@@ -166,30 +166,20 @@ export class RunScan implements CommandModule {
         'Additional Options'
       )
       .middleware((args: Arguments) =>
-        container
-          .register<RestScansOptions>(RestScansOptions, {
-            useValue: {
-              insecure: args.insecure as boolean,
-              baseURL: args.api as string,
-              apiKey: args.token as string,
-              proxyURL: (args.proxyExternal ?? args.proxy) as string
-            }
-          })
-          .register<RestProjectsOptions>(RestProjectsOptions, {
-            useValue: {
-              insecure: args.insecure as boolean,
-              baseURL: args.api as string,
-              apiKey: args.token as string,
-              proxyURL: (args.proxyExternal ?? args.proxy) as string
-            }
-          })
+        container.register<RestScansOptions>(RestScansOptions, {
+          useValue: {
+            insecure: args.insecure as boolean,
+            baseURL: args.api as string,
+            apiKey: args.token as string,
+            proxyURL: (args.proxyExternal ?? args.proxy) as string
+          }
+        })
       );
   }
 
   public async handler(args: Arguments): Promise<void> {
     try {
       const scanManager: Scans = container.resolve(Scans);
-      await this.validateParams(args, scanManager);
       const { id: scanId, warnings = [] } = await scanManager.create({
         tests: args.test,
         name: args.name,
@@ -223,70 +213,12 @@ export class RunScan implements CommandModule {
 
       process.exit(0);
     } catch (e) {
-      logger.error(`Error during "scan:run": ${e.error || e.message}`);
-      process.exit(1);
-    }
-  }
-
-  private async validateParams(
-    args: Arguments,
-    scanManager: Scans
-  ): Promise<void> {
-    const projectId = args.project as string;
-    if (!projectId) {
-      logger.error(
-        'Please specify a project ID with the --project (-p) option to run a scan with entrypoints using the --entrypoint option.\n\nExamples:\nbright scan:run --project <project_id> --entrypoint\nbright scan:run --project <project_id> --entrypoint <entry_point_id1> <entry_point_id2> <entry_point_id3>'
-      );
-      process.exit(1);
-    }
-
-    const isProjectExist = await scanManager.isProjectExist(projectId);
-    if (!isProjectExist) {
-      logger.error(
-        `The specified project ID ${projectId} does not exist.\nPlease verify the project ID and try again.`
-      );
-      process.exit(1);
-    }
-
-    const entryPointIds = args.entrypoint as string[];
-    if (entryPointIds?.length) {
-      const maxAllowedEntryPoints = 2000;
-      if (entryPointIds.length > maxAllowedEntryPoints) {
-        logger.error(
-          `You have specified ${entryPointIds.length} entrypoints, maximum of ${maxAllowedEntryPoints} entrypoints allowed in a single scan.\nPlease reduce the number and try again.`
-        );
+      if (isAxiosError(e) && e.code === 'ERR_BAD_REQUEST') {
+        logger.error(`Error during "scan:run": ${e.response?.data}`);
         process.exit(1);
       }
 
-      await this.validateEntryPointsFromSameProject(
-        projectId,
-        args.entrypoint as string[]
-      );
-    }
-  }
-
-  private async validateEntryPointsFromSameProject(
-    projectId: string,
-    entryPointIds: string[]
-  ): Promise<void> {
-    const entryPoints: RestEntryPoints = container.resolve(RestEntryPoints);
-    const invalidEntryPointIds: string[] = [];
-    for (const entryPointId of entryPointIds) {
-      const entryPointDetails = await entryPoints.getEntryPointDetails(
-        projectId,
-        entryPointId
-      );
-      if (!entryPointDetails) {
-        invalidEntryPointIds.push(entryPointId);
-      }
-    }
-
-    if (invalidEntryPointIds.length) {
-      logger.error(
-        `The following entrypoint IDs do not belong to the specified project ID ${projectId}.\nPlease ensure all entrypoint IDs belong to the specified project and try again.\n\nInvalid entrypoint IDs:\n${invalidEntryPointIds.join(
-          ', '
-        )}`
-      );
+      logger.error(`Error during "scan:run": ${e.error || e.message}`);
       process.exit(1);
     }
   }

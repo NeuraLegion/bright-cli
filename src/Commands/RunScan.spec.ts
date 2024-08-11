@@ -148,7 +148,6 @@ describe('RunScan', () => {
           })
         )
       ).thenResolve({ id: 'test-scan-id', warnings: [] });
-      when(mockedScans.isProjectExist('test-project')).thenResolve(true);
 
       // act
       await runScan.handler(args);
@@ -163,7 +162,6 @@ describe('RunScan', () => {
       // arrange
       const args = {
         name: 'test-scan',
-        project: 'test-project',
         _: [],
         $0: ''
       } as Arguments;
@@ -177,7 +175,6 @@ describe('RunScan', () => {
           })
         )
       ).thenReject(new Error(errMessage));
-      when(mockedScans.isProjectExist('test-project')).thenResolve(true);
 
       // act
       await runScan.handler(args);
