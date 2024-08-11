@@ -114,8 +114,6 @@ export interface Scans {
   delete(scanId: string): Promise<void>;
 
   status(scanId: string): Promise<ScanState>;
-
-  isProjectExist(projectId: string): Promise<boolean>;
 }
 
 export const Scans: unique symbol = Symbol('Scans');

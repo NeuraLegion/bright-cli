@@ -22,6 +22,7 @@ export interface RestScansOptions {
   timeout?: number;
   insecure?: boolean;
   proxyURL?: string;
+  proxyDomains?: string[];
 }
 
 export const RestScansOptions: unique symbol = Symbol('RestScansOptions');
@@ -87,16 +88,6 @@ export class RestScans implements Scans {
 
   public async delete(scanId: string): Promise<void> {
     await this.client.delete(`/api/v1/scans/${scanId}`);
-  }
-
-  public async isProjectExist(projectId: string): Promise<boolean> {
-    try {
-      await this.client.get(`/api/v1/projects/${projectId}`);
-    } catch (error) {
-      return false;
-    }
-
-    return true;
   }
 
   private async prepareScanConfig({ headers, ...rest }: ScanConfig): Promise<

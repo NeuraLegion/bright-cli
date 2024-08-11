@@ -1,8 +1,4 @@
-import {
-  EntryPoints,
-  EntryPoint,
-  GetEntryPointDetailsResponse
-} from './EntryPoints';
+import { EntryPoints, EntryPoint } from './EntryPoints';
 import { ProxyFactory } from '../Utils';
 import axios, { Axios } from 'axios';
 import { inject, injectable } from 'tsyringe';
@@ -15,6 +11,7 @@ export interface RestProjectsOptions {
   timeout?: number;
   insecure?: boolean;
   proxyURL?: string;
+  proxyDomains?: string[];
 }
 
 export const RestProjectsOptions: unique symbol = Symbol('RestProjectsOptions');
@@ -60,20 +57,5 @@ export class RestEntryPoints implements EntryPoints {
     );
 
     return res.data.items;
-  }
-
-  public async getEntryPointDetails(
-    projectId: string,
-    entryPointId: string
-  ): Promise<GetEntryPointDetailsResponse> {
-    try {
-      const res = await this.client.get<GetEntryPointDetailsResponse>(
-        `api/v2/projects/${projectId}/entry-points/${entryPointId}`
-      );
-
-      return res.data;
-    } catch (_) {
-      return undefined;
-    }
   }
 }

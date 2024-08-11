@@ -180,6 +180,7 @@ export class RunScan implements CommandModule {
   public async handler(args: Arguments): Promise<void> {
     try {
       const scanManager: Scans = container.resolve(Scans);
+
       const { id: scanId, warnings = [] } = await scanManager.create({
         tests: args.test,
         name: args.name,
