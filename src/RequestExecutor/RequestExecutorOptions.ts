@@ -8,6 +8,7 @@ export interface RequestExecutorOptions {
   whitelistMimes?: string[];
   maxContentLength?: number;
   reuseConnection?: boolean;
+  proxyDomains?: string[];
 }
 
 export const RequestExecutorOptions: unique symbol = Symbol(

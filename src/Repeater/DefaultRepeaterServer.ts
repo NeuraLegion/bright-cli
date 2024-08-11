@@ -32,6 +32,7 @@ export interface DefaultRepeaterServerOptions {
   readonly connectTimeout?: number;
   readonly proxyUrl?: string;
   readonly insecure?: boolean;
+  readonly proxyDomains?: string[];
 }
 
 export const DefaultRepeaterServerOptions: unique symbol = Symbol(
@@ -50,7 +51,6 @@ const enum SocketEvents {
   ERROR = 'error',
   UPDATE_AVAILABLE = 'update-available',
   SCRIPT_UPDATED = 'scripts-updated',
-  PING = 'ping',
   REQUEST = 'request'
 }
 
@@ -80,13 +80,11 @@ interface SocketEmitEventMap {
     runtime?: DeploymentRuntime
   ) => void;
   [SocketEvents.UNDEPLOY]: () => void;
-  [SocketEvents.PING]: () => void;
 }
 
 @injectable()
 export class DefaultRepeaterServer implements RepeaterServer {
   private readonly MAX_DEPLOYMENT_TIMEOUT = 60_000;
-  private readonly MAX_PING_INTERVAL = 10_000;
   private readonly MAX_RECONNECTION_ATTEMPTS = 20;
   private readonly MIN_RECONNECTION_DELAY = 1000;
   private readonly MAX_RECONNECTION_DELAY = 86_400_000;
@@ -96,7 +94,6 @@ export class DefaultRepeaterServer implements RepeaterServer {
     HandlerFunction
   >();
   private latestReconnectionError?: Error;
-  private pingTimer?: Timer;
   private connectionTimer?: Timer;
   private _socket?: Socket<SocketListeningEventMap, SocketEmitEventMap>;
   private connectionAttempts = 0;
@@ -119,7 +116,6 @@ export class DefaultRepeaterServer implements RepeaterServer {
 
   public disconnect() {
     this.events.removeAllListeners();
-    this.clearPingTimer();
     this.clearConnectionTimer();
 
     this._socket?.disconnect();
@@ -145,8 +141,6 @@ export class DefaultRepeaterServer implements RepeaterServer {
         ).unref()
       )
     ]);
-
-    this.createPingTimer();
 
     return result;
   }
@@ -372,8 +366,6 @@ export class DefaultRepeaterServer implements RepeaterServer {
   };
 
   private handleDisconnect = (reason: string): void => {
-    this.clearPingTimer();
-
     if (reason !== 'io client disconnect') {
       this.events.emit(RepeaterServerEvents.DISCONNECTED);
     }
@@ -392,20 +384,5 @@ export class DefaultRepeaterServer implements RepeaterServer {
       args
     );
     logger.error(error);
-  }
-
-  private createPingTimer() {
-    this.clearPingTimer();
-
-    this.pingTimer = setInterval(
-      () => this.socket.volatile.emit(SocketEvents.PING),
-      this.MAX_PING_INTERVAL
-    ).unref();
-  }
-
-  private clearPingTimer() {
-    if (this.pingTimer) {
-      clearInterval(this.pingTimer);
-    }
   }
 }

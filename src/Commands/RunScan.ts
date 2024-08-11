@@ -171,7 +171,7 @@ export class RunScan implements CommandModule {
             insecure: args.insecure as boolean,
             baseURL: args.api as string,
             apiKey: args.token as string,
-            proxyURL: (args.proxyExternal ?? args.proxy) as string
+            proxyURL: (args.proxyBright ?? args.proxy) as string
           }
         })
       );
