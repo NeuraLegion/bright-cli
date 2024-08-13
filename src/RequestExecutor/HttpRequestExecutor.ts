@@ -212,7 +212,7 @@ export class HttpRequestExecutor implements RequestExecutor {
   }
 
   private async truncateResponse(
-    { decompress, encoding, maxContentSize }: Request,
+    { decompress, encoding, maxContentSize, url }: Request,
     res: IncomingMessage
   ) {
     if (this.responseHasNoBody(res)) {
@@ -223,17 +223,28 @@ export class HttpRequestExecutor implements RequestExecutor {
 
     const contentType = this.parseContentType(res);
     const { type } = contentType;
-    const requiresTruncating = !this.options.whitelistMimes?.some(
-      (mime: string) => type.startsWith(mime)
+    const whiteListedMimeType = this.options.whitelistMimes?.find((mime) =>
+      type.startsWith(mime.type)
     );
+    const maxSize = whiteListedMimeType
+      ? this.options.maxBodySize
+      : (maxContentSize ?? this.options.maxContentLength) * 1024;
 
-    const maxBodySize =
-      (maxContentSize ?? this.options.maxContentLength) * 1024;
-    const body = await this.parseBody(res, {
-      maxBodySize,
-      requiresTruncating,
-      decompress
+    const { body, transform } = await this.parseBody(res, {
+      decompress,
+      allowTruncation:
+        !whiteListedMimeType || whiteListedMimeType.allowTruncation,
+      maxSize
     });
+
+    if (transform && whiteListedMimeType) {
+      logger.error(
+        `The original response body for URL %s was %s because it exceeded the maximum allowed size of %i bytes.`,
+        url,
+        transform,
+        maxSize
+      );
+    }
 
     res.headers['content-length'] = body.byteLength.toFixed();
 
@@ -308,11 +319,11 @@ export class HttpRequestExecutor implements RequestExecutor {
   private async parseBody(
     res: IncomingMessage,
     options: {
-      maxBodySize: number;
-      requiresTruncating: boolean;
+      maxSize: number;
+      allowTruncation: boolean;
       decompress: boolean;
     }
-  ): Promise<Buffer> {
+  ): Promise<{ body: Buffer; transform: 'truncated' | 'omitted' | false }> {
     const chunks: Buffer[] = [];
     const stream = options.decompress ? this.unzipBody(res) : res;
 
@@ -321,22 +332,45 @@ export class HttpRequestExecutor implements RequestExecutor {
     }
 
     let body = Buffer.concat(chunks);
+    let transform: 'truncated' | 'omitted' | false = false;
 
-    const truncated =
-      this.options.maxContentLength !== -1 &&
-      body.byteLength > options.maxBodySize &&
-      options.requiresTruncating;
-
-    if (truncated) {
-      logger.debug(
-        'Truncate original response body to %i bytes',
-        options.maxBodySize
-      );
-
-      body = body.subarray(0, options.maxBodySize);
+    if (body.byteLength > options.maxSize) {
+      const result = this.truncateBody(body, options);
+      body = result.body;
+      transform = result.transform;
     }
 
-    return body;
+    return { body, transform };
+  }
+
+  private truncateBody(
+    body: Buffer,
+    options: {
+      maxSize: number;
+      allowTruncation: boolean;
+    }
+  ): { body: Buffer; transform: 'truncated' | 'omitted' } {
+    if (options.allowTruncation) {
+      logger.debug(
+        'Truncate original response body to %i bytes',
+        options.maxSize
+      );
+
+      return {
+        body: body.subarray(0, options.maxSize),
+        transform: 'truncated'
+      };
+    } else {
+      logger.debug(
+        'Omit original response body because body is bigger than %i bytes',
+        options.maxSize
+      );
+
+      return {
+        body: Buffer.alloc(0),
+        transform: 'omitted'
+      };
+    }
   }
 
   /**
