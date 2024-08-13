@@ -80,6 +80,10 @@ export interface RepeaterUpgradeAvailableEvent {
   version: string;
 }
 
+export interface RepeaterLimitsEvent {
+  maxBodySize: number;
+}
+
 export interface RepeaterServerScriptsUpdatedEvent {
   script: string | Record<string, string>;
 }
@@ -107,6 +111,7 @@ export const enum RepeaterServerEvents {
   REQUEST = 'request',
   TEST_NETWORK = 'test_network',
   UPDATE_AVAILABLE = 'update_available',
+  LIMITS = 'limits',
   SCRIPTS_UPDATED = 'scripts_updated',
   RECONNECTION_FAILED = 'reconnection_failed',
   RECONNECT_ATTEMPT = 'reconnect_attempt',
@@ -123,6 +128,7 @@ export interface RepeaterServerEventsMap {
   [RepeaterServerEvents.REQUEST]: RepeaterServerRequestEvent;
   [RepeaterServerEvents.TEST_NETWORK]: RepeaterServerNetworkTestEvent;
   [RepeaterServerEvents.UPDATE_AVAILABLE]: RepeaterUpgradeAvailableEvent;
+  [RepeaterServerEvents.LIMITS]: RepeaterLimitsEvent;
   [RepeaterServerEvents.SCRIPTS_UPDATED]: RepeaterServerScriptsUpdatedEvent;
   [RepeaterServerEvents.RECONNECTION_FAILED]: RepeaterServerReconnectionFailedEvent;
   [RepeaterServerEvents.RECONNECT_ATTEMPT]: RepeaterServerReconnectionAttemptedEvent;
