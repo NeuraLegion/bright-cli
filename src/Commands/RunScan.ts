@@ -214,12 +214,13 @@ export class RunScan implements CommandModule {
 
       process.exit(0);
     } catch (e) {
-      if (isAxiosError(e) && e.code === 'ERR_BAD_REQUEST') {
-        logger.error(`Error during "scan:run": ${e.response?.data}`);
-        process.exit(1);
-      }
-
-      logger.error(`Error during "scan:run": ${e.error || e.message}`);
+      const errMessage =
+        isAxiosError(e) &&
+        typeof e.response?.data === 'string' &&
+        (e.response?.status === 400 || e.response?.status === 429)
+          ? e.response.data
+          : e.error || e.message;
+      logger.error(`Error during "scan:run": ${errMessage}`);
       process.exit(1);
     }
   }
