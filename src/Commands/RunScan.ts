@@ -215,8 +215,7 @@ export class RunScan implements CommandModule {
       process.exit(0);
     } catch (e) {
       const errMessage =
-        isAxiosError(e) &&
-        typeof e.response?.data === 'string' &&
+        isAxiosError(e) && typeof e.response?.data === 'string'
           ? e.response.data
           : e.error || e.message;
       logger.error(`Error during "scan:run": ${errMessage}`);
