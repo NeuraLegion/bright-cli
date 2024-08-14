@@ -217,7 +217,6 @@ export class RunScan implements CommandModule {
       const errMessage =
         isAxiosError(e) &&
         typeof e.response?.data === 'string' &&
-        (e.response?.status === 400 || e.response?.status === 429)
           ? e.response.data
           : e.error || e.message;
       logger.error(`Error during "scan:run": ${errMessage}`);
