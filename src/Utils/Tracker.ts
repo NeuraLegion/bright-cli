@@ -1,49 +1,76 @@
 import axios from 'axios';
 import { Arguments } from 'yargs';
 
+export interface Event {
+  subject: SubjectType;
+  event: EventType;
+  properties: Record<string, unknown>;
+}
+
+enum SubjectType {
+  CLI = 'cli'
+}
+
+export enum EventType {
+  CLI_COMMAND = 'CLI command'
+}
+
 export class Tracker {
+  // eslint-disable-next-line @typescript-eslint/require-await
   public static async trackCommandUsage(args: Arguments) {
     const baseUrl = args.api as string;
-    // TODO: replace with final analytics endpoint
-    const url = `${baseUrl}/analytics/events`;
+    const url = `${baseUrl}/api/v1/events`;
     const command = args._.join(' ');
-    const data = {
-      command,
-      event: 'CLI-command',
-      token: args.token,
-      hostname: args.cluster || args.hostname,
-      arguments: this.filterArguments({ ...args })
+    const event: Event = {
+      subject: SubjectType.CLI,
+      event: EventType.CLI_COMMAND,
+      properties: {
+        command,
+        hostname: args.cluster || args.hostname,
+        arguments: this.filterArguments({ ...args })
+      }
     };
 
-    // Send CLI-command event
-    try {
-      await axios.post(url, data);
-    } catch (e) {
-      // eslint-disable-next-line no-console
-      console.error('CLI-command error tracking event:', e.message);
-    }
+    axios
+      .post(url, event, {
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${args.token}`
+        }
+      })
+      .catch((e) => {
+        // eslint-disable-next-line no-console
+        console.error('Error tracking CLI-command event:', e.message);
+      });
   }
 
-  // Blacklist function to filter out arguments
   private static filterArguments(
     args: Record<string, any>
   ): Record<string, any> {
-    const blacklist = [
-      '_',
-      '$0',
-      't',
+    const whitelist = [
+      'b',
+      'breakpoint',
+      'bucket',
       'cluster',
       'hostname',
-      'token',
-      'password',
-      'repeaterServer',
-      'bus',
-      'api'
+      'insecure',
+      'interval',
+      'log-level',
+      'module',
+      'param',
+      'smart',
+      'template',
+      'test',
+      'timeout',
+      'tp',
+      'type',
+      'verbose'
     ];
+
     const filteredArgs: Record<string, any> = {};
 
     for (const key of Object.keys(args)) {
-      if (!blacklist.includes(key)) {
+      if (whitelist.includes(key)) {
         filteredArgs[key] = args[key];
       }
     }
