@@ -19,7 +19,7 @@ export class Tracker {
   // eslint-disable-next-line @typescript-eslint/require-await
   public static async trackCommandUsage(args: Arguments) {
     const baseUrl = args.api as string;
-    const url = `${baseUrl}/api/v1/events`;
+    const url = `${baseUrl}/api/v1/analytics/events`;
     const command = args._.join(' ');
     const event: Event = {
       subject: SubjectType.CLI,
@@ -31,6 +31,7 @@ export class Tracker {
       }
     };
 
+    // fire-and-forget, so command execution won't be delayed
     axios
       .post(url, event, {
         headers: {
@@ -40,7 +41,7 @@ export class Tracker {
       })
       .catch((e) => {
         // eslint-disable-next-line no-console
-        console.error('Error tracking CLI-command event:', e.message);
+        console.warn('Error tracking CLI-command event:', e.message);
       });
   }
 
