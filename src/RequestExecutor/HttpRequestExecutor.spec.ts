@@ -211,10 +211,10 @@ describe('HttpRequestExecutor', () => {
       expect(response.body).toEqual(bigBody.slice(0, 1024));
     });
 
-    it('should not truncate response body if it is in allowed mime types', async () => {
-      when(spiedExecutorOptions.maxContentLength).thenReturn(1);
+    it('should not truncate response body if its smaller than limit and it is in allowed mime types', async () => {
+      when(spiedExecutorOptions.maxBodySize).thenReturn(1025);
       when(spiedExecutorOptions.whitelistMimes).thenReturn([
-        'application/x-custom'
+        { type: 'application/x-custom', allowTruncation: false }
       ]);
       const { request, requestOptions } = createRequest();
       const bigBody = 'x'.repeat(1025);
@@ -227,9 +227,44 @@ describe('HttpRequestExecutor', () => {
       expect(response.body).toEqual(bigBody);
     });
 
+    it('should truncate response body if its larger than limit and it is in allowed mime types that require truncation', async () => {
+      when(spiedExecutorOptions.maxBodySize).thenReturn(1024);
+      when(spiedExecutorOptions.whitelistMimes).thenReturn([
+        { type: 'text/plain', allowTruncation: true }
+      ]);
+      const { request, requestOptions } = createRequest();
+      const bigBody = 'x'.repeat(1025);
+      const expected = bigBody.slice(0, 1024);
+      nock(requestOptions.url).get('/').reply(200, bigBody, {
+        'content-type': 'text/plain'
+      });
+
+      const response = await executor.execute(request);
+
+      expect(response.body).toEqual(expected);
+    });
+
+    it('should omit response body if its larger than limit and it is in allowed mime types that require omission', async () => {
+      when(spiedExecutorOptions.maxBodySize).thenReturn(1024);
+      when(spiedExecutorOptions.whitelistMimes).thenReturn([
+        { type: 'application/json', allowTruncation: false }
+      ]);
+      const { request, requestOptions } = createRequest();
+      const bigBody = 'x'.repeat(1025);
+      nock(requestOptions.url).get('/').reply(200, bigBody, {
+        'content-type': 'application/json'
+      });
+
+      const response = await executor.execute(request);
+
+      expect(response.body).toEqual('');
+    });
+
     it('should decode response body if content-encoding is brotli', async () => {
-      when(spiedExecutorOptions.maxContentLength).thenReturn(1);
-      when(spiedExecutorOptions.whitelistMimes).thenReturn(['text/plain']);
+      when(spiedExecutorOptions.maxBodySize).thenReturn(1025);
+      when(spiedExecutorOptions.whitelistMimes).thenReturn([
+        { type: 'text/plain', allowTruncation: true }
+      ]);
       const { request, requestOptions } = createRequest();
       const expected = 'x'.repeat(1025);
       const bigBody = await promisify(brotliCompress)(expected);
@@ -244,8 +279,10 @@ describe('HttpRequestExecutor', () => {
     });
 
     it('should prevent decoding response body if decompress option is disabled', async () => {
-      when(spiedExecutorOptions.maxContentLength).thenReturn(1);
-      when(spiedExecutorOptions.whitelistMimes).thenReturn(['text/plain']);
+      when(spiedExecutorOptions.maxBodySize).thenReturn(1024);
+      when(spiedExecutorOptions.whitelistMimes).thenReturn([
+        { type: 'text/plain', allowTruncation: true }
+      ]);
       const { request, requestOptions } = createRequest({
         decompress: false,
         encoding: 'base64'
@@ -267,8 +304,10 @@ describe('HttpRequestExecutor', () => {
     });
 
     it('should decode response body if content-encoding is gzip', async () => {
-      when(spiedExecutorOptions.maxContentLength).thenReturn(1);
-      when(spiedExecutorOptions.whitelistMimes).thenReturn(['text/plain']);
+      when(spiedExecutorOptions.maxBodySize).thenReturn(1025);
+      when(spiedExecutorOptions.whitelistMimes).thenReturn([
+        { type: 'text/plain', allowTruncation: true }
+      ]);
       const { request, requestOptions } = createRequest();
       const expected = 'x'.repeat(1025);
       const bigBody = await promisify(gzip)(expected, {
@@ -286,8 +325,10 @@ describe('HttpRequestExecutor', () => {
     });
 
     it('should decode response body if content-encoding is deflate', async () => {
-      when(spiedExecutorOptions.maxContentLength).thenReturn(1);
-      when(spiedExecutorOptions.whitelistMimes).thenReturn(['text/plain']);
+      when(spiedExecutorOptions.maxBodySize).thenReturn(1025);
+      when(spiedExecutorOptions.whitelistMimes).thenReturn([
+        { type: 'text/plain', allowTruncation: true }
+      ]);
       const { request, requestOptions } = createRequest();
       const expected = 'x'.repeat(1025);
       const bigBody = await promisify(deflate)(expected, {
@@ -305,8 +346,10 @@ describe('HttpRequestExecutor', () => {
     });
 
     it('should decode response body if content-encoding is deflate and content does not have zlib headers', async () => {
-      when(spiedExecutorOptions.maxContentLength).thenReturn(1);
-      when(spiedExecutorOptions.whitelistMimes).thenReturn(['text/plain']);
+      when(spiedExecutorOptions.maxBodySize).thenReturn(1025);
+      when(spiedExecutorOptions.whitelistMimes).thenReturn([
+        { type: 'text/plain', allowTruncation: true }
+      ]);
       const { request, requestOptions } = createRequest();
       const expected = 'x'.repeat(1025);
       const bigBody = await promisify(deflateRaw)(expected, {
@@ -325,7 +368,9 @@ describe('HttpRequestExecutor', () => {
 
     it('should decode and truncate gzipped response body if content-type is not in allowed list', async () => {
       when(spiedExecutorOptions.maxContentLength).thenReturn(1);
-      when(spiedExecutorOptions.whitelistMimes).thenReturn(['text/plain']);
+      when(spiedExecutorOptions.whitelistMimes).thenReturn([
+        { type: 'text/plain', allowTruncation: true }
+      ]);
       const { request, requestOptions } = createRequest();
       const bigBody = 'x'.repeat(1025);
       const expected = bigBody.slice(0, 1024);
@@ -344,9 +389,9 @@ describe('HttpRequestExecutor', () => {
     });
 
     it('should not truncate response body if allowed mime type starts with actual one', async () => {
-      when(spiedExecutorOptions.maxContentLength).thenReturn(1);
+      when(spiedExecutorOptions.maxBodySize).thenReturn(1025);
       when(spiedExecutorOptions.whitelistMimes).thenReturn([
-        'application/x-custom'
+        { type: 'application/x-custom', allowTruncation: false }
       ]);
       const { request, requestOptions } = createRequest();
       const bigBody = 'x'.repeat(1025);
