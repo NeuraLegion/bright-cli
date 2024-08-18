@@ -40,7 +40,7 @@ describe('GetEntryPoints', () => {
       } as Arguments;
 
       when(processSpy.exit(anything())).thenReturn(undefined);
-      when(mockedEntryPoints.entrypoints('1')).thenResolve([
+      when(mockedEntryPoints.entrypoints('1', 10)).thenResolve([
         {
           id: '1',
           method: 'GET',

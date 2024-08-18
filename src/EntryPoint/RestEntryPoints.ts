@@ -51,11 +51,39 @@ export class RestEntryPoints implements EntryPoints {
     });
   }
 
-  public async entrypoints(projectId: string): Promise<EntryPoint[]> {
-    const res = await this.client.get(
-      `/api/v2/projects/${projectId}/entry-points`
-    );
+  public async entrypoints(
+    projectId: string,
+    limit: number = 10
+  ): Promise<EntryPoint[]> {
+    let l = limit;
+    const batchSize = 50;
+    const data: EntryPoint[] = [];
+    let nextId: string;
+    let nextCreatedAt: string;
 
-    return res.data.items;
+    while (l > 0) {
+      const res = await this.client.get(
+        `/api/v2/projects/${projectId}/entry-points`,
+        {
+          params: {
+            limit: Math.min(l, batchSize),
+            nextId,
+            nextCreatedAt
+          }
+        }
+      );
+
+      if (!res.data.items || res.data.items.length === 0) {
+        break;
+      }
+
+      data.push(...res.data.items);
+      nextId = res.data.items[res.data.items.length - 1].id;
+      nextCreatedAt = res.data.items[res.data.items.length - 1].createdAt;
+
+      l -= batchSize;
+    }
+
+    return data;
   }
 }
