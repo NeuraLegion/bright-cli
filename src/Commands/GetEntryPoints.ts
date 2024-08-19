@@ -30,6 +30,23 @@ export class GetEntryPoints implements CommandModule {
         describe: 'Limit the number of entrypoints',
         default: 10
       })
+      .option('connectivity', {
+        describe: 'Filter by connectivity',
+        array: true,
+        choices: [
+          'ok',
+          'unreachable',
+          'problem',
+          'skipped',
+          'unauthorized',
+          'unavailable'
+        ]
+      })
+      .option('status', {
+        describe: 'Filter by status',
+        array: true,
+        choices: ['new', 'changed', 'tested', 'vulnerable']
+      })
       .middleware((args: Arguments) =>
         container.register<RestProjectsOptions>(RestProjectsOptions, {
           useValue: {
@@ -48,7 +65,9 @@ export class GetEntryPoints implements CommandModule {
     try {
       const entryPoints: EntryPoint[] = await entryPointsManager.entrypoints(
         args.project as string,
-        args.limit as number
+        args.limit as number,
+        args.connectivity as string[],
+        args.status as string[]
       );
 
       if (args.verbose) {

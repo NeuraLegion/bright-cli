@@ -54,7 +54,9 @@ export class RestEntryPoints implements EntryPoints {
 
   public async entrypoints(
     projectId: string,
-    limit: number = 10
+    limit: number = 10,
+    connectivity?: string[],
+    status?: string[]
   ): Promise<EntryPoint[]> {
     let remaining = limit;
     const data: EntryPoint[] = [];
@@ -68,7 +70,9 @@ export class RestEntryPoints implements EntryPoints {
         params: {
           nextId,
           nextCreatedAt,
-          limit: Math.min(remaining, this.entrypointsPaginationBatchSize)
+          limit: Math.min(remaining, this.entrypointsPaginationBatchSize),
+          connectivity,
+          status,
         }
       });
 
