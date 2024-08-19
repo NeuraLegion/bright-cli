@@ -10,6 +10,7 @@ import {
 import { Helpers, logger } from '../Utils';
 import { Arguments, Argv, CommandModule } from 'yargs';
 import { container } from 'tsyringe';
+import { isAxiosError } from 'axios';
 import { EOL } from 'node:os';
 
 export class RunScan implements CommandModule {
@@ -157,9 +158,7 @@ export class RunScan implements CommandModule {
         array: true,
         alias: 'e',
         describe:
-          'A list of entry points to start the scan from' +
-          'The maximum number of entry points allowed is 2000' +
-          'Pass an empty list to use the first 2000 entry points of project'
+          'List entrypoint IDs to scan specific entrypoints. If no IDs are provided, the scan will run on the first 2000 project-level entrypoints. This option requires to specify the project ID using the --project option.'
       })
       .group(['archive', 'crawler'], 'Discovery Options')
       .group(
@@ -215,7 +214,11 @@ export class RunScan implements CommandModule {
 
       process.exit(0);
     } catch (e) {
-      logger.error(`Error during "scan:run": ${e.error || e.message}`);
+      const errMessage =
+        isAxiosError(e) && typeof e.response?.data === 'string'
+          ? e.response.data
+          : e.error || e.message;
+      logger.error(`Error during "scan:run": ${errMessage}`);
       process.exit(1);
     }
   }
