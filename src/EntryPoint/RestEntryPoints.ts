@@ -72,7 +72,7 @@ export class RestEntryPoints implements EntryPoints {
           nextCreatedAt,
           limit: Math.min(remaining, this.entrypointsPaginationBatchSize),
           connectivity,
-          status,
+          status
         }
       });
 
