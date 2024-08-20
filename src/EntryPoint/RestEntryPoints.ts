@@ -80,7 +80,7 @@ export class RestEntryPoints implements EntryPoints {
       data.push(...res.data.items);
       ({ id: nextId, createdAt: nextCreatedAt } = items[items.length - 1]);
 
-      l -= batchSize;
+      remaining -= batchSize;
     }
 
     return data;
