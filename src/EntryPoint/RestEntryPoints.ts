@@ -62,7 +62,7 @@ export class RestEntryPoints implements EntryPoints {
     let nextCreatedAt: string;
 
     while (l > 0) {
-      const res = await this.client.get(
+      const { data: { items = [] } } = await this.client.get(
         `/api/v2/projects/${projectId}/entry-points`,
         {
           params: {
