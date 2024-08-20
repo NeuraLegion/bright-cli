@@ -18,6 +18,7 @@ export const RestProjectsOptions: unique symbol = Symbol('RestProjectsOptions');
 
 @injectable()
 export class RestEntryPoints implements EntryPoints {
+  private readonly entrypointsPaginationBatchSize = 50;
   private readonly client: Axios;
 
   constructor(
@@ -56,31 +57,29 @@ export class RestEntryPoints implements EntryPoints {
     limit: number = 10
   ): Promise<EntryPoint[]> {
     let remaining = limit;
-    const batchSize = 50;
     const data: EntryPoint[] = [];
     let nextId: string;
     let nextCreatedAt: string;
 
-    while (l > 0) {
-      const { data: { items = [] } } = await this.client.get(
-        `/api/v2/projects/${projectId}/entry-points`,
-        {
-          params: {
-            nextId,
-            nextCreatedAt,
-            limit: Math.min(l, batchSize)
-          }
+    while (remaining > 0) {
+      const {
+        data: { items = [] }
+      } = await this.client.get(`/api/v2/projects/${projectId}/entry-points`, {
+        params: {
+          nextId,
+          nextCreatedAt,
+          limit: Math.min(remaining, this.entrypointsPaginationBatchSize)
         }
-      );
+      });
 
-      if (!res.data.items || res.data.items.length === 0) {
+      if (!items || items.length === 0) {
         break;
       }
 
-      data.push(...res.data.items);
+      data.push(...items);
       ({ id: nextId, createdAt: nextCreatedAt } = items[items.length - 1]);
 
-      remaining -= batchSize;
+      remaining -= this.entrypointsPaginationBatchSize;
     }
 
     return data;
