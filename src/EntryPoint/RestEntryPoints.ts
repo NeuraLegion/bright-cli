@@ -1,4 +1,4 @@
-import { EntryPoints, EntryPoint } from './EntryPoints';
+import { EntryPoints, EntryPoint, EntryPointFilter } from './EntryPoints';
 import { ProxyFactory } from '../Utils';
 import axios, { Axios } from 'axios';
 import { inject, injectable } from 'tsyringe';
@@ -52,13 +52,8 @@ export class RestEntryPoints implements EntryPoints {
     });
   }
 
-  public async entrypoints(
-    projectId: string,
-    limit: number = 10,
-    connectivity?: string[],
-    status?: string[]
-  ): Promise<EntryPoint[]> {
-    let remaining = limit;
+  public async entrypoints(filter: EntryPointFilter): Promise<EntryPoint[]> {
+    let remaining = filter.limit ?? 10;
     const data: EntryPoint[] = [];
     let nextId: string;
     let nextCreatedAt: string;
@@ -66,15 +61,18 @@ export class RestEntryPoints implements EntryPoints {
     while (remaining > 0) {
       const {
         data: { items = [] }
-      } = await this.client.get(`/api/v2/projects/${projectId}/entry-points`, {
-        params: {
-          nextId,
-          nextCreatedAt,
-          limit: Math.min(remaining, this.entrypointsPaginationBatchSize),
-          connectivity,
-          status
+      } = await this.client.get(
+        `/api/v2/projects/${filter.projectId}/entry-points`,
+        {
+          params: {
+            nextId,
+            nextCreatedAt,
+            connectivity: filter.connectivity,
+            status: filter.status,
+            limit: Math.min(remaining, this.entrypointsPaginationBatchSize)
+          }
         }
-      });
+      );
 
       if (!items.length) {
         break;

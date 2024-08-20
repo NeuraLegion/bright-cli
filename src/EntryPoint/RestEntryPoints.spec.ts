@@ -38,7 +38,10 @@ describe('RestEntryPoints', () => {
         .get('/api/v2/projects/1/entry-points?limit=10')
         .reply(200, { items: [{ id: 1, name: 'entrypoint1' }] });
 
-      const result = await restEntryPoints.entrypoints('1', 10);
+      const result = await restEntryPoints.entrypoints({
+        projectId: '1',
+        limit: 10
+      });
 
       expect(result).toEqual([{ id: 1, name: 'entrypoint1' }]);
     });
@@ -94,7 +97,10 @@ describe('RestEntryPoints', () => {
           ]
         });
 
-      const result = await restEntryPoints.entrypoints('1', 111);
+      const result = await restEntryPoints.entrypoints({
+        projectId: '1',
+        limit: 111
+      });
 
       expect(result).toEqual([
         { id: 1, name: 'entrypoint1', createdAt: '2024-08-06T09:40:50.226Z' },
