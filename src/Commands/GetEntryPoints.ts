@@ -63,12 +63,12 @@ export class GetEntryPoints implements CommandModule {
     const entryPointsManager: EntryPoints = container.resolve(EntryPoints);
 
     try {
-      const entryPoints: EntryPoint[] = await entryPointsManager.entrypoints(
-        args.project as string,
-        args.limit as number,
-        args.connectivity as string[],
-        args.status as string[]
-      );
+      const entryPoints: EntryPoint[] = await entryPointsManager.entrypoints({
+        projectId: args.project as string,
+        limit: args.limit as number,
+        connectivity: args.connectivity as string[],
+        status: args.status as string[]
+      });
 
       if (args.verbose) {
         // eslint-disable-next-line no-console
