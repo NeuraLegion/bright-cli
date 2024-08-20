@@ -72,7 +72,7 @@ export class RestEntryPoints implements EntryPoints {
         }
       });
 
-      if (!items || items.length === 0) {
+      if (!items.length) {
         break;
       }
 
