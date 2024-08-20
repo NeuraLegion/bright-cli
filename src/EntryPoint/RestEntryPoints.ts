@@ -55,7 +55,7 @@ export class RestEntryPoints implements EntryPoints {
     projectId: string,
     limit: number = 10
   ): Promise<EntryPoint[]> {
-    let l = limit;
+    let remaining = limit;
     const batchSize = 50;
     const data: EntryPoint[] = [];
     let nextId: string;
@@ -66,9 +66,9 @@ export class RestEntryPoints implements EntryPoints {
         `/api/v2/projects/${projectId}/entry-points`,
         {
           params: {
-            limit: Math.min(l, batchSize),
             nextId,
-            nextCreatedAt
+            nextCreatedAt,
+            limit: Math.min(l, batchSize)
           }
         }
       );
@@ -78,8 +78,7 @@ export class RestEntryPoints implements EntryPoints {
       }
 
       data.push(...res.data.items);
-      nextId = res.data.items[res.data.items.length - 1].id;
-      nextCreatedAt = res.data.items[res.data.items.length - 1].createdAt;
+      ({ id: nextId, createdAt: nextCreatedAt } = items[items.length - 1]);
 
       l -= batchSize;
     }
