@@ -26,6 +26,10 @@ export class GetEntryPoints implements CommandModule {
         boolean: true,
         default: false
       })
+      .option('limit', {
+        describe: 'Limit the number of entrypoints',
+        default: 10
+      })
       .middleware((args: Arguments) =>
         container.register<RestProjectsOptions>(RestProjectsOptions, {
           useValue: {
@@ -43,7 +47,8 @@ export class GetEntryPoints implements CommandModule {
 
     try {
       const entryPoints: EntryPoint[] = await entryPointsManager.entrypoints(
-        args.project as string
+        args.project as string,
+        args.limit as number
       );
 
       if (args.verbose) {
