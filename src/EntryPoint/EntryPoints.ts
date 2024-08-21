@@ -6,7 +6,7 @@ export interface EntryPointsListOptions {
 }
 
 export interface EntryPoints {
-  entrypoints(filter: EntryPointFilter): Promise<EntryPoint[]>;
+  entrypoints(filter: EntryPointsListOptions): Promise<EntryPoint[]>;
 }
 
 export const EntryPoints: unique symbol = Symbol('EntryPoints');
