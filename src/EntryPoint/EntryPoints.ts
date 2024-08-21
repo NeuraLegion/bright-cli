@@ -1,4 +1,4 @@
-export interface EntryPointFilter {
+export interface EntryPointsListOptions {
   projectId: string;
   limit?: number;
   connectivity?: string[];
