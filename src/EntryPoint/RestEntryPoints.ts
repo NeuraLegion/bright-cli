@@ -67,8 +67,7 @@ export class RestEntryPoints implements EntryPoints {
           params: {
             nextId,
             nextCreatedAt,
-            connectivity: filter.connectivity,
-            status: filter.status,
+            ...filters,
             limit: Math.min(remaining, this.entrypointsPaginationBatchSize)
           }
         }
