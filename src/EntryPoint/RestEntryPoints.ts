@@ -1,4 +1,4 @@
-import { EntryPoints, EntryPoint } from './EntryPoints';
+import { EntryPoints, EntryPoint, EntryPointsListOptions } from './EntryPoints';
 import { ProxyFactory } from '../Utils';
 import axios, { Axios } from 'axios';
 import { inject, injectable } from 'tsyringe';
@@ -52,10 +52,11 @@ export class RestEntryPoints implements EntryPoints {
     });
   }
 
-  public async entrypoints(
-    projectId: string,
-    limit: number = 10
-  ): Promise<EntryPoint[]> {
+  public async entrypoints({
+    limit = 10,
+    projectId,
+    ...filters
+  }: EntryPointsListOptions): Promise<EntryPoint[]> {
     let remaining = limit;
     const data: EntryPoint[] = [];
     let nextId: string;
@@ -68,6 +69,7 @@ export class RestEntryPoints implements EntryPoints {
         params: {
           nextId,
           nextCreatedAt,
+          ...filters,
           limit: Math.min(remaining, this.entrypointsPaginationBatchSize)
         }
       });

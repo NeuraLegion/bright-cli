@@ -6,8 +6,7 @@ import {
   Exclusions,
   Module,
   Scans,
-  ScanWarning,
-  TestType
+  ScanWarning
 } from '../Scan';
 import {
   anything,
@@ -128,7 +127,7 @@ describe('RunScan', () => {
       when(
         mockedScans.create(
           objectContaining({
-            tests: args.test as TestType[],
+            tests: args.test as string[],
             name: args.name as string,
             module: args.module as Module,
             authObjectId: args.auth as string,

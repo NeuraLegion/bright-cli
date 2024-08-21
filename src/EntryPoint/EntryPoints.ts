@@ -1,5 +1,12 @@
+export interface EntryPointsListOptions {
+  projectId: string;
+  limit?: number;
+  connectivity?: string[];
+  status?: string[];
+}
+
 export interface EntryPoints {
-  entrypoints(projectId: string, limit: number): Promise<EntryPoint[]>;
+  entrypoints(filter: EntryPointsListOptions): Promise<EntryPoint[]>;
 }
 
 export const EntryPoints: unique symbol = Symbol('EntryPoints');
