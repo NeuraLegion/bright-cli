@@ -52,8 +52,8 @@ export class RestEntryPoints implements EntryPoints {
     });
   }
 
-  public async entrypoints(filter: EntryPointFilter): Promise<EntryPoint[]> {
-    let remaining = filter.limit ?? 10;
+  public async entrypoints({ limit = 10, projectId, ...filters }: EntryPointFilter): Promise<EntryPoint[]> {
+    let remaining = limit;
     const data: EntryPoint[] = [];
     let nextId: string;
     let nextCreatedAt: string;
