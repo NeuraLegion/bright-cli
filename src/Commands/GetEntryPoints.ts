@@ -26,6 +26,27 @@ export class GetEntryPoints implements CommandModule {
         boolean: true,
         default: false
       })
+      .option('limit', {
+        describe: 'Limit the number of entrypoints',
+        default: 10
+      })
+      .option('connectivity', {
+        describe: 'Filter by connectivity',
+        array: true,
+        choices: [
+          'ok',
+          'unreachable',
+          'problem',
+          'skipped',
+          'unauthorized',
+          'unavailable'
+        ]
+      })
+      .option('status', {
+        describe: 'Filter by status',
+        array: true,
+        choices: ['new', 'changed', 'tested', 'vulnerable']
+      })
       .middleware((args: Arguments) =>
         container.register<RestProjectsOptions>(RestProjectsOptions, {
           useValue: {
@@ -42,9 +63,12 @@ export class GetEntryPoints implements CommandModule {
     const entryPointsManager: EntryPoints = container.resolve(EntryPoints);
 
     try {
-      const entryPoints: EntryPoint[] = await entryPointsManager.entrypoints(
-        args.project as string
-      );
+      const entryPoints: EntryPoint[] = await entryPointsManager.entrypoints({
+        projectId: args.project as string,
+        limit: args.limit as number,
+        connectivity: args.connectivity as string[],
+        status: args.status as string[]
+      });
 
       if (args.verbose) {
         // eslint-disable-next-line no-console
