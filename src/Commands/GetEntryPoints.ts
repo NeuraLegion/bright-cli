@@ -76,12 +76,12 @@ export class GetEntryPoints implements CommandModule {
       });
 
       const ep = args.verbose
-        ? entryPoints.map((entryPoint) => ({
+        ? entryPoints
+        : entryPoints.map((entryPoint) => ({
             id: entryPoint.id,
             method: entryPoint.method,
             url: entryPoint.url
-          }))
-        : entryPoints;
+          }));
 
       // eslint-disable-next-line no-console
       console.log(

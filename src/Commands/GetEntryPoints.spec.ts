@@ -2,7 +2,16 @@ import 'reflect-metadata';
 import { Logger, logger } from '../Utils';
 import { GetEntryPoints } from './GetEntryPoints';
 import { EntryPoints } from '../EntryPoint';
-import { mock, reset, spy, instance, when, anything, verify } from 'ts-mockito';
+import {
+  mock,
+  reset,
+  spy,
+  instance,
+  when,
+  anything,
+  verify,
+  objectContaining
+} from 'ts-mockito';
 import { container } from 'tsyringe';
 import { Arguments } from 'yargs';
 
@@ -34,14 +43,23 @@ describe('GetEntryPoints', () => {
     it('should correctly pass config from args', async () => {
       const args = {
         project: '1',
+        limit: 10,
         verbose: true,
+        pretty: true,
+        connectivity: ['connected', 'ok'],
+        status: ['open', 'closed', 'failed'],
         _: [],
         $0: ''
       } as Arguments;
 
       when(processSpy.exit(anything())).thenReturn(undefined);
       when(
-        mockedEntryPoints.entrypoints({ projectId: '1', limit: 10 })
+        mockedEntryPoints.entrypoints(
+          objectContaining({
+            projectId: '1',
+            limit: 10
+          })
+        )
       ).thenResolve([
         {
           id: '1',
