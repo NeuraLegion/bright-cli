@@ -30,6 +30,11 @@ export class GetEntryPoints implements CommandModule {
         describe: 'Limit the number of entrypoints',
         default: 10
       })
+      .option('pretty', {
+        describe: 'Pretty print the output',
+        boolean: true,
+        default: false
+      })
       .option('connectivity', {
         describe: 'Filter by connectivity',
         array: true,
@@ -70,20 +75,18 @@ export class GetEntryPoints implements CommandModule {
         status: args.status as string[]
       });
 
-      if (args.verbose) {
-        // eslint-disable-next-line no-console
-        console.log('%j', entryPoints);
-      } else {
-        // eslint-disable-next-line no-console
-        console.log(
-          '%j',
-          entryPoints.map((entryPoint) => ({
+      const ep = args.verbose
+        ? entryPoints.map((entryPoint) => ({
             id: entryPoint.id,
             method: entryPoint.method,
             url: entryPoint.url
           }))
-        );
-      }
+        : entryPoints;
+
+      // eslint-disable-next-line no-console
+      console.log(
+        args.pretty ? JSON.stringify(ep, null, 4) : JSON.stringify(ep)
+      );
 
       process.exitCode = 0;
     } catch (e) {
