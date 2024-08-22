@@ -49,8 +49,6 @@ RUN set -eux; \
     apk add --no-cache libcap; \
     rm -rf /var/cache/apk/*
     
-RUN setcap 'cap_net_raw+ep' $(which node)
-
 # change workgin dir
 WORKDIR $HOME/
 
