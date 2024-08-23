@@ -85,7 +85,7 @@ export class GetEntryPoints implements CommandModule {
 
       // eslint-disable-next-line no-console
       console.log(
-        args.pretty ? JSON.stringify(ep, null, 4) : JSON.stringify(ep)
+        args.pretty ? JSON.stringify(ep, null, 2) : JSON.stringify(ep)
       );
 
       process.exitCode = 0;
