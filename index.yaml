@@ -2,6 +2,23 @@ apiVersion: v1
 entries:
   repeater:
   - apiVersion: v2
+    created: "2024-09-02T09:27:34.626464175Z"
+    description: 'Repeater allows you to run Brightsec scans without exposing your
+      ports outside.  Also, it can be useful, if you want to run a local scan without
+      deploying.  #Add helm repository command: helm repo add bright-cli https://neuralegion.github.io/bright-cli/  #Update
+      helm repository: helm repo update  #Install helm chart: helm upgrade bright-cli
+      --install bright-cli/repeater \  --set repeaterID= \ --set token= \  Default
+      cluster being used is "app.brightsec.com". For different cluster you can use
+      additional --cluster "cluster_name" flag. '
+    digest: 0d5b0d0c2aa6d38227a2e6da13c255bfeb497ca1e908532bfd33e63623772196
+    keywords:
+    - repeater
+    name: repeater
+    type: application
+    urls:
+    - https://github.com/NeuraLegion/bright-cli/releases/download/repeater-0.0.2/repeater-0.0.2.tgz
+    version: 0.0.2
+  - apiVersion: v2
     created: "2024-09-02T09:09:01.446431776Z"
     description: 'Repeater allows you to run Brightsec scans without exposing your
       ports outside.  Also, it can be useful, if you want to run a local scan without
@@ -16,4 +33,4 @@ entries:
     urls:
     - https://github.com/NeuraLegion/bright-cli/releases/download/repeater-0.0.1/repeater-0.0.1.tgz
     version: 0.0.1
-generated: "2024-09-02T09:09:01.44643903Z"
+generated: "2024-09-02T09:27:34.626478672Z"
