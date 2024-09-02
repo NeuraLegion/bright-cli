@@ -12,7 +12,7 @@ enum SubjectType {
 }
 
 export enum EventType {
-  CLI_COMMAND = 'CLI command'
+  CLI_COMMAND_EXECUTED = 'CLI command Executed'
 }
 
 export class Tracker {
@@ -23,7 +23,7 @@ export class Tracker {
     const command = args._.join(' ');
     const event: Event = {
       subject: SubjectType.CLI,
-      event: EventType.CLI_COMMAND,
+      event: EventType.CLI_COMMAND_EXECUTED,
       properties: {
         command,
         hostname: args.cluster || args.hostname,
@@ -36,7 +36,7 @@ export class Tracker {
       .post(url, event, {
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${args.token}`
+          'Authorization': `api-key ${args.token}`
         }
       })
       .catch((e) => {
