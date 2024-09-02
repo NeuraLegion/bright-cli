@@ -35,4 +35,4 @@ spec:
             - name: TOKEN
               value: "{{ .Values.token }}"
             - name: CLUSTER
-              value: "{{ .Values.cluster }}"
+              value: "{{ .Values.cluster | default "app.brightsec.com" }}"

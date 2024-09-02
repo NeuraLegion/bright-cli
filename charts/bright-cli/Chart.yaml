@@ -8,7 +8,8 @@ description: |
   helm upgrade repeater --install \
   --set repeaterID= \
   --set token= \ 
-  --set cluster=hotel.playground.neuralegion.com  . --wait
+  . --wait
+  Default cluster being used is "app.brightsec.com".
 type: application
 version: 0.0.1
 keywords:
