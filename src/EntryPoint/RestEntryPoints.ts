@@ -1,4 +1,4 @@
-import { EntryPoints, EntryPoint } from './EntryPoints';
+import { EntryPoints, EntryPoint, EntryPointsListOptions } from './EntryPoints';
 import { ProxyFactory } from '../Utils';
 import axios, { Axios } from 'axios';
 import { inject, injectable } from 'tsyringe';
@@ -18,6 +18,7 @@ export const RestProjectsOptions: unique symbol = Symbol('RestProjectsOptions');
 
 @injectable()
 export class RestEntryPoints implements EntryPoints {
+  private readonly entrypointsPaginationBatchSize = 50;
   private readonly client: Axios;
 
   constructor(
@@ -51,11 +52,38 @@ export class RestEntryPoints implements EntryPoints {
     });
   }
 
-  public async entrypoints(projectId: string): Promise<EntryPoint[]> {
-    const res = await this.client.get(
-      `/api/v2/projects/${projectId}/entry-points`
-    );
+  public async entrypoints({
+    limit = 10,
+    projectId,
+    ...filters
+  }: EntryPointsListOptions): Promise<EntryPoint[]> {
+    let remaining = limit;
+    const data: EntryPoint[] = [];
+    let nextId: string;
+    let nextCreatedAt: string;
 
-    return res.data.items;
+    while (remaining > 0) {
+      const {
+        data: { items = [] }
+      } = await this.client.get(`/api/v2/projects/${projectId}/entry-points`, {
+        params: {
+          nextId,
+          nextCreatedAt,
+          ...filters,
+          limit: Math.min(remaining, this.entrypointsPaginationBatchSize)
+        }
+      });
+
+      if (!items.length) {
+        break;
+      }
+
+      data.push(...items);
+      ({ id: nextId, createdAt: nextCreatedAt } = items[items.length - 1]);
+
+      remaining -= this.entrypointsPaginationBatchSize;
+    }
+
+    return data;
   }
 }
