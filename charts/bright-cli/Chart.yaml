@@ -3,14 +3,19 @@ name: repeater
 description: |
   Repeater allows you to run Brightsec scans without exposing your ports outside. 
   Also, it can be useful, if you want to run a local scan without deploying.
+  
+  #Add helm repository command:
+  helm repo add bright-cli https://neuralegion.github.io/bright-cli/
 
-  Usage example from chart root dir:
-  helm upgrade repeater --install \
+  #Update helm repository:
+  helm repo update
+
+  #Install helm chart:
+  helm upgrade bright-cli --install bright-cli/repeater \ 
   --set repeaterID= \
   --set token= \ 
-  . --wait
-  Default cluster being used is "app.brightsec.com".
+  Default cluster being used is "app.brightsec.com". For different cluster you can use additional --cluster "cluster_name" flag.
 type: application
-version: 0.0.1
+version: 0.0.2
 keywords:
   - repeater
