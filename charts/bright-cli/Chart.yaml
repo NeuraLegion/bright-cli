@@ -1,0 +1,15 @@
+apiVersion: v2
+name: repeater
+description: |
+  Repeater allows you to run Brightsec scans without exposing your ports outside. 
+  Also, it can be useful, if you want to run a local scan without deploying.
+
+  Usage example from chart root dir:
+  helm upgrade repeater --install \
+  --set repeaterID= \
+  --set token= \ 
+  --set cluster=hotel.playground.neuralegion.com  . --wait
+type: application
+version: 0.0.1
+keywords:
+  - repeater
