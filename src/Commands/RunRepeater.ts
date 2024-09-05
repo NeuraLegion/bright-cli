@@ -141,8 +141,8 @@ export class RunRepeater implements CommandModule {
         daemon: 'remove-daemon',
         ntlm: [
           'proxy',
-          'proxy-external',
-          'proxy-internal',
+          'proxy-bright',
+          'proxy-target',
           'experimental-connection-reuse'
         ]
       })
