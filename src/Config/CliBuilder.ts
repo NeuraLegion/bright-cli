@@ -65,19 +65,17 @@ export class CliBuilder {
           'Specify a proxy URL to route all traffic through. This should be an HTTP(S), SOCKS4, or SOCKS5 URL. By default, if you specify SOCKS://<URL>, then SOCKS5h is applied.'
       })
       .option('proxy-bright', {
-        alias: 'proxy-external',
         requiresArg: true,
         describe:
           'Specify a proxy URL to route all outbound traffic through. For more information, see the --proxy option.'
       })
       .option('proxy-target', {
-        alias: 'proxy-internal',
         requiresArg: true,
         describe:
           'Specify a proxy URL to route all inbound traffic through. For more information, see the --proxy option.'
       })
       .conflicts({
-        proxy: ['proxy-internal', 'proxy-external'],
+        proxy: ['proxy-bright', 'proxy-target'],
         hostname: 'cluster'
       })
       .middleware((args: Arguments) => {
