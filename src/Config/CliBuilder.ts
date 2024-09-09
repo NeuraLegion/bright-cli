@@ -74,6 +74,10 @@ export class CliBuilder {
         describe:
           'Specify a proxy URL to route all inbound traffic through. For more information, see the --proxy option.'
       })
+      .option('timeout', {
+        describe: 'Request timeout in seconds',
+        default: 30
+      })
       .conflicts({
         proxy: ['proxy-bright', 'proxy-target'],
         hostname: 'cluster'
