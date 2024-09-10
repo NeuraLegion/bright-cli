@@ -59,7 +59,7 @@ export class GetEntryPoints implements CommandModule {
             baseURL: args.api as string,
             apiKey: args.token as string,
             proxyURL: (args.proxyBright ?? args.proxy) as string,
-            timeout: (args.timeout as number) * 1000
+            timeout: args.timeout as number
           }
         })
       );

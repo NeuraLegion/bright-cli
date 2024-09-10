@@ -205,7 +205,7 @@ export class RunRepeater implements CommandModule {
               useValue: {
                 uri: args.repeaterServer as string,
                 token: args.token as string,
-                connectTimeout: (args.timeout as number) * 1000,
+                connectTimeout: args.timeout as number,
                 proxyUrl: (args.proxyBright ?? args.proxy) as string,
                 insecure: args.insecure as boolean
               }

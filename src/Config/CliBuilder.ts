@@ -76,7 +76,11 @@ export class CliBuilder {
       })
       .option('timeout', {
         describe: 'Request timeout in seconds',
-        default: 30
+        default: 30,
+        type: 'number',
+        coerce(arg: number) {
+          return arg * 1000;
+        }
       })
       .conflicts({
         proxy: ['proxy-bright', 'proxy-target'],
