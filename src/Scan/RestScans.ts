@@ -35,7 +35,7 @@ export class RestScans implements Scans {
     @inject(delay(() => CliInfo)) private readonly info: CliInfo,
     @inject(ProxyFactory) private readonly proxyFactory: ProxyFactory,
     @inject(RestScansOptions)
-    { baseURL, apiKey, insecure, proxyURL, timeout = 10000 }: RestScansOptions
+    { baseURL, apiKey, insecure, proxyURL, timeout }: RestScansOptions
   ) {
     const {
       httpAgent = new http.Agent(),
