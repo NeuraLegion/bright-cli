@@ -24,13 +24,7 @@ export class RestEntryPoints implements EntryPoints {
   constructor(
     @inject(ProxyFactory) private readonly proxyFactory: ProxyFactory,
     @inject(RestProjectsOptions)
-    {
-      baseURL,
-      apiKey,
-      insecure,
-      proxyURL,
-      timeout = 10000
-    }: RestProjectsOptions
+    { baseURL, apiKey, insecure, proxyURL, timeout }: RestProjectsOptions
   ) {
     const {
       httpAgent = new http.Agent(),
