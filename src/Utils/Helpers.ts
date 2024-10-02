@@ -230,6 +230,31 @@ export class Helpers {
     }, {});
   }
 
+  // parseDuration parses a duration string.
+  // a duration string is a sequence of decimal numbers,
+  // each with optional fraction and a unit suffix,
+  // such as "300ms" or "2h45m".
+  // valid time units are "s", "m", "h".
+  public static parseDuration(duration: string): number {
+    const hours = duration.match(/(\d+)\s*h/);
+    const minutes = duration.match(/(\d+)\s*m/);
+    const seconds = duration.match(/(\d+)\s*s/);
+
+    let totalSeconds = 0;
+
+    if (hours) {
+      totalSeconds += Number(hours[1]) * 3600;
+    }
+    if (minutes) {
+      totalSeconds += Number(minutes[1]) * 60;
+    }
+    if (seconds) {
+      totalSeconds += Number(seconds[1]);
+    }
+
+    return totalSeconds;
+  }
+
   // It's based on https://qntm.org/cmd
   private static escapeShellArgument(val: string): string {
     val = `${val}`;

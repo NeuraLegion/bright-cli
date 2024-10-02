@@ -75,11 +75,15 @@ export class CliBuilder {
           'Specify a proxy URL to route all inbound traffic through. For more information, see the --proxy option.'
       })
       .option('timeout', {
-        describe: 'Request timeout in seconds',
+        describe:
+          'Request timeout in seconds or a duration string (e.g. 10s, 1m, 1h, 1m10s, 1h10m10s).',
         default: 30,
-        type: 'number',
-        coerce(arg: number) {
-          return arg * 1000;
+        coerce(arg: string) {
+          if (isNaN(Number(arg))) {
+            return Helpers.parseDuration(arg) * 1000;
+          }
+
+          return Number(arg) * 1000;
         }
       })
       .conflicts({
