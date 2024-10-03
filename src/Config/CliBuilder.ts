@@ -79,7 +79,7 @@ export class CliBuilder {
           'Request timeout in seconds or a duration string (e.g. 10s, 1m, 1h, 1m10s, 1h10m10s).',
         default: 30,
         coerce(arg: string) {
-          if (isNaN(Number(arg))) {
+          if (isNaN(+arg)) {
             return Helpers.parseDuration(arg) * 1000;
           }
 
