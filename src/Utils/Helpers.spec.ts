@@ -259,26 +259,6 @@ describe('Helpers', () => {
     });
   });
 
-  describe('parseDuration', () => {
-    [
-      { input: '0', expected: 0 },
-      { input: '10s', expected: 10 },
-      { input: '10m', expected: 600 },
-      { input: '10h', expected: 36000 },
-      { input: '10m10s', expected: 610 },
-      { input: '10h10m10s', expected: 36610 },
-      { input: '', expected: 0 },
-      { input: 'm10s', expected: 10 },
-      { input: '9ms', expected: 540 }, // equivalent to 9m0s
-      { input: '9.2m', expected: 120 } // equivalent to 2m, function doesn't support fractions
-    ].forEach(({ input, expected }) => {
-      it(`should return ${expected} for input '${input}'`, () => {
-        const actual = Helpers.parseDuration(input);
-        expect(actual).toBe(expected);
-      });
-    });
-  });
-
   describe('parseHeaders', () => {
     it('should return empty object', () => {
       // arrange
