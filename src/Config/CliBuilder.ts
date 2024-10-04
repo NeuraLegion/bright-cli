@@ -4,6 +4,7 @@ import { SystemConfigManager } from './SystemConfigManager';
 import { CliInfo } from './CliInfo';
 import { Arguments, Argv, CommandModule } from 'yargs';
 import { init, runWithAsyncContext, setContext } from '@sentry/node';
+import ms from 'ms';
 
 export interface CliBuilderOptions {
   info: CliInfo;
@@ -75,11 +76,17 @@ export class CliBuilder {
           'Specify a proxy URL to route all inbound traffic through. For more information, see the --proxy option.'
       })
       .option('timeout', {
-        describe: 'Request timeout in seconds',
+        describe:
+          'Request timeout in seconds or a duration string (e.g. 10s, 1m, 1h, 10h, 1y).',
         default: 30,
-        type: 'number',
-        coerce(arg: number) {
-          return arg * 1000;
+        coerce(arg: string) {
+          // if arg is not a number, then it's a duration string
+          // convert duration string to milliseconds
+          if (isNaN(+arg)) {
+            return ms(arg);
+          }
+
+          return +arg * 1000;
         }
       })
       .conflicts({
