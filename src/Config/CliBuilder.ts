@@ -86,7 +86,7 @@ export class CliBuilder {
             return ms(arg);
           }
 
-          return Number(+arg) * 1000;
+          return +arg * 1000;
         }
       })
       .conflicts({
