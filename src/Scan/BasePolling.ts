@@ -3,7 +3,6 @@ import { Polling } from './Polling';
 import { Breakpoint } from './Breakpoint';
 import { Backoff, logger } from '../Utils';
 import { PollingConfig } from './PollingFactory';
-import ms from 'ms';
 import axios from 'axios';
 import { ok } from 'node:assert';
 
@@ -33,9 +32,7 @@ export class BasePolling implements Polling {
     }
 
     if (this.options.interval) {
-      const interval = this.toMilliseconds(this.options.interval);
-
-      if (interval < this.defaultInterval) {
+      if (this.options.interval < this.defaultInterval) {
         logger.warn(`Warning: polling interval is too small.`);
         logger.warn(`The recommended way to set polling interval to 10s.`);
       }
@@ -69,13 +66,9 @@ export class BasePolling implements Polling {
     clearTimeout(this.timeoutDescriptor);
   }
 
-  private setTimeout(timeout: number | string = this.options.timeout): void {
-    const timeoutInMs: number = this.toMilliseconds(timeout);
-    this.timeoutDescriptor = setTimeout(
-      () => (this._active = false),
-      timeoutInMs
-    );
-    logger.debug(`The polling timeout has been set to %d ms.`, timeoutInMs);
+  private setTimeout(timeout: number = this.options.timeout): void {
+    this.timeoutDescriptor = setTimeout(() => (this._active = false), timeout);
+    logger.debug(`The polling timeout has been set to %d ms.`, timeout);
   }
 
   private async *poll(): AsyncIterableIterator<ScanState> {
@@ -96,19 +89,6 @@ export class BasePolling implements Polling {
     }
   }
 
-  private toMilliseconds(time: string | number): number {
-    if (typeof time === 'string') {
-      const milliseconds = ms(time);
-      if (!milliseconds) {
-        return;
-      }
-
-      return milliseconds;
-    } else if (typeof time === 'number') {
-      return time;
-    }
-  }
-
   private isRedundant(status: ScanStatus): boolean {
     return (
       status === ScanStatus.DONE ||
@@ -119,8 +99,7 @@ export class BasePolling implements Polling {
   }
 
   private delay(): Promise<void> {
-    const interval =
-      this.toMilliseconds(this.options.interval) ?? this.defaultInterval;
+    const interval = this.options.interval ?? this.defaultInterval;
 
     return new Promise<void>((resolve) => setTimeout(resolve, interval));
   }

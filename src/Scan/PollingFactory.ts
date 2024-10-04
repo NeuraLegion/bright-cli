@@ -2,7 +2,7 @@ import { Polling } from './Polling';
 import { BreakpointType } from './BreakpointType';
 
 export interface PollingConfig {
-  timeout?: number | string;
+  timeout?: number;
   interval?: number;
   breakpoint: BreakpointType;
   scanId: string;
