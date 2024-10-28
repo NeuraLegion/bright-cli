@@ -4,7 +4,7 @@ import {
   PollingFactory,
   RestScansOptions
 } from '../Scan';
-import { Helpers, logger } from '../Utils';
+import { ErrorMessageBuilder, Helpers, logger } from '../Utils';
 import { Arguments, Argv, CommandModule } from 'yargs';
 import { container } from 'tsyringe';
 
@@ -72,14 +72,16 @@ export class PollingScanStatus implements CommandModule {
       await polling.start();
 
       process.exit(0);
-    } catch (e) {
-      if (e instanceof BreakpointException) {
+    } catch (error) {
+      if (error instanceof BreakpointException) {
         logger.error(`The breakpoint has been hit during polling.`);
-        logger.error(`Breakpoint: ${e.message}`);
+        logger.error(`Breakpoint: ${error.message}`);
         process.exit(50);
       }
 
-      logger.error(`Error during "scan:polling": ${e.error || e.message}`);
+      logger.error(
+        ErrorMessageBuilder.buildMessage({ command: 'scan:polling', error })
+      );
       process.exit(1);
     }
   }

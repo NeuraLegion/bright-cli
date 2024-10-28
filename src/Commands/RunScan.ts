@@ -7,10 +7,9 @@ import {
   Scans,
   ATTACK_PARAM_LOCATIONS_DEFAULT
 } from '../Scan';
-import { Helpers, logger } from '../Utils';
+import { ErrorMessageBuilder, Helpers, logger } from '../Utils';
 import { Arguments, Argv, CommandModule } from 'yargs';
 import { container } from 'tsyringe';
-import { isAxiosError } from 'axios';
 import { EOL } from 'node:os';
 
 export class RunScan implements CommandModule {
@@ -25,7 +24,11 @@ export class RunScan implements CommandModule {
 
         if (!nonEmptyPatterns.length) {
           logger.error(
-            'Error during "scan:run": please make sure that patterns contain at least one regexp.'
+            ErrorMessageBuilder.buildMessage({
+              command: 'scan:run',
+              error:
+                'please make sure that patterns contain at least one regexp'
+            })
           );
           process.exit(1);
         }
@@ -213,12 +216,10 @@ export class RunScan implements CommandModule {
       }
 
       process.exit(0);
-    } catch (e) {
-      const errMessage =
-        isAxiosError(e) && typeof e.response?.data === 'string'
-          ? e.response.data
-          : e.error || e.message;
-      logger.error(`Error during "scan:run": ${errMessage}`);
+    } catch (error) {
+      logger.error(
+        ErrorMessageBuilder.buildMessage({ command: 'scan:run', error })
+      );
       process.exit(1);
     }
   }

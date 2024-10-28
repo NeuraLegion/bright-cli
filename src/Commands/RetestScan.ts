@@ -1,5 +1,5 @@
 import { RestScansOptions, Scans } from '../Scan';
-import { logger } from '../Utils';
+import { ErrorMessageBuilder, logger } from '../Utils';
 import { Arguments, Argv, CommandModule } from 'yargs';
 import { container } from 'tsyringe';
 
@@ -42,8 +42,10 @@ export class RetestScan implements CommandModule {
       console.log(scanId);
 
       process.exit(0);
-    } catch (e) {
-      logger.error(`Error during "scan:retest": ${e.error || e.message}`);
+    } catch (error) {
+      logger.error(
+        ErrorMessageBuilder.buildMessage({ command: 'scan:retest', error })
+      );
       process.exit(1);
     }
   }
