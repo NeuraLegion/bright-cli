@@ -1,4 +1,4 @@
-import { ErrorMessageBuilder, logger } from '../Utils';
+import { ErrorMessageFactory, logger } from '../Utils';
 import { ConnectivityUrls, Platform, TestType, Options } from '../Wizard';
 import container from '../container';
 import { Arguments, Argv, CommandModule } from 'yargs';
@@ -100,7 +100,7 @@ export class Configure implements CommandModule {
       await app.start({ ping: !!args.ping, traceroute: !!args.traceroute });
     } catch (error) {
       logger.error(
-        ErrorMessageBuilder.buildMessage({ command: 'configure', error })
+        ErrorMessageFactory.genericCommandError({ command: 'configure', error })
       );
       process.exit(1);
     }

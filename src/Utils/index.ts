@@ -1,6 +1,6 @@
 export * from './Backoff';
 export * from './DefaultProxyFactory';
-export * from './ErrorMessageBuilder';
+export * from './ErrorMessageFactory';
 export * from './Helpers';
 export * from './Logger';
 export * from './ProxyFactory';

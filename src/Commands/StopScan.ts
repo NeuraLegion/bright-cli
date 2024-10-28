@@ -1,5 +1,5 @@
 import { RestScansOptions, Scans } from '../Scan';
-import { ErrorMessageBuilder, logger } from '../Utils';
+import { ErrorMessageFactory, logger } from '../Utils';
 import { Arguments, Argv, CommandModule } from 'yargs';
 import { container } from 'tsyringe';
 
@@ -43,7 +43,7 @@ export class StopScan implements CommandModule {
       process.exit(0);
     } catch (error) {
       logger.error(
-        ErrorMessageBuilder.buildMessage({ command: 'scan:stop', error })
+        ErrorMessageFactory.genericCommandError({ command: 'scan:stop', error })
       );
       process.exit(1);
     }

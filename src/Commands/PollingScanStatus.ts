@@ -4,7 +4,7 @@ import {
   PollingFactory,
   RestScansOptions
 } from '../Scan';
-import { ErrorMessageBuilder, Helpers, logger } from '../Utils';
+import { ErrorMessageFactory, Helpers, logger } from '../Utils';
 import { Arguments, Argv, CommandModule } from 'yargs';
 import { container } from 'tsyringe';
 
@@ -81,7 +81,10 @@ export class PollingScanStatus implements CommandModule {
       }
 
       logger.error(
-        ErrorMessageBuilder.buildMessage({ command: 'scan:polling', error })
+        ErrorMessageFactory.genericCommandError({
+          command: 'scan:polling',
+          error
+        })
       );
       process.exit(1);
     }

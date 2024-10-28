@@ -5,7 +5,7 @@ import {
   Spec,
   SpecType
 } from '../Archive';
-import { ErrorMessageBuilder, Helpers, logger } from '../Utils';
+import { ErrorMessageFactory, Helpers, logger } from '../Utils';
 import container from '../container';
 import { Arguments, Argv, CommandModule } from 'yargs';
 
@@ -121,7 +121,10 @@ export class UploadArchive implements CommandModule {
       process.exit(0);
     } catch (error) {
       logger.error(
-        ErrorMessageBuilder.buildMessage({ command: 'archive:upload', error })
+        ErrorMessageFactory.genericCommandError({
+          command: 'archive:upload',
+          error
+        })
       );
       process.exit(1);
     }
