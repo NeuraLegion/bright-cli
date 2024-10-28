@@ -53,7 +53,8 @@ export class PollingScanStatus implements CommandModule {
             insecure: args.insecure as boolean,
             baseURL: args.api as string,
             apiKey: args.token as string,
-            proxyURL: (args.proxyBright ?? args.proxy) as string
+            proxyURL: (args.proxyBright ?? args.proxy) as string,
+            timeout: args.timeout as number
           }
         })
       );

@@ -141,8 +141,8 @@ export class RunRepeater implements CommandModule {
         daemon: 'remove-daemon',
         ntlm: [
           'proxy',
-          'proxy-external',
-          'proxy-internal',
+          'proxy-bright',
+          'proxy-target',
           'experimental-connection-reuse'
         ]
       })
@@ -205,7 +205,7 @@ export class RunRepeater implements CommandModule {
               useValue: {
                 uri: args.repeaterServer as string,
                 token: args.token as string,
-                connectTimeout: 10000,
+                connectTimeout: args.timeout as number,
                 proxyUrl: (args.proxyBright ?? args.proxy) as string,
                 insecure: args.insecure as boolean
               }

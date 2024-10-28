@@ -6,8 +6,8 @@ export class ErrorMessageBuilder {
       | { error: unknown; message: string }
       | { error: any; command: string }
   ): string {
-    const message = '';
-    'message' in params ? params.message : `Error during "${params.command}"`;
+    const message =
+      'message' in params ? params.message : `Error during "${params.command}"`;
 
     const errMessage =
       typeof params.error === 'string'

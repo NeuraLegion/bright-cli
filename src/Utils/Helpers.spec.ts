@@ -258,6 +258,7 @@ describe('Helpers', () => {
       expect(actual).toEqual([TestEnum.TEST, TestEnum.PROD]);
     });
   });
+
   describe('parseHeaders', () => {
     it('should return empty object', () => {
       // arrange

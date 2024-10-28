@@ -4,6 +4,7 @@ import { SystemConfigManager } from './SystemConfigManager';
 import { CliInfo } from './CliInfo';
 import { Arguments, Argv, CommandModule } from 'yargs';
 import { init, runWithAsyncContext, setContext } from '@sentry/node';
+import ms from 'ms';
 
 export interface CliBuilderOptions {
   info: CliInfo;
@@ -65,19 +66,31 @@ export class CliBuilder {
           'Specify a proxy URL to route all traffic through. This should be an HTTP(S), SOCKS4, or SOCKS5 URL. By default, if you specify SOCKS://<URL>, then SOCKS5h is applied.'
       })
       .option('proxy-bright', {
-        alias: 'proxy-external',
         requiresArg: true,
         describe:
           'Specify a proxy URL to route all outbound traffic through. For more information, see the --proxy option.'
       })
       .option('proxy-target', {
-        alias: 'proxy-internal',
         requiresArg: true,
         describe:
           'Specify a proxy URL to route all inbound traffic through. For more information, see the --proxy option.'
       })
+      .option('timeout', {
+        describe:
+          'Request timeout in seconds or a duration string (e.g. 10s, 1m, 1h, 10h, 1y).',
+        default: 30,
+        coerce(arg: string) {
+          // if arg is not a number, then it's a duration string
+          // convert duration string to milliseconds
+          if (isNaN(+arg)) {
+            return ms(arg);
+          }
+
+          return +arg * 1000;
+        }
+      })
       .conflicts({
-        proxy: ['proxy-internal', 'proxy-external'],
+        proxy: ['proxy-bright', 'proxy-target'],
         hostname: 'cluster'
       })
       .middleware((args: Arguments) => {
