@@ -219,7 +219,7 @@ export class RunScan implements CommandModule {
       process.exit(0);
     } catch (error) {
       logger.error(
-        ErrorMessageFactory.genericCommandError({ command: 'scan:run', error })
+        ErrorMessageFactory.genericCommandError({ error, command: 'scan:run' })
       );
       process.exit(1);
     }

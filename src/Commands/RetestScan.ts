@@ -46,8 +46,8 @@ export class RetestScan implements CommandModule {
     } catch (error) {
       logger.error(
         ErrorMessageFactory.genericCommandError({
-          command: 'scan:retest',
-          error
+          error,
+          command: 'scan:retest'
         })
       );
       process.exit(1);

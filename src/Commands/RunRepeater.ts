@@ -257,7 +257,7 @@ export class RunRepeater implements CommandModule {
     } catch (error) {
       captureException(error);
       logger.error(
-        ErrorMessageFactory.genericCommandError({ command: 'repeater', error })
+        ErrorMessageFactory.genericCommandError({ error, command: 'repeater' })
       );
       await repeaterLauncher.close();
       process.exitCode = 1;

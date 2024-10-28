@@ -43,7 +43,7 @@ export class StopScan implements CommandModule {
       process.exit(0);
     } catch (error) {
       logger.error(
-        ErrorMessageFactory.genericCommandError({ command: 'scan:stop', error })
+        ErrorMessageFactory.genericCommandError({ error, command: 'scan:stop' })
       );
       process.exit(1);
     }

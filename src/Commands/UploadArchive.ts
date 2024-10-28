@@ -122,8 +122,8 @@ export class UploadArchive implements CommandModule {
     } catch (error) {
       logger.error(
         ErrorMessageFactory.genericCommandError({
-          command: 'archive:upload',
-          error
+          error,
+          command: 'archive:upload'
         })
       );
       process.exit(1);

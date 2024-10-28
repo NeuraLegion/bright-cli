@@ -93,8 +93,8 @@ export class GetEntryPoints implements CommandModule {
     } catch (error) {
       logger.error(
         ErrorMessageFactory.genericCommandError({
-          command: 'entrypoints:list',
-          error
+          error,
+          command: 'entrypoints:list'
         })
       );
       process.exitCode = 1;

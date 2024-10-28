@@ -82,8 +82,8 @@ export class PollingScanStatus implements CommandModule {
 
       logger.error(
         ErrorMessageFactory.genericCommandError({
-          command: 'scan:polling',
-          error
+          error,
+          command: 'scan:polling'
         })
       );
       process.exit(1);

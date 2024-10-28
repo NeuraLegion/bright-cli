@@ -100,7 +100,7 @@ export class Configure implements CommandModule {
       await app.start({ ping: !!args.ping, traceroute: !!args.traceroute });
     } catch (error) {
       logger.error(
-        ErrorMessageFactory.genericCommandError({ command: 'configure', error })
+        ErrorMessageFactory.genericCommandError({ error, command: 'configure' })
       );
       process.exit(1);
     }
