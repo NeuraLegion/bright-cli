@@ -1,6 +1,6 @@
 import { isAxiosError } from 'axios';
 
-type GenericCommandErrorParam =
+type GenericCommandErrorParams =
   | { command: string; error: any }
   | { message: string; error: unknown };
 
