@@ -6,7 +6,7 @@ type GenericCommandErrorParams =
 
 export class ErrorMessageFactory {
   public static genericCommandError(params: GenericCommandErrorParams): string {
-    const message = this.getMessageTitle(params);
+    const message = this.getTitle(params);
     const details = this.extractErrorDetails(params);
 
     return this.formatFinalMessage(message, details);
@@ -21,7 +21,7 @@ export class ErrorMessageFactory {
       : `${baseMessage}.`;
   }
 
-  private static getMessageTitle(params: GenericCommandErrorParams): string {
+  private static getTitle(params: GenericCommandErrorParams): string {
     return 'message' in params
       ? params.message
       : `Error during "${params.command}"`;
