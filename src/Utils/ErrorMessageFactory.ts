@@ -25,7 +25,7 @@ export class ErrorMessageFactory {
       : `Error during "${params.command}"`;
   }
 
-  private static getMessageDetails(
+  private static extractErrorDetails(
     params: GenericCommandErrorParam
   ): string | null {
     if (typeof params.error === 'string') {
