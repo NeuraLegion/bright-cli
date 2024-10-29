@@ -5,28 +5,30 @@ type GenericCommandErrorParams =
   | { message: string; error: unknown };
 
 export class ErrorMessageFactory {
-  public static genericCommandError(params: GenericCommandErrorParam): string {
+  public static genericCommandError(params: GenericCommandErrorParams): string {
     const message = this.getMessageTitle(params);
-    const details = this.getMessageDetails(params);
+    const details = this.extractErrorDetails(params);
 
     return this.formatFinalMessage(message, details);
   }
-  
-  private static formatFinalMessage(baseMessage: string, errorDetails?: string): string {
-    return errorDetails 
+
+  private static formatFinalMessage(
+    baseMessage: string,
+    errorDetails?: string
+  ): string {
+    return errorDetails
       ? `${baseMessage}: ${errorDetails}.`
       : `${baseMessage}.`;
   }
-  }
 
-  private static getMessageTitle(params: GenericCommandErrorParam): string {
+  private static getMessageTitle(params: GenericCommandErrorParams): string {
     return 'message' in params
       ? params.message
       : `Error during "${params.command}"`;
   }
 
   private static extractErrorDetails(
-    params: GenericCommandErrorParam
+    params: GenericCommandErrorParams
   ): string | null {
     if (typeof params.error === 'string') {
       return params.error;
