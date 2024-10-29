@@ -1,5 +1,5 @@
 import { Cert, RequestExecutorOptions } from '../RequestExecutor';
-import { Helpers, logger } from '../Utils';
+import { ErrorMessageFactory, Helpers, logger } from '../Utils';
 import container from '../container';
 import { DefaultRepeaterServerOptions, RepeaterLauncher } from '../Repeater';
 import { Arguments, Argv, CommandModule } from 'yargs';
@@ -254,9 +254,11 @@ export class RunRepeater implements CommandModule {
       );
 
       await repeaterLauncher.run(args.id as string, args.run as boolean);
-    } catch (e) {
-      captureException(e);
-      logger.error(e);
+    } catch (error) {
+      captureException(error);
+      logger.error(
+        ErrorMessageFactory.genericCommandError({ error, command: 'repeater' })
+      );
       await repeaterLauncher.close();
       process.exitCode = 1;
     }

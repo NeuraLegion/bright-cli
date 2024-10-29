@@ -1,5 +1,5 @@
 import { RestScansOptions, Scans } from '../Scan';
-import { logger } from '../Utils';
+import { ErrorMessageFactory, logger } from '../Utils';
 import { Arguments, Argv, CommandModule } from 'yargs';
 import { container } from 'tsyringe';
 
@@ -41,8 +41,10 @@ export class StopScan implements CommandModule {
       await scanManager.stop(args.scan as string);
 
       process.exit(0);
-    } catch (e) {
-      logger.error(`Error during "scan:stop": ${e.error || e.message}`);
+    } catch (error) {
+      logger.error(
+        ErrorMessageFactory.genericCommandError({ error, command: 'scan:stop' })
+      );
       process.exit(1);
     }
   }

@@ -1,5 +1,5 @@
 import { EntryPoint, EntryPoints, RestProjectsOptions } from '../EntryPoint';
-import { logger } from '../Utils';
+import { ErrorMessageFactory, logger } from '../Utils';
 import { Arguments, Argv, CommandModule } from 'yargs';
 import { container } from 'tsyringe';
 
@@ -90,8 +90,13 @@ export class GetEntryPoints implements CommandModule {
       );
 
       process.exitCode = 0;
-    } catch (e) {
-      logger.error(`Error during "entrypoints:list": ${e.error || e.message}`);
+    } catch (error) {
+      logger.error(
+        ErrorMessageFactory.genericCommandError({
+          error,
+          command: 'entrypoints:list'
+        })
+      );
       process.exitCode = 1;
     }
   }

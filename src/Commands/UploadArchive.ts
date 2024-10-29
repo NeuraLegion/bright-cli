@@ -5,7 +5,7 @@ import {
   Spec,
   SpecType
 } from '../Archive';
-import { Helpers, logger } from '../Utils';
+import { ErrorMessageFactory, Helpers, logger } from '../Utils';
 import container from '../container';
 import { Arguments, Argv, CommandModule } from 'yargs';
 
@@ -119,8 +119,13 @@ export class UploadArchive implements CommandModule {
       // eslint-disable-next-line no-console
       console.log(await archives.upload(spec));
       process.exit(0);
-    } catch (e) {
-      logger.error(`Error during "archive:upload": ${e.message}`);
+    } catch (error) {
+      logger.error(
+        ErrorMessageFactory.genericCommandError({
+          error,
+          command: 'archive:upload'
+        })
+      );
       process.exit(1);
     }
   }
