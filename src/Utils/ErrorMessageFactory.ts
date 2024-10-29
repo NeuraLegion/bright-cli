@@ -9,7 +9,14 @@ export class ErrorMessageFactory {
     const message = this.getMessageTitle(params);
     const details = this.getMessageDetails(params);
 
-    return details ? `${message}: ${details}.` : `${message}.`;
+    return this.formatFinalMessage(message, details);
+  }
+  
+  private static formatFinalMessage(baseMessage: string, errorDetails?: string): string {
+    return errorDetails 
+      ? `${baseMessage}: ${errorDetails}.`
+      : `${baseMessage}.`;
+  }
   }
 
   private static getMessageTitle(params: GenericCommandErrorParam): string {
