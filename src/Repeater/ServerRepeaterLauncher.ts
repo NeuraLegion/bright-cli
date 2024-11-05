@@ -112,8 +112,6 @@ export class ServerRepeaterLauncher implements RepeaterLauncher {
     this.subscribeToEvents();
 
     await this.repeaterServer.connect(this.repeaterId);
-
-    logger.log('The Repeater (%s) started', this.info.version);
   }
 
   private getRuntime(): DeploymentRuntime {
@@ -164,9 +162,6 @@ export class ServerRepeaterLauncher implements RepeaterLauncher {
     this.repeaterServer.on(RepeaterServerEvents.RECONNECTION_SUCCEEDED, () =>
       logger.log('The Repeater (%s) connected', this.info.version)
     );
-    this.repeaterServer.on(RepeaterServerEvents.DEPLOY, () =>
-      logger.log('The Repeater (%s) deployed', this.info.version)
-    );
   }
 
   private handleError = ({
@@ -213,6 +208,7 @@ export class ServerRepeaterLauncher implements RepeaterLauncher {
         },
         this.getRuntime()
       );
+      logger.log('The Repeater (%s) started', this.info.version);
     } catch {
       // noop
     }
