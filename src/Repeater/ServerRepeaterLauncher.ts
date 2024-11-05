@@ -112,8 +112,6 @@ export class ServerRepeaterLauncher implements RepeaterLauncher {
     this.subscribeToEvents();
 
     await this.repeaterServer.connect(this.repeaterId);
-
-    logger.log('The Repeater (%s) started', this.info.version);
   }
 
   private getRuntime(): DeploymentRuntime {
@@ -210,6 +208,7 @@ export class ServerRepeaterLauncher implements RepeaterLauncher {
         },
         this.getRuntime()
       );
+      logger.log('The Repeater (%s) started', this.info.version);
     } catch {
       // noop
     }
