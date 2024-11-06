@@ -94,7 +94,7 @@ jobs:
             && rm -rf /var/lib/apt/lists/*
 
       - name: Checkout Repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
 
       - name: Download Executable
         shell: bash
