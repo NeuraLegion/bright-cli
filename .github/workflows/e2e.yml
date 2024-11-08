@@ -41,6 +41,9 @@ jobs:
     if: ${{ inputs.test-executables }}
     runs-on: ${{ matrix.os }}
     container: ${{ matrix.container }}
+    env:
+      ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION: true
+
     strategy:
       fail-fast: false
       matrix:
@@ -94,7 +97,7 @@ jobs:
             && rm -rf /var/lib/apt/lists/*
 
       - name: Checkout Repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@ee0669bd1cc54295c223e0bb666b733df41de1c5 # v2
 
       - name: Download Executable
         shell: bash
@@ -125,6 +128,7 @@ jobs:
           E2E_REPEATER_TARGET_URL: ${{ format('http://localhost:{0}', steps.target.outputs.port) }}
           E2E_REPEATER_TARGET_CMD: ${{ steps.target.outputs.cmd }}
           E2E_TEST_TIMEOUT: ${{ inputs.test_timeout }}
+
   msi:
     if: ${{ inputs.test-msi }}
     runs-on: windows-latest
@@ -175,6 +179,7 @@ jobs:
           E2E_REPEATER_TARGET_URL: ${{ format('http://localhost:{0}', steps.target.outputs.port) }}
           E2E_REPEATER_TARGET_CMD: ${{ steps.target.outputs.cmd }}
           E2E_TEST_TIMEOUT: ${{ inputs.test_timeout }}
+
   docker:
     if: ${{ inputs.test-docker }}
     runs-on: ${{ matrix.os }}
@@ -193,7 +198,7 @@ jobs:
         run: docker pull brightsec/cli:${{ inputs.version }}
 
       - name: Checkout Repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@ee0669bd1cc54295c223e0bb666b733df41de1c5 # v2
 
       - name: Download Target
         id: target
@@ -217,10 +222,14 @@ jobs:
           E2E_REPEATER_TARGET_URL: ${{ format('http://host.docker.internal:{0}', steps.target.outputs.port) }}
           E2E_REPEATER_TARGET_CMD: ${{ steps.target.outputs.cmd }}
           E2E_TEST_TIMEOUT: ${{ inputs.test_timeout }}
+
   npm:
     if: ${{ inputs.test-npm }}
     runs-on: ${{ matrix.os }}
     container: ${{ matrix.container }}
+    env:
+      ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION: true
+
     strategy:
       fail-fast: false
       matrix:
@@ -257,7 +266,7 @@ jobs:
             && rm -rf /var/lib/apt/lists/*
 
       - name: Checkout Repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@ee0669bd1cc54295c223e0bb666b733df41de1c5 # v2
 
       - name: Download Target
         id: target
