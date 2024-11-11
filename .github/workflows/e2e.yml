@@ -97,7 +97,7 @@ jobs:
             && rm -rf /var/lib/apt/lists/*
 
       - name: Checkout Repository
-        uses: actions/checkout@ee0669bd1cc54295c223e0bb666b733df41de1c5 # v2
+        uses: actions/checkout@2
 
       - name: Download Executable
         shell: bash
@@ -198,7 +198,7 @@ jobs:
         run: docker pull brightsec/cli:${{ inputs.version }}
 
       - name: Checkout Repository
-        uses: actions/checkout@ee0669bd1cc54295c223e0bb666b733df41de1c5 # v2
+        uses: actions/checkout@2
 
       - name: Download Target
         id: target
@@ -266,7 +266,7 @@ jobs:
             && rm -rf /var/lib/apt/lists/*
 
       - name: Checkout Repository
-        uses: actions/checkout@ee0669bd1cc54295c223e0bb666b733df41de1c5 # v2
+        uses: actions/checkout@2
 
       - name: Download Target
         id: target
