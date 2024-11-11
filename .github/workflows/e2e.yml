@@ -67,7 +67,7 @@ jobs:
           - os: ubuntu-latest
             executable: bright-cli-linux-x64
             node: 20
-          - os: macos-11
+          - os: macos-12
             executable: bright-cli-macos-x64
             node: 20
           - os: macos-latest
