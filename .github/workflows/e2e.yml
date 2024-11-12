@@ -34,7 +34,7 @@ on:
           - development
       test_timeout:
         description: "Test timeout in seconds"
-        default: 3600
+        default: 5000
 
 jobs:
   executables:
@@ -187,7 +187,7 @@ jobs:
       fail-fast: false
       matrix:
         # Windows can't run linux docker images: https://github.com/actions/runner-images/issues/1143
-        os: [ubuntu-latest, macos-13]
+        os: [ubuntu-latest, macos-latest]
     steps:
       - name: Install Docker (MacOS)
         if: ${{ startsWith(matrix.os, 'macos') }}
