@@ -23,7 +23,7 @@ import { CliInfo } from '../Config';
 import { RepeaterCommandHub } from './RepeaterCommandHub';
 import { delay, inject, injectable } from 'tsyringe';
 import chalk from 'chalk';
-import { captureException } from '@sentry/node';
+import { captureException, setUser } from '@sentry/node';
 
 @injectable()
 export class ServerRepeaterLauncher implements RepeaterLauncher {
@@ -100,6 +100,10 @@ export class ServerRepeaterLauncher implements RepeaterLauncher {
     }
 
     this.repeaterRunning = true;
+
+    setUser({
+      username: repeaterId
+    });
 
     if (asDaemon) {
       await this.startupManager.run(() => this.close());
