@@ -34,7 +34,7 @@ on:
           - development
       test_timeout:
         description: "Test timeout in seconds"
-        default: 3600
+        default: 5000
 
 jobs:
   executables:
@@ -67,7 +67,7 @@ jobs:
           - os: ubuntu-latest
             executable: bright-cli-linux-x64
             node: 20
-          - os: macos-11
+          - os: macos-12
             executable: bright-cli-macos-x64
             node: 20
           - os: macos-latest
@@ -192,7 +192,7 @@ jobs:
       - name: Install Docker (MacOS)
         if: ${{ startsWith(matrix.os, 'macos') }}
         uses: docker-practice/actions-setup-docker@master
-        timeout-minutes: 12
+        timeout-minutes: 30
 
       - name: Pull Image
         run: docker pull brightsec/cli:${{ inputs.version }}
