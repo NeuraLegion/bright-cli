@@ -25,8 +25,8 @@
     "node": ">=16 <=20"
   },
   "dependencies": {
-    "@neuralegion/os-service": "1.2.2",
-    "@neuralegion/raw-socket": "1.8.2",
+    "@neuralegion/os-service": "^1.2.6",
+    "@neuralegion/raw-socket": "^1.8.6",
     "@sentry/node": "^7.70.0",
     "ajv": "^6.12.6",
     "amqplib": "~0.10.2",
