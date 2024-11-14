@@ -80,6 +80,14 @@ export class Logger {
   }
 
   private write(message: string, level: LogLevel, ...args: any[]): void {
+    if (level <= LogLevel.WARN) {
+      // write to stderr for errors and warnings
+      // eslint-disable-next-line no-console
+      console.error(`${this.formatHeader(level)} - ${message}`, ...args);
+
+      return;
+    }
+
     // eslint-disable-next-line no-console
     console.log(`${this.formatHeader(level)} - ${message}`, ...args);
   }
