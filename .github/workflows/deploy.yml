@@ -52,7 +52,7 @@ jobs:
           tag: ${{ github.ref }}
           file_glob: true
 
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4
         with:
           name: build
           path: |
@@ -92,7 +92,7 @@ jobs:
           ref: ${{ env.TARGET_REF }}
           token: ${{ secrets.GPR_TOKEN }}
 
-      - uses: actions/download-artifact@v4.1.7
+      - uses: actions/download-artifact@v4
         with:
           name: build
 
@@ -145,7 +145,7 @@ jobs:
           ref: ${{ env.TARGET_REF }}
           token: ${{ secrets.GPR_TOKEN }}
 
-      - uses: actions/download-artifact@v4.1.7
+      - uses: actions/download-artifact@v4
         with:
           name: build
 
