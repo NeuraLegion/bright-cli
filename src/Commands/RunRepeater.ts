@@ -135,17 +135,19 @@ export class RunRepeater implements CommandModule {
         requiresArg: true,
         array: true,
         describe:
-          'Comma-separated list of domains that should be routed through the proxy. This option is only applicable when using the --proxy option'
+          'Space-separated list of domains that should be routed through the proxy. This option is only applicable when using the --proxy option'
+      })
+      .option('proxy-domains-bypass', {
+        requiresArg: true,
+        array: true,
+        describe:
+          'Space-separated list of domains that should not be routed through the proxy. This option is only applicable when using the --proxy option'
       })
       .conflicts({
         daemon: 'remove-daemon',
-        ntlm: [
-          'proxy',
-          'proxy-bright',
-          'proxy-target',
-          'experimental-connection-reuse'
-        ]
+        ntlm: ['proxy', 'experimental-connection-reuse']
       })
+      .conflicts('proxy-domains', 'proxy-domains-bypass')
       .env('REPEATER')
       .middleware((args: Arguments) => {
         if (Object.hasOwnProperty.call(args, '')) {
@@ -196,7 +198,8 @@ export class RunRepeater implements CommandModule {
                 { type: 'application/ld+json', allowTruncation: false },
                 { type: 'application/graphql', allowTruncation: false }
               ],
-              proxyDomains: args.proxyDomains as string[]
+              proxyDomains: args.proxyDomains as string[],
+              proxyDomainsBypass: args.proxyDomainsBypass as string[]
             }
           })
           .register<DefaultRepeaterServerOptions>(
