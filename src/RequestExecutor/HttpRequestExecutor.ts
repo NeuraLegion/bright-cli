@@ -103,6 +103,20 @@ export class HttpRequestExecutor implements RequestExecutor {
 
       const { res, body } = await this.request(options);
 
+      logger.trace(
+        'received following response for request %j: headers: %j body: %s',
+        {
+          url: options.url,
+          protocol: this.protocol,
+          method: options.method
+        },
+        {
+          statusCode: res.statusCode,
+          headers: res.headers
+        },
+        body.slice(0, 500).concat(body.length > 500 ? '...' : '')
+      );
+
       return new Response({
         body,
         protocol: this.protocol,
