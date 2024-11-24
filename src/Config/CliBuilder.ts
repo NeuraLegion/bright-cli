@@ -5,6 +5,7 @@ import { CliInfo } from './CliInfo';
 import { Arguments, Argv, CommandModule } from 'yargs';
 import { init, runWithAsyncContext, setContext } from '@sentry/node';
 import ms from 'ms';
+import process from 'node:process';
 
 export interface CliBuilderOptions {
   info: CliInfo;
@@ -62,6 +63,7 @@ export class CliBuilder {
       })
       .option('proxy', {
         requiresArg: true,
+        default: process.env.PROXY,
         describe:
           'Specify a proxy URL to route all traffic through. This should be an HTTP(S), SOCKS4, or SOCKS5 URL. By default, if you specify SOCKS://<URL>, then SOCKS5h is applied.'
       })

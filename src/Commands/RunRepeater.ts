@@ -5,6 +5,7 @@ import { DefaultRepeaterServerOptions, RepeaterLauncher } from '../Repeater';
 import { Arguments, Argv, CommandModule } from 'yargs';
 import { captureException } from '@sentry/node';
 import { normalize } from 'node:path';
+import process from 'node:process';
 
 export class RunRepeater implements CommandModule {
   public readonly command = 'repeater [options]';
@@ -135,13 +136,40 @@ export class RunRepeater implements CommandModule {
         requiresArg: true,
         array: true,
         describe:
-          'Space-separated list of domains that should be routed through the proxy. This option is only applicable when using the --proxy option'
+          'Space-separated list of domains that should be routed through the proxy. This option is only applicable when using the --proxy option',
+        coerce(arg: string[]): string[] {
+          // if values are passed from env variable, they are passed as a single string
+          if (arg.length === 1) {
+            if (arg[0].includes(' ')) {
+              return arg[0].trim().split(' ');
+            }
+
+            return arg;
+          }
+
+          return arg;
+        }
       })
       .option('proxy-domains-bypass', {
         requiresArg: true,
         array: true,
+        default: process.env.NO_PROXY?.trim()
+          .split(',')
+          .map((domain) => domain.trim()),
         describe:
-          'Space-separated list of domains that should not be routed through the proxy. This option is only applicable when using the --proxy option'
+          'Space-separated list of domains that should not be routed through the proxy. This option is only applicable when using the --proxy option',
+        coerce(arg: string[]): string[] {
+          // if values are passed from env variable, they are passed as a single string
+          if (arg.length === 1) {
+            if (arg[0].includes(' ')) {
+              return arg[0].trim().split(' ');
+            }
+
+            return arg;
+          }
+
+          return arg;
+        }
       })
       .conflicts({
         daemon: 'remove-daemon',
