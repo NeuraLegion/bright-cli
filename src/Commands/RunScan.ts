@@ -145,6 +145,14 @@ export class RunScan implements CommandModule {
         describe:
           'Use automatic smart decisions such as: parameter skipping, detection phases, etc. to minimize scan time.'
       })
+      .option('concurrency', {
+        number: true,
+        default: 10,
+        requiresArg: true,
+        describe:
+          'Number of parallel requests to send. ' +
+          'The default value is 10, but it can be increased up to 50 to improve performance.'
+      })
       .option('param', {
         array: true,
         defaultDescription: `[${ATTACK_PARAM_LOCATIONS_DEFAULT.map(
@@ -197,6 +205,7 @@ export class RunScan implements CommandModule {
         repeaters: args.repeater,
         smart: args.smart,
         attackParamLocations: args.param,
+        poolSize: args.concurrency,
         exclusions: {
           requests: args.excludeEntryPoint,
           params: args.excludeParam
