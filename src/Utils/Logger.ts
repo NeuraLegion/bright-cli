@@ -6,7 +6,8 @@ export enum LogLevel {
   ERROR,
   WARN,
   NOTICE,
-  VERBOSE
+  VERBOSE,
+  TRACE
 }
 
 export class Logger {
@@ -79,9 +80,27 @@ export class Logger {
     this.write(message, LogLevel.VERBOSE, ...args);
   }
 
+  public trace(message: string, ...args: any[]): void {
+    if (this.logLevel < LogLevel.TRACE) {
+      return;
+    }
+
+    this.write(message, LogLevel.TRACE, ...args);
+  }
+
   private write(message: string, level: LogLevel, ...args: any[]): void {
+    const logMessage = `${this.formatHeader(level)} - ${message}`;
+
+    if (level <= LogLevel.WARN) {
+      // write to stderr for errors and warnings
+      // eslint-disable-next-line no-console
+      console.error(logMessage, ...args);
+
+      return;
+    }
+
     // eslint-disable-next-line no-console
-    console.log(`${this.formatHeader(level)} - ${message}`, ...args);
+    console.log(logMessage, ...args);
   }
 
   private formatHeader(level: LogLevel): string {
@@ -95,6 +114,7 @@ export class Logger {
       case LogLevel.NOTICE:
         return chalk.green(header);
       case LogLevel.VERBOSE:
+      case LogLevel.TRACE:
         return chalk.cyan(header);
     }
   }

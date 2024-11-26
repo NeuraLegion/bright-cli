@@ -40,6 +40,7 @@ export class HttpRequestExecutor implements RequestExecutor {
   private readonly httpAgent?: http.Agent;
   private readonly httpsAgent?: https.Agent;
   private readonly proxyDomains?: RegExp[];
+  private readonly proxyDomainsBypass?: RegExp[];
 
   get protocol(): Protocol {
     return Protocol.HTTP;
@@ -67,8 +68,20 @@ export class HttpRequestExecutor implements RequestExecutor {
       this.httpAgent = new http.Agent(agentOptions);
     }
 
+    if (this.options.proxyDomains && this.options.proxyDomainsBypass) {
+      throw new Error(
+        'cannot use both proxyDomains and proxyDomainsBypass at the same time'
+      );
+    }
+
     if (this.options.proxyDomains) {
       this.proxyDomains = this.options.proxyDomains.map((domain) =>
+        Helpers.wildcardToRegExp(domain)
+      );
+    }
+
+    if (this.options.proxyDomainsBypass) {
+      this.proxyDomainsBypass = this.options.proxyDomainsBypass.map((domain) =>
         Helpers.wildcardToRegExp(domain)
       );
     }
@@ -89,6 +102,20 @@ export class HttpRequestExecutor implements RequestExecutor {
       logger.debug('Executing HTTP request with following params: %j', options);
 
       const { res, body } = await this.request(options);
+
+      logger.trace(
+        'received following response for request %j: headers: %j body: %s',
+        {
+          url: options.url,
+          protocol: this.protocol,
+          method: options.method
+        },
+        {
+          statusCode: res.statusCode,
+          headers: res.headers
+        },
+        body.slice(0, 500).concat(body.length > 500 ? '...' : '')
+      );
 
       return new Response({
         body,
@@ -197,12 +224,27 @@ export class HttpRequestExecutor implements RequestExecutor {
   }
 
   private getRequestAgent(options: Request) {
+    // do not use proxy for domains that are not in the list
     if (
       this.proxyDomains &&
       !this.proxyDomains.some((domain) =>
         domain.test(parseUrl(options.url).hostname)
       )
     ) {
+      logger.debug("Not using proxy for URL '%s'", options.url);
+
+      return options.secureEndpoint ? this.httpsAgent : this.httpAgent;
+    }
+
+    // do not use proxy for domains that are in the bypass list
+    if (
+      this.proxyDomainsBypass &&
+      this.proxyDomainsBypass.some((domain) =>
+        domain.test(parseUrl(options.url).hostname)
+      )
+    ) {
+      logger.debug("Bypassing proxy for URL '%s'", options.url);
+
       return options.secureEndpoint ? this.httpsAgent : this.httpAgent;
     }
 
