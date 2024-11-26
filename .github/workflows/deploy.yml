@@ -52,7 +52,7 @@ jobs:
           tag: ${{ github.ref }}
           file_glob: true
 
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4
         with:
           name: build
           path: |
@@ -76,13 +76,11 @@ jobs:
           - os: macos-12
             target: macos
             node: 20
-          # Using the `centos7-devtoolset7` runner instead of latest (i.e. `ubuntu-20.04`)
-          # with gcc 7 but glibc 2.17, so binaries are compatible for Ubuntu 14.04 and Debian 8.
           - os: ubuntu-20.04
             target: linux
-            node: 16
+            node: 20
             container:
-              image: centos/devtoolset-7-toolchain-centos7:7
+              image: redhat/ubi8
               options: "--user root"
     runs-on: ${{ matrix.os }}
     container: ${{ matrix.container }}
@@ -92,7 +90,7 @@ jobs:
           ref: ${{ env.TARGET_REF }}
           token: ${{ secrets.GPR_TOKEN }}
 
-      - uses: actions/download-artifact@v3
+      - uses: actions/download-artifact@v4
         with:
           name: build
 
@@ -145,7 +143,7 @@ jobs:
           ref: ${{ env.TARGET_REF }}
           token: ${{ secrets.GPR_TOKEN }}
 
-      - uses: actions/download-artifact@v3
+      - uses: actions/download-artifact@v4
         with:
           name: build
 
