@@ -138,6 +138,10 @@ export class RunRepeater implements CommandModule {
         describe:
           'Space-separated list of domains that should be routed through the proxy. This option is only applicable when using the --proxy option',
         coerce(arg: string[]): string[] {
+          if (arg[0] === undefined) {
+            return undefined;
+          }
+
           // if values are passed from env variable, they are passed as a single string
           if (arg.length === 1) {
             if (arg[0].includes(' ')) {
@@ -161,6 +165,10 @@ export class RunRepeater implements CommandModule {
         coerce(arg: string[]): string[] {
           // if values are passed from env variable, they are passed as a single string
           if (arg.length === 1) {
+            if (arg[0] === undefined) {
+              return undefined;
+            }
+
             if (arg[0].includes(' ')) {
               return arg[0].trim().split(' ');
             }
@@ -191,6 +199,26 @@ export class RunRepeater implements CommandModule {
           throw new Error(
             'Option --id has wrong value. Please ensure that --id option has a valid ID.'
           );
+        }
+
+        const proxyDomains = (args.proxyDomains as string[]) ?? [];
+        for (const domain of proxyDomains) {
+          if (domain.includes(',')) {
+            throw new Error(
+              `Option --proxy-domains has wrong value.` +
+                `Please ensure that --proxy-domains option has spaced separate list of domain values`
+            );
+          }
+        }
+
+        const proxyDomainsBypass = (args.proxyDomainsBypass as string[]) ?? [];
+        for (const domain of proxyDomainsBypass) {
+          if (domain.includes(',')) {
+            throw new Error(
+              `Option --proxy-domain-bypass has wrong value.` +
+                `Please ensure that --proxy-domain-bypass option has spaced separate list of domain values`
+            );
+          }
         }
 
         return true;
