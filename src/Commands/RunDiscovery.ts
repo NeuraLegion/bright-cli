@@ -49,7 +49,7 @@ export class RunDiscovery implements CommandModule {
         normalize: true,
         requiresArg: true,
         describe:
-          "A collection your app's http/websockets logs into HAR file. " +
+          "A collection of your app's http/websockets logs into HAR file. " +
           'Usually you can use browser dev tools or our browser web extension'
       })
       .option('crawler', {
@@ -86,13 +86,15 @@ export class RunDiscovery implements CommandModule {
       .option('concurrency', {
         number: true,
         default: 10,
-        describe: 'Number of requests to send concurrently.',
+        describe:
+          'Number of maximum concurrent requests allowed to be sent to the target, can range between 1 to 50 (default: 10).',
         requiresArg: true
       })
       .option('interactions-depth', {
         number: true,
         default: 3,
-        describe: 'Maximum depth of interactions to crawl. Range is 1 to 5.',
+        describe:
+          'Number of maximum interactions with nested objects, can range between 1 to 5 (default: 3).',
         requiresArg: true
       })
       .middleware((args: Arguments) =>
