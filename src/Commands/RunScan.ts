@@ -153,8 +153,7 @@ export class RunScan implements CommandModule {
         default: 10,
         requiresArg: true,
         describe:
-          'Number of parallel requests to send. ' +
-          'The default value is 10, but it can be increased up to 50 to improve performance.'
+          'Number of maximum concurrent requests allowed to be sent to the target, can range between 1 to 50 (default: 10).'
       })
       .option('param', {
         array: true,
