@@ -16,6 +16,9 @@ import {
 } from './Commands';
 import { CliBuilder } from './Config';
 import container from './container';
+import { RunDiscovery } from './Commands/RunDiscovery';
+import { StopDiscovery } from './Commands/StopDiscovery';
+import { RerunDiscovery } from './Commands/RerunDiscovery';
 
 container.resolve(CliBuilder).build({
   commands: [
@@ -25,6 +28,9 @@ container.resolve(CliBuilder).build({
     new RunScan(),
     new RetestScan(),
     new StopScan(),
+    new RunDiscovery(),
+    new StopDiscovery(),
+    new RerunDiscovery(),
     new UploadArchive(),
     new Configure(),
     new GetEntryPoints()
