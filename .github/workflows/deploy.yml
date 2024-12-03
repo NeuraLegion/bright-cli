@@ -98,10 +98,7 @@ jobs:
         if: startsWith(matrix.os, 'ubuntu')
         run: |
           dnf install -y dnf-utils \
-          && dnf config-manager --enable ubi-8-appstream \
-          && dnf config-manager --enable ubi-8-baseos \
           && dnf install -y python3 gcc gcc-c++ make \
-          && dnf clean all \
           && rm -rf /var/cache/dnf
 
       - name: Install deps
