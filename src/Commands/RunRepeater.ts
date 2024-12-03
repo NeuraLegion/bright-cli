@@ -205,8 +205,8 @@ export class RunRepeater implements CommandModule {
         for (const domain of proxyDomains) {
           if (domain.includes(',')) {
             throw new Error(
-              `Option --proxy-domains has wrong value.` +
-                `Please ensure that --proxy-domains option has spaced separate list of domain values`
+              `Option --proxy-domains has a wrong value.` +
+                `Please ensure that --proxy-domains option has space separated list of domain values`
             );
           }
         }
@@ -216,7 +216,7 @@ export class RunRepeater implements CommandModule {
           if (domain.includes(',')) {
             throw new Error(
               `Option --proxy-domain-bypass has wrong value.` +
-                `Please ensure that --proxy-domain-bypass option has spaced separate list of domain values`
+                `Please ensure that --proxy-domain-bypass option has space separated list of domain values`
             );
           }
         }
