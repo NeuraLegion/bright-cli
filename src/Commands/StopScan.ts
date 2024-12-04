@@ -4,7 +4,7 @@ import { Arguments, Argv, CommandModule } from 'yargs';
 import { container } from 'tsyringe';
 
 export class StopScan implements CommandModule {
-  public readonly command = 'scan:stop [options] <scan>';
+  public readonly command = 'scan:stop [options] <scanId>';
   public readonly describe = 'Stop scan by id.';
 
   public builder(argv: Argv): Argv {
@@ -15,7 +15,7 @@ export class StopScan implements CommandModule {
         requiresArg: true,
         demandOption: true
       })
-      .positional('scan', {
+      .positional('scanId', {
         describe: 'ID of an existing scan which you want to stop.',
         requiresArg: true,
         demandOption: true,
@@ -38,7 +38,7 @@ export class StopScan implements CommandModule {
     try {
       const scanManager: Scans = container.resolve(Scans);
 
-      await scanManager.stop(args.scan as string);
+      await scanManager.stop(args.scanId as string);
 
       process.exit(0);
     } catch (error) {
