@@ -49,17 +49,17 @@ jobs:
       matrix:
         include:
           - os: ubuntu-latest
-            container: ubuntu:18.04
+            container: ubuntu:20.04
             executable: bright-cli-linux-x64
-            node: 16
+            node: 20
           - os: ubuntu-latest
-            container: ubuntu:16.04
+            container: ubuntu:22.04
             executable: bright-cli-linux-x64
-            node: 16
+            node: 20
           - os: ubuntu-latest
             container: fedora:24
             executable: bright-cli-linux-x64
-            node: 16
+            node: 20
           - os: ubuntu-latest
             container: fedora:latest
             executable: bright-cli-linux-x64
@@ -234,17 +234,17 @@ jobs:
       fail-fast: false
       matrix:
         os: [macos-latest, windows-latest, ubuntu-latest]
-        node: [16, 18, 20]
+        node: [20, 22]
         include:
           - os: ubuntu-latest
-            container: ubuntu:16.04
-            node: 16
+            container: ubuntu:20.04
+            node: 20
           - os: ubuntu-latest
             container: fedora:24
-            node: 16
+            node: 20
           - os: ubuntu-latest
             container: fedora:latest
-            node: 18
+            node: 20
           - os: ubuntu-latest
             container: fedora:latest
             node: 20
