@@ -136,7 +136,7 @@
       "./node_modules/@neuralegion/raw-socket/prebuilds/darwin-x64+arm64/node.abi115.node"
     ],
     "targets": [
-      "node16-linux-x64",
+      "node20-linux-x64",
       "node20-macos-x64",
       "node20-windows-x64"
     ],
