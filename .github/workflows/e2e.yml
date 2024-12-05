@@ -57,7 +57,7 @@ jobs:
             executable: bright-cli-linux-x64
             node: 20
           - os: ubuntu-latest
-            container: fedora:24
+            container: fedora:29
             executable: bright-cli-linux-x64
             node: 20
           - os: ubuntu-latest
@@ -240,11 +240,11 @@ jobs:
             container: ubuntu:20.04
             node: 20
           - os: ubuntu-latest
-            container: fedora:24
+            container: fedora:29
             node: 20
           - os: ubuntu-latest
             container: fedora:latest
-            node: 20
+            node: 22
           - os: ubuntu-latest
             container: fedora:latest
             node: 20
