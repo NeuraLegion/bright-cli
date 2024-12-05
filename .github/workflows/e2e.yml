@@ -240,7 +240,7 @@ jobs:
             container: ubuntu:20.04
             node: 20
           - os: ubuntu-latest
-            container: fedora:29
+            container: fedora:28
             node: 20
           - os: ubuntu-latest
             container: fedora:latest
