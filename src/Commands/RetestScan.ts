@@ -1,10 +1,10 @@
 import { RestScansOptions, Scans } from '../Scan';
-import { logger } from '../Utils';
+import { ErrorMessageFactory, logger } from '../Utils';
 import { Arguments, Argv, CommandModule } from 'yargs';
 import { container } from 'tsyringe';
 
 export class RetestScan implements CommandModule {
-  public readonly command = 'scan:retest [options] <scan>';
+  public readonly command = 'scan:retest [options] <scanId>';
   public readonly describe =
     'Request to start a new scan using the same configuration as an existing scan, by scan ID.';
 
@@ -16,7 +16,7 @@ export class RetestScan implements CommandModule {
         requiresArg: true,
         demandOption: true
       })
-      .positional('scan', {
+      .positional('scanId', {
         describe: 'ID of an existing scan which you want to re-run.',
         type: 'string',
         demandOption: true
@@ -37,14 +37,19 @@ export class RetestScan implements CommandModule {
   public async handler(args: Arguments): Promise<void> {
     try {
       const scanManager: Scans = container.resolve(Scans);
-      const scanId: string = await scanManager.retest(args.scan as string);
+      const scanId: string = await scanManager.retest(args.scanId as string);
 
       // eslint-disable-next-line no-console
       console.log(scanId);
 
       process.exit(0);
-    } catch (e) {
-      logger.error(`Error during "scan:retest": ${e.error || e.message}`);
+    } catch (error) {
+      logger.error(
+        ErrorMessageFactory.genericCommandError({
+          error,
+          command: 'scan:retest'
+        })
+      );
       process.exit(1);
     }
   }

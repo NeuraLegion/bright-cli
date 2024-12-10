@@ -180,7 +180,7 @@ describe('RunScan', () => {
 
       // assert
       verify(processSpy.exit(1)).once();
-      verify(loggerSpy.error(`Error during "scan:run": ${errMessage}`)).once();
+      verify(loggerSpy.error(`Error during "scan:run": ${errMessage}.`)).once();
     });
 
     it('should display warnings when present', async () => {

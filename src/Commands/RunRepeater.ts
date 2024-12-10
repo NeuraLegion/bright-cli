@@ -1,10 +1,11 @@
 import { Cert, RequestExecutorOptions } from '../RequestExecutor';
-import { Helpers, logger } from '../Utils';
+import { ErrorMessageFactory, Helpers, logger } from '../Utils';
 import container from '../container';
 import { DefaultRepeaterServerOptions, RepeaterLauncher } from '../Repeater';
 import { Arguments, Argv, CommandModule } from 'yargs';
 import { captureException } from '@sentry/node';
 import { normalize } from 'node:path';
+import process from 'node:process';
 
 export class RunRepeater implements CommandModule {
   public readonly command = 'repeater [options]';
@@ -135,17 +136,54 @@ export class RunRepeater implements CommandModule {
         requiresArg: true,
         array: true,
         describe:
-          'Comma-separated list of domains that should be routed through the proxy. This option is only applicable when using the --proxy option'
+          'Space-separated list of domains that should be routed through the proxy. This option is only applicable when using the --proxy option',
+        coerce(arg: string[]): string[] {
+          if (arg[0] === undefined) {
+            return undefined;
+          }
+
+          // if values are passed from env variable, they are passed as a single string
+          if (arg.length === 1) {
+            if (arg[0].includes(' ')) {
+              return arg[0].trim().split(' ');
+            }
+
+            return arg;
+          }
+
+          return arg;
+        }
+      })
+      .option('proxy-domains-bypass', {
+        requiresArg: true,
+        array: true,
+        default: process.env.NO_PROXY?.trim()
+          .split(',')
+          .map((domain) => domain.trim()),
+        describe:
+          'Space-separated list of domains that should not be routed through the proxy. This option is only applicable when using the --proxy option',
+        coerce(arg: string[]): string[] {
+          // if values are passed from env variable, they are passed as a single string
+          if (arg.length === 1) {
+            if (arg[0] === undefined) {
+              return undefined;
+            }
+
+            if (arg[0].includes(' ')) {
+              return arg[0].trim().split(' ');
+            }
+
+            return arg;
+          }
+
+          return arg;
+        }
       })
       .conflicts({
         daemon: 'remove-daemon',
-        ntlm: [
-          'proxy',
-          'proxy-bright',
-          'proxy-target',
-          'experimental-connection-reuse'
-        ]
+        ntlm: ['proxy', 'experimental-connection-reuse']
       })
+      .conflicts('proxy-domains', 'proxy-domains-bypass')
       .env('REPEATER')
       .middleware((args: Arguments) => {
         if (Object.hasOwnProperty.call(args, '')) {
@@ -161,6 +199,26 @@ export class RunRepeater implements CommandModule {
           throw new Error(
             'Option --id has wrong value. Please ensure that --id option has a valid ID.'
           );
+        }
+
+        const proxyDomains = (args.proxyDomains as string[]) ?? [];
+        for (const domain of proxyDomains) {
+          if (domain.includes(',')) {
+            throw new Error(
+              `Option --proxy-domains has a wrong value.` +
+                `Please ensure that --proxy-domains option has space separated list of domain values`
+            );
+          }
+        }
+
+        const proxyDomainsBypass = (args.proxyDomainsBypass as string[]) ?? [];
+        for (const domain of proxyDomainsBypass) {
+          if (domain.includes(',')) {
+            throw new Error(
+              `Option --proxy-domain-bypass has wrong value.` +
+                `Please ensure that --proxy-domain-bypass option has space separated list of domain values`
+            );
+          }
         }
 
         return true;
@@ -196,7 +254,8 @@ export class RunRepeater implements CommandModule {
                 { type: 'application/ld+json', allowTruncation: false },
                 { type: 'application/graphql', allowTruncation: false }
               ],
-              proxyDomains: args.proxyDomains as string[]
+              proxyDomains: args.proxyDomains as string[],
+              proxyDomainsBypass: args.proxyDomainsBypass as string[]
             }
           })
           .register<DefaultRepeaterServerOptions>(
@@ -254,9 +313,11 @@ export class RunRepeater implements CommandModule {
       );
 
       await repeaterLauncher.run(args.id as string, args.run as boolean);
-    } catch (e) {
-      captureException(e);
-      logger.error(e);
+    } catch (error) {
+      captureException(error);
+      logger.error(
+        ErrorMessageFactory.genericCommandError({ error, command: 'repeater' })
+      );
       await repeaterLauncher.close();
       process.exitCode = 1;
     }

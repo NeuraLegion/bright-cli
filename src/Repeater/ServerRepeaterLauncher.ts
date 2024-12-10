@@ -23,7 +23,7 @@ import { CliInfo } from '../Config';
 import { RepeaterCommandHub } from './RepeaterCommandHub';
 import { delay, inject, injectable } from 'tsyringe';
 import chalk from 'chalk';
-import { captureException } from '@sentry/node';
+import { captureException, setTag } from '@sentry/node';
 
 @injectable()
 export class ServerRepeaterLauncher implements RepeaterLauncher {
@@ -101,6 +101,8 @@ export class ServerRepeaterLauncher implements RepeaterLauncher {
 
     this.repeaterRunning = true;
 
+    setTag('bridge_id', repeaterId);
+
     if (asDaemon) {
       await this.startupManager.run(() => this.close());
     }
@@ -112,8 +114,6 @@ export class ServerRepeaterLauncher implements RepeaterLauncher {
     this.subscribeToEvents();
 
     await this.repeaterServer.connect(this.repeaterId);
-
-    logger.log('The Repeater (%s) started', this.info.version);
   }
 
   private getRuntime(): DeploymentRuntime {
@@ -210,6 +210,7 @@ export class ServerRepeaterLauncher implements RepeaterLauncher {
         },
         this.getRuntime()
       );
+      logger.log('The Repeater (%s) started', this.info.version);
     } catch {
       // noop
     }

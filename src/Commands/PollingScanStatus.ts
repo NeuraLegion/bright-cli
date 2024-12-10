@@ -4,12 +4,12 @@ import {
   PollingFactory,
   RestScansOptions
 } from '../Scan';
-import { Helpers, logger } from '../Utils';
+import { ErrorMessageFactory, Helpers, logger } from '../Utils';
 import { Arguments, Argv, CommandModule } from 'yargs';
 import { container } from 'tsyringe';
 
 export class PollingScanStatus implements CommandModule {
-  public readonly command = 'scan:polling [options] <scan>';
+  public readonly command = 'scan:polling [options] <scanId>';
   public readonly describe = 'Allows to configure a polling of scan status.';
 
   public builder(argv: Argv): Argv {
@@ -42,7 +42,7 @@ export class PollingScanStatus implements CommandModule {
         requiresArg: true,
         default: BreakpointType.ANY
       })
-      .positional('scan', {
+      .positional('scanId', {
         describe: 'ID of an existing scan which you want to check.',
         type: 'string',
         demandOption: true
@@ -64,7 +64,7 @@ export class PollingScanStatus implements CommandModule {
     try {
       const pollingFactory = container.resolve<PollingFactory>(PollingFactory);
       const polling = pollingFactory.create({
-        scanId: args.scan as string,
+        scanId: args.scanId as string,
         timeout: args.timeout as number,
         interval: args.interval as number,
         breakpoint: args.breakpoint as BreakpointType
@@ -73,14 +73,19 @@ export class PollingScanStatus implements CommandModule {
       await polling.start();
 
       process.exit(0);
-    } catch (e) {
-      if (e instanceof BreakpointException) {
+    } catch (error) {
+      if (error instanceof BreakpointException) {
         logger.error(`The breakpoint has been hit during polling.`);
-        logger.error(`Breakpoint: ${e.message}`);
+        logger.error(`Breakpoint: ${error.message}`);
         process.exit(50);
       }
 
-      logger.error(`Error during "scan:polling": ${e.error || e.message}`);
+      logger.error(
+        ErrorMessageFactory.genericCommandError({
+          error,
+          command: 'scan:polling'
+        })
+      );
       process.exit(1);
     }
   }

@@ -7,10 +7,9 @@ import {
   Scans,
   ATTACK_PARAM_LOCATIONS_DEFAULT
 } from '../Scan';
-import { Helpers, logger } from '../Utils';
+import { ErrorMessageFactory, Helpers, logger } from '../Utils';
 import { Arguments, Argv, CommandModule } from 'yargs';
 import { container } from 'tsyringe';
-import { isAxiosError } from 'axios';
 import { EOL } from 'node:os';
 
 export class RunScan implements CommandModule {
@@ -25,7 +24,11 @@ export class RunScan implements CommandModule {
 
         if (!nonEmptyPatterns.length) {
           logger.error(
-            'Error during "scan:run": please make sure that patterns contain at least one regexp.'
+            ErrorMessageFactory.genericCommandError({
+              command: 'scan:run',
+              error:
+                'please make sure that patterns contain at least one regexp'
+            })
           );
           process.exit(1);
         }
@@ -150,8 +153,7 @@ export class RunScan implements CommandModule {
         default: 10,
         requiresArg: true,
         describe:
-          'Number of parallel requests to send. ' +
-          'The default value is 10, but it can be increased up to 50 to improve performance.'
+          'Number of maximum concurrent requests allowed to be sent to the target, can range between 1 to 50 (default: 10).'
       })
       .option('param', {
         array: true,
@@ -223,12 +225,10 @@ export class RunScan implements CommandModule {
       }
 
       process.exit(0);
-    } catch (e) {
-      const errMessage =
-        isAxiosError(e) && typeof e.response?.data === 'string'
-          ? e.response.data
-          : e.error || e.message;
-      logger.error(`Error during "scan:run": ${errMessage}`);
+    } catch (error) {
+      logger.error(
+        ErrorMessageFactory.genericCommandError({ error, command: 'scan:run' })
+      );
       process.exit(1);
     }
   }

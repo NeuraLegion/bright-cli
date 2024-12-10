@@ -14,7 +14,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           ref: ${{ env.TARGET_REF }}
           token: ${{ secrets.GPR_TOKEN }}
@@ -26,7 +26,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: install-deps
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           ref: ${{ env.TARGET_REF }}
           token: ${{ secrets.GPR_TOKEN }}
@@ -45,7 +45,7 @@ jobs:
       - name: Pack artifacts
         run: npm pack
 
-      - uses: svenstaro/upload-release-action@2.7.0
+      - uses: svenstaro/upload-release-action@2.9.0
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           file: ./brightsec-cli-*
@@ -85,7 +85,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     container: ${{ matrix.container }}
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           ref: ${{ env.TARGET_REF }}
           token: ${{ secrets.GPR_TOKEN }}
@@ -97,11 +97,9 @@ jobs:
       - name: Install dev-deps
         if: startsWith(matrix.os, 'ubuntu')
         run: |
-          sed -i 's/mirrorlist/#mirrorlist/g' /etc/yum.repos.d/CentOS-* \
-          && sed -i 's|#baseurl=http://mirror.centos.org|baseurl=http://vault.centos.org|g' /etc/yum.repos.d/CentOS-* \
-          && yum install build-essential python3 -y \
-          && yum clean all -y \
-          && rm -rf /var/cache/yum
+          dnf install -y dnf-utils \
+          && dnf install -y python3 gcc gcc-c++ make \
+          && rm -rf /var/cache/dnf
 
       - name: Install deps
         uses: ./.github/workflows/composite/npm
@@ -119,14 +117,14 @@ jobs:
         run: .\tools\scripts\build-msi.ps1
         shell: pwsh
 
-      - uses: svenstaro/upload-release-action@2.7.0
+      - uses: svenstaro/upload-release-action@2.9.0
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           file: ${{ startsWith(matrix.os, 'win') && '.\bin\cli.exe' || './bin/cli' }}
           asset_name: ${{ format('bright-cli-{0}-x64{1}', matrix.target, startsWith(matrix.os, 'win') && '.exe' || '') }}
           tag: ${{ github.ref }}
 
-      - uses: svenstaro/upload-release-action@2.7.0
+      - uses: svenstaro/upload-release-action@2.9.0
         if: startsWith(matrix.os, 'win')
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
@@ -138,7 +136,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: build
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           ref: ${{ env.TARGET_REF }}
           token: ${{ secrets.GPR_TOKEN }}

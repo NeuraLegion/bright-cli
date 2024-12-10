@@ -1,4 +1,4 @@
-import { logger } from '../Utils';
+import { ErrorMessageFactory, logger } from '../Utils';
 import { ConnectivityUrls, Platform, TestType, Options } from '../Wizard';
 import container from '../container';
 import { Arguments, Argv, CommandModule } from 'yargs';
@@ -98,8 +98,10 @@ export class Configure implements CommandModule {
 
       process.on('SIGTERM', stop).on('SIGINT', stop).on('SIGHUP', stop);
       await app.start({ ping: !!args.ping, traceroute: !!args.traceroute });
-    } catch (e) {
-      logger.error(`Error during "configure": ${e.error || e.message}`);
+    } catch (error) {
+      logger.error(
+        ErrorMessageFactory.genericCommandError({ error, command: 'configure' })
+      );
       process.exit(1);
     }
   }
