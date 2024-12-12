@@ -56,6 +56,7 @@ import {
   ServerRepeaterLauncher
 } from './Repeater';
 import { ProxyFactory, DefaultProxyFactory } from './Utils';
+import { Discoveries, RestDiscoveries } from './Discovery';
 import { container, Lifecycle } from 'tsyringe';
 
 container
@@ -167,6 +168,11 @@ container
     { lifecycle: Lifecycle.Singleton }
   )
   .register(Scans, { useClass: RestScans }, { lifecycle: Lifecycle.Singleton })
+  .register(
+    Discoveries,
+    { useClass: RestDiscoveries },
+    { lifecycle: Lifecycle.Singleton }
+  )
   .register(
     EntryPoints,
     { useClass: RestEntryPoints },

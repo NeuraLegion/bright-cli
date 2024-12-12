@@ -9,7 +9,7 @@ import { Arguments, Argv, CommandModule } from 'yargs';
 import { container } from 'tsyringe';
 
 export class PollingScanStatus implements CommandModule {
-  public readonly command = 'scan:polling [options] <scan>';
+  public readonly command = 'scan:polling [options] <scanId>';
   public readonly describe = 'Allows to configure a polling of scan status.';
 
   public builder(argv: Argv): Argv {
@@ -42,7 +42,7 @@ export class PollingScanStatus implements CommandModule {
         requiresArg: true,
         default: BreakpointType.ANY
       })
-      .positional('scan', {
+      .positional('scanId', {
         describe: 'ID of an existing scan which you want to check.',
         type: 'string',
         demandOption: true
@@ -64,7 +64,7 @@ export class PollingScanStatus implements CommandModule {
     try {
       const pollingFactory = container.resolve<PollingFactory>(PollingFactory);
       const polling = pollingFactory.create({
-        scanId: args.scan as string,
+        scanId: args.scanId as string,
         timeout: args.timeout as number,
         interval: args.interval as number,
         breakpoint: args.breakpoint as BreakpointType
