@@ -130,10 +130,10 @@
     "assets": [
       "./node_modules/axios/**",
       "./node_modules/win-ca/lib/crypt32-*.node",
-      "./node_modules/@neuralegion/os-service/prebuilds/win32-*/node.abi115.node",
-      "./node_modules/@neuralegion/raw-socket/prebuilds/win32-*/node.abi115.node",
-      "./node_modules/@neuralegion/raw-socket/prebuilds/linux-x64/node.abi115.glibc.node",
-      "./node_modules/@neuralegion/raw-socket/prebuilds/darwin-x64+arm64/node.abi115.node"
+      "./node_modules/@neuralegion/os-service/prebuilds/win32-*/@neuralegion+raw-socket.abi115.node",
+      "./node_modules/@neuralegion/raw-socket/prebuilds/win32-*/@neuralegion+raw-socket.abi115.node",
+      "./node_modules/@neuralegion/raw-socket/prebuilds/linux-x64/@neuralegion+raw-socket.abi115.glibc.node",
+      "./node_modules/@neuralegion/raw-socket/prebuilds/darwin-x64+arm64/@neuralegion+raw-socket.abi115.node"
     ],
     "targets": [
       "node20-linux-x64",
