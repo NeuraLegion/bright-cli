@@ -9,6 +9,7 @@ import {
 } from './Discoveries';
 import { ProxyFactory } from '../Utils';
 import { CliInfo } from '../Config';
+import { DiscoveryView } from './DiscoveryView';
 import { delay, inject, injectable } from 'tsyringe';
 import axios, { Axios } from 'axios';
 import http from 'node:http';
@@ -91,6 +92,19 @@ export class RestDiscoveries implements Discoveries {
     await this.client.delete(
       `/api/v2/projects/${projectId}/discoveries/${discoveryId}`
     );
+  }
+
+  public async get(
+    projectId: string,
+    discoveryId: string,
+    options?: { signal?: AbortSignal }
+  ): Promise<DiscoveryView> {
+    const res = await this.client.get<DiscoveryView>(
+      `/api/v2/projects/${projectId}/discoveries/${discoveryId}`,
+      { signal: options?.signal }
+    );
+
+    return res.data;
   }
 
   private async prepareConfig({ headers, ...rest }: DiscoveryConfig): Promise<

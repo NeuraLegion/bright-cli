@@ -1,4 +1,4 @@
-import { Polling } from './Polling';
+import { Polling } from '../Utils/Polling';
 import { BreakpointType } from './BreakpointType';
 
 export interface PollingConfig {

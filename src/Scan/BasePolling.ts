@@ -1,5 +1,5 @@
 import { Scans, ScanState, ScanStatus } from './Scans';
-import { Polling } from './Polling';
+import { Polling } from '../Utils/Polling';
 import { Breakpoint } from './Breakpoint';
 import { Backoff, logger } from '../Utils';
 import { PollingConfig } from './PollingFactory';

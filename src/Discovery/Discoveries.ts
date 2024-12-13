@@ -1,3 +1,5 @@
+import { DiscoveryView } from './DiscoveryView';
+
 export interface DiscoveryConfig {
   name: string;
   authObjectId?: string;
@@ -34,6 +36,12 @@ export interface Discoveries {
   stop(projectId: string, discoveryId: string): Promise<void>;
 
   delete(projectId: string, discoveryId: string): Promise<void>;
+
+  get(
+    projectId: string,
+    discoveryId: string,
+    options?: { signal?: AbortSignal }
+  ): Promise<DiscoveryView>;
 }
 
 export const Discoveries: unique symbol = Symbol('Discoveries');
