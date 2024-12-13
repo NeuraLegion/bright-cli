@@ -1,4 +1,4 @@
 export * from './Discoveries';
 export * from './RestDiscoveries';
 export * from './DiscoveryPollingFactory';
-export * from './DefaultPollingFactory';
+export * from './DefaultDiscoveryPollingFactory';

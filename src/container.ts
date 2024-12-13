@@ -60,7 +60,7 @@ import {
   Discoveries,
   RestDiscoveries,
   DiscoveryPollingFactory as DiscoveryPollingFactory,
-  DefaultPollingFactory as DefaultDiscoveryPollingFactory
+  DefaultDiscoveryPollingFactory as DefaultDiscoveryPollingFactory
 } from './Discovery';
 import { container, Lifecycle } from 'tsyringe';
 

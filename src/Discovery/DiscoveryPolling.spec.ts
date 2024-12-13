@@ -106,7 +106,6 @@ describe('DiscoveryPolling', () => {
 
         // assert
         verify(discoveryManagerMock.get(projectId, discoveryId)).twice();
-        // verify(loggerSpy.log(`The discovery has been finished`)).once();
         verify(
           loggerSpy.log(
             `The discovery has been finished with status: ${status}.`
