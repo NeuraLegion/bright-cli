@@ -83,7 +83,11 @@ describe('BasePolling', () => {
       );
 
       // assert
-      verify(loggerSpy.warn(`Warning: The minimal value for polling interval is 10 seconds.`)).once();
+      verify(
+        loggerSpy.warn(
+          `Warning: The minimal value for polling interval is 10 seconds.`
+        )
+      ).once();
     });
   });
 
