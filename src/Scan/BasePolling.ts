@@ -33,8 +33,7 @@ export class BasePolling implements Polling {
 
     if (this.options.interval) {
       if (this.options.interval < this.defaultInterval) {
-        logger.warn(`Warning: polling interval is too small.`);
-        logger.warn(`The recommended way to set polling interval to 10s.`);
+        logger.warn(`Warning: The minimal value for polling interval is 10 seconds.`);
       }
     }
 

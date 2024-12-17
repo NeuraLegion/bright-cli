@@ -27,7 +27,7 @@ export class PollingDiscoveryStatus implements CommandModule {
       .option('interval', {
         requiresArg: true,
         describe:
-          'Period of time between the end of a timeout period or completion of a discovery status request, and the next request for status. ' +
+          'The sampling interval between status checks. ' +
           'Eg: 60, "2min", "10h", "7d". A numeric value is interpreted as a milliseconds count.',
         default: 5000
       })
