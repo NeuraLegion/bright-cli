@@ -83,9 +83,10 @@ describe('BasePolling', () => {
       );
 
       // assert
-      verify(loggerSpy.warn(`Warning: polling interval is too small.`)).once();
       verify(
-        loggerSpy.warn(`The recommended way to set polling interval to 10s.`)
+        loggerSpy.warn(
+          `Warning: The minimal value for polling interval is 10 seconds.`
+        )
       ).once();
     });
   });

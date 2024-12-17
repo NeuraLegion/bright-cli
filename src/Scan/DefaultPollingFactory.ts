@@ -1,6 +1,6 @@
 import { PollingConfig, PollingFactory } from './PollingFactory';
 import { Scans } from './Scans';
-import { Polling } from './Polling';
+import { Polling } from '../Utils/Polling';
 import { BasePolling } from './BasePolling';
 import { BreakpointFactory } from './BreakpointFactory';
 import { inject, injectable } from 'tsyringe';
