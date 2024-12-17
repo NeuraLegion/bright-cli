@@ -1,6 +1,6 @@
 {
   "name": "@brightsec/cli",
-  "version": "13.0.1",
+  "version": "13.0.2-next.1",
   "private": false,
   "repository": {
     "type": "git",
@@ -27,11 +27,11 @@
   "dependencies": {
     "@neuralegion/os-service": "^1.2.6",
     "@neuralegion/raw-socket": "^1.8.6",
-    "@sentry/node": "^7.70.0",
+    "@sentry/node": "^7.120.0",
     "ajv": "^6.12.6",
     "amqplib": "~0.10.2",
     "arch": "^2.2.0",
-    "axios": "^1.6.8",
+    "axios": "^1.7.8",
     "better-ajv-errors": "^1.2.0",
     "chalk": "^4.1.2",
     "ci-info": "^3.8.0",
@@ -55,7 +55,7 @@
     "ws": "^8.18.0",
     "yargs": "^17.7.2"
   },
-  "description": "Bright CLI is a CLI tool that can initialize, stop, polling and maintain scans in Bright solutions.",
+  "description": "Bright CLI is a CLI tool that can initialize, stop, poll and maintain scans in Bright solutions.",
   "devDependencies": {
     "@commitlint/cli": "^19.2.2",
     "@commitlint/config-conventional": "^19.2.2",
