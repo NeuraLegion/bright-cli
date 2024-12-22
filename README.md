@@ -15,9 +15,9 @@ The NPM allows you to install the Bright Command Line Interface (CLI) on your ma
 
 ## 🔎 Table of Contents
 
-- [Quick Start](#🚀-quick-start)
-- [Full Documentation](#📚-full-documentation)
-- [License](#📝-license)
+- [Quick Start](#-quick-start)
+- [Full Documentation](#-full-documentation)
+- [License](#-license)
 
 ## 🚀 Quick Start
 
@@ -77,6 +77,6 @@ The **Bright CLI** can do so much more! You can find a full guide with the usage
 
 ## 📝 License
 
-Copyright © 2023 [Bright Security Inc.](https://brightsec.com/)
+Copyright © 2024 [Bright Security Inc.](https://brightsec.com/)
 
 This project is licensed under the MIT License - see the [LICENSE file](LICENSE) for details.
