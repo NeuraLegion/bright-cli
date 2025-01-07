@@ -57,8 +57,7 @@ export class RunDiscovery implements CommandModule {
         requiresArg: true,
         array: true,
         describe:
-          'A list of specific urls that should be included into crawler.',
-        demandOption: true
+          'A list of specific urls that should be included into crawler.'
       })
       .option('host-filter', {
         alias: 'F',
