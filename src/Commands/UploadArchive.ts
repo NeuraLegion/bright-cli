@@ -38,7 +38,7 @@ export class UploadArchive implements CommandModule {
         describe:
           'Indicates if archive should be remove or not after scan running. Enabled by default.'
       })
-      .option('projectId', {
+      .option('project', {
         alias: 'p',
         describe:
           'ID of the project for uploading file (Optional for transition period, will be mandatory in future)' +
