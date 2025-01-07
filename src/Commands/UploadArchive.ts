@@ -111,7 +111,7 @@ export class UploadArchive implements CommandModule {
         ...file,
         type,
         discard: args.discard as boolean,
-        projectId: args.projectId as string,
+        projectId: args.project as string,
         headers: args.header as Record<string, string>,
         variables: args.variable as Record<string, string>
       };
