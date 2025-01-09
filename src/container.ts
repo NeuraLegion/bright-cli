@@ -22,7 +22,6 @@ import {
   HTTPConnectivity,
   Platform,
   ReadlinePlatform,
-  TCPConnectivity,
   TracerouteConnectivity,
   Tokens
 } from './Wizard';
@@ -136,13 +135,6 @@ container
     Connectivity,
     {
       useClass: HTTPConnectivity
-    },
-    { lifecycle: Lifecycle.Singleton }
-  )
-  .register(
-    Connectivity,
-    {
-      useClass: TCPConnectivity
     },
     { lifecycle: Lifecycle.Singleton }
   )
