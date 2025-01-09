@@ -108,7 +108,7 @@ export class ReadlinePlatform implements Platform {
     const url = this.urls.get(type);
 
     return this.process(
-      `Validating that the connection to ${url.host} at port ${url.port} is open`,
+      `Validating the ${type} connection to ${url.toString()}`,
       () => this.connectivityService.verifyAccess(type, url)
     );
   }
@@ -116,8 +116,6 @@ export class ReadlinePlatform implements Platform {
   private async processExternalCommunication(): Promise<void> {
     // eslint-disable-next-line no-console
     console.log(`Starting EXTERNAL communication diagnostics:${EOL}`);
-
-    await this.processConnectivity(TestType.TCP);
 
     await this.processConnectivity(TestType.HTTP);
 
