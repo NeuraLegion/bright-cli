@@ -50,6 +50,42 @@ export class CliBuilder {
         describe:
           'File path to write logs to. If specified, logs will be written to this file'
       })
+      .implies({
+        'log-max-size': 'log-file',
+        'log-max-files': 'log-file',
+        'log-rotate-interval': 'log-file',
+        'log-compress': 'log-file'
+      })
+      .group(
+        [
+          'log-max-size',
+          'log-max-files',
+          'log-rotate-interval',
+          'log-compress'
+        ],
+        'Log Rotation Options (requires --log-file):'
+      )
+      .option('log-max-size', {
+        requiresArg: true,
+        type: 'string',
+        describe:
+          'Maximum size of log file before rotation (e.g., "10MB", "1GB"). Default: 10MB'
+      })
+      .option('log-max-files', {
+        requiresArg: true,
+        type: 'number',
+        describe: 'Maximum number of rotated log files to keep. Default: 5'
+      })
+      .option('log-rotate-interval', {
+        requiresArg: true,
+        type: 'string',
+        describe:
+          'Time interval to rotate log files (e.g., "1d", "12h", "7d"). Default: 1d'
+      })
+      .option('log-compress', {
+        type: 'boolean',
+        describe: 'Compress rotated log files using gzip. Default: true'
+      })
       .option('cluster', {
         deprecated: 'Use --hostname instead',
         requiresArg: true,
@@ -107,6 +143,22 @@ export class CliBuilder {
         );
         args.api = api;
         args.repeaterServer = repeaterServer;
+
+        // Configure logger with rotation options if log file is specified
+        if (args.logFile) {
+          const options = {
+            maxSize: args.logMaxSize as string | undefined,
+            maxFiles: args.logMaxFiles as number | undefined,
+            interval: args.logRotateInterval as string | undefined,
+            compress: args.logCompress === false ? undefined : 'gzip'
+          };
+          const loggerOptions = createLogger(
+            args.logLevel as LogLevel,
+            args.logFile as string,
+            options
+          );
+          Object.assign(logger, loggerOptions);
+        }
       })
 
       .middleware((argv: Arguments) => {
@@ -125,6 +177,9 @@ export class CliBuilder {
             ? (+args.logLevel as unknown as LogLevel)
             : LogLevel[args.logLevel.toString().toUpperCase()])
       )
+      .middleware((_argv: Arguments) => {
+        this.handleDeprecatedOptions(_argv);
+      })
       .usage('Usage: $0 <command> [options] [<file | scan>]')
       .pkgConf('bright', info.cwd)
       .example(
@@ -188,4 +243,32 @@ export class CliBuilder {
       }
     });
   }
+
+  private handleDeprecatedOptions(_argv: Arguments) {
+    // Handle deprecated options here
+  }
+}
+
+interface LoggerOptions {
+  logLevel: LogLevel;
+  logFile: string;
+  maxSize: string | undefined;
+  maxFiles: number | undefined;
+  interval: string | undefined;
+  compress: string | undefined;
+}
+
+function createLogger(
+  logLevel: LogLevel,
+  logFile: string,
+  options: any
+): LoggerOptions {
+  return {
+    logLevel,
+    logFile,
+    maxSize: options.maxSize,
+    maxFiles: options.maxFiles,
+    interval: options.interval,
+    compress: options.compress
+  };
 }

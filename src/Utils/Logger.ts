@@ -1,6 +1,7 @@
 import chalk from 'chalk';
+import { createStream } from 'rotating-file-stream';
 import { format } from 'node:util';
-import { createWriteStream, WriteStream, mkdirSync, existsSync } from 'fs';
+import { mkdirSync, existsSync } from 'fs';
 import { dirname } from 'path';
 
 export enum LogLevel {
@@ -14,6 +15,19 @@ export enum LogLevel {
 
 export interface LogFile {
   write(data: string): void;
+  end?(): void;
+}
+
+export interface LogOptions {
+  // Size in bytes, default 10MB
+  maxSize?: string;
+  // Maximum number of rotated files to keep, default 5
+  maxFiles?: number;
+  // Interval to rotate the file even if size is not exceeded
+  // Examples: '1d', '12h', '7d'
+  interval?: string;
+  // Compression for rotated files ('gzip' or undefined)
+  compress?: 'gzip';
 }
 
 export class Logger {
@@ -24,9 +38,22 @@ export class Logger {
 
   private _logLevel: LogLevel;
   private _logFile?: LogFile;
+  private _logPath?: string;
+  private _logOptions: LogOptions;
 
-  constructor(logLevel: LogLevel = LogLevel.NOTICE, logFile?: string) {
+  constructor(
+    logLevel: LogLevel = LogLevel.NOTICE,
+    logFile?: string,
+    options: LogOptions = {}
+  ) {
     this._logLevel = logLevel;
+    this._logOptions = {
+      maxSize: '10MB',
+      maxFiles: 5,
+      interval: '1d',
+      compress: 'gzip',
+      ...options
+    };
     if (logFile) {
       this.logFile = logFile;
     }
@@ -41,23 +68,32 @@ export class Logger {
   }
 
   get logFile(): string | undefined {
-    return this._logFile && 'path' in this._logFile
-      ? (this._logFile as any).path
-      : undefined;
+    return this._logPath;
   }
 
   set logFile(filePath: string | undefined) {
     if (this._logFile && 'end' in this._logFile) {
-      (this._logFile as WriteStream).end();
+      this._logFile.end();
     }
     this._logFile = undefined;
+    this._logPath = undefined;
 
     if (filePath) {
       const dir = dirname(filePath);
       if (!existsSync(dir)) {
         mkdirSync(dir, { recursive: true });
       }
-      this._logFile = createWriteStream(filePath, { flags: 'a' });
+
+      // Create a rotating write stream
+      this._logFile = createStream(filePath, {
+        size: this._logOptions.maxSize,
+        interval: this._logOptions.interval,
+        compress: this._logOptions.compress,
+        maxFiles: this._logOptions.maxFiles,
+        // Rotate file names with timestamp
+        rotate: 1
+      });
+      this._logPath = filePath;
     }
   }
 
