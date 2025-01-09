@@ -44,6 +44,12 @@ export class CliBuilder {
         describe:
           'What level of logs to report. Any logs of a higher level than the setting are shown.'
       })
+      .option('log-file', {
+        requiresArg: true,
+        type: 'string',
+        describe:
+          'File path to write logs to. If specified, logs will be written to this file'
+      })
       .option('cluster', {
         deprecated: 'Use --hostname instead',
         requiresArg: true,
@@ -96,9 +102,22 @@ export class CliBuilder {
         hostname: 'cluster'
       })
       .middleware((args: Arguments) => {
-        ({ api: args.api, repeaterServer: args.repeaterServer } =
-          Helpers.getClusterUrls(args as ClusterArgs));
+        const { api, repeaterServer } = Helpers.getClusterUrls(
+          args as ClusterArgs
+        );
+        args.api = api;
+        args.repeaterServer = repeaterServer;
       })
+
+      .middleware((argv: Arguments) => {
+        logger.logLevel = argv['log-level'] as LogLevel;
+        if (argv['log-file']) {
+          logger.logFile = argv['log-file'] as string;
+        }
+
+        return argv;
+      })
+
       // TODO: (victor.polyakov@brightsec.com) Write correct type checking
       .middleware(
         (args: Arguments) =>

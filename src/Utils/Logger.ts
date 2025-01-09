@@ -1,5 +1,7 @@
 import chalk from 'chalk';
 import { format } from 'node:util';
+import { createWriteStream, WriteStream, mkdirSync, existsSync } from 'fs';
+import { dirname } from 'path';
 
 export enum LogLevel {
   SILENT,
@@ -10,11 +12,25 @@ export enum LogLevel {
   TRACE
 }
 
+export interface LogFile {
+  write(data: string): void;
+}
+
 export class Logger {
   private MAX_FORMATTED_LEVEL_LENGTH = Object.keys(LogLevel)
     .sort((a: string, b: string) => a.length - b.length)
     .slice(0)
     .pop().length;
+
+  private _logLevel: LogLevel;
+  private _logFile?: LogFile;
+
+  constructor(logLevel: LogLevel = LogLevel.NOTICE, logFile?: string) {
+    this._logLevel = logLevel;
+    if (logFile) {
+      this.logFile = logFile;
+    }
+  }
 
   get logLevel(): LogLevel {
     return this._logLevel;
@@ -24,10 +40,25 @@ export class Logger {
     this._logLevel = value;
   }
 
-  private _logLevel: LogLevel;
+  get logFile(): string | undefined {
+    return this._logFile && 'path' in this._logFile
+      ? (this._logFile as any).path
+      : undefined;
+  }
 
-  constructor(logLevel: LogLevel = LogLevel.NOTICE) {
-    this._logLevel = logLevel;
+  set logFile(filePath: string | undefined) {
+    if (this._logFile && 'end' in this._logFile) {
+      (this._logFile as WriteStream).end();
+    }
+    this._logFile = undefined;
+
+    if (filePath) {
+      const dir = dirname(filePath);
+      if (!existsSync(dir)) {
+        mkdirSync(dir, { recursive: true });
+      }
+      this._logFile = createWriteStream(filePath, { flags: 'a' });
+    }
   }
 
   public error(error: Error, message?: string, ...args: any[]): void;
@@ -47,13 +78,18 @@ export class Logger {
       if (arguments.length > 1) {
         args.unshift(messageOrArg);
       }
-
       message = errorOrMessage;
     } else {
-      message = messageOrArg ?? errorOrMessage.message;
+      const error = errorOrMessage as Error;
+      message = messageOrArg || error.message;
+      if (error.stack) {
+        args.push(`\n${error.stack}`);
+      }
     }
 
-    this.write(message, LogLevel.ERROR, ...args);
+    const formatted = this.formatMessage('ERROR', message, args);
+    this.writeToStderr(chalk.red(formatted));
+    this.writeToFile(formatted);
   }
 
   public warn(message: string, ...args: any[]): void {
@@ -61,7 +97,9 @@ export class Logger {
       return;
     }
 
-    this.write(message, LogLevel.WARN, ...args);
+    const formatted = this.formatMessage('WARN', message, args);
+    this.writeToStdout(chalk.yellow(formatted));
+    this.writeToFile(formatted);
   }
 
   public log(message: string, ...args: any[]): void {
@@ -69,7 +107,9 @@ export class Logger {
       return;
     }
 
-    this.write(message, LogLevel.NOTICE, ...args);
+    const formatted = this.formatMessage('NOTICE', message, args);
+    this.writeToStdout(chalk.green(formatted));
+    this.writeToFile(formatted);
   }
 
   public debug(message: string, ...args: any[]): void {
@@ -77,7 +117,9 @@ export class Logger {
       return;
     }
 
-    this.write(message, LogLevel.VERBOSE, ...args);
+    const formatted = this.formatMessage('VERBOSE', message, args);
+    this.writeToStdout(chalk.cyan(formatted));
+    this.writeToFile(formatted);
   }
 
   public trace(message: string, ...args: any[]): void {
@@ -85,45 +127,36 @@ export class Logger {
       return;
     }
 
-    this.write(message, LogLevel.TRACE, ...args);
+    const formatted = this.formatMessage('TRACE', message, args);
+    this.writeToStdout(chalk.cyan(formatted));
+    this.writeToFile(formatted);
   }
 
-  private write(message: string, level: LogLevel, ...args: any[]): void {
-    const logMessage = `${this.formatHeader(level)} - ${message}`;
-
-    if (level <= LogLevel.WARN) {
-      // write to stderr for errors and warnings
-      // eslint-disable-next-line no-console
-      console.error(logMessage, ...args);
-
-      return;
-    }
-
-    // eslint-disable-next-line no-console
-    console.log(logMessage, ...args);
-  }
-
-  private formatHeader(level: LogLevel): string {
-    const header = format('[%s] [%s]', new Date(), this.formattedLevel(level));
-
-    switch (level) {
-      case LogLevel.ERROR:
-        return chalk.red(header);
-      case LogLevel.WARN:
-        return chalk.yellow(header);
-      case LogLevel.NOTICE:
-        return chalk.green(header);
-      case LogLevel.VERBOSE:
-      case LogLevel.TRACE:
-        return chalk.cyan(header);
-    }
-  }
-
-  private formattedLevel(level: LogLevel): string {
-    return LogLevel[level]
-      .toString()
+  private formatMessage(level: string, message: string, args: any[]): string {
+    const formattedMessage = format(message, ...args);
+    const formattedLevel = level
       .toUpperCase()
       .padEnd(this.MAX_FORMATTED_LEVEL_LENGTH, ' ');
+
+    return `${new Date().toISOString()} [${formattedLevel}] ${formattedMessage}`;
+  }
+
+  private writeToFile(message: string): void {
+    if (this._logFile) {
+      try {
+        this._logFile.write(`${message}\n`);
+      } catch (error) {
+        // Silently handle write errors in tests
+      }
+    }
+  }
+
+  private writeToStdout(message: string): void {
+    process.stdout.write(`${message}\n`);
+  }
+
+  private writeToStderr(message: string): void {
+    process.stderr.write(`${message}\n`);
   }
 }
 
