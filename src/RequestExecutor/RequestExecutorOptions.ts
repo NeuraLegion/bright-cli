@@ -16,6 +16,7 @@ export interface RequestExecutorOptions {
   reuseConnection?: boolean;
   proxyDomains?: string[];
   proxyDomainsBypass?: string[];
+  keepAliveMsecs?: number;
 }
 
 export const RequestExecutorOptions: unique symbol = Symbol(

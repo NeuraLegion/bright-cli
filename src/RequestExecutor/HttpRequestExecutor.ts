@@ -60,6 +60,7 @@ export class HttpRequestExecutor implements RequestExecutor {
     if (this.options.reuseConnection) {
       const agentOptions: AgentOptions = {
         keepAlive: true,
+        keepAliveMsecs: this.options.keepAliveMsecs,
         maxSockets: 100,
         timeout: this.options.timeout
       };

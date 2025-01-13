@@ -154,6 +154,13 @@ export class RunRepeater implements CommandModule {
           return arg;
         }
       })
+      .option('keep-alive-msecs', {
+        requiresArg: false,
+        number: true,
+        default: 30000,
+        describe:
+          'The number of milliseconds to wait before closing the connection. This option is only applicable when using the --experimental-connection-reuse or --ntlm option'
+      })
       .option('proxy-domains-bypass', {
         requiresArg: true,
         array: true,
@@ -255,7 +262,8 @@ export class RunRepeater implements CommandModule {
                 { type: 'application/graphql', allowTruncation: false }
               ],
               proxyDomains: args.proxyDomains as string[],
-              proxyDomainsBypass: args.proxyDomainsBypass as string[]
+              proxyDomainsBypass: args.proxyDomainsBypass as string[],
+              keepAliveMsecs: args.keepAliveMsecs as number
             }
           })
           .register<DefaultRepeaterServerOptions>(
