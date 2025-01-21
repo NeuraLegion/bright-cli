@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: "Bright CLI version (e.g.: v10.3.1)"
+        description: "Bright CLI version (e.g.: v13.1.0)"
         required: true
       test-docker:
         type: boolean
