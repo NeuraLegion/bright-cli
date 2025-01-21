@@ -171,12 +171,13 @@ export class CliBuilder {
         return argv;
       })
 
-      // TODO: (victor.polyakov@brightsec.com) Write correct type checking
       .middleware(
         (args: Arguments) =>
           (logger.logLevel = !isNaN(+args.logLevel)
             ? (+args.logLevel as unknown as LogLevel)
-            : LogLevel[args.logLevel.toString().toUpperCase()])
+            : LogLevel[
+                args.logLevel?.toString().toUpperCase() as keyof typeof LogLevel
+              ])
       )
       .middleware((_argv: Arguments) => {
         this.handleDeprecatedOptions(_argv);

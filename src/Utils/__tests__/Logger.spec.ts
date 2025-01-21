@@ -1,4 +1,4 @@
-import { Logger, LogLevel, LogFile } from '../Logger';
+import { Logger, LogLevel } from '../Logger';
 import { mkdirSync, rmSync } from 'fs';
 import { join } from 'path';
 import os from 'os';
@@ -7,7 +7,7 @@ describe('Logger', () => {
   let logger: Logger;
   let stdoutSpy: jest.SpyInstance;
   let stderrSpy: jest.SpyInstance;
-  let mockLogFile: LogFile;
+  let mockLogFile: { write: jest.Mock; end: jest.Mock };
   let tempDir: string;
 
   beforeEach(() => {
@@ -53,47 +53,93 @@ describe('Logger', () => {
   describe('logging methods', () => {
     beforeEach(() => {
       logger = new Logger(LogLevel.TRACE);
-      (logger as any)._logFile = mockLogFile;
     });
 
     it('should log error messages', () => {
       logger.error('test error');
       expect(stderrSpy).toHaveBeenCalled();
+
+      // When logging to file
+      logger = new Logger(LogLevel.TRACE);
+      (logger as any)._logFile = mockLogFile;
+      logger.error('test error');
+      expect(stderrSpy).toHaveBeenCalledTimes(1); // No additional stderr calls
       expect(mockLogFile.write).toHaveBeenCalled();
     });
 
     it('should log error with Error object', () => {
       const error = new Error('test error');
+
+      // When logging to file
+      logger = new Logger(LogLevel.TRACE);
+      (logger as any)._logFile = mockLogFile;
       logger.error(error);
-      expect(stderrSpy).toHaveBeenCalled();
+      expect(stderrSpy).not.toHaveBeenCalled();
       expect(mockLogFile.write).toHaveBeenCalled();
-      const logCall = mockLogFile.write.mock.calls[0][0];
+      const logCall = (mockLogFile.write as jest.Mock).mock.calls[0][0];
       expect(logCall).toContain('test error');
       expect(logCall).toContain(error.stack);
+
+      // When not logging to file
+      logger = new Logger(LogLevel.TRACE);
+      logger.error(error);
+      expect(stderrSpy).toHaveBeenCalled();
     });
 
     it('should log warning messages', () => {
+      // When logging to file
+      logger = new Logger(LogLevel.TRACE);
+      (logger as any)._logFile = mockLogFile;
+      logger.warn('test warning');
+      expect(stdoutSpy).not.toHaveBeenCalled();
+      expect(mockLogFile.write).toHaveBeenCalled();
+
+      // When not logging to file
+      logger = new Logger(LogLevel.TRACE);
       logger.warn('test warning');
       expect(stdoutSpy).toHaveBeenCalled();
-      expect(mockLogFile.write).toHaveBeenCalled();
     });
 
     it('should log notice messages', () => {
+      // When logging to file
+      logger = new Logger(LogLevel.TRACE);
+      (logger as any)._logFile = mockLogFile;
+      logger.log('test notice');
+      expect(stdoutSpy).not.toHaveBeenCalled();
+      expect(mockLogFile.write).toHaveBeenCalled();
+
+      // When not logging to file
+      logger = new Logger(LogLevel.TRACE);
       logger.log('test notice');
       expect(stdoutSpy).toHaveBeenCalled();
-      expect(mockLogFile.write).toHaveBeenCalled();
     });
 
     it('should log debug messages', () => {
+      // When logging to file
+      logger = new Logger(LogLevel.TRACE);
+      (logger as any)._logFile = mockLogFile;
+      logger.debug('test debug');
+      expect(stdoutSpy).not.toHaveBeenCalled();
+      expect(mockLogFile.write).toHaveBeenCalled();
+
+      // When not logging to file
+      logger = new Logger(LogLevel.TRACE);
       logger.debug('test debug');
       expect(stdoutSpy).toHaveBeenCalled();
-      expect(mockLogFile.write).toHaveBeenCalled();
     });
 
     it('should log trace messages', () => {
+      // When logging to file
+      logger = new Logger(LogLevel.TRACE);
+      (logger as any)._logFile = mockLogFile;
+      logger.trace('test trace');
+      expect(stdoutSpy).not.toHaveBeenCalled();
+      expect(mockLogFile.write).toHaveBeenCalled();
+
+      // When not logging to file
+      logger = new Logger(LogLevel.TRACE);
       logger.trace('test trace');
       expect(stdoutSpy).toHaveBeenCalled();
-      expect(mockLogFile.write).toHaveBeenCalled();
     });
 
     it('should not log when level is below threshold', () => {
@@ -104,8 +150,10 @@ describe('Logger', () => {
     });
 
     it('should format messages with arguments', () => {
+      logger = new Logger(LogLevel.TRACE);
+      (logger as any)._logFile = mockLogFile;
       logger.log('test %s %d', 'string', 123);
-      const logCall = mockLogFile.write.mock.calls[0][0];
+      const logCall = (mockLogFile.write as jest.Mock).mock.calls[0][0];
       expect(logCall).toContain('test string 123');
     });
   });

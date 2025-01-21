@@ -112,9 +112,8 @@ export class Logger {
       }
 
       // Create a rotating write stream
-      const parsedSize = this.parseSize(this._logOptions.maxSize || '10MB');
       this._logFile = createStream(filePath, {
-        size: parsedSize,
+        size: this._logOptions.maxSize,
         interval: this._logOptions.interval,
         compress: this._logOptions.compress,
         maxFiles: this._logOptions.maxFiles,
@@ -231,35 +230,6 @@ export class Logger {
 
   private writeToStderr(message: string): void {
     process.stderr.write(`${message}\n`);
-  }
-
-  private parseSize(size: string): string {
-    // Remove any spaces
-    size = size.replace(/\s+/g, '');
-
-    // If it's already just a number, append 'B'
-    if (/^\d+$/.test(size)) {
-      return `${size}B`;
-    }
-
-    const units: Record<string, number> = {
-      B: 1,
-      KB: 1024,
-      MB: 1024 * 1024,
-      GB: 1024 * 1024 * 1024
-    };
-
-    const match = size.match(/^(\d+)(B|KB|MB|GB)$/i);
-    if (!match) {
-      this.writeToStderr(`Invalid size format: ${size}, using default 10MB\n`);
-
-      return '10485760B'; // 10MB in bytes
-    }
-
-    const value = parseInt(match[1], 10);
-    const unit = match[2].toUpperCase();
-
-    return `${Math.floor(value * units[unit])}B`;
   }
 }
 
