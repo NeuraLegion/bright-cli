@@ -1,5 +1,5 @@
 import { CliConfig, ConfigReader } from './ConfigReader';
-import { ClusterArgs, Helpers, logger, LogLevel } from '../Utils';
+import { ClusterArgs, Helpers, logger, Logger, LogLevel } from '../Utils';
 import { SystemConfigManager } from './SystemConfigManager';
 import { CliInfo } from './CliInfo';
 import { Arguments, Argv, CommandModule } from 'yargs';
@@ -147,17 +147,18 @@ export class CliBuilder {
         // Configure logger with rotation options if log file is specified
         if (args.logFile) {
           const options = {
-            maxSize: args.logMaxSize as string | undefined,
-            maxFiles: args.logMaxFiles as number | undefined,
-            interval: args.logRotateInterval as string | undefined,
-            compress: args.logCompress === false ? undefined : 'gzip'
+            maxSize: args['log-max-size'] as string | '10MB',
+            maxFiles: args['log-max-files'] as number | 5,
+            interval: args['log-rotate-interval'] as string | '1d',
+            compress: (args['log-compress'] === false ? undefined : 'gzip') as
+              | 'gzip'
+              | undefined
           };
-          const loggerOptions = createLogger(
+          Logger.configure(
             args.logLevel as LogLevel,
             args.logFile as string,
             options
           );
-          Object.assign(logger, loggerOptions);
         }
       })
 
@@ -247,28 +248,4 @@ export class CliBuilder {
   private handleDeprecatedOptions(_argv: Arguments) {
     // Handle deprecated options here
   }
-}
-
-interface LoggerOptions {
-  logLevel: LogLevel;
-  logFile: string;
-  maxSize: string | undefined;
-  maxFiles: number | undefined;
-  interval: string | undefined;
-  compress: string | undefined;
-}
-
-function createLogger(
-  logLevel: LogLevel,
-  logFile: string,
-  options: any
-): LoggerOptions {
-  return {
-    logLevel,
-    logFile,
-    maxSize: options.maxSize,
-    maxFiles: options.maxFiles,
-    interval: options.interval,
-    compress: options.compress
-  };
 }

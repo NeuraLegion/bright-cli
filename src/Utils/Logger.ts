@@ -31,11 +31,11 @@ export interface LogOptions {
 }
 
 export class Logger {
-  private MAX_FORMATTED_LEVEL_LENGTH = Object.keys(LogLevel)
+  private static instance: Logger;
+  private readonly MAX_FORMATTED_LEVEL_LENGTH = Object.keys(LogLevel)
     .sort((a: string, b: string) => a.length - b.length)
     .slice(0)
     .pop().length;
-
   private _logLevel: LogLevel;
   private _logFile?: LogFile;
   private _logPath?: string;
@@ -48,15 +48,42 @@ export class Logger {
   ) {
     this._logLevel = logLevel;
     this._logOptions = {
-      maxSize: '10MB',
-      maxFiles: 5,
-      interval: '1d',
-      compress: 'gzip',
-      ...options
+      maxSize: options.maxSize || '10MB',
+      maxFiles: options.maxFiles ?? 5,
+      interval: options.interval || '1d',
+      compress: options.compress ?? 'gzip'
     };
     if (logFile) {
       this.logFile = logFile;
     }
+  }
+
+  public static getInstance(): Logger {
+    if (!Logger.instance) {
+      Logger.instance = new Logger();
+    }
+
+    return Logger.instance;
+  }
+
+  public static configure(
+    logLevel: LogLevel = LogLevel.NOTICE,
+    logFile?: string,
+    options: LogOptions = {}
+  ): Logger {
+    const instance = Logger.getInstance();
+    instance._logLevel = logLevel;
+    instance._logOptions = {
+      maxSize: options.maxSize || '10MB',
+      maxFiles: options.maxFiles ?? 5,
+      interval: options.interval || '1d',
+      compress: options.compress ?? 'gzip'
+    };
+    if (logFile) {
+      instance.logFile = logFile;
+    }
+
+    return instance;
   }
 
   get logLevel(): LogLevel {
@@ -85,8 +112,9 @@ export class Logger {
       }
 
       // Create a rotating write stream
+      const parsedSize = this.parseSize(this._logOptions.maxSize || '10MB');
       this._logFile = createStream(filePath, {
-        size: this._logOptions.maxSize,
+        size: parsedSize,
         interval: this._logOptions.interval,
         compress: this._logOptions.compress,
         maxFiles: this._logOptions.maxFiles,
@@ -124,7 +152,9 @@ export class Logger {
     }
 
     const formatted = this.formatMessage('ERROR', message, args);
-    this.writeToStderr(chalk.red(formatted));
+    if (!this._logFile) {
+      this.writeToStderr(chalk.red(formatted));
+    }
     this.writeToFile(formatted);
   }
 
@@ -134,7 +164,9 @@ export class Logger {
     }
 
     const formatted = this.formatMessage('WARN', message, args);
-    this.writeToStdout(chalk.yellow(formatted));
+    if (!this._logFile) {
+      this.writeToStdout(chalk.yellow(formatted));
+    }
     this.writeToFile(formatted);
   }
 
@@ -144,7 +176,9 @@ export class Logger {
     }
 
     const formatted = this.formatMessage('NOTICE', message, args);
-    this.writeToStdout(chalk.green(formatted));
+    if (!this._logFile) {
+      this.writeToStdout(chalk.green(formatted));
+    }
     this.writeToFile(formatted);
   }
 
@@ -154,7 +188,9 @@ export class Logger {
     }
 
     const formatted = this.formatMessage('VERBOSE', message, args);
-    this.writeToStdout(chalk.cyan(formatted));
+    if (!this._logFile) {
+      this.writeToStdout(chalk.cyan(formatted));
+    }
     this.writeToFile(formatted);
   }
 
@@ -164,7 +200,9 @@ export class Logger {
     }
 
     const formatted = this.formatMessage('TRACE', message, args);
-    this.writeToStdout(chalk.cyan(formatted));
+    if (!this._logFile) {
+      this.writeToStdout(chalk.cyan(formatted));
+    }
     this.writeToFile(formatted);
   }
 
@@ -194,6 +232,35 @@ export class Logger {
   private writeToStderr(message: string): void {
     process.stderr.write(`${message}\n`);
   }
+
+  private parseSize(size: string): string {
+    // Remove any spaces
+    size = size.replace(/\s+/g, '');
+
+    // If it's already just a number, append 'B'
+    if (/^\d+$/.test(size)) {
+      return `${size}B`;
+    }
+
+    const units: Record<string, number> = {
+      B: 1,
+      KB: 1024,
+      MB: 1024 * 1024,
+      GB: 1024 * 1024 * 1024
+    };
+
+    const match = size.match(/^(\d+)(B|KB|MB|GB)$/i);
+    if (!match) {
+      this.writeToStderr(`Invalid size format: ${size}, using default 10MB\n`);
+
+      return '10485760B'; // 10MB in bytes
+    }
+
+    const value = parseInt(match[1], 10);
+    const unit = match[2].toUpperCase();
+
+    return `${Math.floor(value * units[unit])}B`;
+  }
 }
 
-export const logger: Logger = new Logger();
+export const logger: Logger = Logger.getInstance();
