@@ -33,11 +33,12 @@ export class ErrorMessageFactory {
     if (typeof params.error === 'string') {
       return params.error;
     }
-    if (
-      isAxiosError(params.error) &&
-      typeof params.error.response?.data === 'string'
-    ) {
-      params.error.response.data;
+
+    if (isAxiosError(params.error)) {
+      switch (typeof params.error.response?.data) {
+        case 'string':
+          return params.error.response.data;
+      }
     }
 
     return (params.error.error || params.error.message) ?? null;
