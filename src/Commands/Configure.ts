@@ -20,11 +20,6 @@ export class Configure implements CommandModule {
 
   public builder(argv: Argv): Argv {
     return argv
-      .option(TestType.TCP, {
-        hidden: true,
-        requiresArg: true,
-        describe: `Bright application base URL`
-      })
       .option(TestType.HTTP, {
         hidden: true,
         requiresArg: true,
@@ -70,10 +65,6 @@ export class Configure implements CommandModule {
           })
           .register(ConnectivityUrls, {
             useValue: new Map([
-              Configure.getMapEntryOrThrow(
-                TestType.TCP,
-                (args[TestType.TCP] ?? args.api) as string
-              ),
               Configure.getMapEntryOrThrow(
                 TestType.HTTP,
                 (args[TestType.HTTP] ?? args.api) as string

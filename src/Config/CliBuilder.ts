@@ -1,5 +1,5 @@
 import { CliConfig, ConfigReader } from './ConfigReader';
-import { ClusterArgs, Helpers, logger, LogLevel } from '../Utils';
+import { ClusterArgs, Helpers, logger, Logger, LogLevel } from '../Utils';
 import { SystemConfigManager } from './SystemConfigManager';
 import { CliInfo } from './CliInfo';
 import { Arguments, Argv, CommandModule } from 'yargs';
@@ -43,6 +43,48 @@ export class CliBuilder {
         default: LogLevel.NOTICE,
         describe:
           'What level of logs to report. Any logs of a higher level than the setting are shown.'
+      })
+      .option('log-file', {
+        requiresArg: true,
+        type: 'string',
+        describe:
+          'File path to write logs to. If specified, logs will be written to this file'
+      })
+      .implies({
+        'log-max-size': 'log-file',
+        'log-max-files': 'log-file',
+        'log-rotate-interval': 'log-file',
+        'log-compress': 'log-file'
+      })
+      .group(
+        [
+          'log-max-size',
+          'log-max-files',
+          'log-rotate-interval',
+          'log-compress'
+        ],
+        'Log Rotation Options (requires --log-file):'
+      )
+      .option('log-max-size', {
+        requiresArg: true,
+        type: 'string',
+        describe:
+          'Maximum size of log file before rotation (e.g., "10MB", "1GB"). Default: 10MB'
+      })
+      .option('log-max-files', {
+        requiresArg: true,
+        type: 'number',
+        describe: 'Maximum number of rotated log files to keep. Default: 5'
+      })
+      .option('log-rotate-interval', {
+        requiresArg: true,
+        type: 'string',
+        describe:
+          'Time interval to rotate log files (e.g., "1d", "12h", "7d"). Default: 1d'
+      })
+      .option('log-compress', {
+        type: 'boolean',
+        describe: 'Compress rotated log files using gzip. Default: true'
       })
       .option('cluster', {
         deprecated: 'Use --hostname instead',
@@ -96,15 +138,46 @@ export class CliBuilder {
         hostname: 'cluster'
       })
       .middleware((args: Arguments) => {
-        ({ api: args.api, repeaterServer: args.repeaterServer } =
-          Helpers.getClusterUrls(args as ClusterArgs));
+        const { api, repeaterServer } = Helpers.getClusterUrls(
+          args as ClusterArgs
+        );
+        args.api = api;
+        args.repeaterServer = repeaterServer;
+
+        // Configure logger with rotation options if log file is specified
+        if (args.logFile) {
+          const options = {
+            maxSize: args['log-max-size'] as string | '10MB',
+            maxFiles: args['log-max-files'] as number | 5,
+            interval: args['log-rotate-interval'] as string | '1d',
+            compress: (args['log-compress'] === false ? undefined : 'gzip') as
+              | 'gzip'
+              | undefined
+          };
+          Logger.configure(
+            args.logLevel as LogLevel,
+            args.logFile as string,
+            options
+          );
+        }
       })
-      // TODO: (victor.polyakov@brightsec.com) Write correct type checking
+
+      .middleware((argv: Arguments) => {
+        logger.logLevel = argv['log-level'] as LogLevel;
+        if (argv['log-file']) {
+          logger.logFile = argv['log-file'] as string;
+        }
+
+        return argv;
+      })
+
       .middleware(
         (args: Arguments) =>
           (logger.logLevel = !isNaN(+args.logLevel)
             ? (+args.logLevel as unknown as LogLevel)
-            : LogLevel[args.logLevel.toString().toUpperCase()])
+            : LogLevel[
+                args.logLevel?.toString().toUpperCase() as keyof typeof LogLevel
+              ])
       )
       .usage('Usage: $0 <command> [options] [<file | scan>]')
       .pkgConf('bright', info.cwd)

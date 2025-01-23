@@ -19,6 +19,7 @@ import container from './container';
 import { RunDiscovery } from './Commands/RunDiscovery';
 import { StopDiscovery } from './Commands/StopDiscovery';
 import { RerunDiscovery } from './Commands/RerunDiscovery';
+import { PollingDiscoveryStatus } from './Commands/PollingDiscoveryStatus';
 
 container.resolve(CliBuilder).build({
   commands: [
@@ -31,6 +32,7 @@ container.resolve(CliBuilder).build({
     new RunDiscovery(),
     new StopDiscovery(),
     new RerunDiscovery(),
+    new PollingDiscoveryStatus(),
     new UploadArchive(),
     new Configure(),
     new GetEntryPoints()

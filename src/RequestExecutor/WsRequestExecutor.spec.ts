@@ -13,7 +13,6 @@ describe('WsRequestExecutor', () => {
   const spiedExecutorOptions = spy<RequestExecutorOptions>(executorOptions);
   const proxyFactoryMock = mock<ProxyFactory>();
 
-  // TODO: discuss renaming such kind of variables to `SUT` or `UUT`
   let executor!: WsRequestExecutor;
 
   beforeEach(() => {
