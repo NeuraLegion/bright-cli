@@ -179,9 +179,6 @@ export class CliBuilder {
                 args.logLevel?.toString().toUpperCase() as keyof typeof LogLevel
               ])
       )
-      .middleware((_argv: Arguments) => {
-        this.handleDeprecatedOptions(_argv);
-      })
       .usage('Usage: $0 <command> [options] [<file | scan>]')
       .pkgConf('bright', info.cwd)
       .example(
@@ -244,9 +241,5 @@ export class CliBuilder {
         return event;
       }
     });
-  }
-
-  private handleDeprecatedOptions(_argv: Arguments) {
-    // Handle deprecated options here
   }
 }
