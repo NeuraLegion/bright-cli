@@ -18,6 +18,7 @@ export interface RequestOptions {
   maxContentSize?: number;
   timeout?: number;
   decompress?: boolean;
+  keepAlive?: boolean;
 }
 
 export interface Cert {
@@ -52,6 +53,7 @@ export class Request {
   public readonly maxContentSize?: number;
   public readonly decompress?: boolean;
   public readonly timeout?: number;
+  public readonly keepAlive?: boolean;
 
   private _method: string;
 
@@ -100,7 +102,8 @@ export class Request {
     maxContentSize,
     encoding,
     decompress = true,
-    headers = {}
+    headers = {},
+    keepAlive
   }: RequestOptions) {
     this.protocol = protocol;
     this._method = method?.toUpperCase() ?? 'GET';
@@ -129,6 +132,7 @@ export class Request {
     this.timeout = timeout;
     this.maxContentSize = maxContentSize;
     this.decompress = !!decompress;
+    this.keepAlive = keepAlive;
   }
 
   public setHeaders(headers: Record<string, string | string[]>): void {
