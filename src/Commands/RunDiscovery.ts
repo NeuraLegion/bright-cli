@@ -61,13 +61,13 @@ export class RunDiscovery implements CommandModule {
       })
       .conflicts('archive', 'crawler')
       .check((args) => {
-        if (argv.archive && argv.crawler) {
+        if (args.archive && args.crawler) {
           throw new Error(
             'Arguments archive and crawler are mutually exclusive'
           );
         }
 
-        if (!argv.archive && !argv.crawler) {
+        if (!args.archive && !args.crawler) {
           throw new Error('Either --archive or --crawler must be specified');
         }
 
