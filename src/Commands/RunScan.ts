@@ -172,6 +172,12 @@ export class RunScan implements CommandModule {
       })
       .conflicts('entrypoint', ['crawler', 'archive'])
       .check((args) => {
+        if (args.entrypoint && args.archive && args.crawler) {
+          throw new Error(
+            'Arguments --entrypoint, --archive and --crawler are mutually exclusive'
+          );
+        }
+
         if (!args.entrypoint && !args.archive && !args.crawler) {
           throw new Error(
             'When --entrypoint is not provided, either --archive or --crawler must be specified'

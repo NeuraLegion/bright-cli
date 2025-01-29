@@ -63,7 +63,7 @@ export class RunDiscovery implements CommandModule {
       .check((args) => {
         if (args.archive && args.crawler) {
           throw new Error(
-            'Arguments archive and crawler are mutually exclusive'
+            'Arguments --archive and --crawler are mutually exclusive'
           );
         }
 
