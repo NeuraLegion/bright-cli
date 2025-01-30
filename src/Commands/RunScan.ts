@@ -170,6 +170,22 @@ export class RunScan implements CommandModule {
         describe:
           'List entrypoint IDs to scan specific entrypoints. If no IDs are provided, the scan will run on the first 2000 project-level entrypoints. This option requires to specify the project ID using the --project option.'
       })
+      .conflicts('entrypoint', ['crawler', 'archive'])
+      .check((args) => {
+        if (args.entrypoint && args.archive && args.crawler) {
+          throw new Error(
+            'Arguments --entrypoint, --archive and --crawler are mutually exclusive'
+          );
+        }
+
+        if (!args.entrypoint && !args.archive && !args.crawler) {
+          throw new Error(
+            'When --entrypoint is not provided, either --archive or --crawler must be specified'
+          );
+        }
+
+        return true;
+      })
       .group(['archive', 'crawler'], 'Discovery Options')
       .group(
         ['host-filter', 'header', 'module', 'repeater', 'test', 'smart'],
