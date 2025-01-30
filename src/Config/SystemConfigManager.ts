@@ -147,6 +147,12 @@ export class SystemConfigManager {
         updatedAt: new Date(fileConfig.updatedAt)
       };
     } catch (e) {
+      if (e.code === 'ENOENT') {
+        logger.debug("System config file doesn't exist at %s", this.path);
+
+        return defaultConfigFile;
+      }
+
       logger.debug('Error during loading system config file', e);
       logger.debug('Using default system config file');
 
