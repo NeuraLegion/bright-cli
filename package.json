@@ -74,7 +74,7 @@
     "@types/yargs": "~16.0.1",
     "@typescript-eslint/eslint-plugin": "^5.33.1",
     "@typescript-eslint/parser": "^5.33.1",
-    "@yao-pkg/pkg": "^5.11.5",
+    "@yao-pkg/pkg": "^6.3.0",
     "axios-retry": "^4.3.0",
     "clean-webpack-plugin": "^4.0.0",
     "conventional-changelog-conventionalcommits": "^7.0.2",
@@ -158,7 +158,7 @@
     "test:unit": "cross-env NODE_ENV=test jest src",
     "test:e2e": "cross-env NODE_ENV=test jest tests",
     "build": "webpack --config webpack.config.js --mode=production",
-    "build:pkg": "pkg .",
+    "build:pkg": "pkg --options experimental-require-module .",
     "prepare": "is-ci || husky install",
     "start": "node -r ts-node/register/transpile-only -r tsconfig-paths/register src/index.ts"
   },
