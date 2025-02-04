@@ -11,7 +11,7 @@
   },
   "author": "Artem Derevnjuk <artem.derevnjuk@brightsec.com>",
   "bin": {
-    "bright-cli": "./dist/index.js"
+    "bright-cli": "dist/index.js"
   },
   "bugs": {
     "url": "https://github.com/NeuraLegion/bright-cli/issues"
