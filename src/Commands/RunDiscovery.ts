@@ -1,6 +1,6 @@
 import { Discoveries, DiscoveryConfig } from '../Discovery';
 import { ErrorMessageFactory, logger } from '../Utils';
-import { RestDiscoveryOptions } from 'src/Discovery/RestDiscoveries';
+import { RestDiscoveryOptions } from '../Discovery/RestDiscoveries';
 import { container } from 'tsyringe';
 import { Arguments, Argv, CommandModule } from 'yargs';
 
@@ -57,8 +57,21 @@ export class RunDiscovery implements CommandModule {
         requiresArg: true,
         array: true,
         describe:
-          'A list of specific urls that should be included into crawler.',
-        demandOption: true
+          'A list of specific urls that should be included into crawler.'
+      })
+      .conflicts('archive', 'crawler')
+      .check((args) => {
+        if (args.archive && args.crawler) {
+          throw new Error(
+            'Arguments --archive and --crawler are mutually exclusive'
+          );
+        }
+
+        if (!args.archive && !args.crawler) {
+          throw new Error('Either --archive or --crawler must be specified');
+        }
+
+        return true;
       })
       .option('host-filter', {
         alias: 'F',

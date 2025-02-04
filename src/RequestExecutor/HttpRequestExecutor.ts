@@ -442,6 +442,10 @@ export class HttpRequestExecutor implements RequestExecutor {
         }
       );
     }
+
+    if (!options.keepAlive) {
+      req.setHeader('Connection', 'close');
+    }
   }
 
   private async transformScript(script: Request): Promise<Request> {

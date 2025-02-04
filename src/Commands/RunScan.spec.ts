@@ -20,6 +20,7 @@ import {
 } from 'ts-mockito';
 import { container } from 'tsyringe';
 import { Arguments } from 'yargs';
+import yargs from 'yargs/yargs';
 
 describe('RunScan', () => {
   let processSpy!: NodeJS.Process;
@@ -31,6 +32,111 @@ describe('RunScan', () => {
   });
 
   afterEach(() => reset<NodeJS.Process | Logger>(processSpy, loggerSpy));
+
+  describe('command validation', () => {
+    let runScan: RunScan;
+    let yargsInstance: any;
+
+    beforeEach(() => {
+      runScan = new RunScan();
+      yargsInstance = yargs([])
+        .exitProcess(false) // Prevent yargs from calling process.exit()
+        .strict(false); // Don't enforce strict mode for testing
+    });
+
+    it('should throw error when entrypoint is used with archive', () => {
+      // arrange
+      const argv = [
+        '--token',
+        'test-token',
+        '--name',
+        'test-scan',
+        '--entrypoint',
+        'test-entry',
+        '--archive',
+        'test.har'
+      ];
+
+      // act & assert
+      expect(() => runScan.builder(yargsInstance).parse(argv)).toThrow(
+        'Arguments entrypoint and archive are mutually exclusive'
+      );
+    });
+
+    it('should throw error when entrypoint is used with crawler', () => {
+      // arrange
+      const argv = [
+        '--token',
+        'test-token',
+        '--name',
+        'test-scan',
+        '--entrypoint',
+        'test-entry',
+        '--crawler',
+        'http://example.com'
+      ];
+
+      // act & assert
+      expect(() => runScan.builder(yargsInstance).parse(argv)).toThrow(
+        'Arguments entrypoint and crawler are mutually exclusive'
+      );
+    });
+
+    it('should throw error when neither entrypoint, archive, nor crawler is specified', () => {
+      // arrange
+      const argv = ['--token', 'test-token', '--name', 'test-scan'];
+
+      // act & assert
+      expect(() => runScan.builder(yargsInstance).parse(argv)).toThrow(
+        'When --entrypoint is not provided, either --archive or --crawler must be specified'
+      );
+    });
+
+    it('should not throw when only entrypoint is specified', () => {
+      // arrange
+      const argv = [
+        '--token',
+        'test-token',
+        '--name',
+        'test-scan',
+        '--entrypoint',
+        'test-entry'
+      ];
+
+      // act & assert
+      expect(() => runScan.builder(yargsInstance).parse(argv)).not.toThrow();
+    });
+
+    it('should not throw when only archive is specified', () => {
+      // arrange
+      const argv = [
+        '--token',
+        'test-token',
+        '--name',
+        'test-scan',
+        '--archive',
+        'test.har'
+      ];
+
+      // act & assert
+      expect(() => runScan.builder(yargsInstance).parse(argv)).not.toThrow();
+    });
+
+    it('should not throw when only crawler is specified', () => {
+      // arrange
+      const argv = [
+        '--token',
+        'test-token',
+        '--name',
+        'test-scan',
+        '--crawler',
+        'http://example.com'
+      ];
+
+      // act & assert
+      expect(() => runScan.builder(yargsInstance).parse(argv)).not.toThrow();
+    });
+  });
 
   describe('excludeEntryPoint', () => {
     it('should return list of unique methods and patterns', () => {

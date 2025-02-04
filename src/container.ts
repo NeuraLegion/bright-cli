@@ -22,7 +22,6 @@ import {
   HTTPConnectivity,
   Platform,
   ReadlinePlatform,
-  TCPConnectivity,
   TracerouteConnectivity,
   Tokens
 } from './Wizard';
@@ -56,7 +55,12 @@ import {
   ServerRepeaterLauncher
 } from './Repeater';
 import { ProxyFactory, DefaultProxyFactory } from './Utils';
-import { Discoveries, RestDiscoveries } from './Discovery';
+import {
+  Discoveries,
+  RestDiscoveries,
+  DiscoveryPollingFactory as DiscoveryPollingFactory,
+  DefaultDiscoveryPollingFactory as DefaultDiscoveryPollingFactory
+} from './Discovery';
 import { container, Lifecycle } from 'tsyringe';
 
 container
@@ -136,13 +140,6 @@ container
   )
   .register(
     Connectivity,
-    {
-      useClass: TCPConnectivity
-    },
-    { lifecycle: Lifecycle.Singleton }
-  )
-  .register(
-    Connectivity,
     { useClass: TracerouteConnectivity },
     { lifecycle: Lifecycle.Singleton }
   )
@@ -164,6 +161,13 @@ container
     PollingFactory,
     {
       useClass: DefaultPollingFactory
+    },
+    { lifecycle: Lifecycle.Singleton }
+  )
+  .register(
+    DiscoveryPollingFactory,
+    {
+      useClass: DefaultDiscoveryPollingFactory
     },
     { lifecycle: Lifecycle.Singleton }
   )

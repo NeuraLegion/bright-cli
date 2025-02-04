@@ -73,7 +73,7 @@ jobs:
           - os: windows-2019
             target: win
             node: 20
-          - os: macos-12
+          - os: macos-13
             target: macos
             node: 20
           - os: ubuntu-20.04
