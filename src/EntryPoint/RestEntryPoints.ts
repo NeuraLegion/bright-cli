@@ -1,4 +1,9 @@
-import { EntryPoints, EntryPoint, EntryPointsListOptions } from './EntryPoints';
+import {
+  EntryPoints,
+  EntryPoint,
+  EntryPointsListOptions,
+  ChangeHostOptions
+} from './EntryPoints';
 import { ProxyFactory } from '../Utils';
 import axios, { Axios } from 'axios';
 import { inject, injectable } from 'tsyringe';
@@ -79,5 +84,23 @@ export class RestEntryPoints implements EntryPoints {
     }
 
     return data;
+  }
+
+  public async changeHost({
+    projectId,
+    newHost,
+    oldHost,
+    entryPointIds
+  }: ChangeHostOptions): Promise<void> {
+    const response = await this.client.post(
+      `/api/v2/projects/${projectId}/entry-points/change_host`,
+      {
+        entryPointIds,
+        newHost,
+        ...(oldHost && { oldHost })
+      }
+    );
+
+    return response.data;
   }
 }

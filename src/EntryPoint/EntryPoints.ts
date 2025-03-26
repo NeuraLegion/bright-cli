@@ -5,8 +5,16 @@ export interface EntryPointsListOptions {
   status?: string[];
 }
 
+export interface ChangeHostOptions {
+  projectId: string;
+  newHost: string;
+  oldHost?: string;
+  entryPointIds?: string[];
+}
+
 export interface EntryPoints {
   entrypoints(filter: EntryPointsListOptions): Promise<EntryPoint[]>;
+  changeHost(options: ChangeHostOptions): Promise<void>;
 }
 
 export const EntryPoints: unique symbol = Symbol('EntryPoints');

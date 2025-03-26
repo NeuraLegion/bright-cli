@@ -111,4 +111,55 @@ describe('RestEntryPoints', () => {
       ]);
     });
   });
+
+  describe('changeHost', () => {
+    it('should change host for entry points', async () => {
+      nock('https://example.com')
+        .post('/api/v2/projects/1/entry-points/change_host', {
+          entryPointIds: ['1', '2'],
+          newHost: 'https://new.example.com',
+          oldHost: 'https://old.example.com'
+        })
+        .reply(200, {});
+
+      await restEntryPoints.changeHost({
+        projectId: '1',
+        entryPointIds: ['1', '2'],
+        newHost: 'https://new.example.com',
+        oldHost: 'https://old.example.com'
+      });
+
+      expect(nock.isDone()).toBeTruthy();
+    });
+
+    it('should change host without oldHost parameter', async () => {
+      nock('https://example.com')
+        .post('/api/v2/projects/1/entry-points/change_host', {
+          entryPointIds: ['1', '2'],
+          newHost: 'https://new.example.com'
+        })
+        .reply(200, {});
+
+      await restEntryPoints.changeHost({
+        projectId: '1',
+        entryPointIds: ['1', '2'],
+        newHost: 'https://new.example.com'
+      });
+
+      expect(nock.isDone()).toBeTruthy();
+    });
+
+    it('should throw error on API failure', async () => {
+      nock('https://example.com')
+        .post('/api/v2/projects/1/entry-points/change_host')
+        .replyWithError('API Error');
+
+      const result = restEntryPoints.changeHost({
+        projectId: '1',
+        entryPointIds: ['1'],
+        newHost: 'https://new.example.com'
+      });
+      await expect(result).rejects.toThrow();
+    });
+  });
 });

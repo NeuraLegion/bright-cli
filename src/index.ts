@@ -12,7 +12,8 @@ import {
   UploadArchive,
   VersionCommand,
   Configure,
-  GetEntryPoints
+  GetEntryPoints,
+  ChangeEntryPointsHost
 } from './Commands';
 import { CliBuilder } from './Config';
 import container from './container';
@@ -35,6 +36,7 @@ container.resolve(CliBuilder).build({
     new PollingDiscoveryStatus(),
     new UploadArchive(),
     new Configure(),
-    new GetEntryPoints()
+    new GetEntryPoints(),
+    new ChangeEntryPointsHost()
   ]
 }).argv;
