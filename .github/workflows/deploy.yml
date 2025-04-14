@@ -132,6 +132,23 @@ jobs:
           asset_name: bright-cli.msi
           tag: ${{ github.ref }}
 
+      - name: Calculate checksum
+        shell: bash
+        run: |
+          if [[ "${{ matrix.os }}" == "windows-2019" ]]; then
+            certutil -hashfile ./bin/cli.exe SHA256 | grep -v "CertUtil" | tr -d " \t\n\r" > checksum.txt
+            certutil -hashfile ./bin/bright-cli.msi SHA256 | grep -v "CertUtil" | tr -d " \t\n\r" >> checksum.txt
+          else
+            sha256sum ./bin/cli > checksum.txt
+          fi
+
+      - uses: svenstaro/upload-release-action@2.9.0
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file: checksum.txt
+          asset_name: ${{ format('bright-cli-{0}-x64.sha256', matrix.target) }}
+          tag: ${{ github.ref }}
+
   publish:
     runs-on: ubuntu-latest
     needs: build
