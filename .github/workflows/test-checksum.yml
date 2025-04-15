@@ -46,12 +46,12 @@ jobs:
       - name: Pack artifacts
         run: npm pack
 
-      - uses: svenstaro/upload-release-action@2.9.0
-        with:
-          repo_token: ${{ secrets.GITHUB_TOKEN }}
-          file: ./brightsec-cli-*
-          tag: ${{ github.ref }}
-          file_glob: true
+      # - uses: svenstaro/upload-release-action@2.9.0
+      #   with:
+      #     repo_token: ${{ secrets.GITHUB_TOKEN }}
+      #     file: ./brightsec-cli-*
+      #     tag: ${{ github.ref }}
+      #     file_glob: true
 
       - uses: actions/upload-artifact@v4
         with:
