@@ -77,7 +77,7 @@ jobs:
           - os: macos-13
             target: macos
             node: 20
-          - os: ubuntu-20.04
+          - os: ubuntu-22.04
             target: linux
             node: 20
             container:
@@ -124,6 +124,8 @@ jobs:
           if [[ "${{ matrix.os }}" == "windows-2019" ]]; then
             certutil -hashfile ./bin/cli.exe SHA256 | grep -v "CertUtil" | tr -d " \t\n\r" > checksum.txt
             certutil -hashfile ./bin/bright-cli.msi SHA256 | grep -v "CertUtil" | tr -d " \t\n\r" >> checksum.txt
+          elif [[ "${{ matrix.os }}" == "macos-13" ]]; then
+            shasum -a 256 ./bin/cli > checksum.txt
           else
             sha256sum ./bin/cli > checksum.txt
           fi
