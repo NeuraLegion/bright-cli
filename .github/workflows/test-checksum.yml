@@ -122,8 +122,8 @@ jobs:
         shell: bash
         run: |
           if [[ "${{ matrix.os }}" == "windows-2019" ]]; then
-            certutil -hashfile ./bin/cli.exe SHA256 | grep -v "CertUtil" | tr -d " \t\n\r" > checksum.txt
-            certutil -hashfile ./bin/bright-cli.msi SHA256 | grep -v "CertUtil" | tr -d " \t\n\r" > checksum.msi.txt
+            certutil -hashfile ./bin/cli.exe SHA256 | grep -v "CertUtil" | sed 's/SHA256 hash of .*://' | tr -d " \t\n\r" > checksum.txt
+            certutil -hashfile ./bin/bright-cli.msi SHA256 | grep -v "CertUtil" | sed 's/SHA256 hash of .*://' | tr -d " \t\n\r" > checksum.msi.txt
           elif [[ "${{ matrix.os }}" == "macos-13" ]]; then
             shasum -a 256 ./bin/cli | cut -d' ' -f1 > checksum.txt
           else
