@@ -1,7 +1,9 @@
 name: Test checksum
 
 on:
-  workflow_dispatch:
+  pull_request:
+    branches:
+      - '**'
 
 env:
   VERSION: ${{ github.event.release.tag_name }}
