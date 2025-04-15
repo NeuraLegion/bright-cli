@@ -123,12 +123,16 @@ jobs:
         run: |
           if [[ "${{ matrix.os }}" == "windows-2019" ]]; then
             certutil -hashfile ./bin/cli.exe SHA256 | grep -v "CertUtil" | tr -d " \t\n\r" > checksum.txt
-            certutil -hashfile ./bin/bright-cli.msi SHA256 | grep -v "CertUtil" | tr -d " \t\n\r" >> checksum.txt
+            certutil -hashfile ./bin/bright-cli.msi SHA256 | grep -v "CertUtil" | tr -d " \t\n\r" > checksum.msi.txt
           elif [[ "${{ matrix.os }}" == "macos-13" ]]; then
-            shasum -a 256 ./bin/cli > checksum.txt
+            shasum -a 256 ./bin/cli | cut -d' ' -f1 > checksum.txt
           else
-            sha256sum ./bin/cli > checksum.txt
+            sha256sum ./bin/cli | cut -d' ' -f1 > checksum.txt
           fi
 
       - name: Print checksum
         run: cat checksum.txt
+
+      - name: Print checksum
+        if: startsWith(matrix.os, 'win')
+        run: cat checksum.msi.txt
