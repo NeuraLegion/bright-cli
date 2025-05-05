@@ -7,8 +7,7 @@ import {
   SourceType,
   StorageFile,
   ATTACK_PARAM_LOCATIONS_DEFAULT,
-  ScanCreateResponse,
-  AttackParamLocation
+  ScanCreateResponse
 } from './Scans';
 import { CliInfo } from '../Config';
 import { ProxyFactory } from '../Utils';
@@ -101,10 +100,9 @@ export class RestScans implements Scans {
     }
   > {
     const config = await this.applyDefaultSettings(rest);
-    const updatedConfig = this.replaceDeprecatedAttackParamLocations(config);
 
     return {
-      ...updatedConfig,
+      ...config,
       info: {
         source: 'cli',
         client: {
@@ -170,53 +168,5 @@ export class RestScans implements Scans {
       discoveryTypes,
       exclusions
     };
-  }
-
-  private replaceDeprecatedAttackParamLocations(
-    scanConfig: Omit<ScanConfig, 'headers'>
-  ): Omit<ScanConfig, 'headers'> {
-    if (
-      scanConfig.attackParamLocations?.includes(
-        AttackParamLocation.ARTIFICAL_FRAGMENT
-      )
-    ) {
-      scanConfig.attackParamLocations = scanConfig.attackParamLocations.filter(
-        (loc) => loc !== AttackParamLocation.ARTIFICAL_FRAGMENT
-      );
-
-      if (
-        !scanConfig.attackParamLocations?.includes(
-          AttackParamLocation.ARTIFICIAL_FRAGMENT
-        )
-      ) {
-        scanConfig.attackParamLocations = [
-          ...scanConfig.attackParamLocations,
-          AttackParamLocation.ARTIFICIAL_FRAGMENT
-        ];
-      }
-    }
-
-    if (
-      scanConfig.attackParamLocations?.includes(
-        AttackParamLocation.ARTIFICAL_QUERY
-      )
-    ) {
-      scanConfig.attackParamLocations = scanConfig.attackParamLocations.filter(
-        (loc) => loc !== AttackParamLocation.ARTIFICAL_QUERY
-      );
-
-      if (
-        !scanConfig.attackParamLocations?.includes(
-          AttackParamLocation.ARTIFICIAL_QUERY
-        )
-      ) {
-        scanConfig.attackParamLocations = [
-          ...scanConfig.attackParamLocations,
-          AttackParamLocation.ARTIFICIAL_QUERY
-        ];
-      }
-    }
-
-    return scanConfig;
   }
 }
