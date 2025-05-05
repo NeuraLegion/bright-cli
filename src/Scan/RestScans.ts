@@ -177,42 +177,42 @@ export class RestScans implements Scans {
   ): Omit<ScanConfig, 'headers'> {
     if (
       scanConfig.attackParamLocations?.includes(
-        AttackParamLocation.ARTIFICIAL_FRAGMENT
+        AttackParamLocation.ARTIFICAL_FRAGMENT
       )
     ) {
       scanConfig.attackParamLocations = scanConfig.attackParamLocations.filter(
-        (loc) => loc !== AttackParamLocation.ARTIFICIAL_FRAGMENT
+        (loc) => loc !== AttackParamLocation.ARTIFICAL_FRAGMENT
       );
 
       if (
         !scanConfig.attackParamLocations?.includes(
-          AttackParamLocation.ARTIFICAL_FRAGMENT
+          AttackParamLocation.ARTIFICIAL_FRAGMENT
         )
       ) {
         scanConfig.attackParamLocations = [
           ...scanConfig.attackParamLocations,
-          AttackParamLocation.ARTIFICAL_FRAGMENT
+          AttackParamLocation.ARTIFICIAL_FRAGMENT
         ];
       }
     }
 
     if (
       scanConfig.attackParamLocations?.includes(
-        AttackParamLocation.ARTIFICIAL_QUERY
+        AttackParamLocation.ARTIFICAL_QUERY
       )
     ) {
       scanConfig.attackParamLocations = scanConfig.attackParamLocations.filter(
-        (loc) => loc !== AttackParamLocation.ARTIFICIAL_QUERY
+        (loc) => loc !== AttackParamLocation.ARTIFICAL_QUERY
       );
 
       if (
         !scanConfig.attackParamLocations?.includes(
-          AttackParamLocation.ARTIFICAL_QUERY
+          AttackParamLocation.ARTIFICIAL_QUERY
         )
       ) {
         scanConfig.attackParamLocations = [
           ...scanConfig.attackParamLocations,
-          AttackParamLocation.ARTIFICAL_QUERY
+          AttackParamLocation.ARTIFICIAL_QUERY
         ];
       }
     }
