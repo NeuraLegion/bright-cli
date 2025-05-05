@@ -7,8 +7,10 @@ export enum Discovery {
 }
 
 export enum AttackParamLocation {
-  ARTIFICAL_FRAGMENT = 'artifical-fragment',
-  ARTIFICAL_QUERY = 'artifical-query',
+  ARTIFICAL_FRAGMENT = 'artifical-fragment', // deprecated, use ARTIFICIAL_FRAGMENT instead
+  ARTIFICAL_QUERY = 'artifical-query', // deprecated, use ARTIFICIAL_QUERY instead
+  ARTIFICIAL_FRAGMENT = 'artificial-fragment',
+  ARTIFICIAL_QUERY = 'artificial-query',
   BODY = 'body',
   FRAGMENT = 'fragment',
   HEADER = 'header',
