@@ -7,3 +7,4 @@ export { PollingScanStatus } from './PollingScanStatus';
 export { RunRepeater } from './RunRepeater';
 export { Configure } from './Configure';
 export { GetEntryPoints } from './GetEntryPoints';
+export { ChangeEntryPointsHost } from './ChangeEntryPointsHost';
