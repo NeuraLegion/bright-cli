@@ -61,6 +61,8 @@ import {
   DiscoveryPollingFactory as DiscoveryPollingFactory,
   DefaultDiscoveryPollingFactory as DefaultDiscoveryPollingFactory
 } from './Discovery';
+import { DefaultHostUpdateJobStatusPollingFactory } from './EntryPoint/DefaultHostUpdateJobStatusPollingFactory';
+import { HostUpdateJobStatusPollingFactory } from './EntryPoint/HostUpdateJobStatusPollingFactory';
 import { container, Lifecycle } from 'tsyringe';
 
 container
@@ -168,6 +170,13 @@ container
     DiscoveryPollingFactory,
     {
       useClass: DefaultDiscoveryPollingFactory
+    },
+    { lifecycle: Lifecycle.Singleton }
+  )
+  .register(
+    HostUpdateJobStatusPollingFactory,
+    {
+      useClass: DefaultHostUpdateJobStatusPollingFactory
     },
     { lifecycle: Lifecycle.Singleton }
   )
