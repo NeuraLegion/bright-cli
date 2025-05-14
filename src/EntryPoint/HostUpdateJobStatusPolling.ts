@@ -58,8 +58,8 @@ export class HostUpdateJobStatusPolling implements Polling {
   }
 
   private async runPollingLoop(): Promise<void> {
-    for await (const discovery of this.poll()) {
-      const shouldContinue = await this.processJobView(discovery);
+    for await (const jobView of this.poll()) {
+      const shouldContinue = await this.processJobView(jobView);
       if (!shouldContinue) break;
     }
   }
@@ -94,6 +94,8 @@ export class HostUpdateJobStatusPolling implements Polling {
           projectId: this.options.projectId
         })
       );
+
+      logger.debug('Host update job data: %j', view);
 
       yield view;
 
