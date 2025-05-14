@@ -1,6 +1,6 @@
 import { ErrorMessageFactory, logger } from '../Utils';
-import { HostUpdateJobStatusPollingFactory } from 'src/EntryPoint/HostUpdateJobStatusPollingFactory';
-import { RestProjectsOptions } from 'src/EntryPoint';
+import { HostUpdateJobStatusPollingFactory } from '../EntryPoint/HostUpdateJobStatusPollingFactory';
+import { RestProjectsOptions } from '../EntryPoint';
 import { Arguments, Argv, CommandModule } from 'yargs';
 import { container } from 'tsyringe';
 
@@ -75,7 +75,7 @@ export class PollingHostUpdateJobStatus implements CommandModule {
       logger.error(
         ErrorMessageFactory.genericCommandError({
           error,
-          command: 'entrypoints:replace-host-job-status-polling'
+          command: 'entrypoints:update-host-polling'
         })
       );
       process.exit(1);

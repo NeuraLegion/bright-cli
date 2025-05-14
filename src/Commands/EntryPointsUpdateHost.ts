@@ -3,7 +3,7 @@ import {
   EntryPoints,
   RestProjectsOptions,
   UpdateHostOptions
-} from 'src/EntryPoint';
+} from '../EntryPoint';
 import { container } from 'tsyringe';
 import { Arguments, Argv, CommandModule } from 'yargs';
 
