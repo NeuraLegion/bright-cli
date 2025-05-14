@@ -16,15 +16,13 @@ import { container } from 'tsyringe';
 import { Arguments } from 'yargs';
 
 describe('EntryPointsUpdateHost', () => {
-  let processSpy!: NodeJS.Process;
   let loggerSpy!: Logger;
 
   beforeEach(() => {
-    processSpy = spy(process);
     loggerSpy = spy(logger);
   });
 
-  afterEach(() => reset<NodeJS.Process | Logger>(processSpy, loggerSpy));
+  afterEach(() => reset(loggerSpy));
 
   describe('handler', () => {
     let entryPointsUpdateHost: EntryPointsUpdateHost;
@@ -53,7 +51,6 @@ describe('EntryPointsUpdateHost', () => {
 
       const expectedTaskId = 'task-123';
 
-      when(processSpy.exit(anything())).thenReturn(undefined);
       when(
         mockedEntryPoints.updateHost(
           objectContaining({
@@ -65,21 +62,14 @@ describe('EntryPointsUpdateHost', () => {
         )
       ).thenResolve({ taskId: expectedTaskId });
 
-      // Spy on console.log
       const consoleLogSpy = jest.spyOn(console, 'log').mockImplementation();
 
       await entryPointsUpdateHost.handler(args);
 
-      // Verify console.log was called with the taskId
       expect(consoleLogSpy).toHaveBeenCalledWith(expectedTaskId);
-
-      // Verify logger.error was never called
       verify(loggerSpy.error(anything())).never();
+      expect(process.exitCode).toBe(0);
 
-      // Verify process.exit was called with 0 (success)
-      verify(processSpy.exit(0)).once();
-
-      // Restore console.log
       consoleLogSpy.mockRestore();
     });
 
@@ -95,12 +85,10 @@ describe('EntryPointsUpdateHost', () => {
 
       const error = new Error('Update host failed');
 
-      when(processSpy.exit(anything())).thenReturn(undefined);
       when(mockedEntryPoints.updateHost(anything())).thenReject(error);
 
       await entryPointsUpdateHost.handler(args);
 
-      // Verify logger.error was called with appropriate error message
       verify(
         loggerSpy.error(
           ErrorMessageFactory.genericCommandError({
@@ -110,8 +98,7 @@ describe('EntryPointsUpdateHost', () => {
         )
       ).once();
 
-      // Verify process.exit was called with 1 (error)
-      verify(processSpy.exit(1)).once();
+      expect(process.exitCode).toBe(1);
     });
   });
 });
