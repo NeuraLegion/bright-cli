@@ -20,14 +20,14 @@ export class PollingHostUpdateJobStatus implements CommandModule {
       .option('interval', {
         requiresArg: true,
         describe:
-          'Period of time between the end of a timeout period or completion of a scan status request, and the next request for status. ' +
+          'Period of time between the end of a timeout period or completion of a host update job status request, and the next request for status. ' +
           'Eg: 60, "2min", "10h", "7d". A numeric value is interpreted as a milliseconds count.',
         default: 5000
       })
       .option('timeout', {
         requiresArg: true,
         describe:
-          'Period of time between the end of a timeout period or completion of a scan status request, and the next request for status. ' +
+          'Period of time between the end of a timeout period or completion of a host update job status request, and the next request for status. ' +
           'Eg: 60, "2min", "10h", "7d". A numeric value is interpreted as a milliseconds count.'
       })
       .option('project', {
