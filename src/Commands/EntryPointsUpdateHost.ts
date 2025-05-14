@@ -77,7 +77,7 @@ export class EntryPointsUpdateHost implements CommandModule {
       // eslint-disable-next-line no-console
       console.log(taskId);
 
-      process.exit(0);
+      process.exitCode = 0;
     } catch (error) {
       logger.error(
         ErrorMessageFactory.genericCommandError({
@@ -85,7 +85,7 @@ export class EntryPointsUpdateHost implements CommandModule {
           command: 'entrypoints:update-host'
         })
       );
-      process.exit(1);
+      process.exitCode = 1;
     }
   }
 }
