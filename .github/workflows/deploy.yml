@@ -76,7 +76,7 @@ jobs:
           - os: macos-13
             target: macos
             node: 20
-          - os: ubuntu-20.04
+          - os: ubuntu-22.04
             target: linux
             node: 20
             container:
