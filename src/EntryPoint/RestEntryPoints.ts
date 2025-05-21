@@ -1,4 +1,11 @@
-import { EntryPoints, EntryPoint, EntryPointsListOptions } from './EntryPoints';
+import {
+  EntryPoints,
+  EntryPoint,
+  EntryPointsListOptions,
+  GetHostUpdateJobStatusOptions,
+  HostUpdateJobStatusView,
+  UpdateHostOptions
+} from './EntryPoints';
 import { ProxyFactory } from '../Utils';
 import axios, { Axios } from 'axios';
 import { inject, injectable } from 'tsyringe';
@@ -77,6 +84,35 @@ export class RestEntryPoints implements EntryPoints {
 
       remaining -= this.entrypointsPaginationBatchSize;
     }
+
+    return data;
+  }
+
+  public async updateHost(
+    options: UpdateHostOptions
+  ): Promise<{ taskId: string }> {
+    const { projectId, oldHostname, newHostname, entryPointIds } = options;
+
+    const { data } = await this.client.post<{ taskId: string }>(
+      `/api/v2/projects/${projectId}/entry-points/update-host`,
+      {
+        oldHostname,
+        newHostname,
+        entryPointIds
+      }
+    );
+
+    return data;
+  }
+
+  public async getHostUpdateJobStatus(
+    options: GetHostUpdateJobStatusOptions
+  ): Promise<HostUpdateJobStatusView> {
+    const { jobId, projectId } = options;
+
+    const { data } = await this.client.get<HostUpdateJobStatusView>(
+      `/api/v2/projects/${projectId}/entry-points/update-host/${jobId}`
+    );
 
     return data;
   }
