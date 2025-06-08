@@ -25,6 +25,7 @@ export interface Cert {
   path: string;
   hostname: string;
   passphrase?: string;
+  port?: string;
 }
 
 export class Request {
@@ -156,10 +157,10 @@ export class Request {
   }
 
   public async setCerts(certs: Cert[]): Promise<void> {
-    const { hostname } = new URL(this.url);
+    const { hostname, port } = new URL(this.url);
 
     const cert: Cert | undefined = certs.find((x) =>
-      this.matchHostname(hostname, x.hostname)
+      this.matchHostnameAndPort(hostname, port, x)
     );
 
     if (!cert) {
@@ -239,10 +240,17 @@ export class Request {
     }
   }
 
-  private matchHostname(hostname: string, wildcard: string): boolean {
-    return (
-      wildcard === hostname || Helpers.wildcardToRegExp(wildcard).test(hostname)
-    );
+  private matchHostnameAndPort(
+    hostname: string,
+    port: string,
+    cert: Cert
+  ): boolean {
+    const hostNameMatch =
+      cert.hostname === hostname ||
+      Helpers.wildcardToRegExp(cert.hostname).test(hostname);
+    const portMatch = cert.port === port;
+
+    return cert.port ? hostNameMatch && portMatch : hostNameMatch;
   }
 
   private assertPassphrase(
