@@ -186,7 +186,7 @@ describe('Request', () => {
 
   it('should load different certs for default ports', async () => {
     const request1 = new Request({
-      url: 'https://foo.bar:80',
+      url: 'http://foo.bar:80',
       protocol: Protocol.HTTP
     });
 
