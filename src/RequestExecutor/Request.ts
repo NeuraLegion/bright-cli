@@ -258,9 +258,12 @@ export class Request {
     const hostNameMatch =
       cert.hostname === hostname ||
       Helpers.wildcardToRegExp(cert.hostname).test(hostname);
-    const portMatch = cert.port === port;
 
-    return cert.port ? hostNameMatch && portMatch : hostNameMatch;
+    if (!hostNameMatch) {
+      return false;
+    }
+
+    return !!cert.port || cert.port === port;
   }
 
   private assertPassphrase(
