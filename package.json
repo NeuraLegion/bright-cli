@@ -1,6 +1,6 @@
 {
   "name": "@brightsec/cli",
-  "version": "13.3.0",
+  "version": "13.4.0-next.1",
   "private": false,
   "repository": {
     "type": "git",
