@@ -263,7 +263,12 @@ export class Request {
       return false;
     }
 
-    return !!cert.port || cert.port === port;
+    if (!cert.port) {
+      // ADHOC: hostNameMatch has been checked above and it's true
+      return true;
+    }
+
+    return cert.port === port;
   }
 
   private assertPassphrase(
