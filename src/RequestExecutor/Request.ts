@@ -157,17 +157,27 @@ export class Request {
   }
 
   public async setCerts(certs: Cert[]): Promise<void> {
-    const { hostname, port } = new URL(this.url);
+    const url = new URL(this.url);
+
+    const port =
+      url.port ||
+      (url.protocol === 'http:'
+        ? '80'
+        : url.protocol === 'https:'
+        ? '443'
+        : '');
 
     const cert: Cert | undefined = certs.find((x) =>
-      this.matchHostnameAndPort(hostname, port, x)
+      this.matchHostnameAndPort(url.hostname, port, x)
     );
 
     if (!cert) {
-      logger.warn(`Warning: certificate for ${hostname} not found.`);
+      logger.warn(`Warning: certificate for ${url.hostname} not found.`);
 
       return;
     }
+
+    logger.trace(`Using certificate for ${url}`, cert);
 
     await this.loadCert(cert);
   }
@@ -248,9 +258,17 @@ export class Request {
     const hostNameMatch =
       cert.hostname === hostname ||
       Helpers.wildcardToRegExp(cert.hostname).test(hostname);
-    const portMatch = cert.port === port;
 
-    return cert.port ? hostNameMatch && portMatch : hostNameMatch;
+    if (!hostNameMatch) {
+      return false;
+    }
+
+    if (!cert.port) {
+      // ADHOC: hostNameMatch has been checked above and it's true
+      return true;
+    }
+
+    return cert.port === port;
   }
 
   private assertPassphrase(
