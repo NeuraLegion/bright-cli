@@ -259,14 +259,7 @@ export class DefaultRepeaterServer implements RepeaterServer {
       data?: Omit<RepeaterServerErrorEvent, 'transaction'>;
     };
 
-    // If the error is not related to the repeater, we should ignore it
-    if (!data?.code) {
-      this.logConnectionError(err);
-
-      return;
-    }
-
-    if (this.suppressConnectionError(data)) {
+    if (data && this.suppressConnectionError(data)) {
       this.events.emit(RepeaterServerEvents.ERROR, {
         ...data,
         message: err.message
@@ -311,23 +304,6 @@ export class DefaultRepeaterServer implements RepeaterServer {
       maxAttempts: this.MAX_RECONNECTION_ATTEMPTS
     } as RepeaterServerReconnectionAttemptedEvent);
     this.connectionTimer = setTimeout(() => this.socket.connect(), delay);
-  }
-
-  private logConnectionError(err: Error) {
-    logger.debug(
-      'An error occurred while connecting to the repeater: %s',
-      err.message
-    );
-
-    const { description, cause } = err as {
-      description?: ErrorEvent;
-      cause?: Error;
-    };
-    const nestedError = description?.error ?? cause;
-
-    if (nestedError) {
-      logger.debug('The error cause: %s', nestedError.message);
-    }
   }
 
   private async wrapEventListener<TArgs extends TArg[], TArg>(
