@@ -23,7 +23,6 @@ import { inject, injectable } from 'tsyringe';
 import io, { Socket } from 'socket.io-client';
 import parser from 'socket.io-msgpack-parser';
 import { captureException, captureMessage } from '@sentry/node';
-import { ErrorEvent } from 'ws';
 import { EventEmitter, once } from 'node:events';
 import Timer = NodeJS.Timer;
 
