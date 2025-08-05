@@ -34,11 +34,6 @@ type ScriptEntrypoint = (
 
 @injectable()
 export class HttpRequestExecutor implements RequestExecutor {
-  private static readonly ERR_TIMEOUT = new Error(
-    'Waiting response has timed out'
-  );
-  private static readonly HTTP_STATUS_GATEWAY_TIMEOUT = 504;
-
   private readonly DEFAULT_SCRIPT_ENTRYPOINT = 'handle';
   private readonly httpProxyAgent?: http.Agent;
   private readonly httpsProxyAgent?: https.Agent;
@@ -141,16 +136,9 @@ export class HttpRequestExecutor implements RequestExecutor {
       );
       logger.error('Cause: %s', message);
 
-      let statusCode: number = null;
-
-      if (err === HttpRequestExecutor.ERR_TIMEOUT) {
-        statusCode = HttpRequestExecutor.HTTP_STATUS_GATEWAY_TIMEOUT;
-      }
-
       return new Response({
         message,
         errorCode,
-        statusCode,
         protocol: this.protocol
       });
     }
@@ -201,7 +189,12 @@ export class HttpRequestExecutor implements RequestExecutor {
     timeout ??= this.options.timeout;
     if (typeof timeout === 'number') {
       return setTimeout(
-        () => req.destroy(HttpRequestExecutor.ERR_TIMEOUT),
+        () =>
+          req.destroy(
+            Object.assign(new Error('Waiting frame has timed out'), {
+              code: 'ETIMEDOUT'
+            })
+          ),
         timeout
       );
     }
