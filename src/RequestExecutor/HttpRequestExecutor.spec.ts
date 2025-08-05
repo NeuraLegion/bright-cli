@@ -182,7 +182,7 @@ describe('HttpRequestExecutor', () => {
       const response = await executor.execute(request);
 
       expect(response).toMatchObject({
-        errorCode: 'Error',
+        errorCode: 'ETIMEDOUT',
         message: 'Waiting response has timed out'
       });
     });

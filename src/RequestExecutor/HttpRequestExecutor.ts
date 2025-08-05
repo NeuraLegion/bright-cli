@@ -191,7 +191,7 @@ export class HttpRequestExecutor implements RequestExecutor {
       return setTimeout(
         () =>
           req.destroy(
-            Object.assign(new Error('Waiting frame has timed out'), {
+            Object.assign(new Error('Waiting response has timed out'), {
               code: 'ETIMEDOUT'
             })
           ),
