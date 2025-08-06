@@ -240,7 +240,7 @@ jobs:
         run: echo ${{ secrets.GPR_TOKEN }} | helm registry login ghcr.io --username ${{ github.actor }} --password-stdin
 
       - name: Package Chart
-        run: helm package helm/bright-cli --version $VERSION --app-version $VERSION --destination .
+        run: helm package helm/bright-cli --version ${VERSION#v} --app-version $VERSION --destination .
 
       - name: Build Helm repository name
         run: echo "HELM_REPOSITORY_OWNER=${OWNER,,}" >>${GITHUB_ENV}
