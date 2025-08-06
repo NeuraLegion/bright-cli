@@ -3,7 +3,7 @@ name: Release Charts
 on:
   push:
     branches:
-      - IR-545/add_bright-cli_helm_chart
+      - master
 
 jobs:
   packages:
