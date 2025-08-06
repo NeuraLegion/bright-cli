@@ -1,0 +1,53 @@
+# API configuration
+api:
+  hostname: app.brightsec.com
+  token: ""
+
+# Repeater configuration
+repeater:
+  # ID for the repeater instance
+  id: ""
+
+  # Image configuration
+  image:
+    repository: brightsec/cli
+    tag: "" # If empty, uses appVersion from Chart.yaml
+    pullPolicy: IfNotPresent
+  
+  # Resource limits and requests
+  resources: {}
+    # limits:
+    #   cpu: 1000m
+    #   memory: 1Gi
+    # requests:
+    #   cpu: 100m
+    #   memory: 128Mi
+  
+  # Security context for the container
+  containerSecurityContext:
+    allowPrivilegeEscalation: false
+    readOnlyRootFilesystem: true
+    runAsNonRoot: true
+    runAsUser: 1000
+    capabilities:
+      drop:
+        - ALL
+  
+  # Pod security context
+  podSecurityContext:
+    fsGroup: 1000
+    runAsNonRoot: true
+    seccompProfile:
+      type: RuntimeDefault
+  
+  # Pod labels
+  podLabels: {}
+  
+  # Additional arguments for bright-cli repeater command
+  extraArgs: {}
+    # proxy: "http://proxy.example.com:8080"
+  
+  # Node selector - constrains pods to nodes with specific labels
+  nodeSelector: {}
+    # kubernetes.io/arch: amd64
+    # node-type: security-scanner

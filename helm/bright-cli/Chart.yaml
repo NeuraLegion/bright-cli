@@ -1,0 +1,41 @@
+apiVersion: v2
+name: bright-cli
+home: https://brightsec.com/
+description: |
+  Bright CLI Repeater lets you run Bright security scans without exposing your internal applications to the Internet.
+  The Repeater acts as a secure proxy that connects to your local targets and forwards scan requests from the Bright cloud engine.
+  
+  Prerequisites:
+  - Active Bright account (https://app.brightsec.com/)
+  - Valid API token with 'bot' scopes
+  - Repeater ID from the Bright app
+  
+  # Install helm chart from OCI registry:
+  helm install bright-cli oci://ghcr.io/neuralegion/bright-cli \
+    --set api.hostname="app.brightsec.com" \
+    --set api.token="your-brightsec-api-token" \
+    --set repeater.id="your-repeater-id"
+
+  By default, the chart connects to "app.brightsec.com".
+  To use a different Bright instance, set --set api.hostname="your-bright-hostname"
+
+  # Upgrade existing installation:
+  helm upgrade bright-cli oci://ghcr.io/neuralegion/bright-cli
+
+  # Uninstall:
+  helm uninstall bright-cli
+type: application
+version: 0.0.1
+keywords:
+  - repeater
+  - bright
+  - appsec
+  - bridge
+  - security
+sources:
+  - https://github.com/NeuraLegion/bright-cli
+maintainers:
+  - name: Artsem Dzerauniuk
+    email: artem.derevnjuk@brightsec.com
+  - name: Denan Musinovic
+    email: denan.musinovic@brightsec.com
