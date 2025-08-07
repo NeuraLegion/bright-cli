@@ -136,7 +136,7 @@ jobs:
       - name: Download and Install Bright CLI using MSI
         shell: pwsh
         run: |
-          Invoke-WebRequest -Uri https://github.com/NeuraLegion/bright-cli/releases/download/${{ inputs.version }}/bright-cli.msi -OutFile bright-cli.msi
+          Invoke-WebRequest -Uri 'https://github.com/NeuraLegion/bright-cli/releases/download/${{ inputs.version }}/bright-cli.msi' -OutFile bright-cli.msi
           $lastExitCode = (Start-Process msiexec.exe `
             -ArgumentList "/i bright-cli.msi /qn /norestart /l*v `"$($pwd)\install.log`"" `
             -PassThru `
