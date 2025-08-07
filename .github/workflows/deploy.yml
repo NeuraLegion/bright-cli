@@ -232,3 +232,20 @@ jobs:
         run: |
           docker login --username=${{ secrets.DOCKERHUB_BRIGHT_USER }} --password=${{ secrets.DOCKERHUB_BRIGHT_TOKEN }}
           docker push $TAG_REPEATER --all-tags
+
+      - name: Setup Helm
+        uses: azure/setup-helm@v4
+
+      - name: Login to GHCR
+        run: echo ${{ secrets.GPR_TOKEN }} | helm registry login ghcr.io --username ${{ github.actor }} --password-stdin
+
+      - name: Package Chart
+        run: helm package helm/bright-cli --version ${VERSION#v} --app-version $VERSION --destination .
+
+      - name: Build Helm repository name
+        run: echo "HELM_REPOSITORY_OWNER=${OWNER,,}" >>${GITHUB_ENV}
+        env:
+          OWNER: ${{ github.repository_owner }}
+
+      - name: Push charts to GHCR
+        run: helm push ./bright-cli-*.tgz oci://ghcr.io/${{ env.HELM_REPOSITORY_OWNER }}
