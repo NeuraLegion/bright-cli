@@ -82,11 +82,11 @@ export class RunRepeater implements CommandModule {
         array: true,
         string: true,
         describe:
-          'The certificate must be in PKCS, or PEM format. Example: {"hostname": "example.com", "path": "./example.pem", "passphrase": "pa$$word"}.',
+          'The certificate must be in PKCS, or PEM format. Example: {"hostname": "example.com", "path": "./example.pem", "passphrase": "pa$$word", "port": "1234"}.',
         coerce(args: string[]): Cert[] {
           return args
             .map((arg: string) => JSON.parse(arg))
-            .map(({ path, hostname, passphrase }: Cert) => {
+            .map(({ path, hostname, passphrase, port }: Cert) => {
               if (!path) {
                 logger.error(
                   'Error during "repeater": Specify the path to your client certificate file.'
@@ -104,7 +104,8 @@ export class RunRepeater implements CommandModule {
               return {
                 hostname,
                 passphrase,
-                path: normalize(path)
+                path: normalize(path),
+                port
               };
             });
         }

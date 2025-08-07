@@ -25,6 +25,7 @@ export interface Cert {
   path: string;
   hostname: string;
   passphrase?: string;
+  port?: string;
 }
 
 export class Request {
@@ -156,17 +157,27 @@ export class Request {
   }
 
   public async setCerts(certs: Cert[]): Promise<void> {
-    const { hostname } = new URL(this.url);
+    const url = new URL(this.url);
+
+    const port =
+      url.port ||
+      (url.protocol === 'http:'
+        ? '80'
+        : url.protocol === 'https:'
+        ? '443'
+        : '');
 
     const cert: Cert | undefined = certs.find((x) =>
-      this.matchHostname(hostname, x.hostname)
+      this.matchHostnameAndPort(url.hostname, port, x)
     );
 
     if (!cert) {
-      logger.warn(`Warning: certificate for ${hostname} not found.`);
+      logger.warn(`Warning: certificate for ${url.hostname} not found.`);
 
       return;
     }
+
+    logger.trace(`Using certificate for ${url}`, cert);
 
     await this.loadCert(cert);
   }
@@ -239,10 +250,25 @@ export class Request {
     }
   }
 
-  private matchHostname(hostname: string, wildcard: string): boolean {
-    return (
-      wildcard === hostname || Helpers.wildcardToRegExp(wildcard).test(hostname)
-    );
+  private matchHostnameAndPort(
+    hostname: string,
+    port: string,
+    cert: Cert
+  ): boolean {
+    const hostNameMatch =
+      cert.hostname === hostname ||
+      Helpers.wildcardToRegExp(cert.hostname).test(hostname);
+
+    if (!hostNameMatch) {
+      return false;
+    }
+
+    if (!cert.port) {
+      // ADHOC: hostNameMatch has been checked above and it's true
+      return true;
+    }
+
+    return cert.port === port;
   }
 
   private assertPassphrase(

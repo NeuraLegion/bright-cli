@@ -20,6 +20,8 @@ import { RunDiscovery } from './Commands/RunDiscovery';
 import { StopDiscovery } from './Commands/StopDiscovery';
 import { RerunDiscovery } from './Commands/RerunDiscovery';
 import { PollingDiscoveryStatus } from './Commands/PollingDiscoveryStatus';
+import { PollingHostUpdateJobStatus } from './Commands/PollingHostUpdateJobStatus';
+import { EntryPointsUpdateHost } from './Commands/EntryPointsUpdateHost';
 
 container.resolve(CliBuilder).build({
   commands: [
@@ -33,8 +35,10 @@ container.resolve(CliBuilder).build({
     new StopDiscovery(),
     new RerunDiscovery(),
     new PollingDiscoveryStatus(),
+    new PollingHostUpdateJobStatus(),
     new UploadArchive(),
     new Configure(),
-    new GetEntryPoints()
+    new GetEntryPoints(),
+    new EntryPointsUpdateHost()
   ]
 }).argv;

@@ -1,0 +1,20 @@
+apiVersion: v2
+name: bright-cli
+home: https://brightsec.com/
+description: Helm chart for deploying the Bright CLI repeater service.
+icon: https://app.brightsec.com/assets/logo-shield-128.png
+type: application
+version: 0.0.1
+keywords:
+  - repeater
+  - bright
+  - appsec
+  - bridge
+  - security
+sources:
+  - https://github.com/NeuraLegion/bright-cli
+maintainers:
+  - name: Artsem Dzerauniuk
+    email: artem.derevnjuk@brightsec.com
+  - name: Denan Musinovic
+    email: denan.musinovic@brightsec.com

@@ -1,0 +1,52 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "bright.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "bright.labels" . | nindent 4 }}
+spec:
+  selector:
+    matchLabels:
+      {{- include "bright.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/component: bright-cli
+        {{- include "bright.selectorLabels" . | nindent 8 }}
+        {{- with .Values.repeater.podLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+    spec:
+      securityContext:
+        {{- toYaml .Values.repeater.podSecurityContext | nindent 8 }}
+      containers:
+        - name: repeater
+          image: "{{ .Values.repeater.image.repository }}:{{ .Values.repeater.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.repeater.image.pullPolicy }}
+          command: ["bright-cli", "repeater"]
+          args:
+            - "--token=$(BRIGHT_TOKEN)"
+            - "--id=$(REPEATER_ID)"
+            - "--hostname=$(BRIGHT_HOSTNAME)"
+            {{- range $key, $value := .Values.repeater.extraArgs }}
+            - "--{{ $key }}={{ $value }}"
+            {{- end }}
+          env:
+            - name: BRIGHT_HOSTNAME
+              value: "{{ .Values.api.hostname }}"
+            - name: BRIGHT_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "bright.fullname" . }}-secrets
+                  key: token
+            - name: REPEATER_ID
+              value: "{{ .Values.repeater.id }}"
+          resources:
+            {{- toYaml .Values.repeater.resources | nindent 12 }}
+          securityContext:
+            {{- toYaml .Values.repeater.containerSecurityContext | nindent 12 }}
+      {{- with .Values.repeater.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
