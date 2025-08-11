@@ -76,7 +76,7 @@ jobs:
           - os: windows-latest
             executable: bright-cli-win-x64.exe
             node: 20
-          - os: windows-2019
+          - os: windows-2022
             executable: bright-cli-win-x64.exe
             node: 20
     steps:
