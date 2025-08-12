@@ -189,7 +189,12 @@ export class HttpRequestExecutor implements RequestExecutor {
     timeout ??= this.options.timeout;
     if (typeof timeout === 'number') {
       return setTimeout(
-        () => req.destroy(new Error('Waiting response has timed out')),
+        () =>
+          req.destroy(
+            Object.assign(new Error('Waiting response has timed out'), {
+              code: 'ETIMEDOUT'
+            })
+          ),
         timeout
       );
     }
