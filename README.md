@@ -7,10 +7,10 @@ The NPM allows you to install the Bright Command Line Interface (CLI) on your ma
 ##### Features:
 
 - Easy control of the Bright REST API.
-- [Repeater mode](https://docs.brightsec.com/docs/initializing-the-repeater), which allows the Bright cloud engine to connect to local targets securely, pulling all scan requests as outbound traffic, without exposing the targets to the Internet.
+- [Repeater mode](https://docs.brightsec.com/docs/on-premises-repeater-local-agent), which allows the Bright cloud engine to connect to local targets securely, pulling all scan requests as outbound traffic, without exposing the targets to the Internet.
 - Flexible proxy configuration, which allows you to control the CLI requests both internally and externally.
 - Connector to on-premises (local) ticketing services. For example, you can enable the Bright integration with on-premises Jira, for tickets to be automatically opened for each security vulnerability detected.
-- Integration of Bright with your CI pipelines. Please see our [guide on integrating Bright with CI pipelines](https://docs.brightsec.com/docs/integrate-bright-with-your-ci-pipeline) for more information.
+- Integration of Bright with your CI pipelines. Please see our [guide on integrating Bright with CI pipelines](https://docs.brightsec.com/docs/integrate-bright-with-your-cicd-pipeline) for more information.
 - Running commands from a configuration file. You can run the CLI commands from your console or save them as a JSON, XML, YML, or JavaScript file. Running the CLI from a pre-configured file will simplify further scanning.
 
 ## 🔎 Table of Contents
@@ -69,14 +69,14 @@ We recommend that you use the `--smart` option to optimize the scan coverage and
 
 #### 4. Check out the scan results
 
-You can follow the scan status in the [Bright app](https://app.brightsec.com/scans) or by using the [**Bright CLI** polling](https://docs.brightsec.com/docs/checking-scan-status) command.
+You can follow the scan status in the [Bright app](https://app.brightsec.com/scans) or by using the [**Bright CLI** polling](https://docs.brightsec.com/docs/cli-checking-scan-status) command.
 
 ## 📚 Full Documentation
 
-The **Bright CLI** can do so much more! You can find a full guide with the usage examples in the [Bright docs](https://docs.brightsec.com/docs/getting-started-with-bright-cli).
+The **Bright CLI** can do so much more! You can find a full guide with the usage examples in the [Bright docs](https://docs.brightsec.com/docs/about-bright-cli).
 
 ## 📝 License
 
-Copyright © 2024 [Bright Security Inc.](https://brightsec.com/)
+Copyright © 2025 [Bright Security Inc.](https://brightsec.com/)
 
 This project is licensed under the MIT License - see the [LICENSE file](LICENSE) for details.

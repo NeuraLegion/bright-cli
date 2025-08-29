@@ -23,9 +23,6 @@ import { PollingDiscoveryStatus } from './Commands/PollingDiscoveryStatus';
 import { PollingHostUpdateJobStatus } from './Commands/PollingHostUpdateJobStatus';
 import { EntryPointsUpdateHost } from './Commands/EntryPointsUpdateHost';
 
-// eslint-disable-next-line no-console
-console.log('test');
-
 container.resolve(CliBuilder).build({
   commands: [
     new RunRepeater(),
