@@ -87,9 +87,8 @@ interface SocketEmitEventMap {
 @injectable()
 export class DefaultRepeaterServer implements RepeaterServer {
   private readonly MAX_DEPLOYMENT_TIMEOUT = 60_000;
-  private readonly MAX_RECONNECTION_ATTEMPTS = 20;
-  private readonly MIN_RECONNECTION_DELAY = 1000;
-  private readonly MAX_RECONNECTION_DELAY = 86_400_000;
+  private readonly MIN_RECONNECTION_DELAY = 30_000;
+  private readonly MAX_RECONNECTION_DELAY = 60_000;
   private readonly events = new EventEmitter();
   private readonly handlerMap = new WeakMap<
     RepeaterServerEventHandler<any>,
@@ -165,7 +164,6 @@ export class DefaultRepeaterServer implements RepeaterServer {
             rejectUnauthorized: !this.options.insecure
           })
         : undefined,
-      reconnectionAttempts: this.MAX_RECONNECTION_ATTEMPTS,
       auth: {
         token: this.options.token,
         domain: hostname
