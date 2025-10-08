@@ -242,8 +242,7 @@ export class DefaultRepeaterServer implements RepeaterServer {
     );
     this.socket.io.on('reconnect_attempt', (attempt) =>
       this.events.emit(RepeaterServerEvents.RECONNECT_ATTEMPT, {
-        attempt,
-        maxAttempts: this.MAX_RECONNECTION_ATTEMPTS
+        attempt
       } as RepeaterServerReconnectionAttemptedEvent)
     );
     this.socket.io.on('reconnect', () =>
@@ -297,8 +296,7 @@ export class DefaultRepeaterServer implements RepeaterServer {
     this.connectionAttempts++;
 
     this.events.emit(RepeaterServerEvents.RECONNECT_ATTEMPT, {
-      attempt: this.connectionAttempts,
-      maxAttempts: this.MAX_RECONNECTION_ATTEMPTS
+      attempt: this.connectionAttempts
     } as RepeaterServerReconnectionAttemptedEvent);
     this.connectionTimer = setTimeout(() => this.socket.connect(), delay);
   }

@@ -56,7 +56,6 @@ export interface RepeaterServerReconnectionFailedEvent {
 
 export interface RepeaterServerReconnectionAttemptedEvent {
   attempt: number;
-  maxAttempts: number;
 }
 
 export enum RepeaterErrorCodes {
