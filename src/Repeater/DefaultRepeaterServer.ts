@@ -260,19 +260,9 @@ export class DefaultRepeaterServer implements RepeaterServer {
         ...data,
         message: err.message
       });
-
-      return;
     }
 
-    if (this.connectionAttempts >= this.MAX_RECONNECTION_ATTEMPTS) {
-      this.events.emit(RepeaterServerEvents.RECONNECTION_FAILED, {
-        error: err
-      } as RepeaterServerReconnectionFailedEvent);
-
-      return;
-    }
-
-    // If the error is not related to the authentication, we should manually reconnect
+    // Try reconnect in any case.
     this.scheduleReconnection();
   };
 
