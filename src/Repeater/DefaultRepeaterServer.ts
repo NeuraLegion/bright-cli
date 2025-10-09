@@ -87,8 +87,8 @@ interface SocketEmitEventMap {
 @injectable()
 export class DefaultRepeaterServer implements RepeaterServer {
   private readonly MAX_DEPLOYMENT_TIMEOUT = 60_000;
-  private readonly MIN_RECONNECTION_DELAY = 30_000;
-  private readonly MAX_RECONNECTION_DELAY = 60_000;
+  private readonly MIN_RECONNECTION_DELAY = 5_000;
+  private readonly MAX_RECONNECTION_DELAY = 1_000;
   private readonly events = new EventEmitter();
   private readonly handlerMap = new WeakMap<
     RepeaterServerEventHandler<any>,
