@@ -154,12 +154,8 @@ export class ServerRepeaterLauncher implements RepeaterLauncher {
     );
     this.repeaterServer.on(
       RepeaterServerEvents.RECONNECT_ATTEMPT,
-      ({ attempt, maxAttempts }) =>
-        logger.warn(
-          'Failed to connect to Bright cloud (attempt %d/%d)',
-          attempt,
-          maxAttempts
-        )
+      ({ attempt }) =>
+        logger.warn('Failed to connect to Bright cloud (attempt %d)', attempt)
     );
     this.repeaterServer.on(RepeaterServerEvents.RECONNECTION_SUCCEEDED, () =>
       logger.log('The Repeater (%s) connected', this.info.version)

@@ -87,9 +87,8 @@ interface SocketEmitEventMap {
 @injectable()
 export class DefaultRepeaterServer implements RepeaterServer {
   private readonly MAX_DEPLOYMENT_TIMEOUT = 60_000;
-  private readonly MAX_RECONNECTION_ATTEMPTS = 20;
-  private readonly MIN_RECONNECTION_DELAY = 1000;
-  private readonly MAX_RECONNECTION_DELAY = 86_400_000;
+  private readonly MIN_RECONNECTION_DELAY = 5_000;
+  private readonly MAX_RECONNECTION_DELAY = 1_000;
   private readonly events = new EventEmitter();
   private readonly handlerMap = new WeakMap<
     RepeaterServerEventHandler<any>,
@@ -165,7 +164,6 @@ export class DefaultRepeaterServer implements RepeaterServer {
             rejectUnauthorized: !this.options.insecure
           })
         : undefined,
-      reconnectionAttempts: this.MAX_RECONNECTION_ATTEMPTS,
       auth: {
         token: this.options.token,
         domain: hostname
@@ -244,8 +242,7 @@ export class DefaultRepeaterServer implements RepeaterServer {
     );
     this.socket.io.on('reconnect_attempt', (attempt) =>
       this.events.emit(RepeaterServerEvents.RECONNECT_ATTEMPT, {
-        attempt,
-        maxAttempts: this.MAX_RECONNECTION_ATTEMPTS
+        attempt
       } as RepeaterServerReconnectionAttemptedEvent)
     );
     this.socket.io.on('reconnect', () =>
@@ -263,19 +260,9 @@ export class DefaultRepeaterServer implements RepeaterServer {
         ...data,
         message: err.message
       });
-
-      return;
     }
 
-    if (this.connectionAttempts >= this.MAX_RECONNECTION_ATTEMPTS) {
-      this.events.emit(RepeaterServerEvents.RECONNECTION_FAILED, {
-        error: err
-      } as RepeaterServerReconnectionFailedEvent);
-
-      return;
-    }
-
-    // If the error is not related to the authentication, we should manually reconnect
+    // Try reconnect in any case.
     this.scheduleReconnection();
   };
 
@@ -299,8 +286,7 @@ export class DefaultRepeaterServer implements RepeaterServer {
     this.connectionAttempts++;
 
     this.events.emit(RepeaterServerEvents.RECONNECT_ATTEMPT, {
-      attempt: this.connectionAttempts,
-      maxAttempts: this.MAX_RECONNECTION_ATTEMPTS
+      attempt: this.connectionAttempts
     } as RepeaterServerReconnectionAttemptedEvent);
     this.connectionTimer = setTimeout(() => this.socket.connect(), delay);
   }
