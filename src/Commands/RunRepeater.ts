@@ -1,16 +1,122 @@
-import { Cert, RequestExecutorOptions } from '../RequestExecutor';
+import {
+  Cert,
+  CertificatesLoader,
+  RequestExecutorOptions
+} from '../RequestExecutor';
 import { ErrorMessageFactory, Helpers, logger } from '../Utils';
 import container from '../container';
 import { DefaultRepeaterServerOptions, RepeaterLauncher } from '../Repeater';
 import { Arguments, Argv, CommandModule } from 'yargs';
 import { captureException } from '@sentry/node';
-import { normalize } from 'node:path';
+import { normalize, basename, extname } from 'node:path';
+import { readFile } from 'node:fs/promises';
+import { createSecureContext } from 'node:tls';
 import process from 'node:process';
+import https from 'node:https';
 
 export class RunRepeater implements CommandModule {
   public readonly command = 'repeater [options]';
   public readonly describe = 'Starts an on-prem agent.';
 
+  public static async isValidCertificate(cert: Cert): Promise<boolean> {
+    const ext = extname(cert.path);
+    if (ext !== '.pfx') {
+      return true;
+    }
+
+    const loadedCert: { cert: Buffer; passphrase?: string } | undefined =
+      await RunRepeater.loadPfxCert(cert);
+
+    if (!loadedCert) {
+      return false;
+    }
+
+    const options = {
+      hostname: cert.hostname,
+      port: cert.port || 443,
+      protocol: 'https:',
+      path: cert.validationPath || '/',
+      method: 'GET',
+      rejectUnauthorized: true,
+      requestCert: true,
+      ca: https.globalAgent.options.ca,
+      agent: new https.Agent({
+        pfx: loadedCert.cert,
+        passphrase: loadedCert.passphrase
+      })
+    };
+
+    try {
+      return await new Promise<boolean>((resolve, reject) => {
+        const req = https.request(options, (res) => {
+          res.on('data', () => {
+            // We are not interested in response data
+            // but need to handle this event not to get crashed.
+          });
+          res.on('end', () => {
+            if (res.statusCode >= 200 && res.statusCode < 400) {
+              resolve(true);
+
+              return;
+            }
+            logger.error(
+              `Failed to make successful GET request with certificate ${cert.path} to URL https://${cert.hostname}:${cert.port}${cert.validationPath}`
+            );
+            resolve(false);
+          });
+        });
+
+        req.on('error', (e) => {
+          logger.error(e);
+          reject(false);
+        });
+
+        process.nextTick(() => req.end());
+      });
+    } catch (error) {
+      logger.error(`Certificate ${cert.path} is invalid!`);
+    }
+
+    return false;
+  }
+
+  private static async loadPfxCert({
+    path,
+    passphrase
+  }: Cert): Promise<{ cert: Buffer; passphrase?: string } | undefined> {
+    let cert: Buffer | undefined;
+
+    try {
+      cert = await readFile(path);
+    } catch (e) {
+      logger.warn(`Warning: certificate ${path} not found.`);
+
+      return undefined;
+    }
+
+    const name = basename(path);
+    if (this.assertPassphrase(name, cert, passphrase)) {
+      return { cert, passphrase };
+    }
+  }
+
+  private static assertPassphrase(
+    name: string,
+    pfx: Buffer,
+    passphrase: string
+  ): boolean {
+    try {
+      createSecureContext({ passphrase, pfx });
+
+      return true;
+    } catch (e) {
+      logger.error(
+        `Error Loading Certificate: Wrong passphrase for certificate ${name}.`
+      );
+
+      return false;
+    }
+  }
   public builder(argv: Argv): Argv {
     return argv
       .option('token', {
@@ -77,37 +183,45 @@ export class RunRepeater implements CommandModule {
             : false;
         }
       })
+      .option('validateCertificates', {
+        boolean: true,
+        describe:
+          'Specifies whether certificates validation must be done before applying them for requests.'
+      })
       .option('cert', {
         requiresArg: true,
         array: true,
         string: true,
         describe:
-          'The certificate must be in PKCS, or PEM format. Example: {"hostname": "example.com", "path": "./example.pem", "passphrase": "pa$$word", "port": "1234"}.',
+          'The certificate must be in PKCS, or PEM format. Example: {"hostname": "example.com", "path": "./example.pem", "passphrase": "pa$$word", "port": "1234", "validationPath": "/"}.',
         coerce(args: string[]): Cert[] {
           return args
             .map((arg: string) => JSON.parse(arg))
-            .map(({ path, hostname, passphrase, port }: Cert) => {
-              if (!path) {
-                logger.error(
-                  'Error during "repeater": Specify the path to your client certificate file.'
-                );
-                process.exit(1);
-              }
+            .map(
+              ({ path, hostname, passphrase, port, validationPath }: Cert) => {
+                if (!path) {
+                  logger.error(
+                    'Error during "repeater": Specify the path to your client certificate file.'
+                  );
+                  process.exit(1);
+                }
 
-              if (!hostname) {
-                logger.error(
-                  'Error during "repeater": Specify the hostname (without protocol and port) of the request URL for which you want to use the certificate.'
-                );
-                process.exit(1);
-              }
+                if (!hostname) {
+                  logger.error(
+                    'Error during "repeater": Specify the hostname (without protocol and port) of the request URL for which you want to use the certificate.'
+                  );
+                  process.exit(1);
+                }
 
-              return {
-                hostname,
-                passphrase,
-                path: normalize(path),
-                port
-              };
-            });
+                return {
+                  hostname,
+                  passphrase,
+                  path: normalize(path),
+                  port,
+                  validationPath
+                };
+              }
+            );
         }
       })
       .option('experimental-connection-reuse', {
@@ -224,14 +338,32 @@ export class RunRepeater implements CommandModule {
 
         return true;
       })
-      .middleware((args: Arguments) => {
+      .middleware(async (args: Arguments) => {
         container
           .register<RequestExecutorOptions>(RequestExecutorOptions, {
             useValue: {
               headers: (args.header ?? args.headers) as Record<string, string>,
               timeout: args.timeout as number,
               proxyUrl: (args.proxyTarget ?? args.proxy) as string,
-              certs: args.cert as Cert[],
+              certs: args.validateCertificates
+                ? await (async (
+                    certs: Cert[],
+                    cacert?: string
+                  ): Promise<Cert[]> => {
+                    const loader = new CertificatesLoader();
+                    if (cacert) {
+                      await loader.load(cacert);
+                    }
+                    const validatedCerts: Cert[] = [];
+                    for (const cert of certs) {
+                      if (await RunRepeater.isValidCertificate(cert)) {
+                        validatedCerts.push(cert);
+                      }
+                    }
+
+                    return validatedCerts;
+                  })(args.cert as Cert[], args.cacert as unknown as string)
+                : (args.cert as Cert[]),
               maxBodySize: Infinity,
               maxContentLength: 100,
               reuseConnection:
