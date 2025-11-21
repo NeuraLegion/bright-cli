@@ -21,6 +21,8 @@ export class RunRepeater implements CommandModule {
   public static async isValidCertificate(cert: Cert): Promise<boolean> {
     const ext = extname(cert.path);
     if (ext !== '.pfx') {
+      logger.warn('Non-PFX certificates are passed without validation');
+
       return true;
     }
 
@@ -356,8 +358,10 @@ export class RunRepeater implements CommandModule {
                     }
                     const validatedCerts: Cert[] = [];
                     for (const cert of certs) {
+                      logger.log(`Validating: ${cert.path}`);
                       if (await RunRepeater.isValidCertificate(cert)) {
                         validatedCerts.push(cert);
+                        logger.log(`Validated successfully: ${cert.path}`);
                       }
                     }
 
