@@ -1,11 +1,12 @@
 import { RequestExecutor } from './RequestExecutor';
 import { Response } from './Response';
-import { Request, RequestOptions } from './Request';
+import { Cert, Request, RequestOptions } from './Request';
 import { Helpers, logger, ProxyFactory } from '../Utils';
 import { VirtualScripts } from '../Scripts';
 import { Protocol } from './Protocol';
 import { RequestExecutorOptions } from './RequestExecutorOptions';
 import { NormalizeZlibDeflateTransformStream } from '../Utils/NormalizeZlibDeflateTransformStream';
+import { CertificatesCache } from './CertificatesCache';
 import { inject, injectable } from 'tsyringe';
 import iconv from 'iconv-lite';
 import { safeParse } from 'fast-content-type-parse';
@@ -50,7 +51,9 @@ export class HttpRequestExecutor implements RequestExecutor {
     @inject(VirtualScripts) private readonly virtualScripts: VirtualScripts,
     @inject(ProxyFactory) private readonly proxyFactory: ProxyFactory,
     @inject(RequestExecutorOptions)
-    private readonly options: RequestExecutorOptions
+    private readonly options: RequestExecutorOptions,
+    @inject(CertificatesCache)
+    private readonly certificatesCache: CertificatesCache
   ) {
     if (this.options.proxyUrl) {
       ({ httpsAgent: this.httpsProxyAgent, httpAgent: this.httpProxyAgent } =
@@ -95,35 +98,24 @@ export class HttpRequestExecutor implements RequestExecutor {
 
       options = await this.transformScript(options);
 
-      if (this.options.certs) {
-        await options.setCerts(this.options.certs);
+      const targetCerts: Cert[] | undefined = this.options.certs
+        ? this.certificatesForRequest(options)
+        : undefined;
+
+      if (targetCerts === undefined) {
+        logger.debug(
+          'Executing HTTP request with following params: %j',
+          options
+        );
+
+        return await this.tryRequest(options);
       }
 
-      logger.debug('Executing HTTP request with following params: %j', options);
+      if (targetCerts.length === 0) {
+        logger.warn(`Warning: certificate for ${options.url} not found.`);
+      }
 
-      const { res, body } = await this.request(options);
-
-      logger.trace(
-        'received following response for request %j: headers: %j body: %s',
-        {
-          url: options.url,
-          protocol: this.protocol,
-          method: options.method
-        },
-        {
-          statusCode: res.statusCode,
-          headers: res.headers
-        },
-        body.slice(0, 500).concat(body.length > 500 ? '...' : '')
-      );
-
-      return new Response({
-        body,
-        protocol: this.protocol,
-        statusCode: res.statusCode,
-        headers: res.headers,
-        encoding: options.encoding
-      });
+      return await this.tryRequestWithCertificates(options, targetCerts);
     } catch (err) {
       const { cause } = err;
       const { message, code, syscall, name } = cause ?? err;
@@ -473,5 +465,111 @@ export class HttpRequestExecutor implements RequestExecutor {
     );
 
     return new Request(result);
+  }
+
+  private matchHostnameAndPort(
+    hostname: string,
+    port: string,
+    cert: Cert
+  ): boolean {
+    const hostNameMatch =
+      cert.hostname === hostname ||
+      Helpers.wildcardToRegExp(cert.hostname).test(hostname);
+
+    if (!hostNameMatch) {
+      return false;
+    }
+
+    if (!cert.port) {
+      // ADHOC: hostNameMatch has been checked above and it's true
+      return true;
+    }
+
+    return cert.port === port;
+  }
+
+  private portFromURL(url: URL): string {
+    return (
+      url.port ||
+      (url.protocol === 'http:' ? '80' : url.protocol === 'https:' ? '443' : '')
+    );
+  }
+
+  private certificatesForRequest(request: Request): Cert[] {
+    const cachedCertificate = this.certificatesCache.get(request);
+    if (cachedCertificate) {
+      return [cachedCertificate];
+    }
+
+    const requestUrl = new URL(request.url);
+    const port = this.portFromURL(requestUrl);
+
+    return this.options.certs.filter((cert: Cert) =>
+      this.matchHostnameAndPort(requestUrl.hostname, port, cert)
+    );
+  }
+
+  private async tryRequest(request: Request): Promise<Response | undefined> {
+    const { res, body } = await this.request(request);
+
+    logger.trace(
+      'received following response for request %j: headers: %j body: %s',
+      {
+        url: request.url,
+        protocol: this.protocol,
+        method: request.method
+      },
+      {
+        statusCode: res.statusCode,
+        headers: res.headers
+      },
+      body.slice(0, 500).concat(body.length > 500 ? '...' : '')
+    );
+
+    return new Response({
+      body,
+      protocol: this.protocol,
+      statusCode: res.statusCode,
+      headers: res.headers,
+      encoding: request.encoding
+    });
+  }
+
+  private async tryRequestWithCertificate(
+    request: Request,
+    cert: Cert
+  ): Promise<Response | undefined> {
+    try {
+      await request.setCert(cert);
+
+      return await this.tryRequest(request);
+    } catch (error) {
+      return undefined;
+    }
+  }
+
+  private async tryRequestWithCertificates(
+    request: Request,
+    certs: Cert[]
+  ): Promise<Response> {
+    for (const cert of certs) {
+      logger.debug('Executing HTTP request with following params: %j', request);
+      const response = await this.tryRequestWithCertificate(request, cert);
+      if (!response) {
+        logger.warn(
+          `Failed to do successful request with certificate ${cert.path}. It will be excluded from list of known certificates.`
+        );
+        continue;
+      }
+      logger.log(`Successfully executed request with certificate ${cert.path}`);
+
+      this.certificatesCache.add(request, cert);
+
+      return response;
+    }
+
+    throw Error(
+      `Didn't find valid certificate to execute request for ${request.url}.`
+    );
   }
 }

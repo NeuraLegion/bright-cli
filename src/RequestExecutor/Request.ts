@@ -1,4 +1,4 @@
-import { Helpers, logger } from '../Utils';
+import { logger } from '../Utils';
 import { Protocol } from './Protocol';
 import { readFile } from 'node:fs/promises';
 import { basename, extname } from 'node:path';
@@ -156,29 +156,7 @@ export class Request {
     );
   }
 
-  public async setCerts(certs: Cert[]): Promise<void> {
-    const url = new URL(this.url);
-
-    const port =
-      url.port ||
-      (url.protocol === 'http:'
-        ? '80'
-        : url.protocol === 'https:'
-        ? '443'
-        : '');
-
-    const cert: Cert | undefined = certs.find((x) =>
-      this.matchHostnameAndPort(url.hostname, port, x)
-    );
-
-    if (!cert) {
-      logger.warn(`Warning: certificate for ${url.hostname} not found.`);
-
-      return;
-    }
-
-    logger.trace(`Using certificate for ${url}`, cert);
-
+  public async setCert(cert: Cert): Promise<void> {
     await this.loadCert(cert);
   }
 
@@ -248,27 +226,6 @@ export class Request {
       default:
         logger.warn(`Warning: certificate of type "${ext}" does not support.`);
     }
-  }
-
-  private matchHostnameAndPort(
-    hostname: string,
-    port: string,
-    cert: Cert
-  ): boolean {
-    const hostNameMatch =
-      cert.hostname === hostname ||
-      Helpers.wildcardToRegExp(cert.hostname).test(hostname);
-
-    if (!hostNameMatch) {
-      return false;
-    }
-
-    if (!cert.port) {
-      // ADHOC: hostNameMatch has been checked above and it's true
-      return true;
-    }
-
-    return cert.port === port;
   }
 
   private assertPassphrase(
