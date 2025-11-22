@@ -26,7 +26,6 @@ export interface Cert {
   hostname: string;
   passphrase?: string;
   port?: string;
-  validationPath?: string;
 }
 
 export class Request {
