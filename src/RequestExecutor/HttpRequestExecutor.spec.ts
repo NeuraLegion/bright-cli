@@ -5,6 +5,7 @@ import { Protocol } from './Protocol';
 import { Request, RequestOptions } from './Request';
 import { RequestExecutorOptions } from './RequestExecutorOptions';
 import { ProxyFactory } from '../Utils';
+import { CertificatesCache } from './CertificatesCache';
 import nock from 'nock';
 import {
   anyString,
@@ -42,6 +43,7 @@ const createRequest = (options?: Partial<RequestOptions>) => {
 describe('HttpRequestExecutor', () => {
   const virtualScriptsMock = mock<VirtualScripts>();
   const proxyFactoryMock = mock<ProxyFactory>();
+  const certificatesCacheMock = mock<CertificatesCache>();
   let spiedExecutorOptions!: RequestExecutorOptions;
 
   let executor!: HttpRequestExecutor;
@@ -53,15 +55,19 @@ describe('HttpRequestExecutor', () => {
     executor = new HttpRequestExecutor(
       instance(virtualScriptsMock),
       instance(proxyFactoryMock),
-      executorOptions
+      executorOptions,
+      certificatesCacheMock
     );
   });
 
   afterEach(() =>
-    reset<VirtualScripts | RequestExecutorOptions | ProxyFactory>(
+    reset<
+      VirtualScripts | RequestExecutorOptions | ProxyFactory | CertificatesCache
+    >(
       virtualScriptsMock,
       spiedExecutorOptions,
-      proxyFactoryMock
+      proxyFactoryMock,
+      certificatesCacheMock
     )
   );
 
@@ -118,21 +124,21 @@ describe('HttpRequestExecutor', () => {
       verify(spiedRequest.toJSON()).never();
     });
 
-    it('should call setCerts on the provided request if there were certificates configured globally', async () => {
+    it('should call setCert on the provided request if there were certificates configured globally', async () => {
       when(spiedExecutorOptions.certs).thenReturn([]);
       const { request, spiedRequest } = createRequest();
 
       await executor.execute(request);
 
-      verify(spiedRequest.setCerts(anything())).once();
+      verify(spiedRequest.setCert(anything())).once();
     });
 
-    it('should not call setCerts on the provided request if there were no certificates configured', async () => {
+    it('should not call setCert on the provided request if there were no certificates configured', async () => {
       const { request, spiedRequest } = createRequest();
 
       await executor.execute(request);
 
-      verify(spiedRequest.setCerts(anything())).never();
+      verify(spiedRequest.setCert(anything())).never();
     });
 
     it('should perform an external http request', async () => {

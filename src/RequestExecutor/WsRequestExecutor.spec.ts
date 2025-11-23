@@ -2,6 +2,7 @@ import 'reflect-metadata';
 import { Protocol } from './Protocol';
 import { WsRequestExecutor } from './WsRequestExecutor';
 import { RequestExecutorOptions } from './RequestExecutorOptions';
+import { CertificatesCache } from './CertificatesCache';
 import { Request } from './Request';
 import { ProxyFactory } from '../Utils';
 import { anything, instance, mock, reset, spy, verify, when } from 'ts-mockito';
@@ -11,6 +12,7 @@ import { once } from 'node:events';
 describe('WsRequestExecutor', () => {
   const executorOptions: RequestExecutorOptions = { timeout: 2000 };
   const spiedExecutorOptions = spy<RequestExecutorOptions>(executorOptions);
+  const certificatesCacheMock = mock<CertificatesCache>();
   const proxyFactoryMock = mock<ProxyFactory>();
 
   let executor!: WsRequestExecutor;
@@ -20,7 +22,8 @@ describe('WsRequestExecutor', () => {
     Object.assign(executorOptions, { timeout: 2000 });
     executor = new WsRequestExecutor(
       instance(proxyFactoryMock),
-      executorOptions
+      executorOptions,
+      certificatesCacheMock
     );
   });
 
@@ -69,7 +72,7 @@ describe('WsRequestExecutor', () => {
       when(spiedExecutorOptions.certs).thenReturn([]);
       await executor.execute(request);
 
-      verify(spiedRequest.setCerts(anything())).once();
+      verify(spiedRequest.setCert(anything())).once();
     });
 
     it('should not call setCerts on the provided request if there were no globally configured certificates', async () => {
@@ -82,7 +85,7 @@ describe('WsRequestExecutor', () => {
 
       await executor.execute(request);
 
-      verify(spiedRequest.setCerts(anything())).never();
+      verify(spiedRequest.setCert(anything())).never();
     });
 
     it('should send request body to a web-socket server', (done) => {
@@ -161,6 +164,7 @@ describe('WsRequestExecutor', () => {
     });
 
     it('should get the response from server', async () => {
+      when(certificatesCacheMock.get(anything())).thenReturn(undefined);
       const url = `ws://localhost:${wsPort}`;
       const request = new Request({ url, headers: {}, protocol: Protocol.WS });
 
