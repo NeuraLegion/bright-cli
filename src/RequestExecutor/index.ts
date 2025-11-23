@@ -7,3 +7,4 @@ export * from './Request';
 export * from './Protocol';
 export * from './Certificates';
 export * from './CertificatesLoader';
+export * from './CertificatesCache';

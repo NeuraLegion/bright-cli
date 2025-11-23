@@ -2,6 +2,7 @@ import 'reflect-metadata';
 import {
   Certificates,
   CertificatesLoader,
+  CertificatesCache,
   HttpRequestExecutor,
   RequestExecutor,
   WsRequestExecutor
@@ -63,6 +64,7 @@ import {
 } from './Discovery';
 import { DefaultHostUpdateJobStatusPollingFactory } from './EntryPoint/DefaultHostUpdateJobStatusPollingFactory';
 import { HostUpdateJobStatusPollingFactory } from './EntryPoint/HostUpdateJobStatusPollingFactory';
+import { DefaultCertificatesCache } from './RequestExecutor/DefaultCertificatesCache';
 import { container, Lifecycle } from 'tsyringe';
 
 container
@@ -83,6 +85,13 @@ container
     Certificates,
     {
       useClass: CertificatesLoader
+    },
+    { lifecycle: Lifecycle.Singleton }
+  )
+  .register(
+    CertificatesCache,
+    {
+      useClass: DefaultCertificatesCache
     },
     { lifecycle: Lifecycle.Singleton }
   )
