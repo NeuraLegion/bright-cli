@@ -1,9 +1,10 @@
 import { RequestExecutor } from './RequestExecutor';
 import { Response } from './Response';
-import { Request } from './Request';
+import { Cert, Request } from './Request';
 import { Protocol } from './Protocol';
-import { logger, ProxyFactory } from '../Utils';
+import { Helpers, logger, ProxyFactory } from '../Utils';
 import { RequestExecutorOptions } from './RequestExecutorOptions';
+import { CertificatesCache } from './CertificatesCache';
 import { inject, injectable } from 'tsyringe';
 import WebSocket from 'ws';
 import { once } from 'node:events';
@@ -29,7 +30,9 @@ export class WsRequestExecutor implements RequestExecutor {
   constructor(
     @inject(ProxyFactory) private readonly proxyFactory: ProxyFactory,
     @inject(RequestExecutorOptions)
-    private readonly options: RequestExecutorOptions
+    private readonly options: RequestExecutorOptions,
+    @inject(CertificatesCache)
+    private readonly certificatesCache: CertificatesCache
   ) {
     if (this.options.proxyUrl) {
       ({ httpsAgent: this.httpsProxyAgent, httpAgent: this.httpProxyAgent } =
@@ -42,43 +45,24 @@ export class WsRequestExecutor implements RequestExecutor {
   }
 
   public async execute(options: Request): Promise<Response> {
-    let timeout: NodeJS.Timeout;
-    let client: WebSocket;
-
     try {
       logger.debug('Executing HTTP request with following params: %j', options);
 
-      if (this.options.certs) {
-        await options.setCerts(this.options.certs);
+      const targetCerts: Cert[] | undefined = this.options.certs
+        ? this.certificatesForRequest(options)
+        : undefined;
+
+      if (targetCerts === undefined) {
+        logger.debug('Executing WS request with following params: %j', options);
+
+        return await this.tryRequest(options);
       }
 
-      client = new WebSocket(options.url, {
-        agent: options.secureEndpoint
-          ? this.httpsProxyAgent
-          : this.httpProxyAgent,
-        rejectUnauthorized: false,
-        handshakeTimeout: this.options.timeout,
-        headers: this.normalizeHeaders(options.headers),
-        ca: options.ca,
-        pfx: options.pfx,
-        passphrase: options.passphrase
-      });
+      if (targetCerts.length === 0) {
+        logger.warn(`Warning: certificate for ${options.url} not found.`);
+      }
 
-      const res: IncomingMessage = await this.connect(client);
-
-      // @ts-expect-error TS infers a wrong type here
-      await promisify(client.send.bind(client))(options.body);
-
-      timeout = this.setTimeout(client);
-
-      const msg = await this.consume(client, options.correlationIdRegex);
-
-      return new Response({
-        protocol: this.protocol,
-        statusCode: msg.code ?? res.statusCode,
-        headers: res.headers,
-        body: msg.body
-      });
+      return await this.tryRequestWithCertificates(options, targetCerts);
     } catch (err) {
       const message = err.info ?? err.message;
       const errorCode = err.code ?? err.syscall;
@@ -91,14 +75,6 @@ export class WsRequestExecutor implements RequestExecutor {
         errorCode,
         protocol: this.protocol
       });
-    } finally {
-      if (timeout) {
-        clearTimeout(timeout);
-      }
-
-      if (client?.readyState === WebSocket.OPEN) {
-        client.close(1000);
-      }
     }
   }
 
@@ -185,6 +161,128 @@ export class WsRequestExecutor implements RequestExecutor {
         return result;
       },
       {}
+    );
+  }
+
+  private certificatesForRequest(request: Request): Cert[] {
+    const cachedCertificate = this.certificatesCache.get(request);
+    if (cachedCertificate) {
+      return [cachedCertificate];
+    }
+
+    const requestUrl = new URL(request.url);
+    const port = this.portFromURL(requestUrl);
+
+    return this.options.certs.filter((cert: Cert) =>
+      this.matchHostnameAndPort(requestUrl.hostname, port, cert)
+    );
+  }
+
+  private portFromURL(url: URL): string {
+    return (
+      url.port ||
+      (url.protocol === 'http:' ? '80' : url.protocol === 'https:' ? '443' : '')
+    );
+  }
+
+  private matchHostnameAndPort(
+    hostname: string,
+    port: string,
+    cert: Cert
+  ): boolean {
+    const hostNameMatch =
+      cert.hostname === hostname ||
+      Helpers.wildcardToRegExp(cert.hostname).test(hostname);
+
+    if (!hostNameMatch) {
+      return false;
+    }
+
+    if (!cert.port) {
+      // ADHOC: hostNameMatch has been checked above and it's true
+      return true;
+    }
+
+    return cert.port === port;
+  }
+
+  private async tryRequest(request: Request): Promise<Response | undefined> {
+    let timeout: NodeJS.Timeout;
+    let client: WebSocket;
+
+    try {
+      client = new WebSocket(request.url, {
+        agent: request.secureEndpoint
+          ? this.httpsProxyAgent
+          : this.httpProxyAgent,
+        rejectUnauthorized: false,
+        handshakeTimeout: this.options.timeout,
+        headers: this.normalizeHeaders(request.headers),
+        ca: request.ca,
+        pfx: request.pfx,
+        passphrase: request.passphrase
+      });
+
+      const res: IncomingMessage = await this.connect(client);
+
+      // @ts-expect-error TS infers a wrong type here
+      await promisify(client.send.bind(client))(request.body);
+
+      timeout = this.setTimeout(client);
+
+      const msg = await this.consume(client, request.correlationIdRegex);
+
+      return new Response({
+        protocol: this.protocol,
+        statusCode: msg.code ?? res.statusCode,
+        headers: res.headers,
+        body: msg.body
+      });
+    } finally {
+      if (timeout) {
+        clearTimeout(timeout);
+      }
+
+      if (client?.readyState === WebSocket.OPEN) {
+        client.close(1000);
+      }
+    }
+  }
+
+  private async tryRequestWithCertificate(
+    request: Request,
+    cert: Cert
+  ): Promise<Response | undefined> {
+    try {
+      await request.setCert(cert);
+
+      return await this.tryRequest(request);
+    } catch (error) {
+      return undefined;
+    }
+  }
+
+  private async tryRequestWithCertificates(
+    request: Request,
+    certs: Cert[]
+  ): Promise<Response> {
+    for (const cert of certs) {
+      const response = await this.tryRequestWithCertificate(request, cert);
+      if (!response) {
+        logger.warn(
+          `Failed to do successful request with certificate ${cert.path}. It will be excluded from list of known certificates.`
+        );
+        continue;
+      }
+      logger.log(`Successfully executed request with certificate ${cert.path}`);
+
+      this.certificatesCache.add(request, cert);
+
+      return response;
+    }
+
+    throw Error(
+      `Didn't find valid certificate to execute request for ${request.url}.`
     );
   }
 }
