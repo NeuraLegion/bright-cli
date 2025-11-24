@@ -513,13 +513,10 @@ export class HttpRequestExecutor implements RequestExecutor {
     request: Request,
     cert: Cert
   ): Promise<Response | undefined> {
-    try {
-      await request.setCert(cert);
+    await request.setCert(cert);
 
-      return await this.tryRequest(request);
-    } catch (error) {
-      return undefined;
-    }
+    // eslint-disable-next-line @typescript-eslint/return-await
+    return await this.tryRequest(request);
   }
 
   private async tryRequestWithCertificates(
@@ -532,18 +529,18 @@ export class HttpRequestExecutor implements RequestExecutor {
           'Executing HTTP request with following params: %j',
           request
         );
-        const response = await this.tryRequestWithCertificate(request, cert);
-        if (!response) {
-          logger.warn(
-            `Failed to do successful request with certificate ${cert.path}. It will be excluded from list of known certificates.`
-          );
-          throw Error(
-            `Failed to do successful request with certificate ${cert.path}.`
-          );
-        }
-        this.certificatesCache.add(request, cert);
+        try {
+          const response = await this.tryRequestWithCertificate(request, cert);
+          this.certificatesCache.add(request, cert);
 
-        return response;
+          return response;
+        } catch (error) {
+          const msg = Helpers.isTlsCertError(error)
+            ? `Failed to do successful request with certificate ${cert.path}. It will be excluded from list of known certificates.`
+            : `Unexpected error occured during request: ${error}`;
+          logger.warn(msg);
+          throw Error(msg);
+        }
       }
     );
 

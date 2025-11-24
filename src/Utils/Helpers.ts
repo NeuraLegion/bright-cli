@@ -31,11 +31,28 @@ export interface ClusterUrls {
   repeaterServer: string;
 }
 
+export interface TlsError {
+  code?: string;
+}
+
 export class Helpers {
   private static readonly UUID_PATTERN =
     /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
   private static readonly SHORT_UUID_PATTERN = /^[1-9a-z]{10,22}$/i;
   private static readonly META_CHARS_REGEXP = /([()\][%!^"`<>&|;, *?])/g;
+
+  private static readonly OPENSSL_CODES = new Set([
+    'CERT_HAS_EXPIRED',
+    'CERT_NOT_YET_VALID',
+    'DEPTH_ZERO_SELF_SIGNED_CERT',
+    'SELF_SIGNED_CERT_IN_CHAIN',
+    'UNABLE_TO_VERIFY_LEAF_SIGNATURE',
+    'UNABLE_TO_GET_ISSUER_CERT_LOCALLY',
+    'UNABLE_TO_GET_ISSUER_CERT',
+    'HOSTNAME_MISMATCH',
+    'CERT_REJECTED',
+    'CERT_UNTRUSTED'
+  ]);
 
   public static isUUID(value: string): boolean {
     ok(value, 'Value must be string');
@@ -257,6 +274,25 @@ export class Helpers {
     }
 
     return cert.port === port;
+  }
+
+  public static isTlsCertError(error: Error) {
+    const err = error as TlsError;
+
+    if (!err.code) return false;
+
+    if (
+      typeof err.code === 'string' &&
+      (err.code.startsWith('ERR_TLS_') ||
+        err.code === 'ECONNRESET' ||
+        err.code === 'ECONNREFUSED')
+    ) {
+      return true;
+    }
+
+    if (Helpers.OPENSSL_CODES.has(err.code)) return true;
+
+    return false;
   }
 
   // It's based on https://qntm.org/cmd
