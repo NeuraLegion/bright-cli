@@ -524,24 +524,29 @@ export class HttpRequestExecutor implements RequestExecutor {
     request: Request,
     certs: Cert[]
   ): Promise<Response> {
-    for (const cert of certs) {
-      logger.debug('Executing HTTP request with following params: %j', request);
-      const response = await this.tryRequestWithCertificate(request, cert);
-      if (!response) {
-        logger.warn(
-          `Failed to do successful request with certificate ${cert.path}. It will be excluded from list of known certificates.`
+    const requestsWithCerts: Promise<Response>[] = certs.map(
+      async (cert: Cert) => {
+        logger.debug(
+          'Executing HTTP request with following params: %j',
+          request
         );
-        continue;
+        const response = await this.tryRequestWithCertificate(request, cert);
+        if (!response) {
+          logger.warn(
+            `Failed to do successful request with certificate ${cert.path}. It will be excluded from list of known certificates.`
+          );
+          throw Error(
+            `Failed to do successful request with certificate ${cert.path}.`
+          );
+        }
+        this.certificatesCache.add(request, cert);
+
+        return response;
       }
-      logger.log(`Successfully executed request with certificate ${cert.path}`);
-
-      this.certificatesCache.add(request, cert);
-
-      return response;
-    }
-
-    throw Error(
-      `Didn't find valid certificate to execute request for ${request.url}.`
     );
+
+    // Important to wait for valid response.
+    // eslint-disable-next-line @typescript-eslint/return-await
+    return await Promise.any(requestsWithCerts);
   }
 }
