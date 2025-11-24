@@ -112,7 +112,9 @@ export class HttpRequestExecutor implements RequestExecutor {
       }
 
       if (targetCerts.length === 0) {
-        logger.warn(`Warning: certificate for ${options.url} not found.`);
+        const msg = `certificate for ${options.url} not found.`;
+        logger.warn(`Warn: ${msg}`);
+        throw Error(msg);
       }
 
       return await this.tryRequestWithCertificates(options, targetCerts);
