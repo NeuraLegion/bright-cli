@@ -102,19 +102,16 @@ export class HttpRequestExecutor implements RequestExecutor {
         ? this.certificatesForRequest(options)
         : undefined;
 
-      if (targetCerts === undefined) {
+      if (targetCerts === undefined || targetCerts.length === 0) {
+        // We may have https and http targets connected with same repeater,
+        // or certificates may not be necessary.
+        // If certificates not found try request anyway.
         logger.debug(
           'Executing HTTP request with following params: %j',
           options
         );
 
         return await this.tryRequest(options);
-      }
-
-      if (targetCerts.length === 0) {
-        const msg = `certificate for ${options.url} not found.`;
-        logger.warn(`Warn: ${msg}`);
-        throw Error(msg);
       }
 
       return await this.tryRequestWithCertificates(options, targetCerts);
