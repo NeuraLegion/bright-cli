@@ -46,61 +46,6 @@ describe('Request', () => {
         expect(request.pfx).toBeTruthy();
       }
     );
-
-    // it.each(['https://foo.bar', 'wss://foo.bar'])(
-    // 'should not read cert for url %s if there was no matching by hostname',
-    // async (url) => {
-    // //arrange
-    // const cert = {
-    // path: '~/cert.pfx',
-    // hostname: 'not-a-foo.bar'
-    // };
-    // const request = new Request({
-    // url,
-    // headers: {},
-    // protocol: Protocol.HTTP
-    // });
-    // //arrange:mock
-    // readFileMock.mockImplementation((filePath) =>
-    // filePath === cert.path
-    // ? Promise.resolve(certContent)
-    // : Promise.reject(new Error('no such file'))
-    // );
-    // //act
-    // await request.setCert(cert);
-    // //assert
-    // expect(request.pfx).toBeUndefined();
-    // }
-    // );
-
-    // it.each([
-    // { url: 'https://foo.bar', wildcard: '*.bar' },
-    // { url: 'wss://foo.bar', wildcard: '*.bar' }
-    // ])(
-    // 'should read cert for url $url if there was wildcard hostname match',
-    // async ({ url, wildcard }) => {
-    // //arrange
-    // const cert = {
-    // path: '~/cert.pfx',
-    // hostname: wildcard
-    // };
-    // const request = new Request({
-    // url,
-    // headers: {},
-    // protocol: Protocol.HTTP
-    // });
-    // //arrange:mock
-    // readFileMock.mockImplementation((filePath) =>
-    // filePath === cert.path
-    // ? Promise.resolve(certContent)
-    // : Promise.reject(new Error('no such file'))
-    // );
-    // //act
-    // await request.setCert(cert);
-    // //assert
-    // expect(request.pfx).toBeTruthy();
-    // }
-    // );
   });
 
   describe('setHeaders', () => {
