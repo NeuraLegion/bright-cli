@@ -1,3 +1,4 @@
+import { Cert } from 'src/RequestExecutor';
 import { ok } from 'node:assert';
 import { ChildProcess, spawn } from 'node:child_process';
 import { normalize } from 'node:path';
@@ -228,6 +229,34 @@ export class Helpers {
 
       return { ...acc, [key]: header };
     }, {});
+  }
+
+  public static portFromURL(url: URL): string {
+    return (
+      url.port ||
+      (url.protocol === 'http:' ? '80' : url.protocol === 'https:' ? '443' : '')
+    );
+  }
+
+  public static matchHostnameAndPort(
+    hostname: string,
+    port: string,
+    cert: Cert
+  ): boolean {
+    const hostNameMatch =
+      cert.hostname === hostname ||
+      Helpers.wildcardToRegExp(cert.hostname).test(hostname);
+
+    if (!hostNameMatch) {
+      return false;
+    }
+
+    if (!cert.port) {
+      // ADHOC: hostNameMatch has been checked above and it's true
+      return true;
+    }
+
+    return cert.port === port;
   }
 
   // It's based on https://qntm.org/cmd

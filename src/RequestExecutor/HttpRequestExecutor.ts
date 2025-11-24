@@ -467,34 +467,6 @@ export class HttpRequestExecutor implements RequestExecutor {
     return new Request(result);
   }
 
-  private matchHostnameAndPort(
-    hostname: string,
-    port: string,
-    cert: Cert
-  ): boolean {
-    const hostNameMatch =
-      cert.hostname === hostname ||
-      Helpers.wildcardToRegExp(cert.hostname).test(hostname);
-
-    if (!hostNameMatch) {
-      return false;
-    }
-
-    if (!cert.port) {
-      // ADHOC: hostNameMatch has been checked above and it's true
-      return true;
-    }
-
-    return cert.port === port;
-  }
-
-  private portFromURL(url: URL): string {
-    return (
-      url.port ||
-      (url.protocol === 'http:' ? '80' : url.protocol === 'https:' ? '443' : '')
-    );
-  }
-
   private certificatesForRequest(request: Request): Cert[] {
     const cachedCertificate = this.certificatesCache.get(request);
     if (cachedCertificate) {
@@ -502,10 +474,10 @@ export class HttpRequestExecutor implements RequestExecutor {
     }
 
     const requestUrl = new URL(request.url);
-    const port = this.portFromURL(requestUrl);
+    const port = Helpers.portFromURL(requestUrl);
 
     return this.options.certs.filter((cert: Cert) =>
-      this.matchHostnameAndPort(requestUrl.hostname, port, cert)
+      Helpers.matchHostnameAndPort(requestUrl.hostname, port, cert)
     );
   }
 
