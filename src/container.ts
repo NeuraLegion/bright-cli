@@ -3,6 +3,7 @@ import {
   Certificates,
   CertificatesLoader,
   CertificatesCache,
+  CertificatesResolver,
   HttpRequestExecutor,
   RequestExecutor,
   WsRequestExecutor
@@ -65,6 +66,7 @@ import {
 import { DefaultHostUpdateJobStatusPollingFactory } from './EntryPoint/DefaultHostUpdateJobStatusPollingFactory';
 import { HostUpdateJobStatusPollingFactory } from './EntryPoint/HostUpdateJobStatusPollingFactory';
 import { DefaultCertificatesCache } from './RequestExecutor/DefaultCertificatesCache';
+import { DefaultCertificatesResolver } from './RequestExecutor/DefaultCertificatesResolver';
 import { container, Lifecycle } from 'tsyringe';
 
 container
@@ -92,6 +94,13 @@ container
     CertificatesCache,
     {
       useClass: DefaultCertificatesCache
+    },
+    { lifecycle: Lifecycle.Singleton }
+  )
+  .register(
+    CertificatesResolver,
+    {
+      useClass: DefaultCertificatesResolver
     },
     { lifecycle: Lifecycle.Singleton }
   )
