@@ -9,7 +9,7 @@ export class DefaultCertificatesCache implements CertificatesCache {
 
   public add(request: Request, cert: Cert): void {
     const key = this.certificateCacheKeyFromRequest(request);
-    if (key in this.cache) {
+    if (this.cache.has(key)) {
       return;
     }
     this.cache.set(key, cert);
