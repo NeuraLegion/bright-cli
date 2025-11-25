@@ -519,7 +519,7 @@ export class HttpRequestExecutor implements RequestExecutor {
             ? `Failed to do successful request with certificate ${cert.path}. It will be excluded from list of known certificates.`
             : `Unexpected error occured during request: ${error}`;
           logger.warn(msg);
-          throw new Error(msg);
+          throw error;
         }
       }
     );
