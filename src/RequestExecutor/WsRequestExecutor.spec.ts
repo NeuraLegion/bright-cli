@@ -3,7 +3,8 @@ import { Protocol } from './Protocol';
 import { WsRequestExecutor } from './WsRequestExecutor';
 import { RequestExecutorOptions } from './RequestExecutorOptions';
 import { CertificatesCache } from './CertificatesCache';
-import { Request } from './Request';
+import { CertificatesResolver } from './CertificatesResolver';
+import { Cert, Request } from './Request';
 import { ProxyFactory } from '../Utils';
 import { anything, instance, mock, reset, spy, verify, when } from 'ts-mockito';
 import { Server } from 'ws';
@@ -13,6 +14,7 @@ describe('WsRequestExecutor', () => {
   const executorOptions: RequestExecutorOptions = { timeout: 2000 };
   const spiedExecutorOptions = spy<RequestExecutorOptions>(executorOptions);
   const certificatesCacheMock = mock<CertificatesCache>();
+  const certificatesResolverMock = mock<CertificatesResolver>();
   const proxyFactoryMock = mock<ProxyFactory>();
 
   let executor!: WsRequestExecutor;
@@ -23,14 +25,22 @@ describe('WsRequestExecutor', () => {
     executor = new WsRequestExecutor(
       instance(proxyFactoryMock),
       executorOptions,
-      certificatesCacheMock
+      certificatesCacheMock,
+      instance(certificatesResolverMock)
     );
   });
 
   afterEach(() =>
-    reset<RequestExecutorOptions | ProxyFactory>(
+    reset<
+      | RequestExecutorOptions
+      | ProxyFactory
+      | CertificatesCache
+      | CertificatesResolver
+    >(
       proxyFactoryMock,
-      spiedExecutorOptions
+      spiedExecutorOptions,
+      certificatesCacheMock,
+      certificatesResolverMock
     )
   );
 
@@ -62,20 +72,29 @@ describe('WsRequestExecutor', () => {
       server.close(done);
     });
 
-    it('should call setCerts on the provided request if there were certificates configured globally', async () => {
+    it('should call loadCerts on the provided request if there were certificates configured globally', async () => {
       const request = new Request({
         protocol: Protocol.WS,
         url: 'wss://foo.bar',
         headers: {}
       });
       const spiedRequest = spy(request);
-      when(spiedExecutorOptions.certs).thenReturn([]);
+      const certs: Cert[] = [
+        {
+          path: '/tmp/cert.pem',
+          hostname: new URL(request.url).hostname
+        }
+      ];
+      when(spiedExecutorOptions.certs).thenReturn(certs);
+      when(certificatesResolverMock.resolve(request, anything())).thenReturn(
+        certs
+      );
       await executor.execute(request);
 
-      verify(spiedRequest.setCert(anything())).once();
+      verify(spiedRequest.loadCert(anything())).once();
     });
 
-    it('should not call setCerts on the provided request if there were no globally configured certificates', async () => {
+    it('should not call loadCerts on the provided request if there were no globally configured certificates', async () => {
       const request = new Request({
         protocol: Protocol.WS,
         url: 'wss://foo.bar',
@@ -85,7 +104,7 @@ describe('WsRequestExecutor', () => {
 
       await executor.execute(request);
 
-      verify(spiedRequest.setCert(anything())).never();
+      verify(spiedRequest.loadCert(anything())).never();
     });
 
     it('should send request body to a web-socket server', (done) => {

@@ -2,10 +2,11 @@ import 'reflect-metadata';
 import { HttpRequestExecutor } from './HttpRequestExecutor';
 import { VirtualScript, VirtualScripts, VirtualScriptType } from '../Scripts';
 import { Protocol } from './Protocol';
-import { Request, RequestOptions } from './Request';
+import { Request, RequestOptions, Cert } from './Request';
 import { RequestExecutorOptions } from './RequestExecutorOptions';
 import { ProxyFactory } from '../Utils';
 import { CertificatesCache } from './CertificatesCache';
+import { CertificatesResolver } from './CertificatesResolver';
 import nock from 'nock';
 import {
   anyString,
@@ -44,6 +45,7 @@ describe('HttpRequestExecutor', () => {
   const virtualScriptsMock = mock<VirtualScripts>();
   const proxyFactoryMock = mock<ProxyFactory>();
   const certificatesCacheMock = mock<CertificatesCache>();
+  const certificatesResolverMock = mock<CertificatesResolver>();
   let spiedExecutorOptions!: RequestExecutorOptions;
 
   let executor!: HttpRequestExecutor;
@@ -56,18 +58,24 @@ describe('HttpRequestExecutor', () => {
       instance(virtualScriptsMock),
       instance(proxyFactoryMock),
       executorOptions,
-      certificatesCacheMock
+      certificatesCacheMock,
+      instance(certificatesResolverMock)
     );
   });
 
   afterEach(() =>
     reset<
-      VirtualScripts | RequestExecutorOptions | ProxyFactory | CertificatesCache
+      | VirtualScripts
+      | RequestExecutorOptions
+      | ProxyFactory
+      | CertificatesCache
+      | CertificatesResolver
     >(
       virtualScriptsMock,
       spiedExecutorOptions,
       proxyFactoryMock,
-      certificatesCacheMock
+      certificatesCacheMock,
+      certificatesResolverMock
     )
   );
 
@@ -124,21 +132,30 @@ describe('HttpRequestExecutor', () => {
       verify(spiedRequest.toJSON()).never();
     });
 
-    it('should call setCert on the provided request if there were certificates configured globally', async () => {
-      when(spiedExecutorOptions.certs).thenReturn([]);
+    it('should call loadCert on the provided request if there were certificates configured globally', async () => {
       const { request, spiedRequest } = createRequest();
+      const certs: Cert[] = [
+        {
+          path: '/tmp/cert.pem',
+          hostname: new URL(request.url).hostname
+        }
+      ];
+      when(spiedExecutorOptions.certs).thenReturn(certs);
+      when(certificatesResolverMock.resolve(request, anything())).thenReturn(
+        certs
+      );
 
       await executor.execute(request);
 
-      verify(spiedRequest.setCert(anything())).once();
+      verify(spiedRequest.loadCert(anything())).once();
     });
 
-    it('should not call setCert on the provided request if there were no certificates configured', async () => {
+    it('should not call loadCert on the provided request if there were no certificates configured', async () => {
       const { request, spiedRequest } = createRequest();
 
       await executor.execute(request);
 
-      verify(spiedRequest.setCert(anything())).never();
+      verify(spiedRequest.loadCert(anything())).never();
     });
 
     it('should perform an external http request', async () => {

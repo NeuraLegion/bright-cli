@@ -7,6 +7,7 @@ import { Protocol } from './Protocol';
 import { RequestExecutorOptions } from './RequestExecutorOptions';
 import { NormalizeZlibDeflateTransformStream } from '../Utils/NormalizeZlibDeflateTransformStream';
 import { CertificatesCache } from './CertificatesCache';
+import { CertificatesResolver } from './CertificatesResolver';
 import { inject, injectable } from 'tsyringe';
 import iconv from 'iconv-lite';
 import { safeParse } from 'fast-content-type-parse';
@@ -53,7 +54,9 @@ export class HttpRequestExecutor implements RequestExecutor {
     @inject(RequestExecutorOptions)
     private readonly options: RequestExecutorOptions,
     @inject(CertificatesCache)
-    private readonly certificatesCache: CertificatesCache
+    private readonly certificatesCache: CertificatesCache,
+    @inject(CertificatesResolver)
+    private readonly certificatesResolver: CertificatesResolver
   ) {
     if (this.options.proxyUrl) {
       ({ httpsAgent: this.httpsProxyAgent, httpAgent: this.httpProxyAgent } =
@@ -99,7 +102,7 @@ export class HttpRequestExecutor implements RequestExecutor {
       options = await this.transformScript(options);
 
       const targetCerts: Cert[] | undefined = this.options.certs
-        ? this.certificatesForRequest(options)
+        ? this.certificatesResolver.resolve(options, this.options.certs)
         : undefined;
 
       if (targetCerts === undefined || targetCerts.length === 0) {
@@ -111,7 +114,7 @@ export class HttpRequestExecutor implements RequestExecutor {
           options
         );
 
-        return await this.tryRequest(options);
+        return await this.executeRequest(options);
       }
 
       return await this.tryRequestWithCertificates(options, targetCerts);
@@ -466,21 +469,9 @@ export class HttpRequestExecutor implements RequestExecutor {
     return new Request(result);
   }
 
-  private certificatesForRequest(request: Request): Cert[] {
-    const cachedCertificate = this.certificatesCache.get(request);
-    if (cachedCertificate) {
-      return [cachedCertificate];
-    }
-
-    const requestUrl = new URL(request.url);
-    const port = Helpers.portFromURL(requestUrl);
-
-    return this.options.certs.filter((cert: Cert) =>
-      Helpers.matchHostnameAndPort(requestUrl.hostname, port, cert)
-    );
-  }
-
-  private async tryRequest(request: Request): Promise<Response | undefined> {
+  private async executeRequest(
+    request: Request
+  ): Promise<Response | undefined> {
     const { res, body } = await this.request(request);
 
     logger.trace(
@@ -506,17 +497,7 @@ export class HttpRequestExecutor implements RequestExecutor {
     });
   }
 
-  private async tryRequestWithCertificate(
-    request: Request,
-    cert: Cert
-  ): Promise<Response | undefined> {
-    await request.setCert(cert);
-
-    // eslint-disable-next-line @typescript-eslint/return-await
-    return await this.tryRequest(request);
-  }
-
-  private async tryRequestWithCertificates(
+  private tryRequestWithCertificates(
     request: Request,
     certs: Cert[]
   ): Promise<Response> {
@@ -527,7 +508,9 @@ export class HttpRequestExecutor implements RequestExecutor {
           request
         );
         try {
-          const response = await this.tryRequestWithCertificate(request, cert);
+          await request.loadCert(cert);
+
+          const response = await this.executeRequest(request);
           this.certificatesCache.add(request, cert);
 
           return response;
@@ -536,13 +519,12 @@ export class HttpRequestExecutor implements RequestExecutor {
             ? `Failed to do successful request with certificate ${cert.path}. It will be excluded from list of known certificates.`
             : `Unexpected error occured during request: ${error}`;
           logger.warn(msg);
-          throw Error(msg);
+          throw new Error(msg);
         }
       }
     );
 
-    // Important to wait for valid response.
-    // eslint-disable-next-line @typescript-eslint/return-await
-    return await Promise.any(requestsWithCerts);
+    // @ts-expect-error TS forces to use es2021
+    return Promise.any(requestsWithCerts);
   }
 }

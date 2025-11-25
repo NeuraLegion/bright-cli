@@ -1,4 +1,4 @@
-import { Cert } from 'src/RequestExecutor';
+import { Cert } from '../RequestExecutor';
 import { ok } from 'node:assert';
 import { ChildProcess, spawn } from 'node:child_process';
 import { normalize } from 'node:path';
@@ -283,9 +283,7 @@ export class Helpers {
 
     if (
       typeof err.code === 'string' &&
-      (err.code.startsWith('ERR_TLS_') ||
-        err.code === 'ECONNRESET' ||
-        err.code === 'ECONNREFUSED')
+      (err.code.startsWith('ERR_TLS_') || err.code === 'ECONNRESET')
     ) {
       return true;
     }

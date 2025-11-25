@@ -4,18 +4,18 @@ import { injectable } from 'tsyringe';
 
 @injectable()
 export class DefaultCertificatesCache implements CertificatesCache {
-  private readonly cache: Record<string, Cert> = {};
+  private readonly cache: Map<string, Cert> = new Map<string, Cert>();
 
   public add(request: Request, cert: Cert): void {
     const key = this.certificateCacheKeyFromRequest(request);
     if (key in this.cache) {
       return;
     }
-    this.cache[key] = cert;
+    this.cache.set(key, cert);
   }
 
   public get(request: Request): Cert | undefined {
-    return this.cache[this.certificateCacheKeyFromRequest(request)];
+    return this.cache.get(this.certificateCacheKeyFromRequest(request));
   }
 
   private certificateCacheKeyFromRequest(request: Request): string {

@@ -20,7 +20,7 @@ describe('Request', () => {
     readFileMock.mockReset();
   });
 
-  describe('setCert', () => {
+  describe('loadCert', () => {
     it.each(['https://foo.bar', 'wss://foo.bar'])(
       'should read cert for url %s if there was matching certificate configured globally',
       async (url) => {
@@ -41,7 +41,7 @@ describe('Request', () => {
             : Promise.reject(new Error('no such file'))
         );
         //act
-        await request.setCert(cert);
+        await request.loadCert(cert);
         //assert
         expect(request.pfx).toBeTruthy();
       }

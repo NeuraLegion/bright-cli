@@ -5,6 +5,7 @@ import { Protocol } from './Protocol';
 import { Helpers, logger, ProxyFactory } from '../Utils';
 import { RequestExecutorOptions } from './RequestExecutorOptions';
 import { CertificatesCache } from './CertificatesCache';
+import { CertificatesResolver } from './CertificatesResolver';
 import { inject, injectable } from 'tsyringe';
 import WebSocket from 'ws';
 import { once } from 'node:events';
@@ -32,7 +33,9 @@ export class WsRequestExecutor implements RequestExecutor {
     @inject(RequestExecutorOptions)
     private readonly options: RequestExecutorOptions,
     @inject(CertificatesCache)
-    private readonly certificatesCache: CertificatesCache
+    private readonly certificatesCache: CertificatesCache,
+    @inject(CertificatesResolver)
+    private readonly certificatesResolver: CertificatesResolver
   ) {
     if (this.options.proxyUrl) {
       ({ httpsAgent: this.httpsProxyAgent, httpAgent: this.httpProxyAgent } =
@@ -46,20 +49,17 @@ export class WsRequestExecutor implements RequestExecutor {
 
   public async execute(options: Request): Promise<Response> {
     try {
-      logger.debug('Executing HTTP request with following params: %j', options);
-
       const targetCerts: Cert[] | undefined = this.options.certs
-        ? this.certificatesForRequest(options)
+        ? this.certificatesResolver.resolve(options, this.options.certs)
         : undefined;
 
-      if (targetCerts === undefined) {
+      if (targetCerts === undefined || targetCerts.length === 0) {
+        // We may have https and http targets connected with same repeater,
+        // or certificates may not be necessary.
+        // If certificates not found try request anyway.
         logger.debug('Executing WS request with following params: %j', options);
 
-        return await this.tryRequest(options);
-      }
-
-      if (targetCerts.length === 0) {
-        logger.warn(`Warning: certificate for ${options.url} not found.`);
+        return await this.executeRequest(options);
       }
 
       return await this.tryRequestWithCertificates(options, targetCerts);
@@ -164,21 +164,9 @@ export class WsRequestExecutor implements RequestExecutor {
     );
   }
 
-  private certificatesForRequest(request: Request): Cert[] {
-    const cachedCertificate = this.certificatesCache.get(request);
-    if (cachedCertificate) {
-      return [cachedCertificate];
-    }
-
-    const requestUrl = new URL(request.url);
-    const port = Helpers.portFromURL(requestUrl);
-
-    return this.options.certs.filter((cert: Cert) =>
-      Helpers.matchHostnameAndPort(requestUrl.hostname, port, cert)
-    );
-  }
-
-  private async tryRequest(request: Request): Promise<Response | undefined> {
+  private async executeRequest(
+    request: Request
+  ): Promise<Response | undefined> {
     let timeout: NodeJS.Timeout;
     let client: WebSocket;
 
@@ -221,40 +209,34 @@ export class WsRequestExecutor implements RequestExecutor {
     }
   }
 
-  private async tryRequestWithCertificate(
-    request: Request,
-    cert: Cert
-  ): Promise<Response | undefined> {
-    try {
-      await request.setCert(cert);
-
-      return await this.tryRequest(request);
-    } catch (error) {
-      return undefined;
-    }
-  }
-
-  private async tryRequestWithCertificates(
+  private tryRequestWithCertificates(
     request: Request,
     certs: Cert[]
   ): Promise<Response> {
-    for (const cert of certs) {
-      const response = await this.tryRequestWithCertificate(request, cert);
-      if (!response) {
-        logger.warn(
-          `Failed to do successful request with certificate ${cert.path}. It will be excluded from list of known certificates.`
+    const requestsWithCerts: Promise<Response>[] = certs.map(
+      async (cert: Cert) => {
+        logger.debug(
+          'Executing HTTP request with following params: %j',
+          request
         );
-        continue;
+        try {
+          await request.loadCert(cert);
+
+          const response = await this.executeRequest(request);
+          this.certificatesCache.add(request, cert);
+
+          return response;
+        } catch (error) {
+          const msg = Helpers.isTlsCertError(error)
+            ? `Failed to do successful request with certificate ${cert.path}. It will be excluded from list of known certificates.`
+            : `Unexpected error occured during request: ${error}`;
+          logger.warn(msg);
+          throw new Error(msg);
+        }
       }
-      logger.log(`Successfully executed request with certificate ${cert.path}`);
-
-      this.certificatesCache.add(request, cert);
-
-      return response;
-    }
-
-    throw Error(
-      `Didn't find valid certificate to execute request for ${request.url}.`
     );
+
+    // @ts-expect-error TS forces to use es2021
+    return Promise.any(requestsWithCerts);
   }
 }

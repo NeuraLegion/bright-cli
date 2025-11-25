@@ -156,8 +156,32 @@ export class Request {
     );
   }
 
-  public async setCert(cert: Cert): Promise<void> {
-    await this.loadCert(cert);
+  public async loadCert({ path, passphrase }: Cert): Promise<void> {
+    let cert: Buffer | undefined;
+
+    try {
+      cert = await readFile(path);
+    } catch (e) {
+      logger.warn(`Warning: certificate ${path} not found.`);
+    }
+
+    const ext = extname(path);
+    const name = basename(path);
+
+    switch (ext) {
+      case '.pem':
+      case '.crt':
+      case '.ca':
+        this._ca = cert;
+        break;
+      case '.pfx':
+        this.assertPassphrase(name, cert, passphrase);
+        this._pfx = cert;
+        this._passphrase = passphrase;
+        break;
+      default:
+        logger.warn(`Warning: certificate of type "${ext}" does not support.`);
+    }
   }
 
   public toJSON(): RequestOptions {
@@ -197,34 +221,6 @@ export class Request {
       } catch {
         throw new Error('Correlation id must be regular expression.');
       }
-    }
-  }
-
-  private async loadCert({ path, passphrase }: Cert): Promise<void> {
-    let cert: Buffer | undefined;
-
-    try {
-      cert = await readFile(path);
-    } catch (e) {
-      logger.warn(`Warning: certificate ${path} not found.`);
-    }
-
-    const ext = extname(path);
-    const name = basename(path);
-
-    switch (ext) {
-      case '.pem':
-      case '.crt':
-      case '.ca':
-        this._ca = cert;
-        break;
-      case '.pfx':
-        this.assertPassphrase(name, cert, passphrase);
-        this._pfx = cert;
-        this._passphrase = passphrase;
-        break;
-      default:
-        logger.warn(`Warning: certificate of type "${ext}" does not support.`);
     }
   }
 
