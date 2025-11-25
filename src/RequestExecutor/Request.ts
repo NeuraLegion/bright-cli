@@ -1,4 +1,4 @@
-import { Helpers, logger } from '../Utils';
+import { logger } from '../Utils';
 import { Protocol } from './Protocol';
 import { readFile } from 'node:fs/promises';
 import { basename, extname } from 'node:path';
@@ -156,30 +156,32 @@ export class Request {
     );
   }
 
-  public async setCerts(certs: Cert[]): Promise<void> {
-    const url = new URL(this.url);
+  public async loadCert({ path, passphrase }: Cert): Promise<void> {
+    let cert: Buffer | undefined;
 
-    const port =
-      url.port ||
-      (url.protocol === 'http:'
-        ? '80'
-        : url.protocol === 'https:'
-        ? '443'
-        : '');
-
-    const cert: Cert | undefined = certs.find((x) =>
-      this.matchHostnameAndPort(url.hostname, port, x)
-    );
-
-    if (!cert) {
-      logger.warn(`Warning: certificate for ${url.hostname} not found.`);
-
-      return;
+    try {
+      cert = await readFile(path);
+    } catch (e) {
+      logger.warn(`Warning: certificate ${path} not found.`);
     }
 
-    logger.trace(`Using certificate for ${url}`, cert);
+    const ext = extname(path);
+    const name = basename(path);
 
-    await this.loadCert(cert);
+    switch (ext) {
+      case '.pem':
+      case '.crt':
+      case '.ca':
+        this._ca = cert;
+        break;
+      case '.pfx':
+        this.assertPassphrase(name, cert, passphrase);
+        this._pfx = cert;
+        this._passphrase = passphrase;
+        break;
+      default:
+        logger.warn(`Warning: certificate of type "${ext}" does not support.`);
+    }
   }
 
   public toJSON(): RequestOptions {
@@ -220,55 +222,6 @@ export class Request {
         throw new Error('Correlation id must be regular expression.');
       }
     }
-  }
-
-  private async loadCert({ path, passphrase }: Cert): Promise<void> {
-    let cert: Buffer | undefined;
-
-    try {
-      cert = await readFile(path);
-    } catch (e) {
-      logger.warn(`Warning: certificate ${path} not found.`);
-    }
-
-    const ext = extname(path);
-    const name = basename(path);
-
-    switch (ext) {
-      case '.pem':
-      case '.crt':
-      case '.ca':
-        this._ca = cert;
-        break;
-      case '.pfx':
-        this.assertPassphrase(name, cert, passphrase);
-        this._pfx = cert;
-        this._passphrase = passphrase;
-        break;
-      default:
-        logger.warn(`Warning: certificate of type "${ext}" does not support.`);
-    }
-  }
-
-  private matchHostnameAndPort(
-    hostname: string,
-    port: string,
-    cert: Cert
-  ): boolean {
-    const hostNameMatch =
-      cert.hostname === hostname ||
-      Helpers.wildcardToRegExp(cert.hostname).test(hostname);
-
-    if (!hostNameMatch) {
-      return false;
-    }
-
-    if (!cert.port) {
-      // ADHOC: hostNameMatch has been checked above and it's true
-      return true;
-    }
-
-    return cert.port === port;
   }
 
   private assertPassphrase(

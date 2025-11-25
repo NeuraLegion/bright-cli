@@ -1,11 +1,13 @@
 import { RequestExecutor } from './RequestExecutor';
 import { Response } from './Response';
-import { Request, RequestOptions } from './Request';
+import { Cert, Request, RequestOptions } from './Request';
 import { Helpers, logger, ProxyFactory } from '../Utils';
 import { VirtualScripts } from '../Scripts';
 import { Protocol } from './Protocol';
 import { RequestExecutorOptions } from './RequestExecutorOptions';
 import { NormalizeZlibDeflateTransformStream } from '../Utils/NormalizeZlibDeflateTransformStream';
+import { CertificatesCache } from './CertificatesCache';
+import { CertificatesResolver } from './CertificatesResolver';
 import { inject, injectable } from 'tsyringe';
 import iconv from 'iconv-lite';
 import { safeParse } from 'fast-content-type-parse';
@@ -50,7 +52,11 @@ export class HttpRequestExecutor implements RequestExecutor {
     @inject(VirtualScripts) private readonly virtualScripts: VirtualScripts,
     @inject(ProxyFactory) private readonly proxyFactory: ProxyFactory,
     @inject(RequestExecutorOptions)
-    private readonly options: RequestExecutorOptions
+    private readonly options: RequestExecutorOptions,
+    @inject(CertificatesCache)
+    private readonly certificatesCache: CertificatesCache,
+    @inject(CertificatesResolver)
+    private readonly certificatesResolver: CertificatesResolver
   ) {
     if (this.options.proxyUrl) {
       ({ httpsAgent: this.httpsProxyAgent, httpAgent: this.httpProxyAgent } =
@@ -95,35 +101,23 @@ export class HttpRequestExecutor implements RequestExecutor {
 
       options = await this.transformScript(options);
 
-      if (this.options.certs) {
-        await options.setCerts(this.options.certs);
+      const targetCerts: Cert[] | undefined = this.options.certs
+        ? this.certificatesResolver.resolve(options, this.options.certs)
+        : undefined;
+
+      if (targetCerts === undefined || targetCerts.length === 0) {
+        // We may have https and http targets connected with same repeater,
+        // or certificates may not be necessary.
+        // If certificates not found try request anyway.
+        logger.debug(
+          'Executing HTTP request with following params: %j',
+          options
+        );
+
+        return await this.executeRequest(options);
       }
 
-      logger.debug('Executing HTTP request with following params: %j', options);
-
-      const { res, body } = await this.request(options);
-
-      logger.trace(
-        'received following response for request %j: headers: %j body: %s',
-        {
-          url: options.url,
-          protocol: this.protocol,
-          method: options.method
-        },
-        {
-          statusCode: res.statusCode,
-          headers: res.headers
-        },
-        body.slice(0, 500).concat(body.length > 500 ? '...' : '')
-      );
-
-      return new Response({
-        body,
-        protocol: this.protocol,
-        statusCode: res.statusCode,
-        headers: res.headers,
-        encoding: options.encoding
-      });
+      return await this.tryRequestWithCertificates(options, targetCerts);
     } catch (err) {
       const { cause } = err;
       const { message, code, syscall, name } = cause ?? err;
@@ -473,5 +467,64 @@ export class HttpRequestExecutor implements RequestExecutor {
     );
 
     return new Request(result);
+  }
+
+  private async executeRequest(
+    request: Request
+  ): Promise<Response | undefined> {
+    const { res, body } = await this.request(request);
+
+    logger.trace(
+      'received following response for request %j: headers: %j body: %s',
+      {
+        url: request.url,
+        protocol: this.protocol,
+        method: request.method
+      },
+      {
+        statusCode: res.statusCode,
+        headers: res.headers
+      },
+      body.slice(0, 500).concat(body.length > 500 ? '...' : '')
+    );
+
+    return new Response({
+      body,
+      protocol: this.protocol,
+      statusCode: res.statusCode,
+      headers: res.headers,
+      encoding: request.encoding
+    });
+  }
+
+  private tryRequestWithCertificates(
+    request: Request,
+    certs: Cert[]
+  ): Promise<Response> {
+    const requestsWithCerts: Promise<Response>[] = certs.map(
+      async (cert: Cert) => {
+        logger.debug(
+          'Executing HTTP request with following params: %j',
+          request
+        );
+        try {
+          await request.loadCert(cert);
+
+          const response = await this.executeRequest(request);
+          this.certificatesCache.add(request, cert);
+
+          return response;
+        } catch (error) {
+          const msg = Helpers.isTlsCertError(error)
+            ? `Failed to do successful request with certificate ${cert.path}. It will be excluded from list of known certificates.`
+            : `Unexpected error occured during request: ${error}`;
+          logger.warn(msg);
+          throw error;
+        }
+      }
+    );
+
+    // @ts-expect-error TS forces to use es2021
+    return Promise.any(requestsWithCerts);
   }
 }
