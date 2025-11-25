@@ -255,27 +255,6 @@ export class Helpers {
     );
   }
 
-  public static matchHostnameAndPort(
-    hostname: string,
-    port: string,
-    cert: Cert
-  ): boolean {
-    const hostNameMatch =
-      cert.hostname === hostname ||
-      Helpers.wildcardToRegExp(cert.hostname).test(hostname);
-
-    if (!hostNameMatch) {
-      return false;
-    }
-
-    if (!cert.port) {
-      // ADHOC: hostNameMatch has been checked above and it's true
-      return true;
-    }
-
-    return cert.port === port;
-  }
-
   public static isTlsCertError(error: Error) {
     const err = error as TlsError;
 

@@ -1,3 +1,4 @@
+import { Helpers } from '../Utils';
 import { CertificatesCache } from './CertificatesCache';
 import { Cert, Request } from './Request';
 import { injectable } from 'tsyringe';
@@ -21,13 +22,6 @@ export class DefaultCertificatesCache implements CertificatesCache {
   private certificateCacheKeyFromRequest(request: Request): string {
     const requestUrl = new URL(request.url);
 
-    return `${requestUrl.hostname}_${this.portFromURL(requestUrl)}`;
-  }
-
-  private portFromURL(url: URL): string {
-    return (
-      url.port ||
-      (url.protocol === 'http:' ? '80' : url.protocol === 'https:' ? '443' : '')
-    );
+    return `${requestUrl.hostname}_${Helpers.portFromURL(requestUrl)}`;
   }
 }

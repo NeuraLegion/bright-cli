@@ -21,7 +21,28 @@ export class DefaultCertificatesResolver implements CertificatesResolver {
     const port = Helpers.portFromURL(requestUrl);
 
     return registeredCerts.filter((cert: Cert) =>
-      Helpers.matchHostnameAndPort(requestUrl.hostname, port, cert)
+      this.matchHostnameAndPort(requestUrl.hostname, port, cert)
     );
+  }
+
+  private matchHostnameAndPort(
+    hostname: string,
+    port: string,
+    cert: Cert
+  ): boolean {
+    const hostNameMatch =
+      cert.hostname === hostname ||
+      Helpers.wildcardToRegExp(cert.hostname).test(hostname);
+
+    if (!hostNameMatch) {
+      return false;
+    }
+
+    if (!cert.port) {
+      // ADHOC: hostNameMatch has been checked above and it's true
+      return true;
+    }
+
+    return cert.port === port;
   }
 }

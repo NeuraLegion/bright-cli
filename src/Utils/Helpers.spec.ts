@@ -1,5 +1,4 @@
 import { Helpers } from './Helpers';
-import { Cert } from 'src/RequestExecutor';
 import { reset, spy, when } from 'ts-mockito';
 
 enum TestEnum {
@@ -327,64 +326,5 @@ describe('Helpers', () => {
       // assert
       expect(actual).toEqual('4443');
     });
-  });
-
-  describe('matchHostnameAndPort', () => {
-    it.each(['example.com', 'local.example.com', 'some.example.com'])(
-      'should return true on matching certificate by hostname pattern',
-      (hostname) => {
-        // arrange
-        const port = '4443';
-        const cert: Cert = {
-          path: '/tmp/cert',
-          hostname: '*example.com',
-          port
-        };
-
-        // act
-        const actual = Helpers.matchHostnameAndPort(hostname, port, cert);
-
-        // assert
-        expect(actual).toBe(true);
-      }
-    );
-
-    it.each(['example.com', 'another.com', 'some.another.com'])(
-      'should return false if certificate does not match hostname pattern',
-      (hostname) => {
-        // arrange
-        const port = '80';
-        const cert: Cert = {
-          path: '/tmp/cert',
-          hostname: '*.example.com',
-          port: '80'
-        };
-
-        // act
-        const actual = Helpers.matchHostnameAndPort(hostname, port, cert);
-
-        // assert
-        expect(actual).toBe(false);
-      }
-    );
-
-    it.each(['8888', '4444', '443', '80'])(
-      'should return false if does not match certificate port',
-      (port) => {
-        // arrange
-        const hostname = 'local.example.com';
-        const cert: Cert = {
-          path: '/tmp/cert',
-          hostname: '*.example.com',
-          port: '1111'
-        };
-
-        // act
-        const actual = Helpers.matchHostnameAndPort(hostname, port, cert);
-
-        // assert
-        expect(actual).toBe(false);
-      }
-    );
   });
 });
