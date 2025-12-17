@@ -38,8 +38,13 @@ spec:
             - name: BRIGHT_TOKEN
               valueFrom:
                 secretKeyRef:
+                  {{- if .Values.api.existingSecret.name }}
+                  name: {{ .Values.api.existingSecret.name }}
+                  key: {{ .Values.api.existingSecret.key | default "token" }}
+                  {{- else }}
                   name: {{ include "bright.fullname" . }}-secrets
                   key: token
+                  {{- end }}
             - name: REPEATER_ID
               value: "{{ .Values.repeater.id }}"
           resources:
