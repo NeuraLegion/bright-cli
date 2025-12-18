@@ -85,9 +85,9 @@ export class RunScan implements CommandModule {
         describe:
           'A list of tests to run during a scan. ' +
           `If no tests are specified, the default tests will be run.${EOL}` +
-          `For more information on the default tests, refer to the documentation: https://docs.brightsec.com/docs/running-a-scan${EOL}` +
+          `For more information on the default tests, refer to the documentation: https://docs.brightsec.com/docs/cli-running-a-scan${EOL}` +
           'Additional details about available tests can be found here: ' +
-          'https://docs.brightsec.com/docs/vulnerability-guide'
+          'https://docs.brightsec.com/docs/vulnerabilities-index'
       })
       .option('bucket', {
         array: true,
