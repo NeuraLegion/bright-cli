@@ -160,6 +160,8 @@ jobs:
           tag: ${{ github.ref }}
 
   publish:
+    permissions:
+      id-token: write
     runs-on: ubuntu-latest
     needs: build
     steps:
@@ -181,6 +183,8 @@ jobs:
 
       - name:  Setup node
         uses: ./.github/workflows/composite/npm
+        with:
+          version: '24'
 
       - name: Set TAG based on target_commitish
         run: |
@@ -199,7 +203,7 @@ jobs:
 
       - run: npm publish --tag $TAG
         env:
-          NODE_AUTH_TOKEN: ${{ env.NPM_TOKEN }}
+          NPM_CONFIG_PROVENANCE: true
 
         # The scope does not align with the package name
         # FIXME: once GitHub organization name has been changed, we should prevent this behavior
