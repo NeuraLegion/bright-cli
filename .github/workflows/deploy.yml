@@ -160,6 +160,8 @@ jobs:
           tag: ${{ github.ref }}
 
   publish:
+    permissions:
+      id-token: write
     runs-on: ubuntu-latest
     needs: build
     steps:
@@ -168,19 +170,14 @@ jobs:
           ref: ${{ env.TARGET_REF }}
           token: ${{ secrets.GPR_TOKEN }}
 
-      - name: Load Bitwarden project secrets
-        uses: bitwarden/sm-action@v2.0.0
-        with:
-          access_token: ${{ secrets.BW_ACCESS_TOKEN }}
-          secrets: |
-            87ec0f15-aab8-462e-b7ff-b306010be0ac > NPM_TOKEN
-
       - uses: actions/download-artifact@v4
         with:
           name: build
 
       - name:  Setup node
         uses: ./.github/workflows/composite/npm
+        with:
+          version: '24'
 
       - name: Set TAG based on target_commitish
         run: |
@@ -199,7 +196,7 @@ jobs:
 
       - run: npm publish --tag $TAG
         env:
-          NODE_AUTH_TOKEN: ${{ env.NPM_TOKEN }}
+          NPM_CONFIG_PROVENANCE: true
 
         # The scope does not align with the package name
         # FIXME: once GitHub organization name has been changed, we should prevent this behavior
