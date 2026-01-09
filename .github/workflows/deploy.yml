@@ -192,7 +192,7 @@ jobs:
       - name: Set NPM distribution
         run: npm pkg set brightCli.distribution=npm
 
-      - run: npx -y npm@^11.6.0 publish --tag $TAG
+      - run: npx -y npm@^11.5.1 publish --tag $TAG
         env:
           NPM_CONFIG_PROVENANCE: true
 
