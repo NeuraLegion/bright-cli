@@ -7,7 +7,6 @@
           { "type": "docs", "release": "patch" },
           { "type": "refactor", "release": "patch" },
           { "type": "build", "release": "patch" },
-          { "type": "revert", "release": "patch" }
         ],
         "parserOpts": {
           "noteKeywords": ["BREAKING CHANGE", "BREAKING CHANGES"]
