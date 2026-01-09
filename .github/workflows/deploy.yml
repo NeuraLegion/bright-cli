@@ -176,8 +176,6 @@ jobs:
 
       - name:  Setup node
         uses: ./.github/workflows/composite/npm
-        with:
-          version: '24'
 
       - name: Set TAG based on target_commitish
         run: |
@@ -194,7 +192,7 @@ jobs:
       - name: Set NPM distribution
         run: npm pkg set brightCli.distribution=npm
 
-      - run: npm publish --tag $TAG
+      - run: npx -y npm@^11.6.0 publish --tag $TAG
         env:
           NPM_CONFIG_PROVENANCE: true
 
