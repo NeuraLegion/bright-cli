@@ -6,7 +6,7 @@
         "releaseRules": [
           { "type": "docs", "release": "patch" },
           { "type": "refactor", "release": "patch" },
-          { "type": "build", "release": "patch" },
+          { "type": "build", "release": "patch" }
         ],
         "parserOpts": {
           "noteKeywords": ["BREAKING CHANGE", "BREAKING CHANGES"]
@@ -27,7 +27,7 @@
             { "type": "fix", "section": "Bug Fixes" },
             { "type": "docs", "section": "Documentation" },
             { "type": "revert", "section": "Reverts" },
-            { "type": "build", "section": "Build System", "hidden": true },
+            { "type": "build", "section": "Build System" },
             { "type": "chore", "section": "Build System", "hidden": true },
             {
               "type": "ci",
@@ -36,8 +36,7 @@
             },
             {
               "type": "refactor",
-              "section": "Code Refactoring",
-              "hidden": true
+              "section": "Code Refactoring"
             },
             { "type": "style", "section": "Styles", "hidden": true },
             { "type": "test", "section": "Tests", "hidden": true }
