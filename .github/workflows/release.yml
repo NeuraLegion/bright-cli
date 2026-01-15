@@ -17,8 +17,6 @@ jobs:
 
       - name: Install deps
         uses: ./.github/workflows/composite/npm
-        with:
-          version: "24"
 
       - name: Release a new version
         run: npm run semantic-release
