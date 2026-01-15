@@ -178,7 +178,7 @@ export class ReadlinePlatform implements Platform {
     if (process.platform === 'win32') {
       console.log(
         `Note: Some Windows users might need to allow the ICMP network traffic through a firewall to enable this functionality.
-      For more information, see: https://docs.brightsec.com/docs/testing-network-connectivity${EOL}`
+      For more information, see: https://docs.brightsec.com/docs/cli-testing-network-connectivity${EOL}`
       );
     }
 

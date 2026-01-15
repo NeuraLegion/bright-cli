@@ -147,7 +147,7 @@ export class ServerRepeaterLauncher implements RepeaterLauncher {
     );
     this.repeaterServer.on(RepeaterServerEvents.UPDATE_AVAILABLE, (payload) =>
       logger.warn(
-        '%s: A new Repeater version (%s) is available, for update instruction visit https://docs.brightsec.com/docs/installation-options',
+        '%s: A new Repeater version (%s) is available, for update instruction visit https://docs.brightsec.com/docs/cli-installation-guide',
         chalk.yellow('(!) IMPORTANT'),
         payload.version
       )
