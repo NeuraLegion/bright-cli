@@ -1,9 +1,7 @@
 import 'reflect-metadata';
 import { Logger, logger } from '../Utils';
 import { RunDiscovery } from './RunDiscovery';
-import { Discoveries } from '../Discovery';
-import { instance, mock, reset, spy, when } from 'ts-mockito';
-import { container } from 'tsyringe';
+import { reset, spy } from 'ts-mockito';
 import yargs from 'yargs/yargs';
 
 describe('RunDiscovery', () => {
