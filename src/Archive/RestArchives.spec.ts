@@ -71,7 +71,7 @@ describe('RestArchives', () => {
       const result = restArchives.upload(spec);
 
       // assert
-      await expect(result).rejects.toThrowError('Invalid specification type');
+      await expect(result).rejects.toThrow('Invalid specification type');
     });
 
     it('should send multipart form data correctly', async () => {

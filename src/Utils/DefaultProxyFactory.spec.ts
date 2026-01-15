@@ -49,7 +49,7 @@ describe('DefaultProxyFactory', () => {
       };
 
       // act & assert
-      expect(() => defaultProxyFactory.createProxy(proxyOptions)).toThrowError(
+      expect(() => defaultProxyFactory.createProxy(proxyOptions)).toThrow(
         'Unsupported proxy protocol'
       );
     });
@@ -99,7 +99,7 @@ describe('DefaultProxyFactory', () => {
       // act & assert
       expect(() =>
         defaultProxyFactory.createProxyForClient(targetProxyOptions)
-      ).toThrowError('Proxy not supported for protocol');
+      ).toThrow('Proxy not supported for protocol');
     });
   });
 });
