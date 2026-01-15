@@ -188,7 +188,7 @@ describe('RunScan', () => {
       const act = () => RunScan.excludeEntryPoint(input);
 
       // assert
-      expect(act).toThrowError(SyntaxError);
+      expect(act).toThrow(SyntaxError);
     });
   });
 

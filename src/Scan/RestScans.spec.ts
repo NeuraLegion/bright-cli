@@ -116,7 +116,7 @@ describe('RestScans', () => {
       const result = restScans.create(scanConfig);
 
       // assert
-      await expect(result).rejects.toThrowError(
+      await expect(result).rejects.toThrow(
         `Error loading file with id "${scanConfig.fileId}": No such file or you do not have permissions.`
       );
     });
