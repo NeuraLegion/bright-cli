@@ -49,11 +49,11 @@ jobs:
       matrix:
         include:
           - os: ubuntu-latest
-            container: ubuntu:20.04
+            container: ubuntu:22.04
             executable: bright-cli-linux-x64
             node: 20
           - os: ubuntu-latest
-            container: ubuntu:22.04
+            container: ubuntu:24.04
             executable: bright-cli-linux-x64
             node: 20
           - os: ubuntu-latest
@@ -69,6 +69,10 @@ jobs:
             executable: bright-cli-linux-x64
             node: 20
           - os: ubuntu-latest
+            container: alpine:3.21
+            executable: bright-cli-linux-x64
+            node: 20
+          - os: ubuntu-latest
             executable: bright-cli-linux-x64
             node: 20
           - os: macos-15-intel
@@ -80,10 +84,10 @@ jobs:
           - os: macos-latest
             executable: bright-cli-macos-x64
             node: 20
-          - os: windows-latest
+          - os: windows-2022
             executable: bright-cli-win-x64.exe
             node: 20
-          - os: windows-2022
+          - os: windows-latest
             executable: bright-cli-win-x64.exe
             node: 20
     steps:
@@ -124,11 +128,16 @@ jobs:
         uses: ./.github/workflows/composite/todoapp
 
       - name: Install Dependencies
+        if: ${{ !startsWith(matrix.container, 'alpine') }}
         uses: ./.github/workflows/composite/npm
         with:
           version: ${{ matrix.node }}
           # https://github.com/actions/setup-node/issues/286#issuecomment-878865957
           cache: ''
+
+      - name: Install Dependencies (Alpine)
+        if: ${{ startsWith(matrix.container, 'alpine') }}
+        run: npm ci -q
 
       - name: Run Tests
         run: npm run test:e2e
@@ -252,28 +261,26 @@ jobs:
         node: [20, 22]
         include:
           - os: ubuntu-latest
-            container: ubuntu:20.04
+            container: ubuntu:22.04
             node: 20
+          - os: ubuntu-latest
+            container: ubuntu:22.04
+            node: 22
           - os: ubuntu-latest
             container: rockylinux:8
             node: 20
           - os: ubuntu-latest
-            container: rockylinux:9
+            container: rockylinux:8
             node: 22
           - os: ubuntu-latest
             container: rockylinux:9
             node: 20
           - os: ubuntu-latest
-            container: alpine:3.19
-            node: 20
+            container: rockylinux:9
+            node: 22
+          # Alpine is tested in executables job only.
+          # npm job requires setup-node which doesn't support Alpine: https://github.com/actions/setup-node/issues/1293
     steps:
-      - name: Install Packages (Alpine)
-        if: ${{ startsWith(matrix.container, 'alpine') }}
-        run: |
-          apk update \
-            && apk add --no-cache curl tar bash gcompat libstdc++ \
-            && rm -rf /var/cache/apk/*
-
       - name: Install Packages (RHEL-based)
         if: ${{ startsWith(matrix.container, 'rockylinux') || startsWith(matrix.container, 'fedora') }}
         run: |
