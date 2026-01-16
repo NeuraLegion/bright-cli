@@ -215,8 +215,7 @@ jobs:
     steps:
       - name: Install Docker (MacOS)
         if: ${{ startsWith(matrix.os, 'macos') }}
-        uses: docker-practice/actions-setup-docker@master
-        timeout-minutes: 30
+        uses: docker/setup-docker-action@v4
 
       - name: Pull Image
         run: docker pull brightsec/cli:${{ inputs.version }}
