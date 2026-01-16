@@ -57,11 +57,15 @@ jobs:
             executable: bright-cli-linux-x64
             node: 20
           - os: ubuntu-latest
-            container: fedora:29
+            container: rockylinux:8
             executable: bright-cli-linux-x64
             node: 20
           - os: ubuntu-latest
-            container: fedora:latest
+            container: rockylinux:9
+            executable: bright-cli-linux-x64
+            node: 20
+          - os: ubuntu-latest
+            container: alpine:3.19
             executable: bright-cli-linux-x64
             node: 20
           - os: ubuntu-latest
@@ -80,8 +84,15 @@ jobs:
             executable: bright-cli-win-x64.exe
             node: 20
     steps:
-      - name: Install Packages (Fedora)
-        if: ${{ startsWith(matrix.container, 'fedora') }}
+      - name: Install Packages (Alpine)
+        if: ${{ startsWith(matrix.container, 'alpine') }}
+        run: |
+          apk update \
+            && apk add --no-cache curl tar bash gcompat libstdc++ \
+            && rm -rf /var/cache/apk/*
+
+      - name: Install Packages (RHEL-based)
+        if: ${{ startsWith(matrix.container, 'rockylinux') || startsWith(matrix.container, 'fedora') }}
         run: |
           dnf -y update \
             && dnf install -y curl tar \
@@ -97,7 +108,7 @@ jobs:
             && rm -rf /var/lib/apt/lists/*
 
       - name: Checkout Repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
 
       - name: Download Executable
         shell: bash
@@ -155,7 +166,7 @@ jobs:
         shell: pwsh
 
       - name: Checkout Repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
 
       - name: Download Target
         id: target
@@ -198,7 +209,7 @@ jobs:
         run: docker pull brightsec/cli:${{ inputs.version }}
 
       - name: Checkout Repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
 
       - name: Download Target
         id: target
@@ -240,17 +251,27 @@ jobs:
             container: ubuntu:20.04
             node: 20
           - os: ubuntu-latest
-            container: fedora:29
+            container: rockylinux:8
             node: 20
           - os: ubuntu-latest
-            container: fedora:latest
+            container: rockylinux:9
             node: 22
           - os: ubuntu-latest
-            container: fedora:latest
+            container: rockylinux:9
+            node: 20
+          - os: ubuntu-latest
+            container: alpine:3.19
             node: 20
     steps:
-      - name: Install Packages (Fedora)
-        if: ${{ startsWith(matrix.container, 'fedora') }}
+      - name: Install Packages (Alpine)
+        if: ${{ startsWith(matrix.container, 'alpine') }}
+        run: |
+          apk update \
+            && apk add --no-cache curl tar bash gcompat libstdc++ \
+            && rm -rf /var/cache/apk/*
+
+      - name: Install Packages (RHEL-based)
+        if: ${{ startsWith(matrix.container, 'rockylinux') || startsWith(matrix.container, 'fedora') }}
         run: |
           dnf -y update \
             && dnf install -y curl tar \
@@ -266,7 +287,7 @@ jobs:
             && rm -rf /var/lib/apt/lists/*
 
       - name: Checkout Repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
 
       - name: Download Target
         id: target
