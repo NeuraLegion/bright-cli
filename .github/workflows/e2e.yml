@@ -71,7 +71,10 @@ jobs:
           - os: ubuntu-latest
             executable: bright-cli-linux-x64
             node: 20
-          - os: macos-13
+          - os: macos-15-intel
+            executable: bright-cli-macos-x64
+            node: 20
+          - os: macos-14
             executable: bright-cli-macos-x64
             node: 20
           - os: macos-latest
@@ -198,8 +201,8 @@ jobs:
       fail-fast: false
       matrix:
         # Windows can't run linux docker images: https://github.com/actions/runner-images/issues/1143
-        # macos-latest (arm64) doesn't support docker-practice/actions-setup-docker, use macos-13 (Intel)
-        os: [ubuntu-latest, macos-13]
+        # macos-latest (arm64) doesn't support docker-practice/actions-setup-docker, use macos-15-intel instead
+        os: [ubuntu-latest, macos-15-intel]
     steps:
       - name: Install Docker (MacOS)
         if: ${{ startsWith(matrix.os, 'macos') }}
