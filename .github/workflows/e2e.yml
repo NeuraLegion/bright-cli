@@ -65,14 +65,6 @@ jobs:
             executable: bright-cli-linux-x64
             node: 20
           - os: ubuntu-latest
-            container: alpine:3.19
-            executable: bright-cli-linux-x64
-            node: 20
-          - os: ubuntu-latest
-            container: alpine:3.21
-            executable: bright-cli-linux-x64
-            node: 20
-          - os: ubuntu-latest
             executable: bright-cli-linux-x64
             node: 20
           - os: macos-15-intel
@@ -91,13 +83,6 @@ jobs:
             executable: bright-cli-win-x64.exe
             node: 20
     steps:
-      - name: Install Packages (Alpine)
-        if: ${{ startsWith(matrix.container, 'alpine') }}
-        run: |
-          apk update \
-            && apk add --no-cache curl tar bash gcompat libstdc++ \
-            && rm -rf /var/cache/apk/*
-
       - name: Install Packages (RHEL-based)
         if: ${{ startsWith(matrix.container, 'rockylinux') || startsWith(matrix.container, 'fedora') }}
         run: |
@@ -128,16 +113,11 @@ jobs:
         uses: ./.github/workflows/composite/todoapp
 
       - name: Install Dependencies
-        if: ${{ !startsWith(matrix.container, 'alpine') }}
         uses: ./.github/workflows/composite/npm
         with:
           version: ${{ matrix.node }}
           # https://github.com/actions/setup-node/issues/286#issuecomment-878865957
           cache: ''
-
-      - name: Install Dependencies (Alpine)
-        if: ${{ startsWith(matrix.container, 'alpine') }}
-        run: npm ci -q
 
       - name: Run Tests
         run: npm run test:e2e
