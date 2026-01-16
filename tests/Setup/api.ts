@@ -17,6 +17,7 @@ export interface WaitOptions {
 export interface CreateScanProps {
   name: string;
   crawlerUrls: string[];
+  tests?: string[];
   repeaters?: string[];
   slowEpTimeout?: number;
   targetTimeout?: number;

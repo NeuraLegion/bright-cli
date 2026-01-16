@@ -90,6 +90,16 @@ describe('Repeater Command', () => {
         const scanId = await api.createScan({
           name,
           repeaters: [repeaterId],
+          tests: [
+            'header_security',
+            'sqli',
+            'css_injection',
+            'xss',
+            'stored_xss',
+            'ssti',
+            'html_injection',
+            'csrf'
+          ],
           crawlerUrls: [config.targetUrl],
           slowEpTimeout: 5_000,
           targetTimeout: 3,
