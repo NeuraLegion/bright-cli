@@ -185,18 +185,10 @@ jobs:
 
   docker:
     if: ${{ inputs.test-docker }}
-    runs-on: ${{ matrix.os }}
-    strategy:
-      fail-fast: false
-      matrix:
-        # Windows can't run linux docker images: https://github.com/actions/runner-images/issues/1143
-        # macos-latest (arm64) doesn't support docker-practice/actions-setup-docker, use macos-15-intel instead
-        os: [ubuntu-latest, macos-15-intel]
+    runs-on: ubuntu-latest
+    # Windows can't run linux docker images: https://github.com/actions/runner-images/issues/1143
+    # macOS Docker doesn't reliably support host.docker.internal DNS resolution in CI
     steps:
-      - name: Install Docker (MacOS)
-        if: ${{ startsWith(matrix.os, 'macos') }}
-        uses: docker/setup-docker-action@v4
-
       - name: Pull Image
         run: docker pull brightsec/cli:${{ inputs.version }}
 
