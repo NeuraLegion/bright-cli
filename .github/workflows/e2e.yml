@@ -95,7 +95,7 @@ jobs:
         if: ${{ startsWith(matrix.container, 'rockylinux') || startsWith(matrix.container, 'fedora') }}
         run: |
           dnf -y update \
-            && dnf install -y curl tar \
+            && dnf install -y --allowerasing curl tar \
             && dnf clean all \
             && rm -rf /var/cache/dnf/*
 
@@ -275,7 +275,7 @@ jobs:
         if: ${{ startsWith(matrix.container, 'rockylinux') || startsWith(matrix.container, 'fedora') }}
         run: |
           dnf -y update \
-            && dnf install -y curl tar \
+            && dnf install -y --allowerasing curl tar \
             && dnf clean all \
             && rm -rf /var/cache/dnf/*
 
