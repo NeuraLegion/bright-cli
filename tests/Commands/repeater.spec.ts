@@ -125,10 +125,10 @@ describe('Repeater Command', () => {
         });
 
       // assert
-      await expect(act).rejects.toThrow('Request failed with status code 429');
+      await expect(act).rejects.toThrow('Request failed with status code 400');
       await expect(act).rejects.toMatchObject({
         response: {
-          status: 429,
+          status: 400,
           data: 'The repeater used for the scan is not connected. Connect the repeater and restart the scan.'
         }
       });
