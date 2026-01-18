@@ -70,8 +70,7 @@ export class DefaultConfigReader implements ConfigReader {
   private loadCommonJsModule(filename: string): Record<string, unknown> {
     const code: string = readFileSync(filename, { encoding: 'utf8' });
     const script: Script = new Script(code, {
-      filename,
-      timeout: 100
+      filename
     });
     const vmModule: { exports: any } = { exports: {} };
     const context: Context = createContext({
@@ -79,7 +78,7 @@ export class DefaultConfigReader implements ConfigReader {
       module: vmModule
     });
 
-    script.runInNewContext(context);
+    script.runInNewContext(context, { timeout: 100 });
 
     const config: Record<string, unknown> | (() => Record<string, unknown>) =
       context.module?.exports ?? context.exports;

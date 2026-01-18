@@ -51,37 +51,37 @@ jobs:
           - os: ubuntu-latest
             container: ubuntu:22.04
             executable: bright-cli-linux-x64
-            node: 20
+            node: 22
           - os: ubuntu-latest
             container: ubuntu:24.04
             executable: bright-cli-linux-x64
-            node: 20
+            node: 22
           - os: ubuntu-latest
             container: rockylinux:8
             executable: bright-cli-linux-x64
-            node: 20
+            node: 22
           - os: ubuntu-latest
             container: rockylinux:9
             executable: bright-cli-linux-x64
-            node: 20
+            node: 22
           - os: ubuntu-latest
             executable: bright-cli-linux-x64
-            node: 20
+            node: 22
           - os: macos-15-intel
             executable: bright-cli-macos-x64
-            node: 20
+            node: 22
           - os: macos-14
             executable: bright-cli-macos-x64
-            node: 20
+            node: 22
           - os: macos-latest
             executable: bright-cli-macos-x64
-            node: 20
+            node: 22
           - os: windows-2022
             executable: bright-cli-win-x64.exe
-            node: 20
+            node: 22
           - os: windows-latest
             executable: bright-cli-win-x64.exe
-            node: 20
+            node: 22
     steps:
       - name: Install Packages (RHEL-based)
         if: ${{ startsWith(matrix.container, 'rockylinux') || startsWith(matrix.container, 'fedora') }}
@@ -229,26 +229,26 @@ jobs:
       fail-fast: false
       matrix:
         os: [macos-latest, windows-latest, ubuntu-latest]
-        node: [20, 22]
+        node: [22, 24.11.1]
         include:
           - os: ubuntu-latest
             container: ubuntu:22.04
-            node: 20
+            node: 22
           - os: ubuntu-latest
             container: ubuntu:22.04
-            node: 22
-          - os: ubuntu-latest
-            container: rockylinux:8
-            node: 20
+            node: 24.11.1
           - os: ubuntu-latest
             container: rockylinux:8
             node: 22
           - os: ubuntu-latest
-            container: rockylinux:9
-            node: 20
+            container: rockylinux:8
+            node: 24.11.1
           - os: ubuntu-latest
             container: rockylinux:9
             node: 22
+          - os: ubuntu-latest
+            container: rockylinux:9
+            node: 24.11.1
           # Alpine is tested in executables job only.
           # npm job requires setup-node which doesn't support Alpine: https://github.com/actions/setup-node/issues/1293
     steps:
