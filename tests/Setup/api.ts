@@ -17,6 +17,7 @@ export interface WaitOptions {
 export interface CreateScanProps {
   name: string;
   crawlerUrls: string[];
+  tests?: string[];
   repeaters?: string[];
   slowEpTimeout?: number;
   targetTimeout?: number;
@@ -144,7 +145,7 @@ export class Api {
     repeaterId: string,
     options?: WaitOptions
   ) {
-    const maxAttempts = options?.maxAttempts ?? 25;
+    const maxAttempts = options?.maxAttempts ?? 60;
     const timeout = options?.timeout ?? 10_000;
 
     for (let attempt = 1; attempt <= maxAttempts; attempt++) {
@@ -167,7 +168,7 @@ export class Api {
   }
 
   public async waitForScanToFinish(scanId: string, options?: WaitOptions) {
-    const maxAttempts = options?.maxAttempts ?? 50;
+    const maxAttempts = options?.maxAttempts ?? 120;
     const timeout = options?.timeout ?? 30_000;
 
     for (let attempt = 1; attempt <= maxAttempts; attempt++) {

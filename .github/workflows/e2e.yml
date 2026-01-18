@@ -49,42 +49,45 @@ jobs:
       matrix:
         include:
           - os: ubuntu-latest
-            container: ubuntu:20.04
-            executable: bright-cli-linux-x64
-            node: 20
-          - os: ubuntu-latest
             container: ubuntu:22.04
             executable: bright-cli-linux-x64
             node: 20
           - os: ubuntu-latest
-            container: fedora:29
+            container: ubuntu:24.04
             executable: bright-cli-linux-x64
             node: 20
           - os: ubuntu-latest
-            container: fedora:latest
+            container: rockylinux:8
+            executable: bright-cli-linux-x64
+            node: 20
+          - os: ubuntu-latest
+            container: rockylinux:9
             executable: bright-cli-linux-x64
             node: 20
           - os: ubuntu-latest
             executable: bright-cli-linux-x64
             node: 20
-          - os: macos-13
+          - os: macos-15-intel
+            executable: bright-cli-macos-x64
+            node: 20
+          - os: macos-14
             executable: bright-cli-macos-x64
             node: 20
           - os: macos-latest
             executable: bright-cli-macos-x64
             node: 20
-          - os: windows-latest
-            executable: bright-cli-win-x64.exe
-            node: 20
           - os: windows-2022
             executable: bright-cli-win-x64.exe
             node: 20
+          - os: windows-latest
+            executable: bright-cli-win-x64.exe
+            node: 20
     steps:
-      - name: Install Packages (Fedora)
-        if: ${{ startsWith(matrix.container, 'fedora') }}
+      - name: Install Packages (RHEL-based)
+        if: ${{ startsWith(matrix.container, 'rockylinux') || startsWith(matrix.container, 'fedora') }}
         run: |
           dnf -y update \
-            && dnf install -y curl tar \
+            && dnf install -y --allowerasing curl tar \
             && dnf clean all \
             && rm -rf /var/cache/dnf/*
 
@@ -97,7 +100,7 @@ jobs:
             && rm -rf /var/lib/apt/lists/*
 
       - name: Checkout Repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
 
       - name: Download Executable
         shell: bash
@@ -155,7 +158,7 @@ jobs:
         shell: pwsh
 
       - name: Checkout Repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
 
       - name: Download Target
         id: target
@@ -182,23 +185,15 @@ jobs:
 
   docker:
     if: ${{ inputs.test-docker }}
-    runs-on: ${{ matrix.os }}
-    strategy:
-      fail-fast: false
-      matrix:
-        # Windows can't run linux docker images: https://github.com/actions/runner-images/issues/1143
-        os: [ubuntu-latest, macos-latest]
+    runs-on: ubuntu-latest
+    # Windows can't run linux docker images: https://github.com/actions/runner-images/issues/1143
+    # macOS Docker doesn't reliably support host.docker.internal DNS resolution in CI
     steps:
-      - name: Install Docker (MacOS)
-        if: ${{ startsWith(matrix.os, 'macos') }}
-        uses: docker-practice/actions-setup-docker@master
-        timeout-minutes: 30
-
       - name: Pull Image
         run: docker pull brightsec/cli:${{ inputs.version }}
 
       - name: Checkout Repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
 
       - name: Download Target
         id: target
@@ -237,23 +232,31 @@ jobs:
         node: [20, 22]
         include:
           - os: ubuntu-latest
-            container: ubuntu:20.04
+            container: ubuntu:22.04
             node: 20
           - os: ubuntu-latest
-            container: fedora:29
-            node: 20
-          - os: ubuntu-latest
-            container: fedora:latest
+            container: ubuntu:22.04
             node: 22
           - os: ubuntu-latest
-            container: fedora:latest
+            container: rockylinux:8
             node: 20
+          - os: ubuntu-latest
+            container: rockylinux:8
+            node: 22
+          - os: ubuntu-latest
+            container: rockylinux:9
+            node: 20
+          - os: ubuntu-latest
+            container: rockylinux:9
+            node: 22
+          # Alpine is tested in executables job only.
+          # npm job requires setup-node which doesn't support Alpine: https://github.com/actions/setup-node/issues/1293
     steps:
-      - name: Install Packages (Fedora)
-        if: ${{ startsWith(matrix.container, 'fedora') }}
+      - name: Install Packages (RHEL-based)
+        if: ${{ startsWith(matrix.container, 'rockylinux') || startsWith(matrix.container, 'fedora') }}
         run: |
           dnf -y update \
-            && dnf install -y curl tar \
+            && dnf install -y --allowerasing curl tar \
             && dnf clean all \
             && rm -rf /var/cache/dnf/*
 
@@ -266,7 +269,7 @@ jobs:
             && rm -rf /var/lib/apt/lists/*
 
       - name: Checkout Repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
 
       - name: Download Target
         id: target
