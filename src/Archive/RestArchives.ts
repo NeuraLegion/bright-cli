@@ -2,7 +2,6 @@ import { Archives, Spec, SpecType } from './Archives';
 import { ProxyFactory } from '../Utils';
 import { inject, injectable } from 'tsyringe';
 import axios, { Axios } from 'axios';
-import FormData from 'form-data';
 import { ok } from 'node:assert';
 import https from 'node:https';
 import http from 'node:http';
@@ -67,7 +66,7 @@ export class RestArchives implements Archives {
     const file = this.castToFile(spec);
 
     const formData = new FormData();
-    formData.append('file', file.value, file.options);
+    formData.append('file', file.value, file.options.filename);
     formData.append('projectId', projectId);
     formData.append('headers', JSON.stringify(headers ?? {}));
     formData.append('variables', JSON.stringify(variables ?? {}));
@@ -87,15 +86,14 @@ export class RestArchives implements Archives {
     content,
     contentType = 'application/json'
   }: Spec): {
-    options: { filename: string; contentType: string };
-    value: Buffer;
+    options: { filename: string };
+    value: File;
   } {
     return {
       options: {
-        filename,
-        contentType
+        filename
       },
-      value: Buffer.from(content)
+      value: new File([content], filename, { type: contentType })
     };
   }
 }
