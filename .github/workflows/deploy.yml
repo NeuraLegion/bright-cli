@@ -105,7 +105,7 @@ jobs:
         run: npx json -I -f package.json -e "this.brightCli.distribution='${{ matrix.target }}-executable'"
 
       - name: Build executable file
-        run: npm run build:pkg -- -t node${{ matrix.node }}-${{ matrix.target }}-x64
+        run: npm run build:pkg -- -t node22-${{ matrix.target }}-x64
 
       - name: Build MSI
         if: startsWith(matrix.os, 'win')
