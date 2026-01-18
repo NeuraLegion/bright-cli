@@ -81,7 +81,7 @@
     "husky": "^8.0.1",
     "is-ci": "^3.0.1",
     "jest": "^30.2.0",
-    "lint-staged": "^13.0.3",
+    "lint-staged": "^16.2.7",
     "nock": "^13.2.9",
     "prettier": "^2.7.1",
     "semantic-release": "^25.0.2",
