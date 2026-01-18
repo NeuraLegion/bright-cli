@@ -12,7 +12,7 @@ inputs:
   version:
     description: 'Node.JS version'
     required: false
-    default: "24.11.1"
+    default: "22"
   cache:
     description: 'Cache'
     required: false

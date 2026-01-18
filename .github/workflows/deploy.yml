@@ -72,13 +72,10 @@ jobs:
         include:
           - os: windows-2022
             target: win
-            node: 22
           - os: macos-14
             target: macos
-            node: 22
           - os: ubuntu-22.04
             target: linux
-            node: 22
             container:
               image: redhat/ubi8
               options: "--user root"
@@ -103,8 +100,6 @@ jobs:
 
       - name: Install deps
         uses: ./.github/workflows/composite/npm
-        with:
-          version: ${{ matrix.node }}
 
       - name: Set distribution
         run: npx json -I -f package.json -e "this.brightCli.distribution='${{ matrix.target }}-executable'"
