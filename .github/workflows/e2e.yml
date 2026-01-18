@@ -34,7 +34,7 @@ on:
           - development
       test_timeout:
         description: "Test timeout in seconds"
-        default: 5000
+        default: "5000"
 
 jobs:
   executables:
@@ -51,37 +51,27 @@ jobs:
           - os: ubuntu-latest
             container: ubuntu:22.04
             executable: bright-cli-linux-x64
-            node: 22
           - os: ubuntu-latest
             container: ubuntu:24.04
             executable: bright-cli-linux-x64
-            node: 22
           - os: ubuntu-latest
             container: rockylinux:8
             executable: bright-cli-linux-x64
-            node: 22
           - os: ubuntu-latest
             container: rockylinux:9
             executable: bright-cli-linux-x64
-            node: 22
           - os: ubuntu-latest
             executable: bright-cli-linux-x64
-            node: 22
           - os: macos-15-intel
             executable: bright-cli-macos-x64
-            node: 22
           - os: macos-14
             executable: bright-cli-macos-x64
-            node: 22
           - os: macos-latest
             executable: bright-cli-macos-x64
-            node: 22
           - os: windows-2022
             executable: bright-cli-win-x64.exe
-            node: 22
           - os: windows-latest
             executable: bright-cli-win-x64.exe
-            node: 22
     steps:
       - name: Install Packages (RHEL-based)
         if: ${{ startsWith(matrix.container, 'rockylinux') || startsWith(matrix.container, 'fedora') }}
@@ -115,7 +105,6 @@ jobs:
       - name: Install Dependencies
         uses: ./.github/workflows/composite/npm
         with:
-          version: ${{ matrix.node }}
           # https://github.com/actions/setup-node/issues/286#issuecomment-878865957
           cache: ''
 
