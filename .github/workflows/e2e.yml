@@ -229,26 +229,26 @@ jobs:
       fail-fast: false
       matrix:
         os: [macos-latest, windows-latest, ubuntu-latest]
-        node: [22, 24]
+        node: [22, 24.11.1]
         include:
           - os: ubuntu-latest
             container: ubuntu:22.04
             node: 22
           - os: ubuntu-latest
             container: ubuntu:22.04
-            node: 24
+            node: 24.11.1
           - os: ubuntu-latest
             container: rockylinux:8
             node: 22
           - os: ubuntu-latest
             container: rockylinux:8
-            node: 24
+            node: 24.11.1
           - os: ubuntu-latest
             container: rockylinux:9
             node: 22
           - os: ubuntu-latest
             container: rockylinux:9
-            node: 24
+            node: 24.11.1
           # Alpine is tested in executables job only.
           # npm job requires setup-node which doesn't support Alpine: https://github.com/actions/setup-node/issues/1293
     steps:
