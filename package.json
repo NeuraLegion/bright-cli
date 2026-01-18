@@ -157,6 +157,11 @@
     "prepare": "is-ci || husky install",
     "start": "node -r ts-node/register/transpile-only -r tsconfig-paths/register src/index.ts"
   },
+  "overrides": {
+    "ts-node": {
+      "diff": "8.0.3"
+    }
+  },
   "brightCli": {
     "distribution": "unknown"
   }
