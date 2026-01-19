@@ -29,6 +29,7 @@ describe('DefaultVirtualScripts', () => {
       expect(firstScript).toMatchObject({ id: key1 });
       expect(secondKey).toBe(key2);
       expect(secondScript).toMatchObject({ id: key2 });
+      expect(virtualScripts.localScriptsSize).toBe(0);
     });
   });
 
@@ -43,6 +44,7 @@ describe('DefaultVirtualScripts', () => {
 
       // assert
       expect([...virtualScripts]).toEqual([]);
+      expect(virtualScripts.localScriptsSize).toBe(0);
     });
 
     it('should remove only VirtualScriptType.LOCAL scripts when VirtualScriptType.LOCAL type is passed', () => {
@@ -64,6 +66,7 @@ describe('DefaultVirtualScripts', () => {
           ).compile()
         ]
       ]);
+      expect(virtualScripts.localScriptsSize).toBe(0);
     });
 
     it('should remove only VirtualScriptType.REMOTE scripts when VirtualScriptType.REMOTE type is passed', () => {
@@ -85,6 +88,7 @@ describe('DefaultVirtualScripts', () => {
           ).compile()
         ]
       ]);
+      expect(virtualScripts.localScriptsSize).toBe(1);
     });
   });
 
@@ -110,6 +114,8 @@ describe('DefaultVirtualScripts', () => {
           ).compile()
         ]
       ]);
+      expect(virtualScripts.size).toBe(1);
+      expect(virtualScripts.localScriptsSize).toBe(0);
     });
 
     it('should return true when successfully deleted key', () => {
@@ -122,6 +128,7 @@ describe('DefaultVirtualScripts', () => {
 
       // assert
       expect(deleteRes).toBe(true);
+      expect(virtualScripts.localScriptsSize).toBe(0);
     });
 
     it('should return false when not found key', () => {
@@ -234,6 +241,7 @@ describe('DefaultVirtualScripts', () => {
       expect(
         virtualScripts.set('first', VirtualScriptType.LOCAL, 'let a = 1;')
       ).toBe(virtualScripts);
+      expect(virtualScripts.localScriptsSize).toBe(1);
     });
     it('should create and compile VirtualScript, and store it', () => {
       // arrange
@@ -249,6 +257,7 @@ describe('DefaultVirtualScripts', () => {
           new VirtualScript(id, VirtualScriptType.LOCAL, 'let a = 1;').compile()
         ]
       ]);
+      expect(virtualScripts.localScriptsSize).toBe(1);
     });
     it('should overwrite previously set script when called with the same wildcard', () => {
       // arrange
@@ -269,6 +278,7 @@ describe('DefaultVirtualScripts', () => {
           ).compile()
         ]
       ]);
+      expect(virtualScripts.localScriptsSize).toBe(0);
     });
   });
 

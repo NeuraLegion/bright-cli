@@ -5,6 +5,7 @@ import { injectable } from 'tsyringe';
 
 @injectable()
 export class DefaultVirtualScripts implements VirtualScripts {
+  private readonly _localScriptsSize: number;
   private readonly store = new Map<string, VirtualScript>();
 
   get size(): number {
@@ -12,15 +13,7 @@ export class DefaultVirtualScripts implements VirtualScripts {
   }
 
   get localScriptsSize(): number {
-    let count = 0;
-
-    this.store.forEach((x: VirtualScript) => {
-      if (x.type === VirtualScriptType.LOCAL) {
-        count++;
-      }
-    });
-
-    return count;
+    return this._localScriptsSize;
   }
 
   public [Symbol.iterator](): IterableIterator<[string, VirtualScript]> {
@@ -33,14 +26,24 @@ export class DefaultVirtualScripts implements VirtualScripts {
     } else {
       this.store.forEach((x: VirtualScript) => {
         if (x.type === type) {
-          this.delete(x.id);
+          this.delete(x.id, false);
         }
       });
     }
+
+    if (!type || type === VirtualScriptType.LOCAL) {
+      this.calculateLocalScriptsSize();
+    }
   }
 
-  public delete(key: string): boolean {
-    return this.store.delete(key);
+  public delete(key: string, recalculate: boolean = true): boolean {
+    const result = this.store.delete(key);
+
+    if (recalculate) {
+      this.calculateLocalScriptsSize();
+    }
+
+    return result;
   }
 
   public entries(): IterableIterator<[string, VirtualScript]> {
@@ -64,10 +67,24 @@ export class DefaultVirtualScripts implements VirtualScripts {
 
     script.compile();
 
+    this.calculateLocalScriptsSize();
+
     return this;
   }
 
   public values(): IterableIterator<VirtualScript> {
     return this.store.values();
+  }
+
+  private calculateLocalScriptsSize(): number {
+    let count = 0;
+
+    this.store.forEach((x: VirtualScript) => {
+      if (x.type === VirtualScriptType.LOCAL) {
+        count++;
+      }
+    });
+
+    return count;
   }
 }
