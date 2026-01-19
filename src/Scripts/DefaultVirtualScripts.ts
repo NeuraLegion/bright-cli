@@ -5,7 +5,7 @@ import { injectable } from 'tsyringe';
 
 @injectable()
 export class DefaultVirtualScripts implements VirtualScripts {
-  private readonly _localScriptsSize: number;
+  private _localScriptsSize: number = 0;
   private readonly store = new Map<string, VirtualScript>();
 
   get size(): number {
@@ -76,7 +76,7 @@ export class DefaultVirtualScripts implements VirtualScripts {
     return this.store.values();
   }
 
-  private calculateLocalScriptsSize(): number {
+  private calculateLocalScriptsSize(): void {
     let count = 0;
 
     this.store.forEach((x: VirtualScript) => {
@@ -85,6 +85,6 @@ export class DefaultVirtualScripts implements VirtualScripts {
       }
     });
 
-    return count;
+    this._localScriptsSize = count;
   }
 }
