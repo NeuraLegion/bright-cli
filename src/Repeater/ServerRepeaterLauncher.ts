@@ -120,6 +120,7 @@ export class ServerRepeaterLauncher implements RepeaterLauncher {
     return {
       version: this.info.version,
       scriptsLoaded: !!this.virtualScripts.size,
+      localScriptsLoaded: !!this.virtualScripts.localScriptsSize,
       ci: this.runtimeDetector.ci(),
       os: this.runtimeDetector.os(),
       arch: this.runtimeDetector.arch(),

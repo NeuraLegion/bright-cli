@@ -11,6 +11,18 @@ export class DefaultVirtualScripts implements VirtualScripts {
     return this.store.size;
   }
 
+  get localScriptsSize(): number {
+    let count = 0;
+
+    this.store.forEach((x: VirtualScript) => {
+      if (x.type === VirtualScriptType.LOCAL) {
+        count++;
+      }
+    });
+
+    return count;
+  }
+
   public [Symbol.iterator](): IterableIterator<[string, VirtualScript]> {
     return this.store[Symbol.iterator]();
   }

@@ -3,6 +3,8 @@ import { VirtualScript, VirtualScriptType } from './VirtualScript';
 export interface VirtualScripts {
   size: number;
 
+  localScriptsSize: number;
+
   [Symbol.iterator](): IterableIterator<[string, VirtualScript]>;
 
   clear(type?: VirtualScriptType): void;
