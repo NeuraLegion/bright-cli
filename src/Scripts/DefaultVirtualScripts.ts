@@ -32,7 +32,7 @@ export class DefaultVirtualScripts implements VirtualScripts {
     }
 
     if (!type || type === VirtualScriptType.LOCAL) {
-      this.calculateLocalScriptsSize();
+      this._localScriptsSize = 0;
     }
   }
 
