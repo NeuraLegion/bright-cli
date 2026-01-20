@@ -11,7 +11,9 @@ const config = {
   projectId: process.env.E2E_PROJECT_ID,
   targetUrl: process.env['E2E_REPEATER_TARGET_URL'],
   targetCmd: process.env['E2E_REPEATER_TARGET_CMD'],
-  maxTestTimeout: parseInt(process.env.E2E_TEST_TIMEOUT, 10) * 1000
+  maxTestTimeout: parseInt(process.env.E2E_TEST_TIMEOUT, 10) * 1000,
+  targetEntrypointId: process.env.E2E_TARGET_ENTRYPOINT_ID,
+  targetTestType: process.env.E2E_TARGET_TEST_TYPE
 };
 
 describe('Repeater Command', () => {
@@ -90,12 +92,12 @@ describe('Repeater Command', () => {
         const scanId = await api.createScan({
           name,
           repeaters: [repeaterId],
-          tests: ['stored_xss'],
+          tests: [config.targetTestType],
           slowEpTimeout: 5_000,
           targetTimeout: 3,
           poolSize: 50,
           projectId: config.projectId,
-          entryPointIds: ['3K5TpgejvUJPBmcDYGgbx5']
+          entryPointIds: [config.targetEntrypointId]
         });
         // eslint-disable-next-line no-console
         console.log('Scan was started with id: %s', scanId);

@@ -120,6 +120,7 @@ jobs:
           E2E_REPEATER_TARGET_URL: ${{ format('http://localhost:{0}', steps.target.outputs.port) }}
           E2E_REPEATER_TARGET_CMD: ${{ steps.target.outputs.cmd }}
           E2E_TEST_TIMEOUT: ${{ inputs.test_timeout }}
+          E2E_TARGET_ENTRYPOINT_ID: ${{ vars.E2E_TARGET_ENTRYPOINT_ID_LOCAL }}
 
   msi:
     if: ${{ inputs.test-msi }}
@@ -171,6 +172,7 @@ jobs:
           E2E_REPEATER_TARGET_URL: ${{ format('http://localhost:{0}', steps.target.outputs.port) }}
           E2E_REPEATER_TARGET_CMD: ${{ steps.target.outputs.cmd }}
           E2E_TEST_TIMEOUT: ${{ inputs.test_timeout }}
+          E2E_TARGET_ENTRYPOINT_ID: ${{ vars.E2E_TARGET_ENTRYPOINT_ID_LOCAL }}
 
   docker:
     if: ${{ inputs.test-docker }}
@@ -206,6 +208,7 @@ jobs:
           E2E_REPEATER_TARGET_URL: ${{ format('http://host.docker.internal:{0}', steps.target.outputs.port) }}
           E2E_REPEATER_TARGET_CMD: ${{ steps.target.outputs.cmd }}
           E2E_TEST_TIMEOUT: ${{ inputs.test_timeout }}
+          E2E_TARGET_ENTRYPOINT_ID: ${{ vars.E2E_TARGET_ENTRYPOINT_ID_DOCKER }}
 
   npm:
     if: ${{ inputs.test-npm }}
@@ -286,3 +289,4 @@ jobs:
           E2E_REPEATER_TARGET_URL: ${{ format('http://localhost:{0}', steps.target.outputs.port) }}
           E2E_REPEATER_TARGET_CMD: ${{ steps.target.outputs.cmd }}
           E2E_TEST_TIMEOUT: ${{ inputs.test_timeout }}
+          E2E_TARGET_ENTRYPOINT_ID: ${{ vars.E2E_TARGET_ENTRYPOINT_ID_LOCAL }}
