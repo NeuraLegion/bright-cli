@@ -7,7 +7,7 @@ export interface VirtualScripts {
 
   clear(type?: VirtualScriptType): void;
 
-  delete(key: string, recalculate?: boolean): boolean;
+  delete(key: string): boolean;
 
   entries(): IterableIterator<[string, VirtualScript]>;
 

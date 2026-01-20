@@ -21,7 +21,7 @@ export class DefaultVirtualScripts implements VirtualScripts {
     } else {
       this.store.forEach((x: VirtualScript) => {
         if (x.type === type) {
-          this.delete(x.id, false);
+          this.delete(x.id);
         }
       });
     }

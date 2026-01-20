@@ -29,8 +29,6 @@ describe('DefaultVirtualScripts', () => {
       expect(firstScript).toMatchObject({ id: key1 });
       expect(secondKey).toBe(key2);
       expect(secondScript).toMatchObject({ id: key2 });
-      expect(virtualScripts.count(VirtualScriptType.LOCAL)).toBe(0);
-      expect(virtualScripts.count(VirtualScriptType.REMOTE)).toBe(2);
     });
   });
 
@@ -45,8 +43,6 @@ describe('DefaultVirtualScripts', () => {
 
       // assert
       expect([...virtualScripts]).toEqual([]);
-      expect(virtualScripts.count(VirtualScriptType.LOCAL)).toBe(0);
-      expect(virtualScripts.count(VirtualScriptType.REMOTE)).toBe(0);
     });
 
     it('should remove only VirtualScriptType.LOCAL scripts when VirtualScriptType.LOCAL type is passed', () => {
@@ -68,8 +64,6 @@ describe('DefaultVirtualScripts', () => {
           ).compile()
         ]
       ]);
-      expect(virtualScripts.count(VirtualScriptType.LOCAL)).toBe(0);
-      expect(virtualScripts.count(VirtualScriptType.REMOTE)).toBe(1);
     });
 
     it('should remove only VirtualScriptType.REMOTE scripts when VirtualScriptType.REMOTE type is passed', () => {
@@ -91,8 +85,6 @@ describe('DefaultVirtualScripts', () => {
           ).compile()
         ]
       ]);
-      expect(virtualScripts.count(VirtualScriptType.LOCAL)).toBe(1);
-      expect(virtualScripts.count(VirtualScriptType.REMOTE)).toBe(0);
     });
   });
 
@@ -119,8 +111,6 @@ describe('DefaultVirtualScripts', () => {
         ]
       ]);
       expect(virtualScripts.size).toBe(1);
-      expect(virtualScripts.count(VirtualScriptType.LOCAL)).toBe(0);
-      expect(virtualScripts.count(VirtualScriptType.REMOTE)).toBe(1);
     });
 
     it('should return true when successfully deleted key', () => {
@@ -133,7 +123,6 @@ describe('DefaultVirtualScripts', () => {
 
       // assert
       expect(deleteRes).toBe(true);
-      expect(virtualScripts.count(VirtualScriptType.LOCAL)).toBe(0);
     });
 
     it('should return false when not found key', () => {
@@ -246,7 +235,6 @@ describe('DefaultVirtualScripts', () => {
       expect(
         virtualScripts.set('first', VirtualScriptType.LOCAL, 'let a = 1;')
       ).toBe(virtualScripts);
-      expect(virtualScripts.count(VirtualScriptType.LOCAL)).toBe(1);
     });
     it('should create and compile VirtualScript, and store it', () => {
       // arrange
@@ -262,7 +250,6 @@ describe('DefaultVirtualScripts', () => {
           new VirtualScript(id, VirtualScriptType.LOCAL, 'let a = 1;').compile()
         ]
       ]);
-      expect(virtualScripts.count(VirtualScriptType.LOCAL)).toBe(1);
     });
     it('should overwrite previously set script when called with the same wildcard', () => {
       // arrange
@@ -283,7 +270,6 @@ describe('DefaultVirtualScripts', () => {
           ).compile()
         ]
       ]);
-      expect(virtualScripts.count(VirtualScriptType.LOCAL)).toBe(0);
     });
   });
 
@@ -301,6 +287,43 @@ describe('DefaultVirtualScripts', () => {
       // assert
       expect(values.next().value).toMatchObject({ id: key1 });
       expect(values.next().value).toMatchObject({ id: key2 });
+    });
+  });
+
+  describe('count', () => {
+    it('should return 0 when no items match', () => {
+      // arrange
+      virtualScripts.set('first', VirtualScriptType.LOCAL, 'let a = 1;');
+
+      // act
+      const count = virtualScripts.count(VirtualScriptType.REMOTE);
+      // assert
+      expect(count).toBe(0);
+    });
+
+    it('should return 0 when the store is empty', () => {
+      // arrange
+      // act
+      const countLocal = virtualScripts.count(VirtualScriptType.LOCAL);
+      const countRemote = virtualScripts.count(VirtualScriptType.REMOTE);
+      // assert
+      expect(countLocal).toBe(0);
+      expect(countRemote).toBe(0);
+    });
+
+    it('should return the number of scripts with the given type', () => {
+      // arrange
+      virtualScripts.set('first', VirtualScriptType.LOCAL, 'let a = 1;');
+      virtualScripts.set('second', VirtualScriptType.REMOTE, 'let a = 2;');
+      virtualScripts.set('third', VirtualScriptType.REMOTE, 'let a = 3;');
+
+      // act
+      const countLocal = virtualScripts.count(VirtualScriptType.LOCAL);
+      const countRemote = virtualScripts.count(VirtualScriptType.REMOTE);
+
+      // assert
+      expect(countLocal).toBe(1);
+      expect(countRemote).toBe(2);
     });
   });
 });
