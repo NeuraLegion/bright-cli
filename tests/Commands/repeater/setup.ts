@@ -83,4 +83,6 @@ export async function teardownAfterEach(
   }
 
   await ctx.api.deleteRepeater(ctx.repeaterId);
+
+  ctx.repeaterId = null;
 }
