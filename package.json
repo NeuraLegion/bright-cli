@@ -1,6 +1,6 @@
 {
   "name": "@brightsec/cli",
-  "version": "13.8.0",
+  "version": "13.9.0-next.19",
   "private": false,
   "repository": {
     "type": "git",
@@ -22,23 +22,20 @@
     ]
   },
   "engines": {
-    "node": ">=20 <=22"
+    "node": ">=22 <=24"
   },
   "dependencies": {
-    "@neuralegion/os-service": "^1.2.6",
-    "@neuralegion/raw-socket": "^1.8.6",
+    "@neuralegion/os-service": "^2.0.5",
+    "@neuralegion/raw-socket": "^2.0.0",
     "@sentry/node": "^7.120.0",
     "ajv": "^6.12.6",
-    "amqplib": "~0.10.2",
     "arch": "^2.2.0",
     "axios": "^1.7.8",
     "better-ajv-errors": "^1.2.0",
     "chalk": "^4.1.2",
     "ci-info": "^3.8.0",
-    "cross-spawn": "7.0.6",
     "fast-content-type-parse": "^1.1.0",
     "find-up": "^5.0.0",
-    "form-data": "^4.0.0",
     "http-proxy-agent": "^7.0.2",
     "https-proxy-agent": "^7.0.4",
     "iconv-lite": "^0.6.3",
@@ -49,7 +46,6 @@
     "semver": "^7.6.0",
     "socket.io-client": "^4.7.1",
     "socket.io-msgpack-parser": "^3.0.2",
-    "socks": "~2.8.3",
     "socks-proxy-agent": "~8.0.2",
     "tslib": "^2.3.1",
     "tsyringe": "~4.6.0",
@@ -59,25 +55,24 @@
   },
   "description": "Bright CLI is a CLI tool that can initialize, stop, poll and maintain scans in Bright solutions.",
   "devDependencies": {
-    "@commitlint/cli": "^19.2.2",
-    "@commitlint/config-conventional": "^19.2.2",
-    "@semantic-release/exec": "^6.0.3",
+    "@commitlint/cli": "^20.3.1",
+    "@commitlint/config-conventional": "^20.3.1",
+    "@semantic-release/exec": "^7.1.0",
     "@semantic-release/git": "^10.0.1",
-    "@types/amqplib": "~0.8.2",
     "@types/har-format": "^1.2.7",
-    "@types/jest": "^29.5.12",
+    "@types/jest": "^30.0.0",
     "@types/js-yaml": "^4.0.2",
     "@types/ms": "^0.7.31",
-    "@types/node": "^16.18.96",
+    "@types/node": "^22.11.7",
     "@types/semver": "^7.5.8",
     "@types/ws": "^7.4.7",
     "@types/yargs": "~16.0.1",
     "@typescript-eslint/eslint-plugin": "^5.33.1",
     "@typescript-eslint/parser": "^5.33.1",
-    "@yao-pkg/pkg": "^5.11.5",
+    "@yao-pkg/pkg": "^6.12.0",
     "axios-retry": "^4.3.0",
     "clean-webpack-plugin": "^4.0.0",
-    "conventional-changelog-conventionalcommits": "^7.0.2",
+    "conventional-changelog-conventionalcommits": "^9.1.0",
     "cross-env": "^7.0.3",
     "eslint": "^8.22.0",
     "eslint-config-prettier": "^8.5.0",
@@ -85,21 +80,20 @@
     "eslint-plugin-import": "^2.26.0",
     "husky": "^8.0.1",
     "is-ci": "^3.0.1",
-    "jest": "^29.7.0",
-    "lint-staged": "^13.0.3",
+    "jest": "^30.2.0",
+    "lint-staged": "^16.2.7",
     "nock": "^13.2.9",
-    "nodemon": "^3.1.0",
     "prettier": "^2.7.1",
-    "semantic-release": "^22.0.12",
-    "terser-webpack-plugin": "^5.3.5",
-    "ts-jest": "^29.1.2",
-    "ts-loader": "^9.3.1",
+    "semantic-release": "^25.0.2",
+    "terser-webpack-plugin": "^5.3.16",
+    "ts-jest": "^29.4.6",
+    "ts-loader": "^9.5.4",
     "ts-mockito": "^2.6.1",
-    "ts-node": "^10.9.1",
-    "tsconfig-paths-webpack-plugin": "^4.0.0",
+    "ts-node": "^10.9.2",
+    "tsconfig-paths-webpack-plugin": "^4.2.0",
     "typescript": "^4.7.4",
-    "webpack": "^5.74.0",
-    "webpack-cli": "^4.10.0",
+    "webpack": "^5.104.1",
+    "webpack-cli": "^6.0.1",
     "webpack-node-externals": "^3.0.0"
   },
   "files": [
@@ -132,16 +126,16 @@
     "assets": [
       "./node_modules/axios/**",
       "./node_modules/win-ca/lib/crypt32-*.node",
-      "./node_modules/@neuralegion/os-service/prebuilds/win32-*/@neuralegion+os-service.abi115.node",
-      "./node_modules/@neuralegion/raw-socket/prebuilds/win32-*/@neuralegion+raw-socket.abi115.node",
-      "./node_modules/@neuralegion/raw-socket/prebuilds/linux-x64/@neuralegion+raw-socket.abi115.glibc.node",
-      "./node_modules/@neuralegion/raw-socket/prebuilds/darwin-x64+arm64/@neuralegion+raw-socket.abi115.node",
+      "./node_modules/@neuralegion/os-service/prebuilds/win32-x64/@neuralegion+os-service.abi127.node",
+      "./node_modules/@neuralegion/raw-socket/prebuilds/win32-x64/@neuralegion+raw-socket.abi127.node",
+      "./node_modules/@neuralegion/raw-socket/prebuilds/linux-x64/@neuralegion+raw-socket.abi127.node",
+      "./node_modules/@neuralegion/raw-socket/prebuilds/darwin-x64+arm64/@neuralegion+raw-socket.abi127.node",
       "./node_modules/rotating-file-stream/**"
     ],
     "targets": [
-      "node20-linux-x64",
-      "node20-macos-x64",
-      "node20-windows-x64"
+      "node22-linux-x64",
+      "node22-macos-x64",
+      "node22-windows-x64"
     ],
     "outputPath": "bin",
     "compress": "Brotli"
@@ -162,6 +156,11 @@
     "build:pkg": "pkg .",
     "prepare": "is-ci || husky install",
     "start": "node -r ts-node/register/transpile-only -r tsconfig-paths/register src/index.ts"
+  },
+  "overrides": {
+    "ts-node": {
+      "diff": "8.0.3"
+    }
   },
   "brightCli": {
     "distribution": "unknown"

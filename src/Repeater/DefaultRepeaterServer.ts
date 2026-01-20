@@ -24,7 +24,6 @@ import io, { Socket } from 'socket.io-client';
 import parser from 'socket.io-msgpack-parser';
 import { captureException, captureMessage } from '@sentry/node';
 import { EventEmitter, once } from 'node:events';
-import Timer = NodeJS.Timer;
 
 export interface DefaultRepeaterServerOptions {
   readonly uri: string;
@@ -95,7 +94,7 @@ export class DefaultRepeaterServer implements RepeaterServer {
     HandlerFunction
   >();
   private latestReconnectionError?: Error;
-  private connectionTimer?: Timer;
+  private connectionTimer?: NodeJS.Timeout;
   private _socket?: Socket<SocketListeningEventMap, SocketEmitEventMap>;
   private connectionAttempts = 0;
 
@@ -133,7 +132,7 @@ export class DefaultRepeaterServer implements RepeaterServer {
     );
 
     const [result]: RepeaterServerDeployedEvent[] = await Promise.race([
-      once(this.socket, SocketEvents.DEPLOYED),
+      once(this.socket as unknown as EventEmitter, SocketEvents.DEPLOYED),
       new Promise<never>((_, reject) =>
         setTimeout(
           reject,
@@ -173,7 +172,7 @@ export class DefaultRepeaterServer implements RepeaterServer {
     this.listenToReservedEvents();
     this.listenToApplicationEvents();
 
-    await once(this.socket, 'connect');
+    await once(this.socket as unknown as EventEmitter, 'connect');
 
     logger.debug('Repeater connected to %s', this.options.uri);
   }

@@ -1,7 +1,15 @@
 # API configuration
 api:
   hostname: app.brightsec.com
+  # Token for authentication (only used if existingSecret is not set)
   token: ""
+  # Use an existing Kubernetes secret instead of creating one
+  # If set, the chart will not create a secret and will use this one instead
+  existingSecret:
+    # Name of the existing secret containing the token
+    name: ""
+    # Key in the secret that contains the token (default: token)
+    key: "token"
 
 # Repeater configuration
 repeater:

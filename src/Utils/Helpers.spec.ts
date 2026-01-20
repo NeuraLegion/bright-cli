@@ -292,4 +292,39 @@ describe('Helpers', () => {
       expect(act).toThrow('First argument must be an instance of Array.');
     });
   });
+
+  describe('portFromURL', () => {
+    it('should return port 80 by default for http', () => {
+      // arrange
+      const url = new URL('http://example.com');
+
+      // act
+      const actual = Helpers.portFromURL(url);
+
+      // assert
+      expect(actual).toEqual('80');
+    });
+
+    it('should return port 443 by default for https', () => {
+      // arrange
+      const url = new URL('https://example.com');
+
+      // act
+      const actual = Helpers.portFromURL(url);
+
+      // assert
+      expect(actual).toEqual('443');
+    });
+
+    it('should return port as-is in URL', () => {
+      // arrange
+      const url = new URL('https://localhost:4443');
+
+      // act
+      const actual = Helpers.portFromURL(url);
+
+      // assert
+      expect(actual).toEqual('4443');
+    });
+  });
 });

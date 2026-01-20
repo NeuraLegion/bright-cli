@@ -12,7 +12,7 @@ inputs:
   version:
     description: 'Node.JS version'
     required: false
-    default: "20"
+    default: "22"
   cache:
     description: 'Cache'
     required: false
@@ -23,7 +23,7 @@ runs:
   using: 'composite'
   steps:
     - name: Set Node.js
-      uses: actions/setup-node@v3
+      uses: actions/setup-node@v4
       with:
         node-version: ${{ inputs.version }}
         cache: ${{ inputs.cache }}

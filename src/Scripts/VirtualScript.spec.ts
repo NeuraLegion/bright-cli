@@ -25,15 +25,13 @@ describe('VirtualScript', () => {
       it(`should throw an error if "${input}" is supplied as ID`, () => {
         expect(
           () => new VirtualScript(input, VirtualScriptType.REMOTE, 'let a = 1;')
-        ).toThrowError();
+        ).toThrow();
       })
     );
 
     [undefined, null].forEach((input) =>
       it(`should throw an error if "${input}" is supplied as type`, () => {
-        expect(
-          () => new VirtualScript('123', input, 'let a = 1;')
-        ).toThrowError();
+        expect(() => new VirtualScript('123', input, 'let a = 1;')).toThrow();
       })
     );
 
@@ -41,7 +39,7 @@ describe('VirtualScript', () => {
       it(`should throw an error if "${input}" is supplied as code`, () => {
         expect(
           () => new VirtualScript('123', VirtualScriptType.REMOTE, input)
-        ).toThrowError();
+        ).toThrow();
       })
     );
   });
@@ -138,7 +136,7 @@ describe('VirtualScript', () => {
       const execPromise = virtualScript.exec('handle');
 
       // assert
-      await expect(execPromise).rejects.toThrowError();
+      await expect(execPromise).rejects.toThrow();
     });
 
     it('should throw when script has not been compiled before exec', async () => {
@@ -153,7 +151,7 @@ describe('VirtualScript', () => {
       const execPromise = virtualScript.exec('handle');
 
       // assert
-      await expect(execPromise).rejects.toThrowError();
+      await expect(execPromise).rejects.toThrow();
     });
   });
 });

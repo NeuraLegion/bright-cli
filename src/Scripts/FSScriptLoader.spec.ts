@@ -67,7 +67,7 @@ describe('FSScriptLoader', () => {
       });
 
       // assert
-      await expect(loadPromise).rejects.toThrowError();
+      await expect(loadPromise).rejects.toThrow();
 
       verify(spiedLogger.debug(anyString())).once();
     });
