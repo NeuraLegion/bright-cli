@@ -288,4 +288,43 @@ describe('DefaultVirtualScripts', () => {
       expect(values.next().value).toMatchObject({ id: key2 });
     });
   });
+
+  describe('count', () => {
+    it('should return 0 when no items match', () => {
+      // arrange
+      virtualScripts.set('first', VirtualScriptType.LOCAL, 'let a = 1;');
+
+      // act
+      const count = virtualScripts.count(VirtualScriptType.REMOTE);
+
+      // assert
+      expect(count).toBe(0);
+    });
+
+    it('should return 0 when the store is empty', () => {
+      // arrange
+      // act
+      const countLocal = virtualScripts.count(VirtualScriptType.LOCAL);
+      const countRemote = virtualScripts.count(VirtualScriptType.REMOTE);
+
+      // assert
+      expect(countLocal).toBe(0);
+      expect(countRemote).toBe(0);
+    });
+
+    it('should return the number of scripts with the given type', () => {
+      // arrange
+      virtualScripts.set('first', VirtualScriptType.LOCAL, 'let a = 1;');
+      virtualScripts.set('second', VirtualScriptType.REMOTE, 'let a = 2;');
+      virtualScripts.set('third', VirtualScriptType.REMOTE, 'let a = 3;');
+
+      // act
+      const countLocal = virtualScripts.count(VirtualScriptType.LOCAL);
+      const countRemote = virtualScripts.count(VirtualScriptType.REMOTE);
+
+      // assert
+      expect(countLocal).toBe(1);
+      expect(countRemote).toBe(2);
+    });
+  });
 });
