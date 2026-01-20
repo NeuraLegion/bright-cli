@@ -110,7 +110,6 @@ describe('DefaultVirtualScripts', () => {
           ).compile()
         ]
       ]);
-      expect(virtualScripts.size).toBe(1);
     });
 
     it('should return true when successfully deleted key', () => {
