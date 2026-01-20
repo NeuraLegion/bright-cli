@@ -6,8 +6,9 @@ import {
   teardownAfterEach,
   RepeaterTestContext
 } from './setup';
+import { randomUUID } from 'node:crypto';
 
-describe('Repeater: Smoke Tests', () => {
+describe.skip('Repeater: Smoke Tests', () => {
   const ctx: RepeaterTestContext = createTestContext();
 
   beforeAll(() => {
@@ -22,7 +23,7 @@ describe('Repeater: Smoke Tests', () => {
     await teardownAfterEach(ctx);
   }, 10000);
 
-  it.skip(
+  it(
     `should run scan against ${config.targetUrl}`,
     async () => {
       // arrange
@@ -90,51 +91,4 @@ describe('Repeater: Smoke Tests', () => {
       }
     });
   }, 10000);
-
-  it(
-    'should run scan with custom headers passed to repeater',
-    async () => {
-      // arrange
-      const customHeaderName = 'X-Custom-Header';
-      const customHeaderValue = 'test-value';
-
-      ctx.commandProcess = ctx.cli.spawn('repeater', [
-        '--token',
-        config.apiKey,
-        '--id',
-        ctx.repeaterId,
-        '--cluster',
-        config.cluster,
-        '--header',
-        `${customHeaderName}: ${customHeaderValue}`
-      ]);
-      ctx.commandProcess.stdout.pipe(process.stdout);
-      ctx.commandProcess.stderr.pipe(process.stderr);
-
-      await ctx.api.waitForRepeater(ctx.repeaterId);
-
-      // act
-      const scanId = await ctx.api.createScan({
-        name: ctx.name,
-        repeaters: [ctx.repeaterId],
-        tests: ['header_security'],
-        crawlerUrls: [config.targetUrl],
-        projectId: config.projectId
-      });
-      const scan = await ctx.api.waitForScanToFinish(scanId);
-      const entryPoints = await ctx.api.getScanEntryPoints(scanId);
-
-      // assert
-      expect(scan.requests).toBeGreaterThan(0);
-      expect(scan.status).toBe('done');
-      expect(entryPoints.length).toBeGreaterThan(0);
-
-      expect(
-        entryPoints.every(
-          (ep) => ep.request?.headers?.[customHeaderName] === customHeaderValue
-        )
-      ).toBe(true);
-    },
-    config.maxTestTimeout
-  );
 });

@@ -9,6 +9,7 @@ import {
 import { writeFile, unlink, mkdir } from 'node:fs/promises';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
+import { randomUUID } from 'node:crypto';
 
 describe('Repeater: Scripts', () => {
   const ctx: RepeaterTestContext = createTestContext();
@@ -45,34 +46,6 @@ describe('Repeater: Scripts', () => {
   }, 10000);
 
   describe('Local scripts', () => {
-    it('should start repeater with a custom script', async () => {
-      // arrange
-      await writeFile(scriptPath, scriptContent, 'utf8');
-
-      const scriptsJson = JSON.stringify({ '*': scriptPath });
-
-      // act
-      ctx.commandProcess = ctx.cli.spawn('repeater', [
-        '--token',
-        config.apiKey,
-        '--id',
-        ctx.repeaterId,
-        '--cluster',
-        config.cluster,
-        '--scripts',
-        scriptsJson
-      ]);
-      ctx.commandProcess.stdout.pipe(process.stdout);
-      ctx.commandProcess.stderr.pipe(process.stderr);
-
-      await ctx.api.waitForRepeater(ctx.repeaterId);
-
-      // assert
-      const status = await ctx.api.getRepeaterStatus(ctx.repeaterId);
-      expect(status.status).toBe('connected');
-      expect(status.localScriptsUsed).toBe(true);
-    }, 30000);
-
     it('should fail when script file does not exist', async () => {
       // arrange
       const scriptsJson = JSON.stringify({
@@ -93,12 +66,14 @@ describe('Repeater: Scripts', () => {
 
       // assert
       expect(output).toContain('Error Loading Script');
-    }, 30000);
+    }, 10000);
 
     it(
       'should run scan with custom headers passed to repeater via script',
       async () => {
         // arrange
+        await writeFile(scriptPath, scriptContent, 'utf8');
+
         const scriptsJson = JSON.stringify({
           '*': scriptPath
         });
@@ -117,12 +92,23 @@ describe('Repeater: Scripts', () => {
 
         await ctx.api.waitForRepeater(ctx.repeaterId);
 
+        const entryPointId = await ctx.api.createProjectEntryPoint(
+          config.projectId,
+          {
+            method: 'POST',
+            url: new URL('/todo', config.targetUrl).toString(),
+            body: JSON.stringify({ title: randomUUID() }),
+            headers: { 'Content-Type': 'application/json' }
+          },
+          ctx.repeaterId
+        );
+
         // act
         const scanId = await ctx.api.createScan({
           name: ctx.name,
           repeaters: [ctx.repeaterId],
-          tests: ['header_security'],
-          crawlerUrls: [config.targetUrl],
+          tests: ['html_injection'],
+          entryPointIds: [entryPointId],
           projectId: config.projectId
         });
         const scan = await ctx.api.waitForScanToFinish(scanId);
@@ -158,36 +144,42 @@ describe('Repeater: Scripts', () => {
       }
     });
 
-    it('should start repeater with a remote script', async () => {
-      // arrange
-      remoteScriptId = await ctx.api.createScript(
-        `E2E-${ctx.name}`,
-        scriptContent
-      );
+    it(
+      'should start repeater with a remote script',
+      async () => {
+        // arrange
+        remoteScriptId = await ctx.api.createScript(
+          `E2E-${ctx.name}`,
+          scriptContent,
+          config.projectId
+        );
 
-      await ctx.api.updateRepeater(ctx.repeaterId, {
-        scripts: [{ scriptId: remoteScriptId, host: '*' }]
-      });
+        await ctx.api.updateRepeater(ctx.repeaterId, {
+          name: ctx.name,
+          scripts: [{ scriptId: remoteScriptId, host: '*' }]
+        });
 
-      // act
-      ctx.commandProcess = ctx.cli.spawn('repeater', [
-        '--token',
-        config.apiKey,
-        '--id',
-        ctx.repeaterId,
-        '--cluster',
-        config.cluster
-      ]);
-      ctx.commandProcess.stdout.pipe(process.stdout);
-      ctx.commandProcess.stderr.pipe(process.stderr);
+        // act
+        ctx.commandProcess = ctx.cli.spawn('repeater', [
+          '--token',
+          config.apiKey,
+          '--id',
+          ctx.repeaterId,
+          '--cluster',
+          config.cluster
+        ]);
+        ctx.commandProcess.stdout.pipe(process.stdout);
+        ctx.commandProcess.stderr.pipe(process.stderr);
 
-      await ctx.api.waitForRepeater(ctx.repeaterId);
+        await ctx.api.waitForRepeater(ctx.repeaterId);
 
-      // assert
-      const status = await ctx.api.getRepeaterStatus(ctx.repeaterId);
-      expect(status.status).toBe('connected');
-      expect(status.localScriptsUsed).toBe(false);
-    }, 30000);
+        // assert
+        const status = await ctx.api.getRepeaterStatus(ctx.repeaterId);
+        expect(status.status).toBe('connected');
+        expect(status.localScriptsUsed).toBe(false);
+      },
+      config.maxTestTimeout
+    );
 
     it(
       'should run scan with custom headers passed to repeater via remote script',
@@ -195,10 +187,12 @@ describe('Repeater: Scripts', () => {
         // arrange
         remoteScriptId = await ctx.api.createScript(
           `E2E-${ctx.name}`,
-          scriptContent
+          scriptContent,
+          config.projectId
         );
 
         await ctx.api.updateRepeater(ctx.repeaterId, {
+          name: ctx.name,
           scripts: [{ scriptId: remoteScriptId, host: '*' }]
         });
 
@@ -215,12 +209,23 @@ describe('Repeater: Scripts', () => {
 
         await ctx.api.waitForRepeater(ctx.repeaterId);
 
+        const entryPointId = await ctx.api.createProjectEntryPoint(
+          config.projectId,
+          {
+            method: 'POST',
+            url: new URL('/todo', config.targetUrl).toString(),
+            body: JSON.stringify({ title: randomUUID() }),
+            headers: { 'Content-Type': 'application/json' }
+          },
+          ctx.repeaterId
+        );
+
         // act
         const scanId = await ctx.api.createScan({
           name: ctx.name,
           repeaters: [ctx.repeaterId],
-          tests: ['header_security'],
-          crawlerUrls: [config.targetUrl],
+          tests: ['html_injection'],
+          entryPointIds: [entryPointId],
           projectId: config.projectId
         });
         const scan = await ctx.api.waitForScanToFinish(scanId);

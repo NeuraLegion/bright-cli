@@ -20,7 +20,8 @@ export interface WaitForRepeaterStatusOptions extends WaitOptions {
 
 export interface CreateScanProps {
   name: string;
-  crawlerUrls: string[];
+  crawlerUrls?: string[];
+  entryPointIds?: string[];
   tests?: string[];
   repeaters?: string[];
   slowEpTimeout?: number;
@@ -118,31 +119,67 @@ export class Api {
   }
 
   public async getScanEntryPoints(scanId: string) {
-    const { data } = await this.client.get<
-      {
+    const { data } = await this.client.get<{
+      items: {
         id: string;
         request?: {
           headers?: Record<string, string>;
         };
-      }[]
-    >(`/api/v2/scans/${scanId}/entry-points`);
+      }[];
+    }>(`/api/v2/scans/${scanId}/entry-points`);
 
-    return data;
+    return data.items;
   }
 
   public async createRepeater(
     name: string,
     projectId?: string
   ): Promise<string> {
-    const { data } = await this.client.post<{ id: string }>(
-      '/api/v1/repeaters',
-      {
-        name,
-        ...(projectId ? { projectIds: [projectId] } : {})
+    try {
+      const { data } = await this.client.post<{ id: string }>(
+        '/api/v1/repeaters',
+        {
+          name,
+          ...(projectId ? { projectIds: [projectId] } : {})
+        }
+      );
+
+      return data.id;
+    } catch (error) {
+      const is409 = axios.isAxiosError(error) && error.response?.status === 409;
+      if (!is409) {
+        throw error;
       }
+
+      // Repeater with this name already exists - find and delete it, then retry
+      const existingRepeater = await this.findRepeaterByName(name);
+      if (!existingRepeater) {
+        throw error;
+      }
+
+      await this.deleteRepeater(existingRepeater.id);
+
+      // Retry creation
+      const { data } = await this.client.post<{ id: string }>(
+        '/api/v1/repeaters',
+        {
+          name,
+          ...(projectId ? { projectIds: [projectId] } : {})
+        }
+      );
+
+      return data.id;
+    }
+  }
+
+  public async findRepeaterByName(
+    name: string
+  ): Promise<{ id: string; name: string } | undefined> {
+    const { data } = await this.client.get<{ id: string; name: string }[]>(
+      '/api/v1/repeaters'
     );
 
-    return data.id;
+    return data.find((r) => r.name === name);
   }
 
   public async deleteRepeater(id: string) {
@@ -156,13 +193,21 @@ export class Api {
       scripts?: { scriptId: string; host?: string }[];
     }
   ) {
-    await this.client.put(`/api/v1/repeaters/${id}`, data);
+    await this.client.put(`/api/v1/repeaters/${id}`, {
+      ...data,
+      active: true
+    });
   }
 
-  public async createScript(name: string, code: string): Promise<string> {
+  public async createScript(
+    name: string,
+    code: string,
+    projectId?: string
+  ): Promise<string> {
     const { data } = await this.client.post<{ id: string }>('/api/v1/scripts', {
       name,
-      code
+      code,
+      ...(projectId ? { projectIds: [projectId] } : {})
     });
 
     return data.id;
@@ -262,6 +307,58 @@ export class Api {
 
   public async stopScan(scanId: string) {
     await this.client.get(`/api/v1/scans/${scanId}/stop`);
+  }
+
+  public async createProjectEntryPoint(
+    projectId: string,
+    request: {
+      method: string;
+      url: string;
+      headers?: Record<string, string>;
+      body?: string;
+    },
+    repeaterId?: string
+  ): Promise<string> {
+    try {
+      const response = await this.client.post(
+        `/api/v2/projects/${projectId}/entry-points`,
+        {
+          request,
+          ...(repeaterId ? { repeaterId } : {})
+        }
+      );
+
+      return response.data?.id;
+    } catch (error) {
+      const is409 = axios.isAxiosError(error) && error.response?.status === 409;
+      if (!is409) {
+        throw error;
+      }
+
+      // Entry point already exists, get ID from Location header
+      const location = error.response.headers['location'];
+      if (!location) {
+        throw new Error('409 response but no Location header found');
+      }
+
+      const match = location.match(/entry-points\/([^/]+)$/);
+      if (!match) {
+        throw new Error(
+          '409 response but Location header has unexpected format'
+        );
+      }
+
+      return match[1];
+    }
+  }
+
+  public async deleteProjectEntryPoint(
+    projectId: string,
+    entryPointId: string
+  ): Promise<void> {
+    await this.client.delete(
+      `/api/v2/projects/${projectId}/entry-points/${entryPointId}`
+    );
   }
 
   private getRandomIP() {

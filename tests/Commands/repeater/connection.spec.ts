@@ -44,7 +44,7 @@ describe('Repeater: Connection Lifecycle', () => {
     // assert
     const statusAfter = await ctx.api.getRepeaterStatus(ctx.repeaterId);
     expect(statusAfter.status).toBe('connected');
-  }, 30000);
+  }, 10000);
 
   it('should disconnect repeater when process is terminated', async () => {
     // arrange
@@ -77,7 +77,7 @@ describe('Repeater: Connection Lifecycle', () => {
 
     // cleanup
     ctx.commandProcess = null;
-  }, 30000);
+  }, 10000);
 
   it('should handle attempt to connect with same repeater ID twice', async () => {
     // arrange
