@@ -118,17 +118,29 @@ export class Api {
     return data;
   }
 
-  public async getScanEntryPoints(scanId: string) {
-    const { data } = await this.client.get<{
-      items: {
-        id: string;
-        request?: {
-          headers?: Record<string, string>;
-        };
-      }[];
-    }>(`/api/v2/scans/${scanId}/entry-points`);
+  public async getScanEntryPoint(scanId: string, entryPointId: string) {
+    const { data: listData } = await this.client.get<{
+      items: { id: string; projectEntryPointId?: string }[];
+    }>(
+      `/api/v2/scans/${scanId}/entry-points?targetEntryPointId[]=${entryPointId}`
+    );
 
-    return data.items;
+    const item = listData.items[0];
+
+    if (!item) {
+      throw new Error(
+        `Scan entry point not found for project entry point ${entryPointId}`
+      );
+    }
+
+    const { data } = await this.client.get<{
+      id: string;
+      request?: {
+        headers?: Record<string, string>;
+      };
+    }>(`/api/v1/scans/${scanId}/entry-points/${item.id}`);
+
+    return data;
   }
 
   public async createRepeater(

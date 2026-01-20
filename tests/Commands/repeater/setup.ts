@@ -13,6 +13,7 @@ export const config = {
   projectId: process.env.E2E_PROJECT_ID,
   targetUrl: process.env['E2E_REPEATER_TARGET_URL'],
   targetCmd: process.env['E2E_REPEATER_TARGET_CMD'],
+  wiremockUrl: process.env['E2E_WIREMOCK_URL'] ?? 'http://localhost:8080',
   maxTestTimeout: parseInt(process.env.E2E_TEST_TIMEOUT, 10) * 1000
 };
 

@@ -6,10 +6,10 @@ import {
   teardownAfterEach,
   RepeaterTestContext
 } from './setup';
+import { wiremock } from '../../Setup/wiremock';
 import { writeFile, unlink, mkdir } from 'node:fs/promises';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
-import { randomUUID } from 'node:crypto';
 
 describe('Repeater: Scripts', () => {
   const ctx: RepeaterTestContext = createTestContext();
@@ -34,6 +34,7 @@ describe('Repeater: Scripts', () => {
 
   beforeEach(async () => {
     await setupBeforeEach(ctx);
+    await wiremock.clearAllRequests();
   }, 10000);
 
   afterEach(async () => {
@@ -42,17 +43,16 @@ describe('Repeater: Scripts', () => {
     } catch {
       // ignore
     }
+    await wiremock.clearAllMappings();
     await teardownAfterEach(ctx);
   }, 10000);
 
   describe('Local scripts', () => {
     it('should fail when script file does not exist', async () => {
-      // arrange
       const scriptsJson = JSON.stringify({
         '*': '/non/existent/script.js'
       });
 
-      // act
       const output = await ctx.cli.exec('repeater', [
         '--token',
         config.apiKey,
@@ -64,15 +64,25 @@ describe('Repeater: Scripts', () => {
         scriptsJson
       ]);
 
-      // assert
       expect(output).toContain('Error Loading Script');
     }, 10000);
 
     it(
       'should run scan with custom headers passed to repeater via script',
       async () => {
-        // arrange
         await writeFile(scriptPath, scriptContent, 'utf8');
+
+        await wiremock.register(
+          {
+            method: 'GET',
+            endpoint: '/test-endpoint'
+          },
+          {
+            status: 200,
+            body: 'OK',
+            headers: { 'Content-Type': 'text/plain' }
+          }
+        );
 
         const scriptsJson = JSON.stringify({
           '*': scriptPath
@@ -95,36 +105,26 @@ describe('Repeater: Scripts', () => {
         const entryPointId = await ctx.api.createProjectEntryPoint(
           config.projectId,
           {
-            method: 'POST',
-            url: new URL('/todo', config.targetUrl).toString(),
-            body: JSON.stringify({ title: randomUUID() }),
-            headers: { 'Content-Type': 'application/json' }
+            method: 'GET',
+            url: `${config.wiremockUrl}/test-endpoint`
           },
           ctx.repeaterId
         );
 
-        // act
         const scanId = await ctx.api.createScan({
           name: ctx.name,
           repeaters: [ctx.repeaterId],
-          tests: ['html_injection'],
+          tests: ['header_security'],
           entryPointIds: [entryPointId],
           projectId: config.projectId
         });
-        const scan = await ctx.api.waitForScanToFinish(scanId);
-        const entryPoints = await ctx.api.getScanEntryPoints(scanId);
+        await ctx.api.waitForScanToFinish(scanId);
 
-        // assert
-        expect(scan.requests).toBeGreaterThan(0);
-        expect(scan.status).toBe('done');
-        expect(entryPoints.length).toBeGreaterThan(0);
-
-        expect(
-          entryPoints.every(
-            (ep) =>
-              ep.request?.headers?.[customHeaderName] === customHeaderValue
-          )
-        ).toBe(true);
+        await wiremock.expectRequest({
+          method: 'GET',
+          endpoint: '/test-endpoint',
+          headers: { [customHeaderName]: customHeaderValue }
+        });
       },
       config.maxTestTimeout
     );
@@ -147,7 +147,6 @@ describe('Repeater: Scripts', () => {
     it(
       'should start repeater with a remote script',
       async () => {
-        // arrange
         remoteScriptId = await ctx.api.createScript(
           `E2E-${ctx.name}`,
           scriptContent,
@@ -159,7 +158,6 @@ describe('Repeater: Scripts', () => {
           scripts: [{ scriptId: remoteScriptId, host: '*' }]
         });
 
-        // act
         ctx.commandProcess = ctx.cli.spawn('repeater', [
           '--token',
           config.apiKey,
@@ -173,7 +171,6 @@ describe('Repeater: Scripts', () => {
 
         await ctx.api.waitForRepeater(ctx.repeaterId);
 
-        // assert
         const status = await ctx.api.getRepeaterStatus(ctx.repeaterId);
         expect(status.status).toBe('connected');
         expect(status.localScriptsUsed).toBe(false);
@@ -184,7 +181,6 @@ describe('Repeater: Scripts', () => {
     it(
       'should run scan with custom headers passed to repeater via remote script',
       async () => {
-        // arrange
         remoteScriptId = await ctx.api.createScript(
           `E2E-${ctx.name}`,
           scriptContent,
@@ -195,6 +191,18 @@ describe('Repeater: Scripts', () => {
           name: ctx.name,
           scripts: [{ scriptId: remoteScriptId, host: '*' }]
         });
+
+        await wiremock.register(
+          {
+            method: 'GET',
+            endpoint: '/test-endpoint'
+          },
+          {
+            status: 200,
+            body: 'OK',
+            headers: { 'Content-Type': 'text/plain' }
+          }
+        );
 
         ctx.commandProcess = ctx.cli.spawn('repeater', [
           '--token',
@@ -212,36 +220,26 @@ describe('Repeater: Scripts', () => {
         const entryPointId = await ctx.api.createProjectEntryPoint(
           config.projectId,
           {
-            method: 'POST',
-            url: new URL('/todo', config.targetUrl).toString(),
-            body: JSON.stringify({ title: randomUUID() }),
-            headers: { 'Content-Type': 'application/json' }
+            method: 'GET',
+            url: `${config.wiremockUrl}/test-endpoint`
           },
           ctx.repeaterId
         );
 
-        // act
         const scanId = await ctx.api.createScan({
           name: ctx.name,
           repeaters: [ctx.repeaterId],
-          tests: ['html_injection'],
+          tests: ['header_security'],
           entryPointIds: [entryPointId],
           projectId: config.projectId
         });
-        const scan = await ctx.api.waitForScanToFinish(scanId);
-        const entryPoints = await ctx.api.getScanEntryPoints(scanId);
+        await ctx.api.waitForScanToFinish(scanId);
 
-        // assert
-        expect(scan.requests).toBeGreaterThan(0);
-        expect(scan.status).toBe('done');
-        expect(entryPoints.length).toBeGreaterThan(0);
-
-        expect(
-          entryPoints.every(
-            (ep) =>
-              ep.request?.headers?.[customHeaderName] === customHeaderValue
-          )
-        ).toBe(true);
+        await wiremock.expectRequest({
+          method: 'GET',
+          endpoint: '/test-endpoint',
+          headers: { [customHeaderName]: customHeaderValue }
+        });
       },
       config.maxTestTimeout
     );

@@ -6,7 +6,7 @@ import {
   teardownAfterEach,
   RepeaterTestContext
 } from './setup';
-import { randomUUID } from 'node:crypto';
+import { wiremock } from '../../Setup/wiremock';
 
 describe('Repeater: Header', () => {
   const ctx: RepeaterTestContext = createTestContext();
@@ -17,18 +17,31 @@ describe('Repeater: Header', () => {
 
   beforeEach(async () => {
     await setupBeforeEach(ctx);
+    await wiremock.clearAllRequests();
   }, 10000);
 
   afterEach(async () => {
+    await wiremock.clearAllMappings();
     await teardownAfterEach(ctx);
   }, 10000);
 
   it(
     'should run scan with custom headers passed to repeater',
     async () => {
-      // arrange
       const customHeaderName = 'X-Custom-Header';
       const customHeaderValue = 'test-value';
+
+      await wiremock.register(
+        {
+          method: 'GET',
+          endpoint: '/test-endpoint'
+        },
+        {
+          status: 200,
+          body: 'OK',
+          headers: { 'Content-Type': 'text/plain' }
+        }
+      );
 
       ctx.commandProcess = ctx.cli.spawn('repeater', [
         '--token',
@@ -48,35 +61,26 @@ describe('Repeater: Header', () => {
       const entryPointId = await ctx.api.createProjectEntryPoint(
         config.projectId,
         {
-          method: 'POST',
-          url: new URL('/todo', config.targetUrl).toString(),
-          body: JSON.stringify({ title: randomUUID() }),
-          headers: { 'Content-Type': 'application/json' }
+          method: 'GET',
+          url: `${config.wiremockUrl}/test-endpoint`
         },
         ctx.repeaterId
       );
 
-      // act
       const scanId = await ctx.api.createScan({
         name: ctx.name,
         repeaters: [ctx.repeaterId],
-        tests: ['html_injection'],
+        tests: ['header_security'],
         entryPointIds: [entryPointId],
         projectId: config.projectId
       });
-      const scan = await ctx.api.waitForScanToFinish(scanId);
-      const entryPoints = await ctx.api.getScanEntryPoints(scanId);
+      await ctx.api.waitForScanToFinish(scanId);
 
-      // assert
-      expect(scan.requests).toBeGreaterThan(0);
-      expect(scan.status).toBe('done');
-      expect(entryPoints.length).toBeGreaterThan(0);
-
-      expect(
-        entryPoints.every(
-          (ep) => ep.request?.headers?.[customHeaderName] === customHeaderValue
-        )
-      ).toBe(true);
+      await wiremock.expectRequest({
+        method: 'GET',
+        endpoint: '/test-endpoint',
+        headers: { [customHeaderName]: customHeaderValue }
+      });
     },
     config.maxTestTimeout
   );

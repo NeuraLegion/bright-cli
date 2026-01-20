@@ -6,7 +6,6 @@ import {
   teardownAfterEach,
   RepeaterTestContext
 } from './setup';
-import { randomUUID } from 'node:crypto';
 
 describe.skip('Repeater: Smoke Tests', () => {
   const ctx: RepeaterTestContext = createTestContext();
