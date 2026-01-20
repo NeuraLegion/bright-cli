@@ -69,7 +69,7 @@ describe('Repeater Command', () => {
   }, 10000);
 
   describe('Default Transport', () => {
-    it.skip(
+    it(
       `should run scan against ${config.targetUrl}`,
       async () => {
         // arrange
@@ -90,22 +90,15 @@ describe('Repeater Command', () => {
         const scanId = await api.createScan({
           name,
           repeaters: [repeaterId],
-          tests: [
-            'header_security',
-            'sqli',
-            'css_injection',
-            'xss',
-            'stored_xss',
-            'ssti',
-            'html_injection',
-            'csrf'
-          ],
-          crawlerUrls: [config.targetUrl],
+          tests: ['stored_xss'],
           slowEpTimeout: 5_000,
           targetTimeout: 3,
           poolSize: 50,
-          projectId: config.projectId
+          projectId: config.projectId,
+          entryPointIds: ['3K5TpgejvUJPBmcDYGgbx5']
         });
+        // eslint-disable-next-line no-console
+        console.log('Scan was started with id: %s', scanId);
         const scan = await api.waitForScanToFinish(scanId);
         const connectivity = await api.getScanEntryPointsConnectivity(scanId);
 

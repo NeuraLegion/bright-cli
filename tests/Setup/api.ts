@@ -16,13 +16,14 @@ export interface WaitOptions {
 
 export interface CreateScanProps {
   name: string;
-  crawlerUrls: string[];
+  crawlerUrls?: string[];
   tests?: string[];
   repeaters?: string[];
   slowEpTimeout?: number;
   targetTimeout?: number;
   poolSize?: number;
   projectId?: string;
+  entryPointIds?: string[];
 }
 
 export class Api {
