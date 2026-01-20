@@ -296,6 +296,7 @@ describe('DefaultVirtualScripts', () => {
 
       // act
       const count = virtualScripts.count(VirtualScriptType.REMOTE);
+
       // assert
       expect(count).toBe(0);
     });
@@ -305,6 +306,7 @@ describe('DefaultVirtualScripts', () => {
       // act
       const countLocal = virtualScripts.count(VirtualScriptType.LOCAL);
       const countRemote = virtualScripts.count(VirtualScriptType.REMOTE);
+
       // assert
       expect(countLocal).toBe(0);
       expect(countRemote).toBe(0);
