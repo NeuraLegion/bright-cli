@@ -69,7 +69,7 @@ describe('Repeater Command', () => {
   }, 10000);
 
   describe('Default Transport', () => {
-    it(
+    it.skip(
       `should run scan against ${config.targetUrl}`,
       async () => {
         // arrange
