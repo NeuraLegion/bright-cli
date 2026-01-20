@@ -76,29 +76,7 @@ describe('Repeater: Scripts', () => {
     it('should fail when script file does not exist', async () => {
       // arrange
       const scriptsJson = JSON.stringify({
-        '*.example.com': '/non/existent/script.js'
-      });
-
-      // act
-      const output = await ctx.cli.exec('repeater', [
-        '--token',
-        config.apiKey,
-        '--id',
-        ctx.repeaterId,
-        '--cluster',
-        config.cluster,
-        '--scripts',
-        scriptsJson
-      ]);
-
-      // assert
-      expect(output).toContain('Error Loading Script');
-    }, 30000);
-
-    it('should set custom header via script', async () => {
-      // arrange
-      const scriptsJson = JSON.stringify({
-        '*.example.com': '/non/existent/script.js'
+        '*': '/non/existent/script.js'
       });
 
       // act

@@ -51,7 +51,7 @@ export class Cli {
     const execArgs = [...this.execArgs].concat(args);
 
     return spawn(this.execPath, execArgs, {
-      shell: true,
+      shell: false,
       stdio: ['ignore', 'pipe', 'pipe'],
       env: {
         ...process.env,
