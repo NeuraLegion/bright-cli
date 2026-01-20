@@ -1,0 +1,140 @@
+import {
+  config,
+  createTestContext,
+  setupBeforeAll,
+  setupBeforeEach,
+  teardownAfterEach,
+  RepeaterTestContext
+} from './setup';
+
+describe('Repeater: Smoke Tests', () => {
+  const ctx: RepeaterTestContext = createTestContext();
+
+  beforeAll(() => {
+    setupBeforeAll(ctx);
+  });
+
+  beforeEach(async () => {
+    await setupBeforeEach(ctx);
+  }, 10000);
+
+  afterEach(async () => {
+    await teardownAfterEach(ctx);
+  }, 10000);
+
+  it.skip(
+    `should run scan against ${config.targetUrl}`,
+    async () => {
+      // arrange
+      ctx.commandProcess = ctx.cli.spawn('repeater', [
+        '--token',
+        config.apiKey,
+        '--id',
+        ctx.repeaterId,
+        '--cluster',
+        config.cluster
+      ]);
+      ctx.commandProcess.stdout.pipe(process.stdout);
+      ctx.commandProcess.stderr.pipe(process.stderr);
+
+      await ctx.api.waitForRepeater(ctx.repeaterId);
+
+      // act
+      const scanId = await ctx.api.createScan({
+        name: ctx.name,
+        repeaters: [ctx.repeaterId],
+        tests: [
+          'header_security',
+          'sqli',
+          'css_injection',
+          'xss',
+          'stored_xss',
+          'ssti',
+          'html_injection',
+          'csrf'
+        ],
+        crawlerUrls: [config.targetUrl],
+        projectId: config.projectId
+      });
+      const scan = await ctx.api.waitForScanToFinish(scanId);
+      const connectivity = await ctx.api.getScanEntryPointsConnectivity(scanId);
+
+      // assert
+      expect(scan.requests).toBeGreaterThan(0);
+      expect(scan.entryPoints).toBeGreaterThan(0);
+      expect(connectivity.ok).toBeGreaterThan(0);
+      expect(scan.targets).toEqual([ctx.targetHost]);
+      expect(scan.status).toBe('done');
+    },
+    config.maxTestTimeout
+  );
+
+  it('should fail to start scan when repeater is not connected', async () => {
+    // arrange
+
+    // act
+    const act = () =>
+      ctx.api.createScan({
+        name: ctx.name,
+        repeaters: [ctx.repeaterId],
+        crawlerUrls: [config.targetUrl],
+        projectId: config.projectId
+      });
+
+    // assert
+    await expect(act).rejects.toThrow('Request failed with status code 400');
+    await expect(act).rejects.toMatchObject({
+      response: {
+        status: 400,
+        data: 'The repeater used for the scan is not connected. Connect the repeater and restart the scan.'
+      }
+    });
+  }, 10000);
+
+  it(
+    'should run scan with custom headers passed to repeater',
+    async () => {
+      // arrange
+      const customHeaderName = 'X-Custom-Header';
+      const customHeaderValue = 'test-value';
+
+      ctx.commandProcess = ctx.cli.spawn('repeater', [
+        '--token',
+        config.apiKey,
+        '--id',
+        ctx.repeaterId,
+        '--cluster',
+        config.cluster,
+        '--header',
+        `${customHeaderName}: ${customHeaderValue}`
+      ]);
+      ctx.commandProcess.stdout.pipe(process.stdout);
+      ctx.commandProcess.stderr.pipe(process.stderr);
+
+      await ctx.api.waitForRepeater(ctx.repeaterId);
+
+      // act
+      const scanId = await ctx.api.createScan({
+        name: ctx.name,
+        repeaters: [ctx.repeaterId],
+        tests: ['header_security'],
+        crawlerUrls: [config.targetUrl],
+        projectId: config.projectId
+      });
+      const scan = await ctx.api.waitForScanToFinish(scanId);
+      const entryPoints = await ctx.api.getScanEntryPoints(scanId);
+
+      // assert
+      expect(scan.requests).toBeGreaterThan(0);
+      expect(scan.status).toBe('done');
+      expect(entryPoints.length).toBeGreaterThan(0);
+
+      expect(
+        entryPoints.every(
+          (ep) => ep.request?.headers?.[customHeaderName] === customHeaderValue
+        )
+      ).toBe(true);
+    },
+    config.maxTestTimeout
+  );
+});

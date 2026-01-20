@@ -14,6 +14,10 @@ export interface WaitOptions {
   timeout?: number;
 }
 
+export interface WaitForRepeaterStatusOptions extends WaitOptions {
+  desiredStatus: 'connected' | 'disconnected';
+}
+
 export interface CreateScanProps {
   name: string;
   crawlerUrls: string[];
@@ -113,6 +117,19 @@ export class Api {
     return data;
   }
 
+  public async getScanEntryPoints(scanId: string) {
+    const { data } = await this.client.get<
+      {
+        id: string;
+        request?: {
+          headers?: Record<string, string>;
+        };
+      }[]
+    >(`/api/v2/scans/${scanId}/entry-points`);
+
+    return data;
+  }
+
   public async createRepeater(
     name: string,
     projectId?: string
@@ -132,6 +149,40 @@ export class Api {
     await this.client.delete(`/api/v1/repeaters/${id}`);
   }
 
+  public async updateRepeater(
+    id: string,
+    data: {
+      name?: string;
+      scripts?: { scriptId: string; host?: string }[];
+    }
+  ) {
+    await this.client.put(`/api/v1/repeaters/${id}`, data);
+  }
+
+  public async createScript(name: string, code: string): Promise<string> {
+    const { data } = await this.client.post<{ id: string }>('/api/v1/scripts', {
+      name,
+      code
+    });
+
+    return data.id;
+  }
+
+  public async deleteScript(id: string) {
+    await this.client.delete(`/api/v1/scripts/${id}`);
+  }
+
+  public async getRepeaterStatus(repeaterId: string) {
+    const { data } = await this.client.get<{
+      id: string;
+      name: string;
+      status: string;
+      localScriptsUsed?: boolean;
+    }>(`/api/v1/repeaters/${repeaterId}`);
+
+    return data;
+  }
+
   public async createScan(props: CreateScanProps): Promise<string> {
     const { data } = await this.client.post<{ id: string }>(
       '/api/v1/scans',
@@ -141,10 +192,11 @@ export class Api {
     return data.id;
   }
 
-  public async waitForRepeaterToConnect(
+  public async waitForRepeater(
     repeaterId: string,
-    options?: WaitOptions
+    options?: WaitForRepeaterStatusOptions
   ) {
+    const status = options?.desiredStatus ?? 'connected';
     const maxAttempts = options?.maxAttempts ?? 60;
     const timeout = options?.timeout ?? 10_000;
 
@@ -153,13 +205,13 @@ export class Api {
         `/api/v1/repeaters/${repeaterId}`
       );
 
-      if (data.status === 'connected') {
+      if (data.status === status) {
         return;
       }
 
       if (attempt === maxAttempts) {
         throw new Error(
-          `Repeater ${repeaterId} is not connected after ${maxAttempts} checks`
+          `Repeater ${repeaterId} is not ${status} after ${maxAttempts} checks`
         );
       } else {
         await setTimeout(timeout);
@@ -191,6 +243,25 @@ export class Api {
         await setTimeout(timeout);
       }
     }
+  }
+
+  public async getScanStatus(scanId: string) {
+    const { data } = await this.client.get<{
+      status: string;
+      targets: string[];
+      requests: number;
+      entryPoints: number;
+    }>(`/api/v1/scans/${scanId}`);
+
+    return data;
+  }
+
+  public async deleteScan(scanId: string) {
+    await this.client.delete(`/api/v1/scans/${scanId}`);
+  }
+
+  public async stopScan(scanId: string) {
+    await this.client.get(`/api/v1/scans/${scanId}/stop`);
   }
 
   private getRandomIP() {
