@@ -5,15 +5,10 @@ import { injectable } from 'tsyringe';
 
 @injectable()
 export class DefaultVirtualScripts implements VirtualScripts {
-  private _localScriptsSize: number = 0;
   private readonly store = new Map<string, VirtualScript>();
 
   get size(): number {
     return this.store.size;
-  }
-
-  get localScriptsSize(): number {
-    return this._localScriptsSize;
   }
 
   public [Symbol.iterator](): IterableIterator<[string, VirtualScript]> {
@@ -30,20 +25,10 @@ export class DefaultVirtualScripts implements VirtualScripts {
         }
       });
     }
-
-    if (!type || type === VirtualScriptType.LOCAL) {
-      this._localScriptsSize = 0;
-    }
   }
 
-  public delete(key: string, recalculate: boolean = true): boolean {
-    const result = this.store.delete(key);
-
-    if (recalculate) {
-      this.calculateLocalScriptsSize();
-    }
-
-    return result;
+  public delete(key: string): boolean {
+    return this.store.delete(key);
   }
 
   public entries(): IterableIterator<[string, VirtualScript]> {
@@ -67,8 +52,6 @@ export class DefaultVirtualScripts implements VirtualScripts {
 
     script.compile();
 
-    this.calculateLocalScriptsSize();
-
     return this;
   }
 
@@ -76,15 +59,15 @@ export class DefaultVirtualScripts implements VirtualScripts {
     return this.store.values();
   }
 
-  private calculateLocalScriptsSize(): void {
+  public count(type: VirtualScriptType): number {
     let count = 0;
 
     this.store.forEach((x: VirtualScript) => {
-      if (x.type === VirtualScriptType.LOCAL) {
+      if (x.type === type) {
         count++;
       }
     });
 
-    this._localScriptsSize = count;
+    return count;
   }
 }

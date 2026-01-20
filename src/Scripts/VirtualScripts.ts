@@ -3,8 +3,6 @@ import { VirtualScript, VirtualScriptType } from './VirtualScript';
 export interface VirtualScripts {
   size: number;
 
-  localScriptsSize: number;
-
   [Symbol.iterator](): IterableIterator<[string, VirtualScript]>;
 
   clear(type?: VirtualScriptType): void;
@@ -20,6 +18,8 @@ export interface VirtualScripts {
   set(wildcard: string, type: VirtualScriptType, code: string): this;
 
   values(): IterableIterator<VirtualScript>;
+
+  count(type: VirtualScriptType): number;
 }
 
 export const VirtualScripts: unique symbol = Symbol('VirtualScripts');

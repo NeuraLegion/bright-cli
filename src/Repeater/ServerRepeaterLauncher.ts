@@ -11,7 +11,7 @@ import {
   RepeaterServerRequestEvent
 } from './RepeaterServer';
 import { RuntimeDetector } from './RuntimeDetector';
-import { ScriptLoader, VirtualScripts } from '../Scripts';
+import { ScriptLoader, VirtualScripts, VirtualScriptType } from '../Scripts';
 import { StartupManager } from '../StartupScripts';
 import {
   Certificates,
@@ -120,7 +120,7 @@ export class ServerRepeaterLauncher implements RepeaterLauncher {
     return {
       version: this.info.version,
       scriptsLoaded: !!this.virtualScripts.size,
-      localScriptsLoaded: !!this.virtualScripts.localScriptsSize,
+      localScriptsLoaded: !!this.virtualScripts.count(VirtualScriptType.LOCAL),
       ci: this.runtimeDetector.ci(),
       os: this.runtimeDetector.os(),
       arch: this.runtimeDetector.arch(),
