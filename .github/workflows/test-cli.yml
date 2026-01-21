@@ -124,15 +124,15 @@ jobs:
         if: ${{ !inputs.with_wiremock }}
         uses: ./.github/workflows/composite/todoapp
 
-      - name: Start WireMock
-        id: wiremock
-        if: ${{ inputs.with_wiremock }}
-        uses: ./.github/workflows/composite/wiremock
-
       - name: Install Dependencies
         uses: ./.github/workflows/composite/npm
         with:
           cache: ''
+      
+      - name: Start WireMock
+        id: wiremock
+        if: ${{ inputs.with_wiremock }}
+        uses: ./.github/workflows/composite/wiremock
 
       - name: Run Tests
         run: npm run ${{ inputs.test_script }}
@@ -179,17 +179,18 @@ jobs:
 
       - name: Download Target
         id: target
+        if: ${{ !inputs.with_wiremock }}
         uses: ./.github/workflows/composite/todoapp
-
-      - name: Start WireMock
-        id: wiremock
-        if: ${{ inputs.with_wiremock }}
-        uses: ./.github/workflows/composite/wiremock
 
       - name: Install Dependencies
         uses: ./.github/workflows/composite/npm
         with:
           cache: ''
+
+      - name: Start WireMock
+        id: wiremock
+        if: ${{ inputs.with_wiremock }}
+        uses: ./.github/workflows/composite/wiremock
 
       - name: Run Tests
         run: npm run ${{ inputs.test_script }}
@@ -218,17 +219,18 @@ jobs:
 
       - name: Download Target
         id: target
+        if: ${{ !inputs.with_wiremock }}
         uses: ./.github/workflows/composite/todoapp
-
-      - name: Start WireMock
-        id: wiremock
-        if: ${{ inputs.with_wiremock }}
-        uses: ./.github/workflows/composite/wiremock
 
       - name: Install Dependencies
         uses: ./.github/workflows/composite/npm
         with:
           cache: ''
+
+      - name: Start WireMock
+        id: wiremock
+        if: ${{ inputs.with_wiremock }}
+        uses: ./.github/workflows/composite/wiremock
 
       - name: Run Tests
         run: npm run ${{ inputs.test_script }}
@@ -299,18 +301,19 @@ jobs:
 
       - name: Download Target
         id: target
+        if: ${{ !inputs.with_wiremock }}
         uses: ./.github/workflows/composite/todoapp
-
-      - name: Start WireMock
-        id: wiremock
-        if: ${{ inputs.with_wiremock }}
-        uses: ./.github/workflows/composite/wiremock
 
       - name: Install Dependencies
         uses: ./.github/workflows/composite/npm
         with:
           version: ${{ matrix.node }}
           cache: ''
+
+      - name: Start WireMock
+        id: wiremock
+        if: ${{ inputs.with_wiremock }}
+        uses: ./.github/workflows/composite/wiremock
 
       - name: Install CLI
         run: npm i -g @brightsec/cli@${{ needs.resolve-version.outputs.version }}
