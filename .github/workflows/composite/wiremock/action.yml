@@ -17,6 +17,12 @@ outputs:
 runs:
   using: 'composite'
   steps:
+    - name: Set up Java
+      uses: actions/setup-java@v4
+      with:
+        distribution: 'temurin'
+        java-version: '17'
+
     - name: Start WireMock
       id: start
       shell: bash
