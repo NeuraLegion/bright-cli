@@ -102,6 +102,10 @@ jobs:
         id: target
         uses: ./.github/workflows/composite/todoapp
 
+      - name: Start WireMock
+        id: wiremock
+        uses: ./.github/workflows/composite/wiremock
+
       - name: Install Dependencies
         uses: ./.github/workflows/composite/npm
         with:
@@ -119,6 +123,7 @@ jobs:
           E2E_CLUSTER_API_KEY: ${{ secrets[format('E2E_{0}_API_KEY', inputs.environment )] }}
           E2E_REPEATER_TARGET_URL: ${{ format('http://localhost:{0}', steps.target.outputs.port) }}
           E2E_REPEATER_TARGET_CMD: ${{ steps.target.outputs.cmd }}
+          E2E_WIREMOCK_URL: ${{ steps.wiremock.outputs.url }}
           E2E_TEST_TIMEOUT: ${{ inputs.test_timeout }}
 
   msi:
@@ -153,6 +158,10 @@ jobs:
         id: target
         uses: ./.github/workflows/composite/todoapp
 
+      - name: Start WireMock
+        id: wiremock
+        uses: ./.github/workflows/composite/wiremock
+
       - name: Install Dependencies
         uses: ./.github/workflows/composite/npm
         with:
@@ -170,6 +179,7 @@ jobs:
           E2E_CLUSTER_API_KEY: ${{ secrets[format('E2E_{0}_API_KEY', inputs.environment )] }}
           E2E_REPEATER_TARGET_URL: ${{ format('http://localhost:{0}', steps.target.outputs.port) }}
           E2E_REPEATER_TARGET_CMD: ${{ steps.target.outputs.cmd }}
+          E2E_WIREMOCK_URL: ${{ steps.wiremock.outputs.url }}
           E2E_TEST_TIMEOUT: ${{ inputs.test_timeout }}
 
   docker:
@@ -188,6 +198,10 @@ jobs:
         id: target
         uses: ./.github/workflows/composite/todoapp
 
+      - name: Start WireMock
+        id: wiremock
+        uses: ./.github/workflows/composite/wiremock
+
       - name: Install Dependencies
         uses: ./.github/workflows/composite/npm
         with:
@@ -205,6 +219,7 @@ jobs:
           E2E_CLUSTER_API_KEY: ${{ secrets[format('E2E_{0}_API_KEY', inputs.environment )] }}
           E2E_REPEATER_TARGET_URL: ${{ format('http://host.docker.internal:{0}', steps.target.outputs.port) }}
           E2E_REPEATER_TARGET_CMD: ${{ steps.target.outputs.cmd }}
+          E2E_WIREMOCK_URL: ${{ steps.wiremock.outputs.url }}
           E2E_TEST_TIMEOUT: ${{ inputs.test_timeout }}
 
   npm:
@@ -264,6 +279,10 @@ jobs:
         id: target
         uses: ./.github/workflows/composite/todoapp
 
+      - name: Start WireMock
+        id: wiremock
+        uses: ./.github/workflows/composite/wiremock
+
       - name: Install Dependencies
         uses: ./.github/workflows/composite/npm
         with:
@@ -285,4 +304,5 @@ jobs:
           E2E_CLUSTER_API_KEY: ${{ secrets[format('E2E_{0}_API_KEY', inputs.environment )] }}
           E2E_REPEATER_TARGET_URL: ${{ format('http://localhost:{0}', steps.target.outputs.port) }}
           E2E_REPEATER_TARGET_CMD: ${{ steps.target.outputs.cmd }}
+          E2E_WIREMOCK_URL: ${{ steps.wiremock.outputs.url }}
           E2E_TEST_TIMEOUT: ${{ inputs.test_timeout }}

@@ -132,4 +132,6 @@ export interface WireMockLoggedRequest {
   };
 }
 
-export const wiremock = new WireMock();
+const WIREMOCK_URL = process.env.E2E_WIREMOCK_URL ?? 'http://localhost:8080';
+
+export const wiremock = new WireMock(WIREMOCK_URL);

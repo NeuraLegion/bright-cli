@@ -1,0 +1,37 @@
+name: 'WireMock'
+description: 'Starts WireMock server for E2E tests'
+
+inputs:
+  port:
+    description: 'Port to run WireMock on'
+    default: '8080'
+
+outputs:
+  port:
+    description: 'WireMock port'
+    value: ${{ inputs.port }}
+  url:
+    description: 'WireMock base URL'
+    value: ${{ steps.start.outputs.url }}
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Start WireMock
+      id: start
+      shell: bash
+      run: |
+        PORT=${{ inputs.port }}
+
+        npx --yes wiremock --port ${PORT} &
+        
+        for i in {1..30}; do
+          if curl -s http://localhost:${PORT}/__admin/health | grep -q "healthy"; then
+            echo "WireMock is ready"
+            break
+          fi
+          echo "Waiting for WireMock to start... ($i/30)"
+          sleep 1
+        done
+
+        echo "url=http://localhost:${PORT}" >> "$GITHUB_OUTPUT"
