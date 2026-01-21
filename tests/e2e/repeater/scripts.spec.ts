@@ -6,7 +6,7 @@ import {
   teardownAfterEach,
   RepeaterTestContext
 } from './setup';
-import { wiremock } from '../../Setup/wiremock';
+import { wiremock } from '../../setup/wiremock';
 import { writeFile, unlink, mkdir } from 'node:fs/promises';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
@@ -75,7 +75,7 @@ describe('Repeater: Scripts', () => {
         await wiremock.register(
           {
             method: 'GET',
-            endpoint: '/test-endpoint'
+            endpoint: '/repeaters/scripts'
           },
           {
             status: 200,
@@ -106,7 +106,7 @@ describe('Repeater: Scripts', () => {
           config.projectId,
           {
             method: 'GET',
-            url: `${config.wiremockUrl}/test-endpoint`
+            url: `${config.wiremockUrl}/repeaters/scripts`
           },
           ctx.repeaterId
         );
@@ -122,7 +122,7 @@ describe('Repeater: Scripts', () => {
 
         await wiremock.expectRequest({
           method: 'GET',
-          endpoint: '/test-endpoint',
+          endpoint: '/repeaters/scripts',
           headers: { [customHeaderName]: customHeaderValue }
         });
       },
@@ -195,7 +195,7 @@ describe('Repeater: Scripts', () => {
         await wiremock.register(
           {
             method: 'GET',
-            endpoint: '/test-endpoint'
+            endpoint: '/repeaters/scripts'
           },
           {
             status: 200,
@@ -221,7 +221,7 @@ describe('Repeater: Scripts', () => {
           config.projectId,
           {
             method: 'GET',
-            url: `${config.wiremockUrl}/test-endpoint`
+            url: `${config.wiremockUrl}/repeaters/scripts`
           },
           ctx.repeaterId
         );
@@ -237,7 +237,7 @@ describe('Repeater: Scripts', () => {
 
         await wiremock.expectRequest({
           method: 'GET',
-          endpoint: '/test-endpoint',
+          endpoint: '/repeaters/scripts',
           headers: { [customHeaderName]: customHeaderValue }
         });
       },

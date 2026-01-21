@@ -15,7 +15,7 @@ export interface RequestMatcher {
 
 export interface WaitOptions {
   timeout?: number;
-  interval?: number;
+  maxAttempts?: number;
 }
 
 export class WireMock extends WireMockCaptain {
@@ -27,45 +27,49 @@ export class WireMock extends WireMockCaptain {
     matcher: RequestMatcher,
     options: WaitOptions = {}
   ): Promise<WireMockLoggedRequest> {
-    const { timeout = 10000, interval = 200 } = options;
-    const startTime = Date.now();
+    const { timeout = 200, maxAttempts = 50 } = options;
 
-    while (Date.now() - startTime < timeout) {
+    for (let attempt = 1; attempt <= maxAttempts; attempt++) {
       const requests = await this.findMatchingRequests(matcher);
 
       if (requests.length > 0) {
         return requests[0];
       }
 
-      await setTimeout(interval);
+      if (attempt === maxAttempts) {
+        const allRequests = await this.getAllRequests();
+        throw new Error(
+          `No request matching ${JSON.stringify(
+            matcher
+          )} received after ${maxAttempts} attempts.\n` +
+            `Received ${allRequests.length} request(s): ${JSON.stringify(
+              allRequests,
+              null,
+              2
+            )}`
+        );
+      }
+
+      await setTimeout(timeout);
     }
 
-    const allRequests = await this.getAllRequests();
-    throw new Error(
-      `No request matching ${JSON.stringify(
-        matcher
-      )} received within ${timeout}ms.\n` +
-        `Received ${allRequests.length} request(s): ${JSON.stringify(
-          allRequests,
-          null,
-          2
-        )}`
-    );
+    throw new Error('Unexpected state');
   }
 
   public async waitForReady(options: WaitOptions = {}): Promise<void> {
-    const { timeout = 3000, interval = 100 } = options;
-    const startTime = Date.now();
+    const { timeout = 100, maxAttempts = 30 } = options;
 
-    while (Date.now() - startTime < timeout) {
+    for (let attempt = 1; attempt <= maxAttempts; attempt++) {
       if (await this.#checkHealth()) {
         return;
       }
 
-      await setTimeout(interval);
-    }
+      if (attempt === maxAttempts) {
+        throw new Error(`WireMock not ready after ${maxAttempts} attempts`);
+      }
 
-    throw new Error(`WireMock not ready within ${timeout}ms`);
+      await setTimeout(timeout);
+    }
   }
 
   public async findMatchingRequests(

@@ -5,9 +5,9 @@ import {
   setupBeforeEach,
   teardownAfterEach,
   RepeaterTestContext
-} from './setup';
+} from '../e2e/repeater/setup';
 
-describe.skip('Repeater: Smoke Tests', () => {
+describe('Repeater: Smoke Tests', () => {
   const ctx: RepeaterTestContext = createTestContext();
 
   beforeAll(() => {
@@ -25,7 +25,6 @@ describe.skip('Repeater: Smoke Tests', () => {
   it(
     `should run scan against ${config.targetUrl}`,
     async () => {
-      // arrange
       ctx.commandProcess = ctx.cli.spawn('repeater', [
         '--token',
         config.apiKey,
@@ -39,7 +38,6 @@ describe.skip('Repeater: Smoke Tests', () => {
 
       await ctx.api.waitForRepeater(ctx.repeaterId);
 
-      // act
       const scanId = await ctx.api.createScan({
         name: ctx.name,
         repeaters: [ctx.repeaterId],
@@ -59,7 +57,6 @@ describe.skip('Repeater: Smoke Tests', () => {
       const scan = await ctx.api.waitForScanToFinish(scanId);
       const connectivity = await ctx.api.getScanEntryPointsConnectivity(scanId);
 
-      // assert
       expect(scan.requests).toBeGreaterThan(0);
       expect(scan.entryPoints).toBeGreaterThan(0);
       expect(connectivity.ok).toBeGreaterThan(0);
@@ -70,9 +67,6 @@ describe.skip('Repeater: Smoke Tests', () => {
   );
 
   it('should fail to start scan when repeater is not connected', async () => {
-    // arrange
-
-    // act
     const act = () =>
       ctx.api.createScan({
         name: ctx.name,
@@ -81,7 +75,6 @@ describe.skip('Repeater: Smoke Tests', () => {
         projectId: config.projectId
       });
 
-    // assert
     await expect(act).rejects.toThrow('Request failed with status code 400');
     await expect(act).rejects.toMatchObject({
       response: {

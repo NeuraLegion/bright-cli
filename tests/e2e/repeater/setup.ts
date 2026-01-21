@@ -1,4 +1,5 @@
-import { Cli, Api } from '../../Setup';
+import { Api } from '../../setup/api';
+import { Cli } from '../../setup/cli';
 import { URL } from 'node:url';
 import { ChildProcess, spawn } from 'node:child_process';
 import { setTimeout } from 'node:timers/promises';

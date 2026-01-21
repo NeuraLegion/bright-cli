@@ -6,7 +6,7 @@ import {
   teardownAfterEach,
   RepeaterTestContext
 } from './setup';
-import { wiremock } from '../../Setup/wiremock';
+import { wiremock } from '../../setup/wiremock';
 
 describe('Repeater: Header', () => {
   const ctx: RepeaterTestContext = createTestContext();
@@ -34,7 +34,7 @@ describe('Repeater: Header', () => {
       await wiremock.register(
         {
           method: 'GET',
-          endpoint: '/test-endpoint'
+          endpoint: '/repeaters/headers'
         },
         {
           status: 200,
@@ -62,7 +62,7 @@ describe('Repeater: Header', () => {
         config.projectId,
         {
           method: 'GET',
-          url: `${config.wiremockUrl}/test-endpoint`
+          url: `${config.wiremockUrl}/repeaters/headers`
         },
         ctx.repeaterId
       );
@@ -78,7 +78,7 @@ describe('Repeater: Header', () => {
 
       await wiremock.expectRequest({
         method: 'GET',
-        endpoint: '/test-endpoint',
+        endpoint: '/repeaters/headers',
         headers: { [customHeaderName]: customHeaderValue }
       });
     },
