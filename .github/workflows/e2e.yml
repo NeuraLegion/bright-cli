@@ -61,8 +61,8 @@ jobs:
       test_timeout: ${{ inputs.test_timeout }}
       test_script: test:e2e
       with_wiremock: true
-      test_executables: ${{ inputs.test-executables }}
-      test_msi: ${{ inputs.test-msi }}
-      test_docker: ${{ inputs.test-docker }}
-      test_npm: ${{ inputs.test-npm }}
+      test_executables: ${{ inputs.test-executables == '' && true || inputs.test-executables }}
+      test_msi: ${{ inputs.test-msi == '' && true || inputs.test-msi }}
+      test_docker: ${{ inputs.test-docker == '' && true || inputs.test-docker }}
+      test_npm: ${{ inputs.test-npm == '' && true || inputs.test-npm }}
     secrets: inherit
