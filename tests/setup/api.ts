@@ -10,12 +10,12 @@ export interface ApiOptions {
 }
 
 export interface WaitOptions {
-  maxAttempts?: number;
   timeout?: number;
+  interval?: number;
 }
 
 export interface WaitForRepeaterStatusOptions extends WaitOptions {
-  desiredStatus: 'connected' | 'disconnected';
+  desiredStatus?: 'connected' | 'disconnected';
 }
 
 export interface CreateScanProps {
@@ -253,34 +253,34 @@ export class Api {
     repeaterId: string,
     options?: WaitForRepeaterStatusOptions
   ) {
-    const status = options?.desiredStatus ?? 'connected';
-    const maxAttempts = options?.maxAttempts ?? 60;
-    const timeout = options?.timeout ?? 5_000;
+    const desiredStatus = options?.desiredStatus ?? 'connected';
+    const timeout = options?.timeout ?? 60_000;
+    const interval = options?.interval ?? 1_000;
+    const startTime = Date.now();
 
-    for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    while (Date.now() - startTime < timeout) {
       const { data } = await this.client.get<{ status: string }>(
         `/api/v1/repeaters/${repeaterId}`
       );
 
-      if (data.status === status) {
+      if (data.status === desiredStatus) {
         return;
       }
 
-      if (attempt === maxAttempts) {
-        throw new Error(
-          `Repeater ${repeaterId} is not ${status} after ${maxAttempts} checks`
-        );
-      } else {
-        await setTimeout(timeout);
-      }
+      await setTimeout(interval);
     }
+
+    throw new Error(
+      `Repeater ${repeaterId} did not reach status '${desiredStatus}' within ${timeout}ms`
+    );
   }
 
   public async waitForScanToFinish(scanId: string, options?: WaitOptions) {
-    const maxAttempts = options?.maxAttempts ?? 120;
-    const timeout = options?.timeout ?? 30_000;
+    const timeout = options?.timeout ?? 3_600_000;
+    const interval = options?.interval ?? 10_000;
+    const startTime = Date.now();
 
-    for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    while (Date.now() - startTime < timeout) {
       const { data } = await this.client.get<{
         status: string;
         targets: string[];
@@ -292,14 +292,10 @@ export class Api {
         return data;
       }
 
-      if (attempt === maxAttempts) {
-        throw new Error(
-          `Scan ${scanId} couldn't finish after ${maxAttempts} checks`
-        );
-      } else {
-        await setTimeout(timeout);
-      }
+      await setTimeout(interval);
     }
+
+    throw new Error(`Scan ${scanId} did not finish within ${timeout}ms`);
   }
 
   public async getScanStatus(scanId: string) {
