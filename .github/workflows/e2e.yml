@@ -120,7 +120,7 @@ jobs:
           E2E_REPEATER_TARGET_URL: ${{ format('http://localhost:{0}', steps.target.outputs.port) }}
           E2E_REPEATER_TARGET_CMD: ${{ steps.target.outputs.cmd }}
           E2E_TEST_TIMEOUT: ${{ inputs.test_timeout }}
-          E2E_TARGET_ENTRYPOINT_ID: ${{ vars.E2E_TARGET_ENTRYPOINT_ID_LOCAL }}
+          E2E_TARGET_ENTRYPOINT_ID: ${{ vars[format('E2E_{0}_LOCAL_TARGET_ENTRYPOINT_ID', inputs.environment )] }}
 
   msi:
     if: ${{ inputs.test-msi }}
@@ -172,7 +172,7 @@ jobs:
           E2E_REPEATER_TARGET_URL: ${{ format('http://localhost:{0}', steps.target.outputs.port) }}
           E2E_REPEATER_TARGET_CMD: ${{ steps.target.outputs.cmd }}
           E2E_TEST_TIMEOUT: ${{ inputs.test_timeout }}
-          E2E_TARGET_ENTRYPOINT_ID: ${{ vars.E2E_TARGET_ENTRYPOINT_ID_LOCAL }}
+          E2E_TARGET_ENTRYPOINT_ID: ${{ vars[format('E2E_{0}_LOCAL_TARGET_ENTRYPOINT_ID', inputs.environment )] }}
           E2E_TARGET_TEST_TYPE: ${{ vars.E2E_TARGET_TEST_TYPE }}
 
   docker:
@@ -209,7 +209,7 @@ jobs:
           E2E_REPEATER_TARGET_URL: ${{ format('http://host.docker.internal:{0}', steps.target.outputs.port) }}
           E2E_REPEATER_TARGET_CMD: ${{ steps.target.outputs.cmd }}
           E2E_TEST_TIMEOUT: ${{ inputs.test_timeout }}
-          E2E_TARGET_ENTRYPOINT_ID: ${{ vars.E2E_TARGET_ENTRYPOINT_ID_DOCKER }}
+          E2E_TARGET_ENTRYPOINT_ID: ${{ vars[format('E2E_{0}_DOCKER_TARGET_ENTRYPOINT_ID', inputs.environment )] }}
           E2E_TARGET_TEST_TYPE: ${{ vars.E2E_TARGET_TEST_TYPE }}
 
   npm:
@@ -291,5 +291,5 @@ jobs:
           E2E_REPEATER_TARGET_URL: ${{ format('http://localhost:{0}', steps.target.outputs.port) }}
           E2E_REPEATER_TARGET_CMD: ${{ steps.target.outputs.cmd }}
           E2E_TEST_TIMEOUT: ${{ inputs.test_timeout }}
-          E2E_TARGET_ENTRYPOINT_ID: ${{ vars.E2E_TARGET_ENTRYPOINT_ID_LOCAL }}
+          E2E_TARGET_ENTRYPOINT_ID: ${{ vars[format('E2E_{0}_LOCAL_TARGET_ENTRYPOINT_ID', inputs.environment )] }}
           E2E_TARGET_TEST_TYPE: ${{ vars.E2E_TARGET_TEST_TYPE }}
