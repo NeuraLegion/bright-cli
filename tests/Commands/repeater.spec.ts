@@ -99,8 +99,6 @@ describe('Repeater Command', () => {
           projectId: config.projectId,
           entryPointIds: [config.targetEntrypointId]
         });
-        // eslint-disable-next-line no-console
-        console.log('Scan was started with id: %s', scanId);
         const scan = await api.waitForScanToFinish(scanId);
         const connectivity = await api.getScanEntryPointsConnectivity(scanId);
 

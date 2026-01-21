@@ -134,8 +134,6 @@ export class Api {
   }
 
   public async createScan(props: CreateScanProps): Promise<string> {
-    // eslint-disable-next-line no-console
-    console.log('Creating scan with props:', props);
     const { data } = await this.client.post<{ id: string }>(
       '/api/v1/scans',
       props
