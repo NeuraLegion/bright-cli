@@ -1,7 +1,7 @@
 import { Api } from '../../setup/api';
 import { Cli } from '../../setup/cli';
 import { URL } from 'node:url';
-import { ChildProcess, spawn } from 'node:child_process';
+import { ChildProcess } from 'node:child_process';
 import { setTimeout } from 'node:timers/promises';
 import { once } from 'node:events';
 
@@ -24,7 +24,6 @@ export interface RepeaterTestContext {
   cli: Cli;
   targetHost: string;
   repeaterId: string;
-  targetProcess: ChildProcess;
   commandProcess: ChildProcess;
 }
 
@@ -35,7 +34,6 @@ export function createTestContext(): RepeaterTestContext {
     cli: null,
     targetHost: '',
     repeaterId: '',
-    targetProcess: null,
     commandProcess: null
   };
 }
@@ -54,78 +52,39 @@ export function setupBeforeAll(ctx: RepeaterTestContext): void {
 }
 
 export async function setupBeforeEach(ctx: RepeaterTestContext): Promise<void> {
-  const [targetCmd, ...targetArgs]: string[] = config.targetCmd.split(' ');
-  ctx.targetProcess = spawn(targetCmd, targetArgs, {
-    shell: true,
-    detached: true,
-    stdio: ['ignore', 'pipe', 'pipe'],
-    env: {
-      ...process.env
-    }
-  });
-
-  ctx.targetProcess.stdout.pipe(process.stdout);
-  ctx.targetProcess.stderr.pipe(process.stderr);
-
-  // Use localhost for health check since the target runs in the same environment as the test
-  // (host.docker.internal points to the host machine, not the container where target runs)
-  const targetPort = new URL(config.targetUrl).port || '80';
-  await waitForTarget(`http://localhost:${targetPort}`);
-
   ctx.repeaterId = await ctx.api.createRepeater(ctx.name, config.projectId);
-}
-
-async function waitForTarget(
-  url: string,
-  maxAttempts = 30,
-  interval = 100
-): Promise<void> {
-  for (let attempt = 0; attempt < maxAttempts; attempt++) {
-    try {
-      await fetch(url);
-
-      return;
-    } catch {
-      await setTimeout(interval);
-    }
-  }
-  throw new Error(`Target server at ${url} did not start in time`);
 }
 
 export async function teardownAfterEach(
   ctx: RepeaterTestContext
 ): Promise<void> {
-  const killProcess = async (proc: ChildProcess): Promise<void> => {
-    if (!proc || proc.killed) {
-      return;
-    }
-
-    proc.stdout?.unpipe();
-    proc.stderr?.unpipe();
-    proc.stdout?.destroy();
-    proc.stderr?.destroy();
-
-    // Kill the entire process group (negative pid) to ensure child processes are also killed
-    try {
-      process.kill(-proc.pid, 'SIGKILL');
-    } catch {
-      // Process may have already exited
-      proc.kill('SIGKILL');
-    }
-
-    // Wait for exit or timeout after 5 seconds
-    await Promise.race([once(proc, 'exit'), setTimeout(5000)]);
-  };
-
-  await Promise.all([
-    killProcess(ctx.commandProcess),
-    killProcess(ctx.targetProcess)
-  ]);
+  await killProcess(ctx.commandProcess);
 
   ctx.commandProcess = null;
-  ctx.targetProcess = null;
 
   await ctx.api.deleteRepeater(ctx.repeaterId);
 
   ctx.repeaterId = null;
+}
+
+export async function killProcess(proc: ChildProcess): Promise<void> {
+  if (!proc || proc.killed) {
+    return;
+  }
+
+  proc.stdout?.unpipe();
+  proc.stderr?.unpipe();
+  proc.stdout?.destroy();
+  proc.stderr?.destroy();
+
+  // Kill the entire process group (negative pid) to ensure child processes are also killed
+  try {
+    process.kill(-proc.pid, 'SIGKILL');
+  } catch {
+    // Process may have already exited
+    proc.kill('SIGKILL');
+  }
+
+  // Wait for exit or timeout after 5 seconds
+  await Promise.race([once(proc, 'exit'), setTimeout(5000)]);
 }

@@ -121,6 +121,7 @@ jobs:
 
       - name: Download Target
         id: target
+        if: ${{ !inputs.with_wiremock }}
         uses: ./.github/workflows/composite/todoapp
 
       - name: Start WireMock

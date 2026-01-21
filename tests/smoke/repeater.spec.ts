@@ -5,7 +5,7 @@ import {
   setupBeforeEach,
   teardownAfterEach,
   RepeaterTestContext
-} from '../e2e/repeater/setup';
+} from './setup';
 
 describe('Repeater: Smoke Tests', () => {
   const ctx: RepeaterTestContext = createTestContext();
