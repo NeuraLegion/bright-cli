@@ -262,7 +262,7 @@ jobs:
     uses: ./.github/workflows/e2e.yml
     with:
       version: ${{ github.event.release.tag_name }}
-      environment: staging
+      environment: development
     secrets: inherit
 
   smoke-tests:
@@ -271,5 +271,5 @@ jobs:
     uses: ./.github/workflows/smoke.yml
     with:
       version: ${{ github.event.release.tag_name }}
-      environment: production
+      environment: staging
     secrets: inherit
