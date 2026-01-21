@@ -255,7 +255,7 @@ export class Api {
   ) {
     const status = options?.desiredStatus ?? 'connected';
     const maxAttempts = options?.maxAttempts ?? 60;
-    const timeout = options?.timeout ?? 10_000;
+    const timeout = options?.timeout ?? 5_000;
 
     for (let attempt = 1; attempt <= maxAttempts; attempt++) {
       const { data } = await this.client.get<{ status: string }>(
