@@ -1,4 +1,5 @@
-import { ChildProcess, spawn } from 'node:child_process';
+import spawn from 'cross-spawn';
+import { ChildProcess } from 'node:child_process';
 
 export class Cli {
   constructor(
@@ -48,10 +49,10 @@ export class Cli {
     args: string[] = [],
     env: Record<string, string> = null
   ): ChildProcess {
-    const execArgs = [...this.execArgs].concat(args);
+    const execArgs = [...this.execArgs, ...args];
 
     return spawn(this.execPath, execArgs, {
-      shell: true,
+      detached: process.platform !== 'win32',
       stdio: ['ignore', 'pipe', 'pipe'],
       env: {
         ...process.env,
