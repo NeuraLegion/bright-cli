@@ -4,7 +4,8 @@ import {
   setupBeforeAll,
   setupBeforeEach,
   teardownAfterEach,
-  RepeaterTestContext
+  RepeaterTestContext,
+  killProcess
 } from './setup';
 
 describe('Repeater: Connection Lifecycle', () => {
@@ -60,7 +61,7 @@ describe('Repeater: Connection Lifecycle', () => {
     const statusConnected = await ctx.api.getRepeaterStatus(ctx.repeaterId);
     expect(statusConnected.status).toBe('connected');
 
-    ctx.commandProcess.kill('SIGTERM');
+    await killProcess(ctx.commandProcess);
 
     await ctx.api.waitForRepeater(ctx.repeaterId, {
       desiredStatus: 'disconnected'
