@@ -1,6 +1,6 @@
 name: E2E Tests
 
-run-name: E2E Tests (${{ inputs.version }}, ${{ inputs.environment }})
+run-name: E2E Tests (${{ github.event.inputs.version || 'next' }}, ${{ github.event.inputs.environment || 'staging' }})
 
 on:
   workflow_dispatch:
@@ -35,10 +35,50 @@ on:
       test_timeout:
         description: "Test timeout in seconds"
         default: "5000"
+  push:
+    branches:
+      - next
 
 jobs:
+  resolve-inputs:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.resolve.outputs.version }}
+      test_docker: ${{ steps.resolve.outputs.test_docker }}
+      test_executables: ${{ steps.resolve.outputs.test_executables }}
+      test_msi: ${{ steps.resolve.outputs.test_msi }}
+      test_npm: ${{ steps.resolve.outputs.test_npm }}
+      environment: ${{ steps.resolve.outputs.environment }}
+      test_timeout: ${{ steps.resolve.outputs.test_timeout }}
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Resolve inputs
+        id: resolve
+        shell: bash
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "version=${{ github.event.inputs.version }}" >> "$GITHUB_OUTPUT"
+            echo "test_docker=${{ github.event.inputs['test-docker'] }}" >> "$GITHUB_OUTPUT"
+            echo "test_executables=${{ github.event.inputs['test-executables'] }}" >> "$GITHUB_OUTPUT"
+            echo "test_msi=${{ github.event.inputs['test-msi'] }}" >> "$GITHUB_OUTPUT"
+            echo "test_npm=${{ github.event.inputs['test-npm'] }}" >> "$GITHUB_OUTPUT"
+            echo "environment=${{ github.event.inputs.environment }}" >> "$GITHUB_OUTPUT"
+            echo "test_timeout=${{ github.event.inputs.test_timeout }}" >> "$GITHUB_OUTPUT"
+          else
+            echo "version=$(node -p \"require('./package.json').version\")" >> "$GITHUB_OUTPUT"
+            echo "test_docker=true" >> "$GITHUB_OUTPUT"
+            echo "test_executables=true" >> "$GITHUB_OUTPUT"
+            echo "test_msi=true" >> "$GITHUB_OUTPUT"
+            echo "test_npm=true" >> "$GITHUB_OUTPUT"
+            echo "environment=staging" >> "$GITHUB_OUTPUT"
+            echo "test_timeout=5000" >> "$GITHUB_OUTPUT"
+          fi
+
   executables:
-    if: ${{ inputs.test-executables }}
+    needs: resolve-inputs
+    if: ${{ needs.resolve-inputs.outputs.test_executables == 'true' }}
     runs-on: ${{ matrix.os }}
     container: ${{ matrix.container }}
     env:
@@ -95,7 +135,7 @@ jobs:
       - name: Download Executable
         shell: bash
         run: |
-          curl -fsSL https://github.com/NeuraLegion/bright-cli/releases/download/${{ inputs.version }}/${{ matrix.executable }} > ./${{ matrix.executable }}
+          curl -fsSL https://github.com/NeuraLegion/bright-cli/releases/download/${{ needs.resolve-inputs.outputs.version }}/${{ matrix.executable }} > ./${{ matrix.executable }}
           chmod +x ./${{ matrix.executable }}
 
       - name: Download Target
@@ -111,24 +151,25 @@ jobs:
       - name: Run Tests
         run: npm run test:e2e
         env:
-          E2E_CLI_VERSION: ${{ inputs.version }}
+          E2E_CLI_VERSION: ${{ needs.resolve-inputs.outputs.version }}
           E2E_CLI_CMD: ${{ runner.os != 'windows' && format('./{0}', matrix.executable) || format('.\{0}', matrix.executable) }}
           E2E_RUN_ID: ${{ format('{0}-{1}-{2}-{3}', github.run_number, github.run_attempt, github.job, strategy.job-index) }}
-          E2E_CLUSTER: ${{ vars[format('E2E_{0}_HOST', inputs.environment )] }}
-          E2E_PROJECT_ID: ${{ vars[format('E2E_{0}_PROJECT_ID', inputs.environment )] }}
-          E2E_CLUSTER_API_KEY: ${{ secrets[format('E2E_{0}_API_KEY', inputs.environment )] }}
+          E2E_CLUSTER: ${{ vars[format('E2E_{0}_HOST', needs.resolve-inputs.outputs.environment )] }}
+          E2E_PROJECT_ID: ${{ vars[format('E2E_{0}_PROJECT_ID', needs.resolve-inputs.outputs.environment )] }}
+          E2E_CLUSTER_API_KEY: ${{ secrets[format('E2E_{0}_API_KEY', needs.resolve-inputs.outputs.environment )] }}
           E2E_REPEATER_TARGET_URL: ${{ format('http://localhost:{0}', steps.target.outputs.port) }}
           E2E_REPEATER_TARGET_CMD: ${{ steps.target.outputs.cmd }}
-          E2E_TEST_TIMEOUT: ${{ inputs.test_timeout }}
+          E2E_TEST_TIMEOUT: ${{ needs.resolve-inputs.outputs.test_timeout }}
 
   msi:
-    if: ${{ inputs.test-msi }}
+    needs: resolve-inputs
+    if: ${{ needs.resolve-inputs.outputs.test_msi == 'true' }}
     runs-on: windows-latest
     steps:
       - name: Download and Install Bright CLI using MSI
         shell: pwsh
         run: |
-          Invoke-WebRequest -Uri 'https://github.com/NeuraLegion/bright-cli/releases/download/${{ inputs.version }}/bright-cli.msi' -OutFile bright-cli.msi
+          Invoke-WebRequest -Uri 'https://github.com/NeuraLegion/bright-cli/releases/download/${{ needs.resolve-inputs.outputs.version }}/bright-cli.msi' -OutFile bright-cli.msi
           $lastExitCode = (Start-Process msiexec.exe `
             -ArgumentList "/i bright-cli.msi /qn /norestart /l*v `"$($pwd)\install.log`"" `
             -PassThru `
@@ -162,24 +203,25 @@ jobs:
       - name: Run Tests
         run: npm run test:e2e
         env:
-          E2E_CLI_VERSION: ${{ inputs.version }}
+          E2E_CLI_VERSION: ${{ needs.resolve-inputs.outputs.version }}
           E2E_CLI_CMD: ${{ 'bright-cli.exe' }}
           E2E_RUN_ID: ${{ format('{0}-{1}-{2}-{3}', github.run_number, github.run_attempt, github.job, strategy.job-index) }}
-          E2E_CLUSTER: ${{ vars[format('E2E_{0}_HOST', inputs.environment )] }}
-          E2E_PROJECT_ID: ${{ vars[format('E2E_{0}_PROJECT_ID', inputs.environment )] }}
-          E2E_CLUSTER_API_KEY: ${{ secrets[format('E2E_{0}_API_KEY', inputs.environment )] }}
+          E2E_CLUSTER: ${{ vars[format('E2E_{0}_HOST', needs.resolve-inputs.outputs.environment )] }}
+          E2E_PROJECT_ID: ${{ vars[format('E2E_{0}_PROJECT_ID', needs.resolve-inputs.outputs.environment )] }}
+          E2E_CLUSTER_API_KEY: ${{ secrets[format('E2E_{0}_API_KEY', needs.resolve-inputs.outputs.environment )] }}
           E2E_REPEATER_TARGET_URL: ${{ format('http://localhost:{0}', steps.target.outputs.port) }}
           E2E_REPEATER_TARGET_CMD: ${{ steps.target.outputs.cmd }}
-          E2E_TEST_TIMEOUT: ${{ inputs.test_timeout }}
+          E2E_TEST_TIMEOUT: ${{ needs.resolve-inputs.outputs.test_timeout }}
 
   docker:
-    if: ${{ inputs.test-docker }}
+    needs: resolve-inputs
+    if: ${{ needs.resolve-inputs.outputs.test_docker == 'true' }}
     runs-on: ubuntu-latest
     # Windows can't run linux docker images: https://github.com/actions/runner-images/issues/1143
     # macOS Docker doesn't reliably support host.docker.internal DNS resolution in CI
     steps:
       - name: Pull Image
-        run: docker pull brightsec/cli:${{ inputs.version }}
+        run: docker pull brightsec/cli:${{ needs.resolve-inputs.outputs.version }}
 
       - name: Checkout Repository
         uses: actions/checkout@v4
@@ -197,18 +239,19 @@ jobs:
       - name: Run Tests
         run: npm run test:e2e
         env:
-          E2E_CLI_VERSION: ${{ inputs.version }}
-          E2E_CLI_CMD: docker run --add-host host.docker.internal:host-gateway --network host brightsec/cli:${{ inputs.version }}
+          E2E_CLI_VERSION: ${{ needs.resolve-inputs.outputs.version }}
+          E2E_CLI_CMD: docker run --add-host host.docker.internal:host-gateway --network host brightsec/cli:${{ needs.resolve-inputs.outputs.version }}
           E2E_RUN_ID: ${{ format('{0}-{1}-{2}-{3}', github.run_number, github.run_attempt, github.job, strategy.job-index) }}
-          E2E_CLUSTER: ${{ vars[format('E2E_{0}_HOST', inputs.environment )] }}
-          E2E_PROJECT_ID: ${{ vars[format('E2E_{0}_PROJECT_ID', inputs.environment )] }}
-          E2E_CLUSTER_API_KEY: ${{ secrets[format('E2E_{0}_API_KEY', inputs.environment )] }}
+          E2E_CLUSTER: ${{ vars[format('E2E_{0}_HOST', needs.resolve-inputs.outputs.environment )] }}
+          E2E_PROJECT_ID: ${{ vars[format('E2E_{0}_PROJECT_ID', needs.resolve-inputs.outputs.environment )] }}
+          E2E_CLUSTER_API_KEY: ${{ secrets[format('E2E_{0}_API_KEY', needs.resolve-inputs.outputs.environment )] }}
           E2E_REPEATER_TARGET_URL: ${{ format('http://host.docker.internal:{0}', steps.target.outputs.port) }}
           E2E_REPEATER_TARGET_CMD: ${{ steps.target.outputs.cmd }}
-          E2E_TEST_TIMEOUT: ${{ inputs.test_timeout }}
+          E2E_TEST_TIMEOUT: ${{ needs.resolve-inputs.outputs.test_timeout }}
 
   npm:
-    if: ${{ inputs.test-npm }}
+    needs: resolve-inputs
+    if: ${{ needs.resolve-inputs.outputs.test_npm == 'true' }}
     runs-on: ${{ matrix.os }}
     container: ${{ matrix.container }}
     env:
@@ -272,17 +315,17 @@ jobs:
           cache: ''
 
       - name: Install CLI
-        run: npm i -g @brightsec/cli@${{ inputs.version }}
+        run: npm i -g @brightsec/cli@${{ needs.resolve-inputs.outputs.version }}
 
       - name: Run Tests
         run: npm run test:e2e
         env:
-          E2E_CLI_VERSION: ${{ inputs.version }}
+          E2E_CLI_VERSION: ${{ needs.resolve-inputs.outputs.version }}
           E2E_CLI_CMD: bright-cli
           E2E_RUN_ID: ${{ format('{0}-{1}-{2}-{3}', github.run_number, github.run_attempt, github.job, strategy.job-index) }}
-          E2E_CLUSTER: ${{ vars[format('E2E_{0}_HOST', inputs.environment )] }}
-          E2E_PROJECT_ID: ${{ vars[format('E2E_{0}_PROJECT_ID', inputs.environment )] }}
-          E2E_CLUSTER_API_KEY: ${{ secrets[format('E2E_{0}_API_KEY', inputs.environment )] }}
+          E2E_CLUSTER: ${{ vars[format('E2E_{0}_HOST', needs.resolve-inputs.outputs.environment )] }}
+          E2E_PROJECT_ID: ${{ vars[format('E2E_{0}_PROJECT_ID', needs.resolve-inputs.outputs.environment )] }}
+          E2E_CLUSTER_API_KEY: ${{ secrets[format('E2E_{0}_API_KEY', needs.resolve-inputs.outputs.environment )] }}
           E2E_REPEATER_TARGET_URL: ${{ format('http://localhost:{0}', steps.target.outputs.port) }}
           E2E_REPEATER_TARGET_CMD: ${{ steps.target.outputs.cmd }}
-          E2E_TEST_TIMEOUT: ${{ inputs.test_timeout }}
+          E2E_TEST_TIMEOUT: ${{ needs.resolve-inputs.outputs.test_timeout }}
