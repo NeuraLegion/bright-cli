@@ -13,7 +13,9 @@ const config = {
   targetCmd: process.env['E2E_REPEATER_TARGET_CMD'],
   maxTestTimeout: parseInt(process.env.E2E_TEST_TIMEOUT, 10) * 1000,
   targetEntrypointId: process.env.E2E_TARGET_ENTRYPOINT_ID,
-  targetTestTypes: (process.env.E2E_TARGET_TEST_TYPE || 'sqli').split(',')
+  targetTestTypes: process.env.E2E_TARGET_TEST_TYPE
+    ? process.env.E2E_TARGET_TEST_TYPE.split(',')
+    : ['sqli']
 };
 
 describe('Repeater Command', () => {
