@@ -121,6 +121,7 @@ jobs:
           E2E_REPEATER_TARGET_CMD: ${{ steps.target.outputs.cmd }}
           E2E_TEST_TIMEOUT: ${{ inputs.test_timeout }}
           E2E_TARGET_ENTRYPOINT_ID: ${{ vars[format('E2E_{0}_LOCAL_TARGET_ENTRYPOINT_ID', inputs.environment )] }}
+          E2E_TARGET_TEST_TYPE: ${{ env.E2E_TARGET_TEST_TYPE }}
 
   msi:
     if: ${{ inputs.test-msi }}
