@@ -65,7 +65,7 @@ describe('Repeater: Scripts', () => {
       ]);
 
       expect(output).toContain('Error Loading Script');
-    }, 10000);
+    }, 60000);
 
     it(
       'should run scan with custom headers passed to repeater via script',

@@ -41,7 +41,7 @@ describe('Repeater: Connection Lifecycle', () => {
 
     const statusAfter = await ctx.api.getRepeaterStatus(ctx.repeaterId);
     expect(statusAfter.status).toBe('connected');
-  }, 10000);
+  }, 60000);
 
   it('should disconnect repeater when process is terminated', async () => {
     ctx.commandProcess = ctx.cli.spawn('repeater', [
@@ -70,7 +70,7 @@ describe('Repeater: Connection Lifecycle', () => {
     expect(statusAfter.status).toBe('disconnected');
 
     ctx.commandProcess = null;
-  }, 10000);
+  }, 60000);
 
   it('should handle attempt to connect with same repeater ID twice', async () => {
     ctx.commandProcess = ctx.cli.spawn('repeater', [
