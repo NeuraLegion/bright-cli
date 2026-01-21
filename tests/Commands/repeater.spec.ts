@@ -13,7 +13,7 @@ const config = {
   targetCmd: process.env['E2E_REPEATER_TARGET_CMD'],
   maxTestTimeout: parseInt(process.env.E2E_TEST_TIMEOUT, 10) * 1000,
   targetEntrypointId: process.env.E2E_TARGET_ENTRYPOINT_ID,
-  targetTestType: process.env.E2E_TARGET_TEST_TYPE
+  targetTestTypes: (process.env.E2E_TARGET_TEST_TYPE || 'sqli').split(',')
 };
 
 describe('Repeater Command', () => {
@@ -92,7 +92,7 @@ describe('Repeater Command', () => {
         const scanId = await api.createScan({
           name,
           repeaters: [repeaterId],
-          tests: [config.targetTestType],
+          tests: config.targetTestTypes,
           slowEpTimeout: 5_000,
           targetTimeout: 3,
           poolSize: 50,
