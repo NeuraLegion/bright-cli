@@ -163,7 +163,7 @@ export class Api {
         throw error;
       }
 
-      // Repeater with this name already exists - find and delete it, then retry
+      // Repeater with this name already exists, delete and retry
       const existingRepeater = await this.findRepeaterByName(name);
       if (!existingRepeater) {
         throw error;
@@ -171,7 +171,6 @@ export class Api {
 
       await this.deleteRepeater(existingRepeater.id);
 
-      // Retry creation
       const { data } = await this.client.post<{ id: string }>(
         '/api/v1/repeaters',
         {
