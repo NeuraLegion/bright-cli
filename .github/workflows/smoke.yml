@@ -1,0 +1,51 @@
+name: Smoke Tests (Nightly)
+
+run-name: Smoke Tests (${{ inputs.version || 'latest' }}, ${{ inputs.environment || 'staging' }})
+
+on:
+  schedule:
+    # Run at Saturday evening (6:00 PM UTC)
+    - cron: '0 18 * * 6'
+  workflow_call:
+    inputs:
+      version:
+        description: "Bright CLI version (e.g.: v13.1.0). Leave empty for latest."
+        required: false
+        type: string
+      environment:
+        type: string
+        default: staging
+        description: Environment
+      test_timeout:
+        description: "Test timeout in seconds"
+        default: "5000"
+        type: string
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Bright CLI version (e.g.: v13.1.0). Leave empty for latest."
+        required: false
+        type: string
+      environment:
+        type: choice
+        default: staging
+        description: Environment
+        options:
+          - production
+          - staging
+          - development
+      test_timeout:
+        description: "Test timeout in seconds"
+        default: 5000
+        type: number
+
+jobs:
+  smoke:
+    uses: ./.github/workflows/test-cli.yml
+    with:
+      version: ${{ inputs.version || '' }}
+      environment: ${{ inputs.environment || 'staging' }}
+      test_timeout: ${{ inputs.test_timeout || '5000' }}
+      test_script: test:smoke
+      with_wiremock: false
+    secrets: inherit
