@@ -52,6 +52,7 @@ export class Cli {
     const execArgs = [...this.execArgs, ...args];
 
     return spawn(this.execPath, execArgs, {
+      detached: process.platform !== 'win32',
       stdio: ['ignore', 'pipe', 'pipe'],
       env: {
         ...process.env,

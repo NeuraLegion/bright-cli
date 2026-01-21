@@ -77,12 +77,23 @@ export async function killProcess(proc: ChildProcess): Promise<void> {
   proc.stdout?.destroy();
   proc.stderr?.destroy();
 
-  // Kill the entire process group (negative pid) to ensure child processes are also killed
-  try {
-    process.kill(-proc.pid, 'SIGKILL');
-  } catch {
-    // Process may have already exited
-    proc.kill('SIGKILL');
+  if (process.platform === 'win32') {
+    // Windows: use taskkill to kill the process tree
+    try {
+      const { execSync } = await import('node:child_process');
+      execSync(`taskkill /F /T /PID ${proc.pid}`, { stdio: 'ignore' });
+    } catch {
+      // Process may have already exited
+      proc.kill('SIGKILL');
+    }
+  } else {
+    // Unix: kill the entire process group (negative pid)
+    try {
+      process.kill(-proc.pid, 'SIGKILL');
+    } catch {
+      // Process may have already exited
+      proc.kill('SIGKILL');
+    }
   }
 
   // Wait for exit or timeout after 5 seconds
