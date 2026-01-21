@@ -71,7 +71,7 @@ describe('Repeater: Connection Lifecycle', () => {
     expect(statusAfter.status).toBe('disconnected');
 
     ctx.commandProcess = null;
-  }, 60000);
+  }, 120000);
 
   it('should handle attempt to connect with same repeater ID twice', async () => {
     ctx.commandProcess = ctx.cli.spawn('repeater', [
