@@ -45,7 +45,7 @@ jobs:
     with:
       version: ${{ inputs.version }}
       environment: ${{ inputs.environment }}
-      test_timeout: ${{ inputs.test_timeout }}
+      test_timeout: ${{ inputs.test_timeout && fromJSON(inputs.test_timeout) || 5000 }}
       test_script: test:smoke
       with_wiremock: false
     secrets: inherit
