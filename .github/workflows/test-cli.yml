@@ -236,7 +236,7 @@ jobs:
         run: npm run ${{ inputs.test_script }}
         env:
           E2E_CLI_VERSION: ${{ needs.resolve-version.outputs.version }}
-          E2E_CLI_CMD: docker run --add-host host.docker.internal:host-gateway --network host brightsec/cli:${{ needs.resolve-version.outputs.version }}
+          E2E_CLI_CMD: docker run --add-host host.docker.internal:host-gateway --network host -v /tmp:/tmp brightsec/cli:${{ needs.resolve-version.outputs.version }}
           E2E_RUN_ID: ${{ format('{0}-{1}-{2}-{3}', github.run_number, github.run_attempt, github.job, strategy.job-index) }}
           E2E_CLUSTER: ${{ vars[format('E2E_{0}_HOST', inputs.environment)] }}
           E2E_PROJECT_ID: ${{ vars[format('E2E_{0}_PROJECT_ID', inputs.environment)] }}
