@@ -94,6 +94,7 @@ export interface DeployCommandOptions {
 export interface DeploymentRuntime {
   version: string;
   scriptsLoaded: boolean;
+  localScriptsLoaded: boolean;
   ci?: string;
   os?: string;
   arch?: string;

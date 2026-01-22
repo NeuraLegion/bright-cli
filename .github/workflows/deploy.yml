@@ -252,3 +252,24 @@ jobs:
 
       - name: Push charts to GHCR
         run: helm push ./bright-cli-*.tgz oci://ghcr.io/${{ env.HELM_REPOSITORY_OWNER }}
+
+    outputs:
+      tag: ${{ env.TAG }}
+
+  e2e-tests:
+    needs: [publish, generate-binary]
+    if: ${{ needs.publish.outputs.tag == 'next' }}
+    uses: ./.github/workflows/e2e.yml
+    with:
+      version: ${{ github.event.release.tag_name }}
+      environment: development
+    secrets: inherit
+
+  smoke-tests:
+    needs: [publish, generate-binary]
+    if: ${{ needs.publish.outputs.tag == 'latest' }}
+    uses: ./.github/workflows/smoke.yml
+    with:
+      version: ${{ github.event.release.tag_name }}
+      environment: staging
+    secrets: inherit

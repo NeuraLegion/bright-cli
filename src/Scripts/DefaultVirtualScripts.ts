@@ -58,4 +58,16 @@ export class DefaultVirtualScripts implements VirtualScripts {
   public values(): IterableIterator<VirtualScript> {
     return this.store.values();
   }
+
+  public count(type: VirtualScriptType): number {
+    let count = 0;
+
+    this.store.forEach((x: VirtualScript) => {
+      if (x.type === type) {
+        count++;
+      }
+    });
+
+    return count;
+  }
 }
