@@ -164,5 +164,8 @@
   },
   "brightCli": {
     "distribution": "unknown"
+  },
+  "overrides": {
+    "undici": "7.18.2"
   }
 }
