@@ -1,6 +1,6 @@
 {
   "name": "@brightsec/cli",
-  "version": "13.10.0",
+  "version": "13.10.1-next.1",
   "private": false,
   "repository": {
     "type": "git",
@@ -164,5 +164,8 @@
   },
   "brightCli": {
     "distribution": "unknown"
+  },
+  "overrides": {
+    "undici": "7.18.2"
   }
 }
