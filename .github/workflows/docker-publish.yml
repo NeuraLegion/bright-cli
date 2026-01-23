@@ -1,0 +1,71 @@
+name: Manual Docker Publish
+
+on:
+  pull_request:
+    branches:
+      - master
+
+env:
+  VERSION: v13.10.1
+  TAG: latest
+
+jobs:
+  publish-docker:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Wait for npm registry propagation
+        run: |
+          echo "Checking if @brightsec/cli@${{ env.VERSION }} is available on npm..."
+          for i in {1..30}; do
+            if npm view @brightsec/cli@${{ env.VERSION }} version 2>/dev/null; then
+              echo "Package is available!"
+              exit 0
+            fi
+            echo "Attempt $i/30: Package not yet available, waiting 10s..."
+            sleep 10
+          done
+          echo "Package not available after 5 minutes"
+          exit 1
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_BRIGHT_USER }}
+          password: ${{ secrets.DOCKERHUB_BRIGHT_TOKEN }}
+
+      - name: Build and Push Multi-Platform Images
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./Dockerfile
+          platforms: linux/amd64,linux/arm64
+          push: true
+          build-args: |
+            VERSION=${{ env.VERSION }}
+          tags: |
+            brightsec/cli:${{ env.VERSION }}
+            brightsec/cli:${{ env.TAG }}
+
+      - name: Setup Helm
+        uses: azure/setup-helm@v4
+
+      - name: Login to GHCR
+        run: echo ${{ secrets.GPR_TOKEN }} | helm registry login ghcr.io --username ${{ github.actor }} --password-stdin
+
+      - name: Package Chart
+        run: |
+          VERSION=${{ env.VERSION }}
+          helm package helm/bright-cli --version ${VERSION#v} --app-version $VERSION --destination .
+
+      - name: Build Helm repository name
+        run: echo "HELM_REPOSITORY_OWNER=${OWNER,,}" >>${GITHUB_ENV}
+        env:
+          OWNER: ${{ github.repository_owner }}
+
+      - name: Push charts to GHCR
+        run: helm push ./bright-cli-*.tgz oci://ghcr.io/${{ env.HELM_REPOSITORY_OWNER }}
