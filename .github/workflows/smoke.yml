@@ -43,8 +43,8 @@ jobs:
   smoke:
     uses: ./.github/workflows/test-cli.yml
     with:
-      version: ${{ inputs.version }}
-      environment: ${{ inputs.environment }}
+      version: ${{ inputs.version || '' }}
+      environment: ${{ inputs.environment || 'staging' }}
       test_timeout: ${{ inputs.test_timeout && fromJSON(inputs.test_timeout) || 5000 }}
       test_script: test:smoke
       with_wiremock: false
