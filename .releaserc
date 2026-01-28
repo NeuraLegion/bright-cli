@@ -6,7 +6,7 @@
         "releaseRules": [
           { "type": "docs", "release": "patch" },
           { "type": "refactor", "release": "patch" },
-          { "type": "build", "release": "patch" },
+          { "type": "build", "release": "patch" }
         ],
         "parserOpts": {
           "noteKeywords": ["BREAKING CHANGE", "BREAKING CHANGES"]
@@ -44,7 +44,8 @@
           ]
         },
         "writerOpts": {
-          "commitsSort": ["scope", "subject"]
+          "commitsSort": ["scope", "subject"],
+          "mainTemplate": "{{> header}}\n\n{{#each commitGroups}}\n{{#each commits}}\n{{> commit root=@root}}\n{{/each}}\n{{/each}}{{#unless commitGroups}}This is a maintenance release with no user-facing changes.{{/unless}}\n\n{{> footer}}"
         }
       }
     ],
