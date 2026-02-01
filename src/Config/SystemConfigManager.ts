@@ -4,7 +4,6 @@ import { readFile, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { homedir } from 'node:os';
 import { setTimeout } from 'node:timers/promises';
-import http from 'node:http';
 
 export interface SystemConfig {
   sentryDsn?: string;
@@ -30,8 +29,6 @@ export class SystemConfigManager {
         clarifyTimeoutError: true
       }
     });
-
-    logger.debug('boba: maxHeaderSize', http.maxHeaderSize);
   }
 
   public async read(): Promise<SystemConfig> {
