@@ -7,7 +7,7 @@ const path = require('path');
 const { spawn } = require('child_process');
 
 const ENTRY = path.join(__dirname, '../dist/index.js');
-const FLAG = '--max-http-header-size=32769';
+const FLAG = '--max-http-header-size=32768';
 
 const args = [FLAG, ENTRY, ...process.argv.slice(2)];
 
