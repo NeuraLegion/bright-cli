@@ -11,7 +11,7 @@
   },
   "author": "Artem Derevnjuk <artem.derevnjuk@brightsec.com>",
   "bin": {
-    "bright-cli": "./dist/index.js"
+    "bright-cli": "./npm_bin/bright-cli.js"
   },
   "bugs": {
     "url": "https://github.com/NeuraLegion/bright-cli/issues"
@@ -101,7 +101,8 @@
     "wiremock-captain": "^4.1.3"
   },
   "files": [
-    "dist"
+    "dist",
+    "npm_bin"
   ],
   "homepage": "https://github.com/NeuraLegion/bright-cli#readme",
   "keywords": [
