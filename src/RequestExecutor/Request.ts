@@ -29,6 +29,7 @@ export interface Cert {
 }
 
 export class Request {
+  public static readonly MAX_HEADERS_SIZE = 32768;
   public static readonly SINGLE_VALUE_HEADERS: ReadonlySet<string> =
     new Set<string>([
       'authorization',

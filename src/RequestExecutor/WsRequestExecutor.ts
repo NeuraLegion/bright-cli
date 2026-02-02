@@ -180,7 +180,8 @@ export class WsRequestExecutor implements RequestExecutor {
         headers: this.normalizeHeaders(request.headers),
         ca: request.ca,
         pfx: request.pfx,
-        passphrase: request.passphrase
+        passphrase: request.passphrase,
+        maxHeaderSize: Request.MAX_HEADERS_SIZE
       });
 
       const res: IncomingMessage = await this.connect(client);

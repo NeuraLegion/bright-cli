@@ -218,7 +218,8 @@ export class HttpRequestExecutor implements RequestExecutor {
       pfx: request.pfx,
       passphrase: request.passphrase,
       method: request.method,
-      rejectUnauthorized: false
+      rejectUnauthorized: false,
+      maxHeaderSize: Request.MAX_HEADERS_SIZE
     };
   }
 

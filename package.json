@@ -11,7 +11,7 @@
   },
   "author": "Artem Derevnjuk <artem.derevnjuk@brightsec.com>",
   "bin": {
-    "bright-cli": "./npm_bin/bright-cli.js"
+    "bright-cli": "./dist/index.js"
   },
   "bugs": {
     "url": "https://github.com/NeuraLegion/bright-cli/issues"
@@ -101,8 +101,7 @@
     "wiremock-captain": "^4.1.3"
   },
   "files": [
-    "dist",
-    "npm_bin"
+    "dist"
   ],
   "homepage": "https://github.com/NeuraLegion/bright-cli#readme",
   "keywords": [
@@ -159,9 +158,9 @@
     "test:e2e": "cross-env NODE_ENV=test jest tests/e2e",
     "test:smoke": "cross-env NODE_ENV=test jest tests/smoke",
     "build": "webpack --config webpack.config.js --mode=production",
-    "build:pkg": "pkg --options max-http-header-size=32768 .",
+    "build:pkg": "pkg .",
     "prepare": "is-ci || husky install",
-    "start": "cross-env NODE_OPTIONS=--max-http-header-size=32768 node -r ts-node/register/transpile-only -r tsconfig-paths/register src/index.ts"
+    "start": "node -r ts-node/register/transpile-only -r tsconfig-paths/register src/index.ts"
   },
   "brightCli": {
     "distribution": "unknown"

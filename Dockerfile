@@ -27,8 +27,6 @@ ENV NPM_CONFIG_PREFIX $HOME/.npm
 ENV NPM_CONFIG_UPDATE_NOTIFIER false
 # add local bin dir to path
 ENV PATH $PATH:$NPM_CONFIG_PREFIX/bin
-# increase max HTTP header size for node runtime
-ENV NODE_OPTIONS --max-http-header-size=32768
 
 # make folder for npm package
 RUN set -eux; \
