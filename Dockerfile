@@ -1,4 +1,4 @@
-FROM node:24-alpine as builder
+FROM --platform=linux/amd64 node:24-alpine as builder
 
 ARG VERSION
 
@@ -18,7 +18,7 @@ COPY typings ./typings
 # Build the project
 RUN npm run build
 
-FROM node:24-alpine as base
+FROM --platform=linux/amd64 node:24-alpine as base
 
 ARG VERSION
 
