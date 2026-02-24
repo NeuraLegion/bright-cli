@@ -1,3 +1,22 @@
+FROM node:24-alpine as builder
+
+ARG VERSION
+
+WORKDIR /build
+
+# Copy package files
+COPY package.json package-lock.json ./
+
+# Install dependencies
+RUN npm install
+
+# Copy source files
+COPY tsconfig.json tsconfig.build.json webpack.config.js ./
+COPY src ./src
+
+# Build the project
+RUN npm run build
+
 FROM node:24-alpine as base
 
 ARG VERSION
@@ -28,14 +47,13 @@ ENV NPM_CONFIG_UPDATE_NOTIFIER false
 # add local bin dir to path
 ENV PATH $PATH:$NPM_CONFIG_PREFIX/bin
 
-# make folder for npm package
-RUN set -eux; \
-    mkdir $NPM_CONFIG_PREFIX/; \
-    chown -R 1000:1000 $NPM_CONFIG_PREFIX/
+# Change working dir
+WORKDIR $HOME/app
 
-# install @brightsec/cli from NPM
-RUN set -eux; \
-    npm i -g -q @brightsec/cli@${VERSION}
+# Copy built dist from builder stage
+COPY --from=builder /build/dist ./dist
+COPY --from=builder /build/package.json ./
+COPY --from=builder /build/node_modules ./node_modules
 
 # set the directory and file permissions to allow users in the root group to access files
 # for details please refer to the doc at https://docs.openshift.com/container-platform/3.11/creating_images/guidelines.html#openshift-specific-guidelines
@@ -44,10 +62,7 @@ RUN set -eux; \
     chmod -R g+rwX /home/node; \
     chown -R 1000 /home/node
 
-# change workgin dir
-WORKDIR $HOME/
-
 # set as default a non-privileged user named node.
 USER 1000
-ENTRYPOINT [ "bright-cli" ]
+ENTRYPOINT [ "node", "dist/index.js" ]
 CMD ["--help"]

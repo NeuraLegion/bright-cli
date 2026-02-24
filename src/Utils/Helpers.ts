@@ -23,6 +23,7 @@ export interface CommandArgs {
 export interface ClusterArgs {
   cluster?: string;
   hostname?: string;
+  id: string;
 }
 
 export interface ClusterUrls {
@@ -71,6 +72,8 @@ export class Helpers {
 
     const hostname = args.cluster ?? args.hostname;
 
+    const repeaterId = args.id;
+
     if (hostname) {
       let host = hostname;
 
@@ -80,16 +83,16 @@ export class Helpers {
         // noop
       }
 
-      if (['localhost', '127.0.0.1'].includes(host)) {
-        api = `http://${host}:8000`;
-        repeaterServer = `ws://${host}:8000/workstations`;
+      if (['localhost', '127.0.0.1', 'host.docker.internal'].includes(host)) {
+        api = `http://${host}:8003`;
+        repeaterServer = `ws://${host}:8003/workstations-${repeaterId}`;
       } else {
         api = `https://${host}`;
-        repeaterServer = `wss://${host}/workstations`;
+        repeaterServer = `wss://${host}/workstations-${repeaterId}`;
       }
     } else {
       api = 'https://app.brightsec.com';
-      repeaterServer = `wss://app.brightsec.com/workstations`;
+      repeaterServer = `wss://app.brightsec.com/workstations-${repeaterId}`;
     }
 
     return { api, repeaterServer };
