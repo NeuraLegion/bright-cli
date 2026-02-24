@@ -23,7 +23,7 @@ export interface CommandArgs {
 export interface ClusterArgs {
   cluster?: string;
   hostname?: string;
-  id: string;
+  id?: string;
 }
 
 export interface ClusterUrls {
@@ -73,6 +73,10 @@ export class Helpers {
     const hostname = args.cluster ?? args.hostname;
 
     const repeaterId = args.id;
+
+    if (!repeaterId) {
+      throw new Error('Repeater ID is required to construct cluster URLs');
+    }
 
     if (hostname) {
       let host = hostname;
