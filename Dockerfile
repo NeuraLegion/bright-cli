@@ -63,6 +63,16 @@ RUN set -eux; \
     chmod -R g+rwX /home/node; \
     chown -R 1000 /home/node
 
+# Create bright-cli executable alias for users who run commands explicitly
+RUN set -eux; \
+    mkdir -p $NPM_CONFIG_PREFIX/bin; \
+    echo '#!/bin/sh' > $NPM_CONFIG_PREFIX/bin/bright-cli; \
+    echo 'exec node /home/node/app/dist/index.js "$@"' >> $NPM_CONFIG_PREFIX/bin/bright-cli; \
+    chmod +x $NPM_CONFIG_PREFIX/bin/bright-cli; \
+    chgrp -R 0 $NPM_CONFIG_PREFIX; \
+    chmod -R g+rwX $NPM_CONFIG_PREFIX; \
+    chown -R 1000 $NPM_CONFIG_PREFIX
+
 # set as default a non-privileged user named node.
 USER 1000
 ENTRYPOINT [ "node", "dist/index.js" ]
