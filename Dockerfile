@@ -13,6 +13,7 @@ RUN npm install
 # Copy source files
 COPY tsconfig.json tsconfig.build.json webpack.config.js ./
 COPY src ./src
+COPY typings ./typings
 
 # Build the project
 RUN npm run build
