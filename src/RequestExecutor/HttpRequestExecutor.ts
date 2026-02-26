@@ -8,6 +8,7 @@ import { RequestExecutorOptions } from './RequestExecutorOptions';
 import { NormalizeZlibDeflateTransformStream } from '../Utils/NormalizeZlibDeflateTransformStream';
 import { CertificatesCache } from './CertificatesCache';
 import { CertificatesResolver } from './CertificatesResolver';
+import { RequestExecutorConstants } from './RequestExecutorConstants';
 import { inject, injectable } from 'tsyringe';
 import iconv from 'iconv-lite';
 import { safeParse } from 'fast-content-type-parse';
@@ -218,7 +219,8 @@ export class HttpRequestExecutor implements RequestExecutor {
       pfx: request.pfx,
       passphrase: request.passphrase,
       method: request.method,
-      rejectUnauthorized: false
+      rejectUnauthorized: false,
+      maxHeaderSize: RequestExecutorConstants.MAX_HEADERS_SIZE
     };
   }
 

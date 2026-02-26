@@ -1,4 +1,7 @@
-FROM node:24-alpine as base
+FROM node:24-alpine AS base
+
+# update npm to get latest security fixes
+RUN npm i -g npm@11.11.0
 
 ARG VERSION
 
@@ -12,26 +15,30 @@ LABEL org.opencontainers.image.version="$VERSION"
 # a few environment variables to make NPM installs easier
 
 # good colors for most applications
-ENV TERM xterm
+ENV TERM=xterm
 # inform cli that it's running inside docker container
-ENV BRIGHT_CLI_DOCKER 1
+ENV BRIGHT_CLI_DOCKER=1
 # avoid million NPM install messages
-ENV NPM_CONFIG_LOGLEVEL warn
+ENV NPM_CONFIG_LOGLEVEL=warn
 # allow installing when the main user is root
-ENV NPM_CONFIG_UNSAFE_PERM true
+ENV NPM_CONFIG_UNSAFE_PERM=true
 # set CLI basepath
-ENV HOME /home/node
+ENV HOME=/home/node
 # set as default NPM prefix a custom folder
-ENV NPM_CONFIG_PREFIX $HOME/.npm
+ENV NPM_CONFIG_PREFIX=$HOME/.npm
 # disable npm update check
-ENV NPM_CONFIG_UPDATE_NOTIFIER false
+ENV NPM_CONFIG_UPDATE_NOTIFIER=false
 # add local bin dir to path
-ENV PATH $PATH:$NPM_CONFIG_PREFIX/bin
+ENV PATH=$PATH:$NPM_CONFIG_PREFIX/bin
 
 # make folder for npm package
 RUN set -eux; \
     mkdir $NPM_CONFIG_PREFIX/; \
     chown -R 1000:1000 $NPM_CONFIG_PREFIX/
+
+#  upgrade packages to get latest security fixes
+RUN echo 'http://dl-cdn.alpinelinux.org/alpine/edge/main' >> /etc/apk/repositories && \
+    apk upgrade --no-cache
 
 # install @brightsec/cli from NPM
 RUN set -eux; \
@@ -44,7 +51,7 @@ RUN set -eux; \
     chmod -R g+rwX /home/node; \
     chown -R 1000 /home/node
 
-# change workgin dir
+# change working dir
 WORKDIR $HOME/
 
 # set as default a non-privileged user named node.

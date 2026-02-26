@@ -6,6 +6,7 @@ import { Helpers, logger, ProxyFactory } from '../Utils';
 import { RequestExecutorOptions } from './RequestExecutorOptions';
 import { CertificatesCache } from './CertificatesCache';
 import { CertificatesResolver } from './CertificatesResolver';
+import { RequestExecutorConstants } from './RequestExecutorConstants';
 import { inject, injectable } from 'tsyringe';
 import WebSocket from 'ws';
 import { once } from 'node:events';
@@ -180,7 +181,8 @@ export class WsRequestExecutor implements RequestExecutor {
         headers: this.normalizeHeaders(request.headers),
         ca: request.ca,
         pfx: request.pfx,
-        passphrase: request.passphrase
+        passphrase: request.passphrase,
+        maxHeaderSize: RequestExecutorConstants.MAX_HEADERS_SIZE
       });
 
       const res: IncomingMessage = await this.connect(client);
