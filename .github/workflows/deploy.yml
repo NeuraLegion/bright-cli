@@ -10,6 +10,24 @@ env:
   ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION: true
 
 jobs:
+  resolve-tag:
+    runs-on: ubuntu-latest
+    outputs:
+      tag: ${{ steps.set-tag.outputs.tag }}
+    steps:
+      - name: Set TAG based on target_commitish
+        id: set-tag
+        run: |
+          if [ "${{ github.event.release.target_commitish }}" == "next" ]; then
+            echo "tag=next" >> $GITHUB_OUTPUT
+          elif [ "${{ github.event.release.target_commitish }}" == "alpha" ]; then
+            echo "tag=alpha" >> $GITHUB_OUTPUT
+          elif [ "${{ github.event.release.target_commitish }}" == "master" ]; then
+            echo "tag=latest" >> $GITHUB_OUTPUT
+          else
+            exit 1
+          fi
+
   install-deps:
     runs-on: ubuntu-latest
     steps:
@@ -158,7 +176,7 @@ jobs:
     permissions:
       id-token: write
     runs-on: ubuntu-latest
-    needs: build
+    needs: [build, resolve-tag]
     steps:
       - uses: actions/checkout@v4
         with:
@@ -172,33 +190,18 @@ jobs:
       - name:  Setup node
         uses: ./.github/workflows/composite/npm
 
-      - name: Set TAG based on target_commitish
-        run: |
-          if [ "${{ github.event.release.target_commitish }}" == "next" ]; then
-            echo "TAG=next" >> $GITHUB_ENV
-          elif [ "${{ github.event.release.target_commitish }}" == "alpha" ]; then
-            echo "TAG=alpha" >> $GITHUB_ENV
-          elif [ "${{ github.event.release.target_commitish }}" == "master" ]; then
-            echo "TAG=latest" >> $GITHUB_ENV
-          else
-            exit 1
-          fi
-
       - name: Set NPM distribution
         run: npm pkg set brightCli.distribution=npm
 
-      - run: npx -y npm@^11.5.1 publish --tag $TAG
+      - run: npx -y npm@^11.5.1 publish --tag ${{ needs.resolve-tag.outputs.tag }}
         env:
           NPM_CONFIG_PROVENANCE: true
-
-    outputs:
-      tag: ${{ env.TAG }}
 
   publish-gpr:
     permissions:
       id-token: write
     runs-on: ubuntu-latest
-    needs: build
+    needs: [build, resolve-tag]
     steps:
       - uses: actions/checkout@v4
         with:
@@ -208,18 +211,6 @@ jobs:
       - uses: actions/download-artifact@v4
         with:
           name: build
-
-      - name: Set TAG based on target_commitish
-        run: |
-          if [ "${{ github.event.release.target_commitish }}" == "next" ]; then
-            echo "TAG=next" >> $GITHUB_ENV
-          elif [ "${{ github.event.release.target_commitish }}" == "alpha" ]; then
-            echo "TAG=alpha" >> $GITHUB_ENV
-          elif [ "${{ github.event.release.target_commitish }}" == "master" ]; then
-            echo "TAG=latest" >> $GITHUB_ENV
-          else
-            exit 1
-          fi
 
         # The scope does not align with the package name
         # FIXME: once GitHub organization name has been changed, we should prevent this behavior
@@ -234,7 +225,7 @@ jobs:
           registry: 'https://npm.pkg.github.com'
           scope: '@NeuraLegion'
 
-      - run: npm publish --tag $TAG
+      - run: npm publish --tag ${{ needs.resolve-tag.outputs.tag }}
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GPR_TOKEN }}
 
@@ -242,7 +233,7 @@ jobs:
     permissions:
       id-token: write
     runs-on: ubuntu-latest
-    needs: publish-npm
+    needs: [publish-npm, resolve-tag]
     steps:
       - uses: actions/checkout@v4
         with:
@@ -265,7 +256,7 @@ jobs:
       - name: Prepare Image Tags
         run: |
           echo "TAG_REPEATER=brightsec/cli" >> $GITHUB_ENV
-          echo "TAG=${{ needs.publish-npm.outputs.tag }}" >> $GITHUB_ENV
+          echo "TAG=${{ needs.resolve-tag.outputs.tag }}" >> $GITHUB_ENV
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -287,7 +278,7 @@ jobs:
             VERSION=${{ env.VERSION }}
           tags: |
             ${{ env.TAG_REPEATER }}:${{ env.VERSION }}
-            ${{ env.TAG_REPEATER }}:${{ needs.publish-npm.outputs.tag }}
+            ${{ env.TAG_REPEATER }}:${{ needs.resolve-tag.outputs.tag }}
 
   publish-helm:
     permissions:
@@ -318,8 +309,8 @@ jobs:
         run: helm push ./bright-cli-*.tgz oci://ghcr.io/${{ env.HELM_REPOSITORY_OWNER }}
 
   e2e-tests:
-    needs: [publish-npm, publish-gpr, publish-docker, publish-helm, generate-binary]
-    if: ${{ needs.publish-npm.outputs.tag == 'next' }}
+    needs: [resolve-tag, publish-npm, publish-gpr, publish-docker, publish-helm, generate-binary]
+    if: ${{ needs.resolve-tag.outputs.tag == 'next' }}
     uses: ./.github/workflows/e2e.yml
     with:
       version: ${{ github.event.release.tag_name }}
@@ -327,8 +318,8 @@ jobs:
     secrets: inherit
 
   smoke-tests:
-    needs: [publish-npm, publish-gpr, publish-docker, publish-helm, generate-binary]
-    if: ${{ needs.publish-npm.outputs.tag == 'latest' }}
+    needs: [resolve-tag, publish-npm, publish-gpr, publish-docker, publish-helm, generate-binary]
+    if: ${{ needs.resolve-tag.outputs.tag == 'latest' }}
     uses: ./.github/workflows/smoke.yml
     with:
       version: ${{ github.event.release.tag_name }}
