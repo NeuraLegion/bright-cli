@@ -256,7 +256,6 @@ jobs:
       - name: Prepare Image Tags
         run: |
           echo "TAG_REPEATER=brightsec/cli" >> $GITHUB_ENV
-          echo "TAG=${{ needs.resolve-tag.outputs.tag }}" >> $GITHUB_ENV
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
