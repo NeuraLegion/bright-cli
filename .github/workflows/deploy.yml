@@ -10,6 +10,24 @@ env:
   ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION: true
 
 jobs:
+  resolve-tag:
+    runs-on: ubuntu-latest
+    outputs:
+      tag: ${{ steps.set-tag.outputs.tag }}
+    steps:
+      - name: Set TAG based on target_commitish
+        id: set-tag
+        run: |
+          if [ "${{ github.event.release.target_commitish }}" == "next" ]; then
+            echo "tag=next" >> $GITHUB_OUTPUT
+          elif [ "${{ github.event.release.target_commitish }}" == "alpha" ]; then
+            echo "tag=alpha" >> $GITHUB_OUTPUT
+          elif [ "${{ github.event.release.target_commitish }}" == "master" ]; then
+            echo "tag=latest" >> $GITHUB_OUTPUT
+          else
+            exit 1
+          fi
+
   install-deps:
     runs-on: ubuntu-latest
     steps:
@@ -154,11 +172,11 @@ jobs:
           asset_name: bright-cli.msi.sha256
           tag: ${{ github.ref }}
 
-  publish:
+  publish-npm:
     permissions:
       id-token: write
     runs-on: ubuntu-latest
-    needs: build
+    needs: [build, resolve-tag]
     steps:
       - uses: actions/checkout@v4
         with:
@@ -169,27 +187,30 @@ jobs:
         with:
           name: build
 
-      - name:  Setup node
+      - name: Setup node
         uses: ./.github/workflows/composite/npm
-
-      - name: Set TAG based on target_commitish
-        run: |
-          if [ "${{ github.event.release.target_commitish }}" == "next" ]; then
-            echo "TAG=next" >> $GITHUB_ENV
-          elif [ "${{ github.event.release.target_commitish }}" == "alpha" ]; then
-            echo "TAG=alpha" >> $GITHUB_ENV
-          elif [ "${{ github.event.release.target_commitish }}" == "master" ]; then
-            echo "TAG=latest" >> $GITHUB_ENV
-          else
-            exit 1
-          fi
 
       - name: Set NPM distribution
         run: npm pkg set brightCli.distribution=npm
 
-      - run: npx -y npm@^11.5.1 publish --tag $TAG
+      - run: npx -y npm@^11.5.1 publish --tag ${{ needs.resolve-tag.outputs.tag }}
         env:
           NPM_CONFIG_PROVENANCE: true
+
+  publish-gpr:
+    permissions:
+      id-token: write
+    runs-on: ubuntu-latest
+    needs: [build, resolve-tag]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.TARGET_REF }}
+          token: ${{ secrets.GPR_TOKEN }}
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: build
 
         # The scope does not align with the package name
         # FIXME: once GitHub organization name has been changed, we should prevent this behavior
@@ -204,15 +225,33 @@ jobs:
           registry: 'https://npm.pkg.github.com'
           scope: '@NeuraLegion'
 
-      - run: npm publish --tag $TAG
+      - run: npm publish --tag ${{ needs.resolve-tag.outputs.tag }}
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GPR_TOKEN }}
 
-      - run: sleep 30
+  publish-docker:
+    permissions:
+      id-token: write
+    runs-on: ubuntu-latest
+    needs: [publish-npm, resolve-tag]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.TARGET_REF }}
+          token: ${{ secrets.GPR_TOKEN }}
 
-      - name: Prepare Image Tags
+      - name: Wait for NPM propagation
         run: |
-          echo "TAG_REPEATER=brightsec/cli" >> $GITHUB_ENV
+          for i in {1..20}; do
+            if npm view @brightsec/cli@${{ env.VERSION }} version; then
+              echo "Package available!"
+              exit 0
+            fi
+            echo "Waiting for package to propagate (attempt $i/20)..."
+            sleep 15
+          done
+          echo "Timeout waiting for NPM package"
+          exit 1
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -233,8 +272,19 @@ jobs:
           build-args: |
             VERSION=${{ env.VERSION }}
           tags: |
-            ${{ env.TAG_REPEATER }}:${{ env.VERSION }}
-            ${{ env.TAG_REPEATER }}:${{ env.TAG }}
+            brightsec/cli:${{ env.VERSION }}
+            brightsec/cli:${{ needs.resolve-tag.outputs.tag }}
+
+  publish-helm:
+    permissions:
+      id-token: write
+    runs-on: ubuntu-latest
+    needs: publish-docker
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.TARGET_REF }}
+          token: ${{ secrets.GPR_TOKEN }}
 
       - name: Setup Helm
         uses: azure/setup-helm@v4
@@ -253,12 +303,9 @@ jobs:
       - name: Push charts to GHCR
         run: helm push ./bright-cli-*.tgz oci://ghcr.io/${{ env.HELM_REPOSITORY_OWNER }}
 
-    outputs:
-      tag: ${{ env.TAG }}
-
   e2e-tests:
-    needs: [publish, generate-binary]
-    if: ${{ needs.publish.outputs.tag == 'next' }}
+    needs: [resolve-tag, publish-npm, publish-gpr, publish-docker, publish-helm, generate-binary]
+    if: ${{ needs.resolve-tag.outputs.tag == 'next' }}
     uses: ./.github/workflows/e2e.yml
     with:
       version: ${{ github.event.release.tag_name }}
@@ -266,8 +313,8 @@ jobs:
     secrets: inherit
 
   smoke-tests:
-    needs: [publish, generate-binary]
-    if: ${{ needs.publish.outputs.tag == 'latest' }}
+    needs: [resolve-tag, publish-npm, publish-gpr, publish-docker, publish-helm, generate-binary]
+    if: ${{ needs.resolve-tag.outputs.tag == 'latest' }}
     uses: ./.github/workflows/smoke.yml
     with:
       version: ${{ github.event.release.tag_name }}
