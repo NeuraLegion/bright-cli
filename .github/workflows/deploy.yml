@@ -187,7 +187,7 @@ jobs:
         with:
           name: build
 
-      - name:  Setup node
+      - name: Setup node
         uses: ./.github/workflows/composite/npm
 
       - name: Set NPM distribution
@@ -253,10 +253,6 @@ jobs:
           echo "Timeout waiting for NPM package"
           exit 1
 
-      - name: Prepare Image Tags
-        run: |
-          echo "TAG_REPEATER=brightsec/cli" >> $GITHUB_ENV
-
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
@@ -276,8 +272,8 @@ jobs:
           build-args: |
             VERSION=${{ env.VERSION }}
           tags: |
-            ${{ env.TAG_REPEATER }}:${{ env.VERSION }}
-            ${{ env.TAG_REPEATER }}:${{ needs.resolve-tag.outputs.tag }}
+            brightsec/cli:${{ env.VERSION }}
+            brightsec/cli:${{ needs.resolve-tag.outputs.tag }}
 
   publish-helm:
     permissions:
