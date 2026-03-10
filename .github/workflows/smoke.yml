@@ -18,7 +18,7 @@ on:
         description: Environment
       test_timeout:
         description: "Test timeout in seconds"
-        default: 7200
+        default: 5000
         type: number
   workflow_dispatch:
     inputs:
@@ -36,7 +36,7 @@ on:
           - development
       test_timeout:
         description: "Test timeout in seconds"
-        default: 7200
+        default: 5000
         type: number
 
 jobs:
@@ -45,7 +45,7 @@ jobs:
     with:
       version: ${{ inputs.version || '' }}
       environment: ${{ inputs.environment || 'staging' }}
-      test_timeout: ${{ inputs.test_timeout && fromJSON(inputs.test_timeout) || 7200 }}
+      test_timeout: ${{ inputs.test_timeout && fromJSON(inputs.test_timeout) || 5000 }}
       test_script: test:smoke
       with_wiremock: false
     secrets: inherit
