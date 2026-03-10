@@ -54,7 +54,9 @@ describe('Repeater: Smoke Tests', () => {
         crawlerUrls: [config.targetUrl],
         projectId: config.projectId
       });
-      const scan = await ctx.api.waitForScanToFinish(scanId);
+      const scan = await ctx.api.waitForScanToFinish(scanId, {
+        timeout: config.maxTestTimeout
+      });
       const connectivity = await ctx.api.getScanEntryPointsConnectivity(scanId);
 
       expect(scan.requests).toBeGreaterThan(0);
