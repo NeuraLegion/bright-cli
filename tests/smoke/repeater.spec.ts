@@ -20,7 +20,7 @@ describe('Repeater: Smoke Tests', () => {
 
   afterEach(async () => {
     await teardownAfterEach(ctx);
-  }, 15000);
+  }, 10000);
 
   it(
     `should run scan against ${config.targetUrl}`,
