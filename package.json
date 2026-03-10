@@ -1,6 +1,6 @@
 {
   "name": "@brightsec/cli",
-  "version": "13.10.2",
+  "version": "13.10.3",
   "private": false,
   "repository": {
     "type": "git",
@@ -44,7 +44,7 @@
     "reflect-metadata": "^0.1.13",
     "rotating-file-stream": "^3.2.5",
     "semver": "^7.6.0",
-    "socket.io-client": "^4.7.1",
+    "socket.io-client": "^4.8.3",
     "socket.io-msgpack-parser": "^3.0.2",
     "socks-proxy-agent": "~8.0.2",
     "tslib": "^2.3.1",
