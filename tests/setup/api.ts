@@ -275,7 +275,7 @@ export class Api {
   }
 
   public async waitForScanToFinish(scanId: string, options?: WaitOptions) {
-    const timeout = options?.timeout ?? 4_800_000;
+    const timeout = options?.timeout ?? 3_600_000;
     const interval = options?.interval ?? 10_000;
     const startTime = Date.now();
 
