@@ -41,7 +41,7 @@ describe('Repeater: Smoke Tests', () => {
       const scanId = await ctx.api.createScan({
         name: ctx.name,
         repeaters: [ctx.repeaterId],
-        tests: ['stored_xss'],
+        tests: ['lfi', 'xss'],
         crawlerUrls: [config.targetUrl],
         projectId: config.projectId
       });
