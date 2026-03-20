@@ -467,7 +467,12 @@ describe('HttpRequestExecutor', () => {
   });
 
   it('should NOT include x-target-rtt header when the request fails before reaching the target', async () => {
-    const { request } = createRequest({ url: 'http://127.0.0.1:1' });
+    const { request, requestOptions } = createRequest();
+
+    nock(requestOptions.url).get('/').replyWithError({
+      message: 'connect ECONNREFUSED',
+      code: 'ECONNREFUSED'
+    });
 
     const response = await executor.execute(request);
 
