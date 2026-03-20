@@ -4,6 +4,7 @@ import { VirtualScript, VirtualScripts, VirtualScriptType } from '../Scripts';
 import { Protocol } from './Protocol';
 import { Request, RequestOptions, Cert } from './Request';
 import { RequestExecutorOptions } from './RequestExecutorOptions';
+import { RequestExecutorConstants } from './RequestExecutorConstants';
 import { ProxyFactory } from '../Utils';
 import { CertificatesCache } from './CertificatesCache';
 import { CertificatesResolver } from './CertificatesResolver';
@@ -435,5 +436,53 @@ describe('HttpRequestExecutor', () => {
 
       expect(response.body).toEqual('');
     });
+  });
+
+  it('should include x-target-rtt header in a successful response', async () => {
+    const { request, requestOptions } = createRequest();
+    nock(requestOptions.url).get('/').reply(200, 'ok');
+
+    const response = await executor.execute(request);
+
+    expect(response.headers).toHaveProperty(
+      RequestExecutorConstants.TARGET_RTT_HEADER
+    );
+    const rtt = Number(
+      response.headers[RequestExecutorConstants.TARGET_RTT_HEADER]
+    );
+    expect(Number.isInteger(rtt)).toBe(true);
+    expect(rtt).toBeGreaterThanOrEqual(0);
+  });
+
+  it('should include x-target-rtt header even on HTTP error responses', async () => {
+    const { request, requestOptions } = createRequest();
+    nock(requestOptions.url).get('/').reply(500, 'error body');
+
+    const response = await executor.execute(request);
+
+    expect(response.statusCode).toBe(500);
+    expect(response.headers).toHaveProperty(
+      RequestExecutorConstants.TARGET_RTT_HEADER
+    );
+  });
+
+  it('should NOT include x-target-rtt header when the request fails before reaching the target', async () => {
+    const { request } = createRequest({ url: 'http://127.0.0.1:1' });
+
+    const response = await executor.execute(request);
+
+    expect(response.errorCode).toBeDefined();
+    expect(response.headers).toBeUndefined();
+  });
+
+  it('should return x-target-rtt as an integer (no decimal places)', async () => {
+    const { request, requestOptions } = createRequest();
+    nock(requestOptions.url).get('/').reply(200, 'ok');
+
+    const response = await executor.execute(request);
+
+    const rttHeader =
+      response.headers?.[RequestExecutorConstants.TARGET_RTT_HEADER];
+    expect(rttHeader).toMatch(/^\d+$/);
   });
 });
