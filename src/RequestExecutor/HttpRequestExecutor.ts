@@ -148,15 +148,16 @@ export class HttpRequestExecutor implements RequestExecutor {
 
     try {
       const req = this.createRequest(options);
-      const start = performance.now();
+      let start = performance.now();
 
-      process.nextTick(() =>
+      process.nextTick(() => {
         req.end(
           options.encoding
             ? iconv.encode(options.body, options.encoding)
             : options.body
-        )
-      );
+        );
+        start = performance.now();
+      });
       timer = this.setTimeout(req, options.timeout);
 
       [res] = (await once(req, 'response')) as [IncomingMessage];
