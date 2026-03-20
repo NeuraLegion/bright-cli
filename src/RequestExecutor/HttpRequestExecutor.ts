@@ -148,7 +148,7 @@ export class HttpRequestExecutor implements RequestExecutor {
 
     try {
       const req = this.createRequest(options);
-      let start = performance.now();
+      let start: number;
 
       process.nextTick(() => {
         start = performance.now();
@@ -161,7 +161,10 @@ export class HttpRequestExecutor implements RequestExecutor {
       timer = this.setTimeout(req, options.timeout);
 
       [res] = (await once(req, 'response')) as [IncomingMessage];
-      rttMs = Math.round(performance.now() - start);
+
+      // ADHOC: we have guaranteed that 'response' event will be emitted after req is sent and process.nextTick called, so start will be defined
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      rttMs = Math.round(performance.now() - start!);
     } finally {
       clearTimeout(timer);
     }
