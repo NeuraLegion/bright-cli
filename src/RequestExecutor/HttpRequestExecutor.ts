@@ -151,12 +151,12 @@ export class HttpRequestExecutor implements RequestExecutor {
       let start = performance.now();
 
       process.nextTick(() => {
+        start = performance.now();
         req.end(
           options.encoding
             ? iconv.encode(options.body, options.encoding)
             : options.body
         );
-        start = performance.now();
       });
       timer = this.setTimeout(req, options.timeout);
 
