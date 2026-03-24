@@ -139,28 +139,37 @@ export class HttpRequestExecutor implements RequestExecutor {
     }
   }
 
-  private async request(options: Request) {
+  private async request(
+    options: Request
+  ): Promise<{ res: IncomingMessage; body: string; targetTTFB: number }> {
     let timer: NodeJS.Timeout | undefined;
     let res!: IncomingMessage;
+    let targetTTFB!: number;
 
     try {
       const req = this.createRequest(options);
+      let start!: number;
 
-      process.nextTick(() =>
+      process.nextTick(() => {
+        start = performance.now();
         req.end(
           options.encoding
             ? iconv.encode(options.body, options.encoding)
             : options.body
-        )
-      );
+        );
+      });
       timer = this.setTimeout(req, options.timeout);
 
       [res] = (await once(req, 'response')) as [IncomingMessage];
+
+      targetTTFB = Math.round(performance.now() - start);
     } finally {
       clearTimeout(timer);
     }
 
-    return this.truncateResponse(options, res);
+    const { res: finalRes, body } = await this.truncateResponse(options, res);
+
+    return { res: finalRes, body, targetTTFB };
   }
 
   private createRequest(request: Request): ClientRequest {
@@ -474,7 +483,7 @@ export class HttpRequestExecutor implements RequestExecutor {
   private async executeRequest(
     request: Request
   ): Promise<Response | undefined> {
-    const { res, body } = await this.request(request);
+    const { res, body, targetTTFB: rttMs } = await this.request(request);
 
     logger.trace(
       'received following response for request %j: headers: %j body: %s',
@@ -490,12 +499,15 @@ export class HttpRequestExecutor implements RequestExecutor {
       body.slice(0, 500).concat(body.length > 500 ? '...' : '')
     );
 
+    const headers = { ...res.headers } as Record<string, string | string[]>;
+
     return new Response({
       body,
       protocol: this.protocol,
       statusCode: res.statusCode,
-      headers: res.headers,
-      encoding: request.encoding
+      headers,
+      encoding: request.encoding,
+      targetTTFB: rttMs
     });
   }
 
