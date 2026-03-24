@@ -8,7 +8,8 @@ import {
   RepeaterServerEvents,
   RepeaterServerNetworkTestEvent,
   RepeaterServerReconnectionFailedEvent,
-  RepeaterServerRequestEvent
+  RepeaterServerRequestEvent,
+  RepeaterServerRequestResponse
 } from './RepeaterServer';
 import { RuntimeDetector } from './RuntimeDetector';
 import { ScriptLoader, VirtualScripts, VirtualScriptType } from '../Scripts';
@@ -241,7 +242,9 @@ export class ServerRepeaterLauncher implements RepeaterLauncher {
     this.requestExecutorOptions.maxBodySize = event.maxBodySize;
   };
 
-  private requestReceived = async (event: RepeaterServerRequestEvent) => {
+  private requestReceived = async (
+    event: RepeaterServerRequestEvent
+  ): Promise<RepeaterServerRequestResponse> => {
     const response = await this.commandHub.sendRequest(
       new Request({ ...event })
     );
