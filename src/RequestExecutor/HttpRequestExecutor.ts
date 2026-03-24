@@ -139,39 +139,28 @@ export class HttpRequestExecutor implements RequestExecutor {
     }
   }
 
-  private async request(
-    options: Request
-  ): Promise<{ res: IncomingMessage; body: string; rttMs: number }> {
+  private async request(options: Request) {
     let timer: NodeJS.Timeout | undefined;
     let res!: IncomingMessage;
-    let rttMs!: number;
 
     try {
       const req = this.createRequest(options);
-      let start: number;
 
-      process.nextTick(() => {
-        start = performance.now();
+      process.nextTick(() =>
         req.end(
           options.encoding
             ? iconv.encode(options.body, options.encoding)
             : options.body
-        );
-      });
+        )
+      );
       timer = this.setTimeout(req, options.timeout);
 
       [res] = (await once(req, 'response')) as [IncomingMessage];
-
-      // ADHOC: we have guaranteed that 'response' event will be emitted after req is sent and process.nextTick called, so start will be defined
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      rttMs = Math.round(performance.now() - start!);
     } finally {
       clearTimeout(timer);
     }
 
-    const { res: finalRes, body } = await this.truncateResponse(options, res);
-
-    return { res: finalRes, body, rttMs };
+    return this.truncateResponse(options, res);
   }
 
   private createRequest(request: Request): ClientRequest {
@@ -485,7 +474,7 @@ export class HttpRequestExecutor implements RequestExecutor {
   private async executeRequest(
     request: Request
   ): Promise<Response | undefined> {
-    const { res, body, rttMs } = await this.request(request);
+    const { res, body } = await this.request(request);
 
     logger.trace(
       'received following response for request %j: headers: %j body: %s',
@@ -501,14 +490,11 @@ export class HttpRequestExecutor implements RequestExecutor {
       body.slice(0, 500).concat(body.length > 500 ? '...' : '')
     );
 
-    const headers = { ...res.headers } as Record<string, string | string[]>;
-    headers[RequestExecutorConstants.TARGET_RTT_HEADER] = String(rttMs);
-
     return new Response({
       body,
       protocol: this.protocol,
       statusCode: res.statusCode,
-      headers,
+      headers: res.headers,
       encoding: request.encoding
     });
   }
