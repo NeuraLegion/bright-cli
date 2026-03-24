@@ -141,10 +141,10 @@ export class HttpRequestExecutor implements RequestExecutor {
 
   private async request(
     options: Request
-  ): Promise<{ res: IncomingMessage; body: string; targetTTFB: number }> {
+  ): Promise<{ res: IncomingMessage; body: string; ttfb: number }> {
     let timer: NodeJS.Timeout | undefined;
     let res!: IncomingMessage;
-    let targetTTFB!: number;
+    let ttfb!: number;
 
     try {
       const req = this.createRequest(options);
@@ -162,14 +162,14 @@ export class HttpRequestExecutor implements RequestExecutor {
 
       [res] = (await once(req, 'response')) as [IncomingMessage];
 
-      targetTTFB = Math.round(performance.now() - start);
+      ttfb = Math.round(performance.now() - start);
     } finally {
       clearTimeout(timer);
     }
 
     const { res: finalRes, body } = await this.truncateResponse(options, res);
 
-    return { res: finalRes, body, targetTTFB };
+    return { res: finalRes, body, ttfb };
   }
 
   private createRequest(request: Request): ClientRequest {
@@ -483,7 +483,7 @@ export class HttpRequestExecutor implements RequestExecutor {
   private async executeRequest(
     request: Request
   ): Promise<Response | undefined> {
-    const { res, body, targetTTFB: rttMs } = await this.request(request);
+    const { res, body, ttfb } = await this.request(request);
 
     logger.trace(
       'received following response for request %j: headers: %j body: %s',
@@ -507,7 +507,7 @@ export class HttpRequestExecutor implements RequestExecutor {
       statusCode: res.statusCode,
       headers,
       encoding: request.encoding,
-      targetTTFB: rttMs
+      ttfb
     });
   }
 

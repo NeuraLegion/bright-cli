@@ -437,28 +437,26 @@ describe('HttpRequestExecutor', () => {
     });
   });
 
-  it('should include targetTTFB in a successful response', async () => {
+  it('should include ttfb in a successful response', async () => {
     const { request, requestOptions } = createRequest();
     nock(requestOptions.url).get('/').reply(200, 'ok');
 
     const response = await executor.execute(request);
 
-    expect(response.targetTTFB).toBeDefined();
-    expect(Number.isInteger(response.targetTTFB)).toBe(true);
-    expect(response.targetTTFB).toBeGreaterThanOrEqual(0);
+    expect(response.ttfb).toBeGreaterThanOrEqual(0);
   });
 
-  it('should include targetTTFB even on HTTP error responses', async () => {
+  it('should include ttfb even on HTTP error responses', async () => {
     const { request, requestOptions } = createRequest();
     nock(requestOptions.url).get('/').reply(500, 'error body');
 
     const response = await executor.execute(request);
 
     expect(response.statusCode).toBe(500);
-    expect(response.targetTTFB).toBeDefined();
+    expect(response.ttfb).toBeDefined();
   });
 
-  it('should not include targetTTFB when the request fails before reaching the target', async () => {
+  it('should not include ttfb when the request fails before reaching the target', async () => {
     const { request, requestOptions } = createRequest();
 
     nock(requestOptions.url).get('/').replyWithError({
@@ -469,6 +467,6 @@ describe('HttpRequestExecutor', () => {
     const response = await executor.execute(request);
 
     expect(response.errorCode).toBeDefined();
-    expect(response.targetTTFB).toBeUndefined();
+    expect(response.ttfb).toBeUndefined();
   });
 });

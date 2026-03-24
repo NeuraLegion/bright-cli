@@ -254,7 +254,7 @@ export class ServerRepeaterLauncher implements RepeaterLauncher {
       headers,
       protocol,
       encoding,
-      targetTTFB
+      ttfb
     } = response;
 
     return {
@@ -265,7 +265,7 @@ export class ServerRepeaterLauncher implements RepeaterLauncher {
       errorCode,
       message,
       encoding,
-      targetTTFB
+      ttfb
     };
   };
 }

@@ -8,7 +8,7 @@ export class Response {
   public readonly encoding?: 'base64';
   public readonly message?: string;
   public readonly errorCode?: string;
-  public readonly targetTTFB?: number;
+  public readonly ttfb?: number;
 
   constructor({
     protocol,
@@ -18,7 +18,7 @@ export class Response {
     message,
     errorCode,
     encoding,
-    targetTTFB
+    ttfb
   }: {
     protocol: Protocol;
     statusCode?: number;
@@ -27,7 +27,7 @@ export class Response {
     headers?: Record<string, string | string[]>;
     body?: string;
     encoding?: 'base64';
-    targetTTFB?: number;
+    ttfb?: number;
   }) {
     this.protocol = protocol;
     this.statusCode = statusCode;
@@ -36,6 +36,6 @@ export class Response {
     this.errorCode = errorCode;
     this.message = message;
     this.encoding = encoding;
-    this.targetTTFB = targetTTFB;
+    this.ttfb = ttfb;
   }
 }
