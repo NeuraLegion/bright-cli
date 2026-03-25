@@ -139,9 +139,7 @@ export class HttpRequestExecutor implements RequestExecutor {
     }
   }
 
-  private async request(
-    options: Request
-  ): Promise<{ res: IncomingMessage; body: string; ttfb: number }> {
+  private async request(options: Request) {
     let timer: NodeJS.Timeout | undefined;
     let res!: IncomingMessage;
     let ttfb!: number;
