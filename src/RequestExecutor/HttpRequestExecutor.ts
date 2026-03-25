@@ -499,15 +499,13 @@ export class HttpRequestExecutor implements RequestExecutor {
       body.slice(0, 500).concat(body.length > 500 ? '...' : '')
     );
 
-    const headers = { ...res.headers } as Record<string, string | string[]>;
-
     return new Response({
       body,
-      protocol: this.protocol,
-      statusCode: res.statusCode,
-      headers,
+      ttfb,
       encoding: request.encoding,
-      ttfb
+      headers: res.headers,
+      protocol: this.protocol,
+      statusCode: res.statusCode
     });
   }
 
