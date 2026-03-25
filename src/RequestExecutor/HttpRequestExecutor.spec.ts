@@ -436,4 +436,37 @@ describe('HttpRequestExecutor', () => {
       expect(response.body).toEqual('');
     });
   });
+
+  it('should include ttfb in a successful response', async () => {
+    const { request, requestOptions } = createRequest();
+    nock(requestOptions.url).get('/').reply(200, 'ok');
+
+    const response = await executor.execute(request);
+
+    expect(response.ttfb).toBeGreaterThanOrEqual(0);
+  });
+
+  it('should include ttfb even on HTTP error responses', async () => {
+    const { request, requestOptions } = createRequest();
+    nock(requestOptions.url).get('/').reply(500, 'error body');
+
+    const response = await executor.execute(request);
+
+    expect(response.statusCode).toBe(500);
+    expect(response.ttfb).toBeDefined();
+  });
+
+  it('should not include ttfb when the request fails before reaching the target', async () => {
+    const { request, requestOptions } = createRequest();
+
+    nock(requestOptions.url).get('/').replyWithError({
+      message: 'connect ECONNREFUSED',
+      code: 'ECONNREFUSED'
+    });
+
+    const response = await executor.execute(request);
+
+    expect(response.errorCode).toBeDefined();
+    expect(response.ttfb).toBeUndefined();
+  });
 });

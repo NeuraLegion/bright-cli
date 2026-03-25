@@ -142,25 +142,32 @@ export class HttpRequestExecutor implements RequestExecutor {
   private async request(options: Request) {
     let timer: NodeJS.Timeout | undefined;
     let res!: IncomingMessage;
+    let ttfb!: number;
 
     try {
       const req = this.createRequest(options);
+      let start!: number;
 
-      process.nextTick(() =>
+      process.nextTick(() => {
+        start = performance.now();
         req.end(
           options.encoding
             ? iconv.encode(options.body, options.encoding)
             : options.body
-        )
-      );
+        );
+      });
       timer = this.setTimeout(req, options.timeout);
 
       [res] = (await once(req, 'response')) as [IncomingMessage];
+
+      ttfb = Math.round(performance.now() - start);
     } finally {
       clearTimeout(timer);
     }
 
-    return this.truncateResponse(options, res);
+    const response = await this.truncateResponse(options, res);
+
+    return { ...response, ttfb };
   }
 
   private createRequest(request: Request): ClientRequest {
@@ -474,7 +481,7 @@ export class HttpRequestExecutor implements RequestExecutor {
   private async executeRequest(
     request: Request
   ): Promise<Response | undefined> {
-    const { res, body } = await this.request(request);
+    const { res, body, ttfb } = await this.request(request);
 
     logger.trace(
       'received following response for request %j: headers: %j body: %s',
@@ -492,10 +499,11 @@ export class HttpRequestExecutor implements RequestExecutor {
 
     return new Response({
       body,
-      protocol: this.protocol,
-      statusCode: res.statusCode,
+      ttfb,
+      encoding: request.encoding,
       headers: res.headers,
-      encoding: request.encoding
+      protocol: this.protocol,
+      statusCode: res.statusCode
     });
   }
 
