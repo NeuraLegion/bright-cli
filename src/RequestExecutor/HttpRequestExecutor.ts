@@ -165,9 +165,9 @@ export class HttpRequestExecutor implements RequestExecutor {
       clearTimeout(timer);
     }
 
-    const { res: finalRes, body } = await this.truncateResponse(options, res);
+    const response = await this.truncateResponse(options, res);
 
-    return { res: finalRes, body, ttfb };
+    return { ...response, ttfb };
   }
 
   private createRequest(request: Request): ClientRequest {
