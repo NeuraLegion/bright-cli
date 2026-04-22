@@ -187,7 +187,13 @@ export class HttpRequestExecutor implements RequestExecutor {
       if (!RECOVERABLE_HTTP_REQ_ERRORS.has(err.code)) {
         throw err;
       }
-      outgoingMessage = this.createRawRequest(request);
+
+      // ADHOC: Intentionally sends requests with malformed paths (e.g. unescaped
+      // characters) that Node.js normally rejects. Used for security testing.
+      return this.malformedUrlRequestSender.send(
+        this.createRequestOptions(request),
+        request.secureEndpoint
+      );
     }
     this.setHeaders(outgoingMessage, request);
 
@@ -196,15 +202,6 @@ export class HttpRequestExecutor implements RequestExecutor {
     }
 
     return outgoingMessage;
-  }
-
-  // ADHOC: Intentionally sends requests with malformed paths (e.g. unescaped
-  // characters) that Node.js normally rejects. Used for security testing.
-  private createRawRequest(request: Request): ClientRequest {
-    return this.malformedUrlRequestSender.send(
-      this.createRequestOptions(request),
-      request.secureEndpoint
-    );
   }
 
   private setTimeout(
