@@ -9,6 +9,7 @@ import { NormalizeZlibDeflateTransformStream } from '../Utils/NormalizeZlibDefla
 import { CertificatesCache } from './CertificatesCache';
 import { CertificatesResolver } from './CertificatesResolver';
 import { RequestExecutorConstants } from './RequestExecutorConstants';
+import { MalformedUrlRequestSender } from './MalformedUrlRequestSender';
 import { inject, injectable } from 'tsyringe';
 import iconv from 'iconv-lite';
 import { safeParse } from 'fast-content-type-parse';
@@ -35,6 +36,8 @@ type ScriptEntrypoint = (
   options: RequestOptions
 ) => Promise<RequestOptions> | RequestOptions;
 
+const RECOVERABLE_HTTP_REQ_ERRORS = new Set(['ERR_UNESCAPED_CHARACTERS']);
+
 @injectable()
 export class HttpRequestExecutor implements RequestExecutor {
   private readonly DEFAULT_SCRIPT_ENTRYPOINT = 'handle';
@@ -57,7 +60,9 @@ export class HttpRequestExecutor implements RequestExecutor {
     @inject(CertificatesCache)
     private readonly certificatesCache: CertificatesCache,
     @inject(CertificatesResolver)
-    private readonly certificatesResolver: CertificatesResolver
+    private readonly certificatesResolver: CertificatesResolver,
+    @inject(MalformedUrlRequestSender)
+    private readonly malformedUrlRequestSender: MalformedUrlRequestSender
   ) {
     if (this.options.proxyUrl) {
       ({ httpsAgent: this.httpsProxyAgent, httpAgent: this.httpProxyAgent } =
@@ -161,6 +166,9 @@ export class HttpRequestExecutor implements RequestExecutor {
       [res] = (await once(req, 'response')) as [IncomingMessage];
 
       ttfb = Math.round(performance.now() - start);
+    } catch (e) {
+      logger.error('Error during request execution: %s', e);
+      throw e;
     } finally {
       clearTimeout(timer);
     }
@@ -172,9 +180,15 @@ export class HttpRequestExecutor implements RequestExecutor {
 
   private createRequest(request: Request): ClientRequest {
     const protocol = request.secureEndpoint ? https : http;
-    const outgoingMessage = protocol.request(
-      this.createRequestOptions(request)
-    );
+    let outgoingMessage: ClientRequest;
+    try {
+      outgoingMessage = protocol.request(this.createRequestOptions(request));
+    } catch (err) {
+      if (!RECOVERABLE_HTTP_REQ_ERRORS.has(err.code)) {
+        throw err;
+      }
+      outgoingMessage = this.createRawRequest(request);
+    }
     this.setHeaders(outgoingMessage, request);
 
     if (!outgoingMessage.hasHeader('accept-encoding')) {
@@ -182,6 +196,15 @@ export class HttpRequestExecutor implements RequestExecutor {
     }
 
     return outgoingMessage;
+  }
+
+  // ADHOC: Intentionally sends requests with malformed paths (e.g. unescaped
+  // characters) that Node.js normally rejects. Used for security testing.
+  private createRawRequest(request: Request): ClientRequest {
+    return this.malformedUrlRequestSender.send(
+      this.createRequestOptions(request),
+      request.secureEndpoint
+    );
   }
 
   private setTimeout(
@@ -203,22 +226,36 @@ export class HttpRequestExecutor implements RequestExecutor {
   }
 
   private createRequestOptions(request: Request): ClientRequestOptions {
-    const {
-      auth,
-      hostname,
-      port,
-      hash = '',
-      pathname = '/',
-      search = ''
-    } = parseUrl(request.url);
-    const path = `${pathname ?? '/'}${search ?? ''}${hash ?? ''}`;
+    let auth: string;
+    let hostname: string;
+    let port: number | string;
+    try {
+      const parsed = parseUrl(request.url);
+      auth = parsed.auth;
+      hostname = parsed.hostname;
+      port = parsed.port;
+    } catch (e) {
+      logger.error('Failed to parse URL "%s": %s', request.url, e);
+      throw e;
+    }
+
+    /**
+     * ADHOC: Extract the raw path+query+hash directly from the URL string so that
+     * characters already present in the URL (e.g. `"`, unencoded spaces) are
+     * forwarded to the wire as-is without any additional percent-encoding by
+     * url.parse or the WHATWG URL constructor.
+     */
+    const withoutProtocol = request.url.replace(/^https?:\/\//, '');
+    const slashIndex = withoutProtocol.indexOf('/');
+    const rawPath = slashIndex !== -1 ? withoutProtocol.slice(slashIndex) : '/';
+
     const agent = this.getRequestAgent(request);
     const timeout = request.timeout ?? this.options.timeout;
 
     return {
       hostname,
       port,
-      path,
+      path: rawPath,
       auth,
       agent,
       timeout,
