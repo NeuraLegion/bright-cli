@@ -238,7 +238,11 @@ export class HttpRequestExecutor implements RequestExecutor {
      * forwarded to the wire as-is without any additional percent-encoding by
      * url.parse or the WHATWG URL constructor.
      */
-    const withoutProtocol = request.url.replace(/^https?:\/\//, '');
+    const protocolSeparatorIndex = request.url.indexOf('://');
+    const withoutProtocol =
+      protocolSeparatorIndex === -1
+        ? request.url
+        : request.url.slice(protocolSeparatorIndex + 3);
     const pathStart = withoutProtocol.search(/[/?#]/);
     const rawPath =
       pathStart === -1
