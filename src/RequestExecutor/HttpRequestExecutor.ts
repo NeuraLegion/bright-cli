@@ -217,19 +217,7 @@ export class HttpRequestExecutor implements RequestExecutor {
   }
 
   private createRequestOptions(request: Request): ClientRequestOptions {
-    let auth: string;
-    let hostname: string;
-    let port: number | string;
-    try {
-      const parsed = parseUrl(request.url);
-      auth = parsed.auth;
-      hostname = parsed.hostname;
-      port = parsed.port;
-    } catch (e) {
-      logger.error('Failed to parse URL "%s": %s', request.url, e);
-      throw e;
-    }
-
+    const { auth, hostname, port } = parseUrl(request.url);
     /**
      * ADHOC: Extract the raw path+query+hash directly from the URL string so that
      * characters already present in the URL (e.g. `"`, unencoded spaces) are
