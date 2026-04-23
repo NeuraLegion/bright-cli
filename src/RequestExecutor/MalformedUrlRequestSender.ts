@@ -76,6 +76,9 @@ export class MalformedUrlRequestSender {
           chunk = MalformedUrlRequestSender.patchRequestLine(chunk, rawPath);
         }
 
+        // Restore original immediately so this wrapper is used only once
+        socket.write = originalWrite;
+
         return originalWrite(chunk, encodingOrCb, cb);
       };
     });
