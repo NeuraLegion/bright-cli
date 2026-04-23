@@ -22,7 +22,10 @@ export class MalformedUrlRequestSender {
     opts: ClientRequestOptions,
     secureEndpoint: boolean
   ): ClientRequest {
-    const rawPath = opts.path as string;
+    const rawPath = opts.path;
+    if (!rawPath) {
+      throw new Error('Request options must include a path.');
+    }
     const safeOpts: ClientRequestOptions = {
       ...opts,
       path: this.PATH_PLACEHOLDER
