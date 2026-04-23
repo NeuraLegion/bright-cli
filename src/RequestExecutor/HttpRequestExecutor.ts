@@ -181,8 +181,9 @@ export class HttpRequestExecutor implements RequestExecutor {
   private createRequest(request: Request): ClientRequest {
     const protocol = request.secureEndpoint ? https : http;
     let outgoingMessage: ClientRequest;
+    const requestOptions = this.createRequestOptions(request);
     try {
-      outgoingMessage = protocol.request(this.createRequestOptions(request));
+      outgoingMessage = protocol.request(requestOptions);
     } catch (err) {
       if (!RECOVERABLE_HTTP_REQ_ERRORS.has(err.code)) {
         throw err;
@@ -191,7 +192,7 @@ export class HttpRequestExecutor implements RequestExecutor {
       // ADHOC: Intentionally sends requests with malformed paths (e.g. unescaped
       // characters) that Node.js normally rejects. Used for security testing.
       outgoingMessage = this.malformedUrlRequestSender.send(
-        this.createRequestOptions(request),
+        requestOptions,
         request.secureEndpoint
       );
     }
