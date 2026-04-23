@@ -456,32 +456,42 @@ describe('HttpRequestExecutor', () => {
       expect(response.body).toEqual('');
     });
 
-    it('should delegate to MalformedUrlRequestSender when path contains unescaped characters', async () => {
-      const { request } = createRequest({
-        url: 'http://localhost:8080/path|with|pipes'
+    describe('with ERR_UNESCAPED_CHARACTERS request spy', () => {
+      let reqSpy: jest.SpyInstance;
+
+      beforeEach(() => {
+        // nock intercepts http.request before Node.js validates the path, so
+        // ERR_UNESCAPED_CHARACTERS is never raised naturally in tests. Simulate
+        // it so only the first http.request call (inside createRequest) throws;
+        // subsequent calls fall through to nock's interceptor.
+        reqSpy = jest.spyOn(http, 'request').mockImplementationOnce(() => {
+          throw Object.assign(
+            new Error('Request path contains unescaped characters'),
+            { code: 'ERR_UNESCAPED_CHARACTERS' }
+          );
+        });
       });
-      // nock intercepts http.request before Node.js validates the path, so
-      // ERR_UNESCAPED_CHARACTERS is never raised naturally in tests. Simulate
-      // it with mockImplementationOnce so only the first http.request call
-      // (inside createRequest) throws; the second call (from thenCall below)
-      // falls through to nock's interceptor.
-      const reqSpy = jest.spyOn(http, 'request').mockImplementationOnce(() => {
-        throw Object.assign(
-          new Error('Request path contains unescaped characters'),
-          { code: 'ERR_UNESCAPED_CHARACTERS' }
-        );
+
+      afterEach(() => {
+        reqSpy.mockRestore();
       });
-      nock('http://localhost:8080').get('/safe').reply(200, 'ok');
-      when(malformedUrlRequestSenderMock.send(anything(), anything())).thenCall(
-        () => http.request('http://localhost:8080/safe')
-      );
 
-      const response = await executor.execute(request);
+      it('should delegate to MalformedUrlRequestSender when path contains unescaped characters', async () => {
+        const { request } = createRequest({
+          url: 'http://localhost:8080/path|with|pipes'
+        });
+        nock('http://localhost:8080').get('/safe').reply(200, 'ok');
+        when(
+          malformedUrlRequestSenderMock.send(anything(), anything())
+        ).thenCall(() => http.request('http://localhost:8080/safe'));
 
-      verify(malformedUrlRequestSenderMock.send(anything(), anything())).once();
-      expect(response.statusCode).toBe(200);
+        const response = await executor.execute(request);
 
-      reqSpy.mockRestore();
+        verify(
+          malformedUrlRequestSenderMock.send(anything(), anything())
+        ).once();
+        expect(response.statusCode).toBe(200);
+      });
     });
   });
 
