@@ -190,16 +190,12 @@ export class HttpRequestExecutor implements RequestExecutor {
 
       // ADHOC: Intentionally sends requests with malformed paths (e.g. unescaped
       // characters) that Node.js normally rejects. Used for security testing.
-      return this.malformedUrlRequestSender.send(
+      outgoingMessage = this.malformedUrlRequestSender.send(
         this.createRequestOptions(request),
         request.secureEndpoint
       );
     }
     this.setHeaders(outgoingMessage, request);
-
-    if (!outgoingMessage.hasHeader('accept-encoding')) {
-      outgoingMessage.setHeader('accept-encoding', 'gzip, deflate');
-    }
 
     return outgoingMessage;
   }
@@ -487,6 +483,10 @@ export class HttpRequestExecutor implements RequestExecutor {
 
     if (!options.keepAlive) {
       req.setHeader('Connection', 'close');
+    }
+
+    if (!req.hasHeader('accept-encoding')) {
+      req.setHeader('accept-encoding', 'gzip, deflate');
     }
   }
 
