@@ -75,8 +75,8 @@ describe('MalformedUrlRequestSender', () => {
     sender = new MalformedUrlRequestSender();
   });
 
-  describe('send() with secureEndpoint=false', () => {
-    it('writes a malformed path verbatim on the wire', async () => {
+  describe('send', () => {
+    it('should write a malformed path verbatim on the wire', async () => {
       // arrange
       const fixture = await startTcpServer();
       const rawPath = '/?msg=Server: ESA1 HTTP/1.1';
@@ -100,7 +100,7 @@ describe('MalformedUrlRequestSender', () => {
       expect(extractRequestLine(raw)).toBe(`GET ${rawPath} HTTP/1.1`);
     });
 
-    it('writes a normal path correctly', async () => {
+    it('should write a normal path correctly', async () => {
       // arrange
       const fixture = await startTcpServer();
       const normalPath = '/api/v1/resource?key=value';
@@ -124,7 +124,7 @@ describe('MalformedUrlRequestSender', () => {
       expect(extractRequestLine(raw)).toBe(`GET ${normalPath} HTTP/1.1`);
     });
 
-    it('never sends the safe placeholder path to the wire', async () => {
+    it('should never send the safe placeholder path to the wire', async () => {
       // arrange
       const fixture = await startTcpServer();
       const rawPath = '/?x=1&y=2';
@@ -148,7 +148,7 @@ describe('MalformedUrlRequestSender', () => {
       expect(raw).not.toContain('/SAFE_PATH_PLACEHOLDER');
     });
 
-    it('patches only the request-line write — body chunks arrive unmodified', async () => {
+    it('should patch only the request-line write and leave body chunks unmodified', async () => {
       // arrange
       const fixture = await startTcpServer();
       const rawPath = '/submit';

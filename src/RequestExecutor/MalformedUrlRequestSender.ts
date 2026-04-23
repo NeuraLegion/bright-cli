@@ -16,39 +16,8 @@ import https, { RequestOptions as ClientRequestOptions } from 'node:https';
  */
 @injectable()
 export class MalformedUrlRequestSender {
-  private static readonly PATH_PLACEHOLDER = '/SAFE_PATH_PLACEHOLDER';
+  private readonly PATH_PLACEHOLDER = '/SAFE_PATH_PLACEHOLDER';
 
-  /**
-   * Replaces the placeholder path in the first write of the socket (i.e. the
-   * HTTP request-line) with the actual raw path.
-   */
-  private static patchRequestLine(
-    chunk: string | Uint8Array,
-    rawPath: string
-  ): string | Buffer {
-    const str =
-      typeof chunk === 'string' ? chunk : Buffer.from(chunk).toString('latin1');
-
-    const escapedPlaceholder =
-      MalformedUrlRequestSender.PATH_PLACEHOLDER.replace(
-        /[.*+?^${}()|[\]\\]/g,
-        '\\$&'
-      );
-
-    const patched = str.replace(
-      new RegExp(`^([A-Z]+ )${escapedPlaceholder} (HTTP\\/)`),
-      (_, method: string, httpVer: string) => `${method}${rawPath} ${httpVer}`
-    );
-
-    return typeof chunk === 'string' ? patched : Buffer.from(patched, 'latin1');
-  }
-
-  /**
-   * @param opts          Request options produced by the caller. `opts.path`
-   *                      must contain the raw (possibly malformed) path that
-   *                      should be written to the wire.
-   * @param secureEndpoint Whether to use `https` instead of `http`.
-   */
   public send(
     opts: ClientRequestOptions,
     secureEndpoint: boolean
@@ -56,7 +25,7 @@ export class MalformedUrlRequestSender {
     const rawPath = opts.path as string;
     const safeOpts: ClientRequestOptions = {
       ...opts,
-      path: MalformedUrlRequestSender.PATH_PLACEHOLDER
+      path: this.PATH_PLACEHOLDER
     };
 
     const protocol = secureEndpoint ? https : http;
@@ -73,7 +42,7 @@ export class MalformedUrlRequestSender {
       ): boolean => {
         if (!patched) {
           patched = true;
-          chunk = MalformedUrlRequestSender.patchRequestLine(chunk, rawPath);
+          chunk = this.patchRequestLine(chunk, rawPath);
         }
 
         // Restore original immediately so this wrapper is used only once
@@ -84,5 +53,35 @@ export class MalformedUrlRequestSender {
     });
 
     return req;
+  }
+
+  /**
+   * Replaces the placeholder path in the first write of the socket (i.e. the
+   * HTTP request-line) with the actual raw path.
+   */
+  private patchRequestLine(
+    chunk: string | Uint8Array,
+    rawPath: string
+  ): string | Buffer {
+    const str =
+      typeof chunk === 'string' ? chunk : Buffer.from(chunk).toString('latin1');
+
+    const escapedPlaceholder = this.PATH_PLACEHOLDER.replace(
+      /[.*+?^${}()|[\]\\]/g,
+      '\\$&'
+    );
+
+    const patched = str.replace(
+      new RegExp(`^([^ ]+ )${escapedPlaceholder} (HTTP\\/)`),
+      (_, method: string, httpVer: string) => `${method}${rawPath} ${httpVer}`
+    );
+
+    if (patched === str) {
+      throw new Error(
+        'Failed to patch HTTP request line: placeholder path was not found in the first socket write.'
+      );
+    }
+
+    return typeof chunk === 'string' ? patched : Buffer.from(patched, 'latin1');
   }
 }
