@@ -166,9 +166,6 @@ export class HttpRequestExecutor implements RequestExecutor {
       [res] = (await once(req, 'response')) as [IncomingMessage];
 
       ttfb = Math.round(performance.now() - start);
-    } catch (e) {
-      logger.error('Error during request execution: %s', e);
-      throw e;
     } finally {
       clearTimeout(timer);
     }
