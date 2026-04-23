@@ -9,6 +9,7 @@ import { NormalizeZlibDeflateTransformStream } from '../Utils/NormalizeZlibDefla
 import { CertificatesCache } from './CertificatesCache';
 import { CertificatesResolver } from './CertificatesResolver';
 import { RequestExecutorConstants } from './RequestExecutorConstants';
+import { MalformedUrlRequestSender } from './MalformedUrlRequestSender';
 import { inject, injectable } from 'tsyringe';
 import iconv from 'iconv-lite';
 import { safeParse } from 'fast-content-type-parse';
@@ -35,6 +36,8 @@ type ScriptEntrypoint = (
   options: RequestOptions
 ) => Promise<RequestOptions> | RequestOptions;
 
+const RECOVERABLE_HTTP_REQ_ERRORS = new Set(['ERR_UNESCAPED_CHARACTERS']);
+
 @injectable()
 export class HttpRequestExecutor implements RequestExecutor {
   private readonly DEFAULT_SCRIPT_ENTRYPOINT = 'handle';
@@ -57,7 +60,9 @@ export class HttpRequestExecutor implements RequestExecutor {
     @inject(CertificatesCache)
     private readonly certificatesCache: CertificatesCache,
     @inject(CertificatesResolver)
-    private readonly certificatesResolver: CertificatesResolver
+    private readonly certificatesResolver: CertificatesResolver,
+    @inject(MalformedUrlRequestSender)
+    private readonly malformedUrlRequestSender: MalformedUrlRequestSender
   ) {
     if (this.options.proxyUrl) {
       ({ httpsAgent: this.httpsProxyAgent, httpAgent: this.httpProxyAgent } =
@@ -172,14 +177,23 @@ export class HttpRequestExecutor implements RequestExecutor {
 
   private createRequest(request: Request): ClientRequest {
     const protocol = request.secureEndpoint ? https : http;
-    const outgoingMessage = protocol.request(
-      this.createRequestOptions(request)
-    );
-    this.setHeaders(outgoingMessage, request);
+    let outgoingMessage: ClientRequest;
+    const requestOptions = this.createRequestOptions(request);
+    try {
+      outgoingMessage = protocol.request(requestOptions);
+    } catch (err) {
+      if (!RECOVERABLE_HTTP_REQ_ERRORS.has(err.code)) {
+        throw err;
+      }
 
-    if (!outgoingMessage.hasHeader('accept-encoding')) {
-      outgoingMessage.setHeader('accept-encoding', 'gzip, deflate');
+      // ADHOC: Intentionally sends requests with malformed paths (e.g. unescaped
+      // characters) that Node.js normally rejects. Used for security testing.
+      outgoingMessage = this.malformedUrlRequestSender.send(
+        requestOptions,
+        request.secureEndpoint
+      );
     }
+    this.setHeaders(outgoingMessage, request);
 
     return outgoingMessage;
   }
@@ -203,22 +217,33 @@ export class HttpRequestExecutor implements RequestExecutor {
   }
 
   private createRequestOptions(request: Request): ClientRequestOptions {
-    const {
-      auth,
-      hostname,
-      port,
-      hash = '',
-      pathname = '/',
-      search = ''
-    } = parseUrl(request.url);
-    const path = `${pathname ?? '/'}${search ?? ''}${hash ?? ''}`;
+    const { auth, hostname, port } = parseUrl(request.url);
+    /**
+     * ADHOC: Extract the raw path+query+hash directly from the URL string so that
+     * characters already present in the URL (e.g. `"`, unencoded spaces) are
+     * forwarded to the wire as-is without any additional percent-encoding by
+     * url.parse or the WHATWG URL constructor.
+     */
+    const protocolSeparatorIndex = request.url.indexOf('://');
+    const withoutProtocol =
+      protocolSeparatorIndex === -1
+        ? request.url
+        : request.url.slice(protocolSeparatorIndex + 3);
+    const pathStart = withoutProtocol.search(/[/?#]/);
+    const rawPath =
+      pathStart === -1
+        ? '/'
+        : withoutProtocol[pathStart] === '/'
+        ? withoutProtocol.slice(pathStart)
+        : `/${withoutProtocol.slice(pathStart)}`;
+
     const agent = this.getRequestAgent(request);
     const timeout = request.timeout ?? this.options.timeout;
 
     return {
       hostname,
       port,
-      path,
+      path: rawPath,
       auth,
       agent,
       timeout,
@@ -453,6 +478,10 @@ export class HttpRequestExecutor implements RequestExecutor {
 
     if (!options.keepAlive) {
       req.setHeader('Connection', 'close');
+    }
+
+    if (!req.hasHeader('accept-encoding')) {
+      req.setHeader('accept-encoding', 'gzip, deflate');
     }
   }
 

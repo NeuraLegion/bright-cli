@@ -7,6 +7,7 @@ import { RequestExecutorOptions } from './RequestExecutorOptions';
 import { ProxyFactory } from '../Utils';
 import { CertificatesCache } from './CertificatesCache';
 import { CertificatesResolver } from './CertificatesResolver';
+import { MalformedUrlRequestSender } from './MalformedUrlRequestSender';
 import nock from 'nock';
 import {
   anyString,
@@ -18,6 +19,7 @@ import {
   verify,
   when
 } from 'ts-mockito';
+import http from 'node:http';
 import { promisify } from 'node:util';
 import {
   brotliCompress,
@@ -46,6 +48,7 @@ describe('HttpRequestExecutor', () => {
   const proxyFactoryMock = mock<ProxyFactory>();
   const certificatesCacheMock = mock<CertificatesCache>();
   const certificatesResolverMock = mock<CertificatesResolver>();
+  const malformedUrlRequestSenderMock = mock<MalformedUrlRequestSender>();
   let spiedExecutorOptions!: RequestExecutorOptions;
 
   let executor!: HttpRequestExecutor;
@@ -59,7 +62,8 @@ describe('HttpRequestExecutor', () => {
       instance(proxyFactoryMock),
       executorOptions,
       certificatesCacheMock,
-      instance(certificatesResolverMock)
+      instance(certificatesResolverMock),
+      instance(malformedUrlRequestSenderMock)
     );
   });
 
@@ -70,12 +74,14 @@ describe('HttpRequestExecutor', () => {
       | ProxyFactory
       | CertificatesCache
       | CertificatesResolver
+      | MalformedUrlRequestSender
     >(
       virtualScriptsMock,
       spiedExecutorOptions,
       proxyFactoryMock,
       certificatesCacheMock,
-      certificatesResolverMock
+      certificatesResolverMock,
+      malformedUrlRequestSenderMock
     )
   );
 
@@ -188,6 +194,20 @@ describe('HttpRequestExecutor', () => {
         url: `http://localhost:8080/${path}`
       });
       nock('http://localhost:8080').get(`/${path}`).reply(200, {});
+
+      const response = await executor.execute(request);
+
+      expect(response).toMatchObject({
+        statusCode: 200,
+        body: {}
+      });
+    });
+
+    it('should preserve query string when URL has no explicit path', async () => {
+      const { request } = createRequest({
+        url: 'http://localhost:8080?x=1&y=2'
+      });
+      nock('http://localhost:8080').get('/?x=1&y=2').reply(200, {});
 
       const response = await executor.execute(request);
 
@@ -434,6 +454,44 @@ describe('HttpRequestExecutor', () => {
       const response = await executor.execute(request);
 
       expect(response.body).toEqual('');
+    });
+
+    describe('with ERR_UNESCAPED_CHARACTERS request spy', () => {
+      let reqSpy: jest.SpyInstance;
+
+      beforeEach(() => {
+        // nock intercepts http.request before Node.js validates the path, so
+        // ERR_UNESCAPED_CHARACTERS is never raised naturally in tests. Simulate
+        // it so only the first http.request call (inside createRequest) throws;
+        // subsequent calls fall through to nock's interceptor.
+        reqSpy = jest.spyOn(http, 'request').mockImplementationOnce(() => {
+          throw Object.assign(
+            new Error('Request path contains unescaped characters'),
+            { code: 'ERR_UNESCAPED_CHARACTERS' }
+          );
+        });
+      });
+
+      afterEach(() => {
+        reqSpy.mockRestore();
+      });
+
+      it('should delegate to MalformedUrlRequestSender when path contains unescaped characters', async () => {
+        const { request } = createRequest({
+          url: 'http://localhost:8080/path|with|pipes'
+        });
+        nock('http://localhost:8080').get('/safe').reply(200, 'ok');
+        when(
+          malformedUrlRequestSenderMock.send(anything(), anything())
+        ).thenCall(() => http.request('http://localhost:8080/safe'));
+
+        const response = await executor.execute(request);
+
+        verify(
+          malformedUrlRequestSenderMock.send(anything(), anything())
+        ).once();
+        expect(response.statusCode).toBe(200);
+      });
     });
   });
 
