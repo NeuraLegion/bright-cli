@@ -239,8 +239,13 @@ export class HttpRequestExecutor implements RequestExecutor {
      * url.parse or the WHATWG URL constructor.
      */
     const withoutProtocol = request.url.replace(/^https?:\/\//, '');
-    const slashIndex = withoutProtocol.indexOf('/');
-    const rawPath = slashIndex !== -1 ? withoutProtocol.slice(slashIndex) : '/';
+    const pathStart = withoutProtocol.search(/[/?#]/);
+    const rawPath =
+      pathStart === -1
+        ? '/'
+        : withoutProtocol[pathStart] === '/'
+        ? withoutProtocol.slice(pathStart)
+        : `/${withoutProtocol.slice(pathStart)}`;
 
     const agent = this.getRequestAgent(request);
     const timeout = request.timeout ?? this.options.timeout;

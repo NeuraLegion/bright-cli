@@ -203,6 +203,20 @@ describe('HttpRequestExecutor', () => {
       });
     });
 
+    it('should preserve query string when URL has no explicit path', async () => {
+      const { request } = createRequest({
+        url: 'http://localhost:8080?x=1&y=2'
+      });
+      nock('http://localhost:8080').get('/?x=1&y=2').reply(200, {});
+
+      const response = await executor.execute(request);
+
+      expect(response).toMatchObject({
+        statusCode: 200,
+        body: {}
+      });
+    });
+
     it('should handle timeout', async () => {
       when(spiedExecutorOptions.timeout).thenReturn(1);
       const { request, requestOptions } = createRequest();
