@@ -10,6 +10,7 @@ import { CertificatesCache } from './CertificatesCache';
 import { CertificatesResolver } from './CertificatesResolver';
 import { RequestExecutorConstants } from './RequestExecutorConstants';
 import { MalformedUrlRequestSender } from './MalformedUrlRequestSender';
+import { RawHeadersInjector } from './RawHeadersInjector';
 import { inject, injectable } from 'tsyringe';
 import iconv from 'iconv-lite';
 import { safeParse } from 'fast-content-type-parse';
@@ -62,7 +63,9 @@ export class HttpRequestExecutor implements RequestExecutor {
     @inject(CertificatesResolver)
     private readonly certificatesResolver: CertificatesResolver,
     @inject(MalformedUrlRequestSender)
-    private readonly malformedUrlRequestSender: MalformedUrlRequestSender
+    private readonly malformedUrlRequestSender: MalformedUrlRequestSender,
+    @inject(RawHeadersInjector)
+    private readonly rawHeadersInjector: RawHeadersInjector
   ) {
     if (this.options.proxyUrl) {
       ({ httpsAgent: this.httpsProxyAgent, httpAgent: this.httpProxyAgent } =
@@ -194,6 +197,10 @@ export class HttpRequestExecutor implements RequestExecutor {
       );
     }
     this.setHeaders(outgoingMessage, request);
+
+    if (request.rawHeaders?.length) {
+      this.rawHeadersInjector.inject(outgoingMessage, request.rawHeaders);
+    }
 
     return outgoingMessage;
   }

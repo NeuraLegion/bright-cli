@@ -8,6 +8,7 @@ export interface RequestOptions {
   protocol: Protocol;
   url: string;
   headers?: Record<string, string | string[]>;
+  rawHeaders?: readonly RawHeader[];
   method?: string;
   pfx?: Buffer | string;
   ca?: Buffer | string;
@@ -19,6 +20,11 @@ export interface RequestOptions {
   timeout?: number;
   decompress?: boolean;
   keepAlive?: boolean;
+}
+
+export interface RawHeader {
+  readonly index: number;
+  readonly line: string;
 }
 
 export interface Cert {
@@ -55,6 +61,7 @@ export class Request {
   public readonly decompress?: boolean;
   public readonly timeout?: number;
   public readonly keepAlive?: boolean;
+  public readonly rawHeaders?: readonly RawHeader[];
 
   private _method: string;
 
@@ -104,7 +111,8 @@ export class Request {
     encoding,
     decompress = true,
     headers = {},
-    keepAlive
+    keepAlive,
+    rawHeaders
   }: RequestOptions) {
     this.protocol = protocol;
     this._method = method?.toUpperCase() ?? 'GET';
@@ -134,6 +142,7 @@ export class Request {
     this.maxContentSize = maxContentSize;
     this.decompress = !!decompress;
     this.keepAlive = keepAlive;
+    this.rawHeaders = rawHeaders;
   }
 
   public setHeaders(headers: Record<string, string | string[]>): void {
