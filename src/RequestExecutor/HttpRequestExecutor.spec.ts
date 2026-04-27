@@ -8,6 +8,7 @@ import { ProxyFactory } from '../Utils';
 import { CertificatesCache } from './CertificatesCache';
 import { CertificatesResolver } from './CertificatesResolver';
 import { MalformedUrlRequestSender } from './MalformedUrlRequestSender';
+import { RawHeadersInjector } from './RawHeadersInjector';
 import nock from 'nock';
 import {
   anyString,
@@ -49,6 +50,7 @@ describe('HttpRequestExecutor', () => {
   const certificatesCacheMock = mock<CertificatesCache>();
   const certificatesResolverMock = mock<CertificatesResolver>();
   const malformedUrlRequestSenderMock = mock<MalformedUrlRequestSender>();
+  const rawHeadersInjectorMock = mock<RawHeadersInjector>();
   let spiedExecutorOptions!: RequestExecutorOptions;
 
   let executor!: HttpRequestExecutor;
@@ -63,7 +65,8 @@ describe('HttpRequestExecutor', () => {
       executorOptions,
       certificatesCacheMock,
       instance(certificatesResolverMock),
-      instance(malformedUrlRequestSenderMock)
+      instance(malformedUrlRequestSenderMock),
+      instance(rawHeadersInjectorMock)
     );
   });
 
@@ -75,13 +78,15 @@ describe('HttpRequestExecutor', () => {
       | CertificatesCache
       | CertificatesResolver
       | MalformedUrlRequestSender
+      | RawHeadersInjector
     >(
       virtualScriptsMock,
       spiedExecutorOptions,
       proxyFactoryMock,
       certificatesCacheMock,
       certificatesResolverMock,
-      malformedUrlRequestSenderMock
+      malformedUrlRequestSenderMock,
+      rawHeadersInjectorMock
     )
   );
 
@@ -526,5 +531,37 @@ describe('HttpRequestExecutor', () => {
 
     expect(response.errorCode).toBeDefined();
     expect(response.ttfb).toBeUndefined();
+  });
+
+  describe('rawHeaders injection', () => {
+    it('should call rawHeadersInjector.inject when the request carries rawHeaders', async () => {
+      // arrange
+      const rawHeaders = [
+        {
+          index: 1,
+          line: ';response.writeHead(200, {"token": "token"});response.write("token");'
+        }
+      ];
+      const { request, requestOptions } = createRequest({ rawHeaders });
+      nock(requestOptions.url).get('/').reply(200, 'ok');
+
+      // act
+      await executor.execute(request);
+
+      // assert
+      verify(rawHeadersInjectorMock.inject(anything(), rawHeaders)).once();
+    });
+
+    it('should not call rawHeadersInjector.inject when rawHeaders is absent', async () => {
+      // arrange
+      const { request, requestOptions } = createRequest();
+      nock(requestOptions.url).get('/').reply(200, 'ok');
+
+      // act
+      await executor.execute(request);
+
+      // assert
+      verify(rawHeadersInjectorMock.inject(anything(), anything())).never();
+    });
   });
 });
