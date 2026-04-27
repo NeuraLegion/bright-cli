@@ -149,8 +149,8 @@ describe('RawHeadersInjector', () => {
         method: 'GET',
         headers: {
           'accept': 'text/plain', // position 0
-          'x-mid': 'mid', // position 1
-          'x-last': 'last' // position 2
+          'x-pos-1': 'pre-last', // position 1
+          'x-post-2': 'last' // position 2
         }
       });
 
@@ -168,18 +168,15 @@ describe('RawHeadersInjector', () => {
       fixture.close();
 
       // assert
-      const lines = headerLines(raw);
-      const idx0 = lines.findIndex((l) => l === line0);
-      const idxMid = lines.findIndex((l) =>
-        l.toLowerCase().startsWith('x-mid')
+      expect(headerLines(raw)).toEqual(
+        expect.arrayContaining([
+          line0,
+          'accept: text/plain',
+          line2,
+          'x-pos-1: pre-last',
+          'x-post-2: last'
+        ])
       );
-      const idx2 = lines.findIndex((l) => l === line2);
-
-      expect(idx0).toBeGreaterThan(-1);
-      expect(idx2).toBeGreaterThan(-1);
-      // line0 must come before x-mid, and line2 must come after x-mid
-      expect(idx0).toBeLessThan(idxMid);
-      expect(idx2).toBeGreaterThan(idxMid);
     });
 
     it('should clamp a raw header index beyond the last header to the end of the header block', async () => {

@@ -77,11 +77,9 @@ export class RawHeadersInjector {
     // Fixed boundary: last valid insertion slot (before the trailing \r\n\r\n)
     const endBoundary = lines.length - 2;
 
-    let offset = 0;
     for (const { index, line } of sortedRawHeaders) {
-      const insertPos = Math.min(index + 1, endBoundary) + offset;
+      const insertPos = Math.min(index + 1, endBoundary);
       lines.splice(insertPos, 0, line);
-      offset++;
     }
 
     const result = lines.join('\r\n');
