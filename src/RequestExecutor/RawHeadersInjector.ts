@@ -23,6 +23,7 @@ import type { ClientRequest } from 'node:http';
  */
 @injectable()
 export class RawHeadersInjector {
+  private readonly HEADER_TERMINATOR = '\r\n\r\n';
   public inject(req: ClientRequest, rawHeaders: readonly RawHeader[]): void {
     if (!rawHeaders.length) {
       return;
@@ -58,8 +59,7 @@ export class RawHeadersInjector {
       ? Buffer.from(chunk).toString('latin1')
       : (chunk as string);
 
-    const TERMINATOR = '\r\n\r\n';
-    const terminatorIdx = str.indexOf(TERMINATOR);
+    const terminatorIdx = str.indexOf(this.HEADER_TERMINATOR);
 
     // If there is no header terminator in this chunk, leave it untouched.
     if (terminatorIdx === -1) {
@@ -70,7 +70,7 @@ export class RawHeadersInjector {
 
     // Split at the header/body boundary.  `body` may be an empty string when
     // there is no body data in this write.
-    const body = str.slice(terminatorIdx + TERMINATOR.length);
+    const body = str.slice(terminatorIdx + this.HEADER_TERMINATOR.length);
 
     // The header section ends with \r\n (before the \r\n\r\n terminator).
     // Split on \r\n gives a trailing empty string we remove so that
@@ -89,7 +89,7 @@ export class RawHeadersInjector {
 
     // Reconstruct: join lines with \r\n, then append the header terminator and
     // any body bytes that were coalesced into this write.
-    const result = lines.join('\r\n') + TERMINATOR + body;
+    const result = lines.join('\r\n') + this.HEADER_TERMINATOR + body;
 
     return isBinary ? Buffer.from(result, 'latin1') : result;
   }
