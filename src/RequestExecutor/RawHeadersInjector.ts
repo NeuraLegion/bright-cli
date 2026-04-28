@@ -48,26 +48,6 @@ export class RawHeadersInjector {
     });
   }
 
-  /**
-   * Splices raw header lines into the serialised header block at their
-   * original 0-based positions.
-   *
-   * The wire format of the first socket write is:
-   *   `METHOD path HTTP/x.x\r\n<header>: <value>\r\n...\r\n\r\n[body?]`
-   *
-   * Node.js may include the first body chunk in the same write as the headers
-   * (e.g. when `req.end(data)` is called).  To avoid corrupting body bytes we
-   * locate the header terminator `\r\n\r\n`, operate only on the header section,
-   * and append the untouched remainder (body) back after reassembly.
-   *
-   * Header section lines after `split('\r\n')` (trailing empty string removed):
-   *   index 0  → request-line
-   *   index 1+ → header lines
-   *
-   * Insertion formula (processed in ascending index order):
-   *   insertPos = min(rawHeader.index + 1, endBoundary) + insertionOffset
-   * where endBoundary = lines.length (fixed at entry, before any splices).
-   */
   private injectIntoHeaderBlock(
     chunk: string | Uint8Array,
     sortedRawHeaders: readonly RawHeader[]
