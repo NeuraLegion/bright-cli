@@ -203,7 +203,8 @@ export class Request {
       passphrase: this._passphrase,
       ca: this._ca?.toString('utf8'),
       pfx: this._pfx?.toString('utf8'),
-      correlationIdRegex: this.correlationIdRegex
+      correlationIdRegex: this.correlationIdRegex,
+      rawHeaders: this.rawHeaders
     };
   }
 
