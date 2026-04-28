@@ -207,7 +207,7 @@ describe('RawHeadersInjector', () => {
       expect(rawLineIdx).toBeLessThan(afterIdx);
     });
 
-    it('should inject multiple raw header lines preserving their relative order', async () => {
+    it('should inject multiple raw header lines at non-adjacent positions', async () => {
       // arrange
       const fixture = await startTcpServer();
       const req = http.request({
@@ -235,16 +235,68 @@ describe('RawHeadersInjector', () => {
       const raw = await fixture.received();
       fixture.close();
 
-      // assert
-      expect(headerLines(raw)).toEqual(
-        expect.arrayContaining([
-          line0,
-          'accept: text/plain',
-          line2,
-          'x-pos-1: pre-last',
-          'x-post-2: last'
-        ])
+      // assert positional ordering: line0 before accept, line2 before x-pos-1
+      const lines = headerLines(raw);
+      const idxLine0 = lines.indexOf(line0);
+      const idxAccept = lines.findIndex((l) =>
+        l.toLowerCase().startsWith('accept')
       );
+      const idxLine2 = lines.indexOf(line2);
+      const idxXPos1 = lines.findIndex((l) =>
+        l.toLowerCase().startsWith('x-pos-1')
+      );
+
+      expect(idxLine0).toBeGreaterThan(-1);
+      expect(idxLine2).toBeGreaterThan(-1);
+      expect(idxLine0).toBeLessThan(idxAccept);
+      expect(idxLine2).toBeLessThan(idxXPos1);
+    });
+
+    it('should inject consecutive raw header lines both before the same clean header', async () => {
+      // Regression: insertionOffset must NOT be applied.
+      // Given sortedRawHeaders = [{index:1, line:A}, {index:2, line:B}] and
+      // clean headers [Host, Accept], the expected wire order is:
+      //   Host  A  B  Accept
+      // (A and B share the same "slot" between Host and Accept in the original.)
+      const fixture = await startTcpServer();
+      const req = http.request({
+        hostname: '127.0.0.1',
+        port: fixture.port,
+        path: '/test',
+        method: 'GET',
+        headers: {
+          host: 'google.com', // position 0 — but Node sets this automatically
+          accept: 'text/html' // position 1
+        }
+      });
+
+      const lineA = ';sample-malformed-header-1';
+      const lineB = ';sample-malformed-header-2';
+
+      // both raw lines were originally between the two clean headers
+      injector.inject(req, [
+        { index: 1, line: lineA },
+        { index: 2, line: lineB }
+      ]);
+      req.end();
+
+      const raw = await fixture.received();
+      fixture.close();
+
+      const lines = headerLines(raw);
+      const idxA = lines.indexOf(lineA);
+      const idxB = lines.indexOf(lineB);
+      const idxAccept = lines.findIndex((l) =>
+        l.toLowerCase().startsWith('accept')
+      );
+
+      expect(idxA).toBeGreaterThan(-1);
+      expect(idxB).toBeGreaterThan(-1);
+      // A comes before B
+      expect(idxA).toBeLessThan(idxB);
+      // both A and B come before Accept
+      expect(idxA).toBeLessThan(idxAccept);
+      expect(idxB).toBeLessThan(idxAccept);
     });
 
     it('should clamp a raw header index beyond the last header to the end of the header block', async () => {

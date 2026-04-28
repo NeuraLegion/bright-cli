@@ -82,11 +82,9 @@ export class RawHeadersInjector {
     // Fixed boundary: one past the last real header line (end-of-block slot).
     const endBoundary = lines.length;
 
-    let insertionOffset = 0;
     for (const { index, line } of sortedRawHeaders) {
-      const insertPos = Math.min(index + 1, endBoundary) + insertionOffset;
+      const insertPos = Math.min(index + 1, endBoundary);
       lines.splice(insertPos, 0, line);
-      insertionOffset++;
     }
 
     // Reconstruct: join lines with \r\n, then append the header terminator and
