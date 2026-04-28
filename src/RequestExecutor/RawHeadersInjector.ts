@@ -51,7 +51,7 @@ export class RawHeadersInjector {
 
   private injectIntoHeaderBlock(
     chunk: string | Uint8Array,
-    sortedRawHeaders: readonly RawHeader[]
+    headerLines: readonly RawHeader[]
   ): string | Buffer {
     const isBinary = chunk instanceof Uint8Array;
     // Use latin1 so every byte round-trips through a JS string unchanged.
@@ -82,9 +82,10 @@ export class RawHeadersInjector {
     // Fixed boundary: one past the last real header line (end-of-block slot).
     const endBoundary = lines.length;
 
-    for (const { index, line } of sortedRawHeaders) {
+    for (const { index, line } of headerLines) {
       const insertPos = Math.min(index + 1, endBoundary);
-      lines.splice(insertPos, 0, line);
+      const insertPosSafe = insertPos < 0 ? 0 : insertPos;
+      lines.splice(insertPosSafe, 0, line);
     }
 
     // Reconstruct: join lines with \r\n, then append the header terminator and
