@@ -66,6 +66,74 @@ function headerLines(raw: string): string[] {
   return lines;
 }
 
+/** Return the body portion of a raw HTTP request (bytes after \r\n\r\n). */
+function bodyBytes(raw: string): string {
+  const terminator = '\r\n\r\n';
+  const idx = raw.indexOf(terminator);
+
+  return idx === -1 ? '' : raw.slice(idx + terminator.length);
+}
+
+/**
+ * Bare TCP server that accumulates raw bytes until a full HTTP request is
+ * received (headers + body according to Content-Length), then responds with a
+ * minimal 200 OK so the client can close cleanly.
+ */
+function startTcpServerFull(): Promise<ServerFixture> {
+  return new Promise((resolve, reject) => {
+    let resolveReceived!: (raw: string) => void;
+    const receivedPromise = new Promise<string>((res) => {
+      resolveReceived = res;
+    });
+
+    const server = net.createServer((socket) => {
+      const chunks: Buffer[] = [];
+
+      socket.on('data', (chunk) => {
+        chunks.push(chunk);
+        const all = Buffer.concat(chunks).toString('latin1');
+        const terminator = '\r\n\r\n';
+        const headerEnd = all.indexOf(terminator);
+
+        if (headerEnd === -1) {
+          return;
+        }
+
+        const headerSection = all.slice(0, headerEnd);
+        const bodyStart = headerEnd + terminator.length;
+        const clMatch = headerSection.match(/content-length:\s*(\d+)/i);
+        const expectedBodyLen = clMatch ? parseInt(clMatch[1], 10) : 0;
+        const actualBodyLen = all.length - bodyStart;
+
+        if (actualBodyLen < expectedBodyLen) {
+          return;
+        }
+
+        socket.write(
+          'HTTP/1.1 200 OK\r\nContent-Length: 0\r\nConnection: close\r\n\r\n'
+        );
+        resolveReceived(all);
+        socket.end();
+      });
+
+      socket.on('error', () => {
+        // ignore socket-level errors in the test server
+      });
+    });
+
+    server.listen(0, '127.0.0.1', () => {
+      const { port } = server.address() as AddressInfo;
+      resolve({
+        port,
+        received: () => receivedPromise,
+        close: () => server.close()
+      });
+    });
+
+    server.on('error', reject);
+  });
+}
+
 describe('RawHeadersInjector', () => {
   let injector: RawHeadersInjector;
 
@@ -201,6 +269,38 @@ describe('RawHeadersInjector', () => {
       // assert: raw line is present and is the last non-empty header line
       const lines = headerLines(raw).filter((l) => l.length > 0);
       expect(lines.at(-1)).toBe(rawLine);
+    });
+
+    it('should not corrupt body bytes when headers and body arrive in the same write', async () => {
+      // arrange — use the full-request server so it waits for the body too
+      const fixture = await startTcpServerFull();
+      const body = 'hello=world&foo=bar';
+      const req = http.request({
+        hostname: '127.0.0.1',
+        port: fixture.port,
+        path: '/submit',
+        method: 'POST',
+        headers: {
+          'content-type': 'application/x-www-form-urlencoded',
+          'content-length': Buffer.byteLength(body).toString(),
+          'x-after': 'yes'
+        }
+      });
+
+      const rawLine = ';injected-header';
+      injector.inject(req, [{ index: 1, line: rawLine }]);
+      // req.end(body) causes Node to coalesce headers + body into one write
+      req.end(body);
+
+      const raw = await fixture.received();
+      fixture.close();
+
+      // assert: injected header is present
+      const lines = headerLines(raw);
+      expect(lines.some((l) => l === rawLine)).toBe(true);
+
+      // assert: body is byte-for-byte intact
+      expect(bodyBytes(raw)).toBe(body);
     });
   });
 });

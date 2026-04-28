@@ -53,36 +53,65 @@ export class RawHeadersInjector {
    * original 0-based positions.
    *
    * The wire format of the first socket write is:
-   *   `METHOD path HTTP/x.x\r\n<header>: <value>\r\n...\r\n\r\n`
+   *   `METHOD path HTTP/x.x\r\n<header>: <value>\r\n...\r\n\r\n[body?]`
    *
-   * After `split('\r\n')`:
+   * Node.js may include the first body chunk in the same write as the headers
+   * (e.g. when `req.end(data)` is called).  To avoid corrupting body bytes we
+   * locate the header terminator `\r\n\r\n`, operate only on the header section,
+   * and append the untouched remainder (body) back after reassembly.
+   *
+   * Header section lines after `split('\r\n')` (trailing empty string removed):
    *   index 0  → request-line
    *   index 1+ → header lines
-   *   last two → '' (from the trailing \r\n\r\n)
    *
    * Insertion formula (processed in ascending index order):
    *   insertPos = min(rawHeader.index + 1, endBoundary) + insertionOffset
-   * where endBoundary = lines.length - 2 (fixed at entry, before any splices).
+   * where endBoundary = lines.length (fixed at entry, before any splices).
    */
   private injectIntoHeaderBlock(
     chunk: string | Uint8Array,
     sortedRawHeaders: readonly RawHeader[]
   ): string | Buffer {
     const isBinary = chunk instanceof Uint8Array;
+    // Use latin1 so every byte round-trips through a JS string unchanged.
     const str = isBinary
       ? Buffer.from(chunk).toString('latin1')
       : (chunk as string);
 
-    const lines = str.split('\r\n');
-    // Fixed boundary: last valid insertion slot (before the trailing \r\n\r\n)
-    const endBoundary = lines.length - 2;
+    const TERMINATOR = '\r\n\r\n';
+    const terminatorIdx = str.indexOf(TERMINATOR);
 
-    for (const { index, line } of sortedRawHeaders) {
-      const insertPos = Math.min(index + 1, endBoundary);
-      lines.splice(insertPos, 0, line);
+    // If there is no header terminator in this chunk, leave it untouched.
+    if (terminatorIdx === -1) {
+      return chunk instanceof Uint8Array
+        ? Buffer.from(chunk)
+        : (chunk as string);
     }
 
-    const result = lines.join('\r\n');
+    // Split at the header/body boundary.  `body` may be an empty string when
+    // there is no body data in this write.
+    const body = str.slice(terminatorIdx + TERMINATOR.length);
+
+    // The header section ends with \r\n (before the \r\n\r\n terminator).
+    // Split on \r\n gives a trailing empty string we remove so that
+    // endBoundary points to the slot just after the last real header line.
+    const lines = str.slice(0, terminatorIdx).split('\r\n');
+    if (lines[lines.length - 1] === '') {
+      lines.pop();
+    }
+    // Fixed boundary: one past the last real header line (end-of-block slot).
+    const endBoundary = lines.length;
+
+    let insertionOffset = 0;
+    for (const { index, line } of sortedRawHeaders) {
+      const insertPos = Math.min(index + 1, endBoundary) + insertionOffset;
+      lines.splice(insertPos, 0, line);
+      insertionOffset++;
+    }
+
+    // Reconstruct: join lines with \r\n, then append the header terminator and
+    // any body bytes that were coalesced into this write.
+    const result = lines.join('\r\n') + TERMINATOR + body;
 
     return isBinary ? Buffer.from(result, 'latin1') : result;
   }
