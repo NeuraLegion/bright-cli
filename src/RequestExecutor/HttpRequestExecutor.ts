@@ -275,7 +275,11 @@ export class HttpRequestExecutor implements RequestExecutor {
     const entries = options.headers ? Object.entries(options.headers) : [];
 
     for (const [key, value] of entries) {
-      if (!key) continue;
+      // Skip host — libcurl derives it from the URL. Passing it via HTTPHEADER
+      // would produce a duplicate Host header, causing servers to reject the
+      // request. Node's http module silently ignores a caller-supplied host
+      // header for the same reason.
+      if (!key || key.toLowerCase() === 'host') continue;
 
       const values = Array.isArray(value) ? value : [value];
       lines.push(...values.map((v) => `${key}: ${v ?? ''}`));

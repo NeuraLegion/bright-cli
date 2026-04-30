@@ -686,6 +686,30 @@ describe('HttpRequestExecutor', () => {
         server.close();
       }
     });
+
+    it('should not forward a caller-supplied Host header to avoid duplicate Host', async () => {
+      let receivedHeaders: http.IncomingHttpHeaders | undefined;
+
+      const { server, baseUrl } = await createTestServer((req, res) => {
+        receivedHeaders = req.headers;
+        res.writeHead(200);
+        res.end('ok');
+      });
+
+      try {
+        const { port } = server.address() as AddressInfo;
+        const { request } = createRequest({
+          url: `${baseUrl}/`,
+          headers: { host: 'evil.example.com' }
+        });
+        await executor.execute(request);
+        // libcurl derives Host from the URL; the caller-supplied value must
+        // be dropped so the server sees exactly one, correct Host header.
+        expect(receivedHeaders?.['host']).toBe(`127.0.0.1:${port}`);
+      } finally {
+        server.close();
+      }
+    });
   });
 
   it('should include ttfb in a successful response', async () => {
