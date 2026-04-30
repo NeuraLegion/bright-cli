@@ -248,6 +248,16 @@ export class HttpRequestExecutor implements RequestExecutor {
   private applyCurlHeaders(curl: Curl, options: Request): void {
     const curlHeaders = this.buildCurlHeaders(options);
 
+    // Suppress libcurl's default "User-Agent: node-libcurl/<version>" header.
+    // A header entry with no value after the colon tells libcurl to remove it
+    // entirely from the request, unless the caller already set their own.
+    const hasUserAgent = curlHeaders.some((h) =>
+      h.toLowerCase().startsWith('user-agent:')
+    );
+    if (!hasUserAgent) {
+      curlHeaders.push('User-Agent:');
+    }
+
     if (options.decompress) {
       // Let libcurl handle decompression automatically.
       curl.setOpt('ACCEPT_ENCODING', '');

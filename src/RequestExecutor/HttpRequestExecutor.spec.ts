@@ -647,6 +647,45 @@ describe('HttpRequestExecutor', () => {
         server.close();
       }
     });
+
+    it('should not send the libcurl default User-Agent header', async () => {
+      let receivedUserAgent: string | undefined;
+
+      const { server, baseUrl } = await createTestServer((req, res) => {
+        receivedUserAgent = req.headers['user-agent'];
+        res.writeHead(200);
+        res.end('ok');
+      });
+
+      try {
+        const { request } = createRequest({ url: `${baseUrl}/` });
+        await executor.execute(request);
+        expect(receivedUserAgent).toBeUndefined();
+      } finally {
+        server.close();
+      }
+    });
+
+    it('should preserve a caller-supplied User-Agent header', async () => {
+      let receivedUserAgent: string | undefined;
+
+      const { server, baseUrl } = await createTestServer((req, res) => {
+        receivedUserAgent = req.headers['user-agent'];
+        res.writeHead(200);
+        res.end('ok');
+      });
+
+      try {
+        const { request } = createRequest({
+          url: `${baseUrl}/`,
+          headers: { 'User-Agent': 'my-scanner/1.0' }
+        });
+        await executor.execute(request);
+        expect(receivedUserAgent).toBe('my-scanner/1.0');
+      } finally {
+        server.close();
+      }
+    });
   });
 
   it('should include ttfb in a successful response', async () => {
