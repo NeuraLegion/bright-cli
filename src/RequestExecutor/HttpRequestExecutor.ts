@@ -1,47 +1,34 @@
 import { RequestExecutor } from './RequestExecutor';
 import { Response } from './Response';
 import { Cert, Request, RequestOptions } from './Request';
-import { Helpers, logger, ProxyFactory } from '../Utils';
+import { Helpers, logger } from '../Utils';
 import { VirtualScripts } from '../Scripts';
 import { Protocol } from './Protocol';
 import { RequestExecutorOptions } from './RequestExecutorOptions';
-import { NormalizeZlibDeflateTransformStream } from '../Utils/NormalizeZlibDeflateTransformStream';
 import { CertificatesCache } from './CertificatesCache';
 import { CertificatesResolver } from './CertificatesResolver';
-import { RequestExecutorConstants } from './RequestExecutorConstants';
 import { inject, injectable } from 'tsyringe';
 import iconv from 'iconv-lite';
 import { safeParse } from 'fast-content-type-parse';
+import { Curl } from 'node-libcurl';
 import { parse as parseUrl } from 'node:url';
-import http, {
-  ClientRequest,
-  IncomingMessage,
-  OutgoingMessage
-} from 'node:http';
-import https, {
-  AgentOptions,
-  RequestOptions as ClientRequestOptions
-} from 'node:https';
-import { once } from 'node:events';
-import { Readable } from 'node:stream';
-import {
-  constants,
-  createBrotliDecompress,
-  createGunzip,
-  createInflate
-} from 'node:zlib';
 
 type ScriptEntrypoint = (
   options: RequestOptions
 ) => Promise<RequestOptions> | RequestOptions;
 
+/**
+ * Header object returned by node-libcurl for each response in the chain.
+ * The `result` key holds parsed status-line info.
+ */
+interface CurlHeaderEntry {
+  result: { version: string; code: number; reason: string };
+  [name: string]: string | { version: string; code: number; reason: string };
+}
+
 @injectable()
 export class HttpRequestExecutor implements RequestExecutor {
   private readonly DEFAULT_SCRIPT_ENTRYPOINT = 'handle';
-  private readonly httpProxyAgent?: http.Agent;
-  private readonly httpsProxyAgent?: https.Agent;
-  private readonly httpAgent?: http.Agent;
-  private readonly httpsAgent?: https.Agent;
   private readonly proxyDomains?: RegExp[];
   private readonly proxyDomainsBypass?: RegExp[];
 
@@ -51,7 +38,6 @@ export class HttpRequestExecutor implements RequestExecutor {
 
   constructor(
     @inject(VirtualScripts) private readonly virtualScripts: VirtualScripts,
-    @inject(ProxyFactory) private readonly proxyFactory: ProxyFactory,
     @inject(RequestExecutorOptions)
     private readonly options: RequestExecutorOptions,
     @inject(CertificatesCache)
@@ -59,22 +45,6 @@ export class HttpRequestExecutor implements RequestExecutor {
     @inject(CertificatesResolver)
     private readonly certificatesResolver: CertificatesResolver
   ) {
-    if (this.options.proxyUrl) {
-      ({ httpsAgent: this.httpsProxyAgent, httpAgent: this.httpProxyAgent } =
-        this.proxyFactory.createProxy({ proxyUrl: this.options.proxyUrl }));
-    }
-
-    if (this.options.reuseConnection) {
-      const agentOptions: AgentOptions = {
-        keepAlive: true,
-        maxSockets: 100,
-        timeout: this.options.timeout
-      };
-
-      this.httpsAgent = new https.Agent(agentOptions);
-      this.httpAgent = new http.Agent(agentOptions);
-    }
-
     if (this.options.proxyDomains && this.options.proxyDomainsBypass) {
       throw new Error(
         'cannot use both proxyDomains and proxyDomainsBypass at the same time'
@@ -107,9 +77,6 @@ export class HttpRequestExecutor implements RequestExecutor {
         : undefined;
 
       if (targetCerts === undefined || targetCerts.length === 0) {
-        // We may have https and http targets connected with same repeater,
-        // or certificates may not be necessary.
-        // If certificates not found try request anyway.
         logger.debug(
           'Executing HTTP request with following params: %j',
           options
@@ -139,139 +106,235 @@ export class HttpRequestExecutor implements RequestExecutor {
     }
   }
 
-  private async request(options: Request) {
-    let timer: NodeJS.Timeout | undefined;
-    let res!: IncomingMessage;
-    let ttfb!: number;
+  /**
+   * Performs the HTTP request using libcurl.
+   *
+   * libcurl handles all three malformed-URL cases natively:
+   *   - Case 1 (ERR_UNESCAPED_CHARACTERS): PATH_AS_IS prevents re-encoding
+   *   - Case 2 (malformed path/query): REQUEST_TARGET writes path verbatim
+   *   - Case 3 (CRLF injection in header value): passed byte-for-byte to wire
+   */
+  private request(options: Request): Promise<{
+    statusCode: number;
+    headers: Record<string, string | string[]>;
+    rawBody: Buffer;
+    ttfb: number;
+  }> {
+    return new Promise((resolve, reject) => {
+      const curl = new Curl();
 
-    try {
-      const req = this.createRequest(options);
-      let start!: number;
+      this.configureCurl(curl, options);
 
-      process.nextTick(() => {
-        start = performance.now();
-        req.end(
-          options.encoding
-            ? iconv.encode(options.body, options.encoding)
-            : options.body
-        );
+      const bodyChunks: Buffer[] = [];
+
+      // Signal to libcurl that we consumed all bytes
+      curl.on('data', (chunk: Buffer) => {
+        bodyChunks.push(chunk);
+
+        return chunk.length;
       });
-      timer = this.setTimeout(req, options.timeout);
 
-      [res] = (await once(req, 'response')) as [IncomingMessage];
+      curl.on(
+        'end',
+        (statusCode: number, _data: unknown, rawHeaders: CurlHeaderEntry[]) => {
+          const ttfbUs = curl.getInfo('STARTTRANSFER_TIME_T') as number;
+          const ttfb = Math.round(ttfbUs / 1000);
 
-      ttfb = Math.round(performance.now() - start);
-    } finally {
-      clearTimeout(timer);
-    }
+          curl.close();
 
-    const response = await this.truncateResponse(options, res);
+          const headers = this.parseCurlHeaders(rawHeaders);
+          const rawBody = Buffer.concat(bodyChunks);
 
-    return { ...response, ttfb };
-  }
-
-  private createRequest(request: Request): ClientRequest {
-    const protocol = request.secureEndpoint ? https : http;
-    const outgoingMessage = protocol.request(
-      this.createRequestOptions(request)
-    );
-    this.setHeaders(outgoingMessage, request);
-
-    if (!outgoingMessage.hasHeader('accept-encoding')) {
-      outgoingMessage.setHeader('accept-encoding', 'gzip, deflate');
-    }
-
-    return outgoingMessage;
-  }
-
-  private setTimeout(
-    req: ClientRequest,
-    timeout?: number
-  ): NodeJS.Timeout | undefined {
-    timeout ??= this.options.timeout;
-    if (typeof timeout === 'number') {
-      return setTimeout(
-        () =>
-          req.destroy(
-            Object.assign(new Error('Waiting response has timed out'), {
-              code: 'ETIMEDOUT'
-            })
-          ),
-        timeout
+          resolve({ statusCode, headers, rawBody, ttfb });
+        }
       );
+
+      curl.on('error', (err: Error) => {
+        curl.close();
+        reject(err);
+      });
+
+      curl.perform();
+    });
+  }
+
+  /**
+   * Configures a libcurl handle with all options derived from the request and
+   * executor options (URL, method, body, TLS, timeout, headers, proxy).
+   */
+  private configureCurl(curl: Curl, options: Request): void {
+    const { protocol, host } = parseUrl(options.url);
+    const rawPath = this.buildRawPath(options.url);
+
+    curl.setOpt('URL', `${protocol}//${host}`);
+    curl.setOpt('REQUEST_TARGET', rawPath);
+    // Prevent libcurl from normalising (percent-encoding) the path.
+    curl.setOpt('PATH_AS_IS', true);
+    curl.setOpt('CUSTOMREQUEST', options.method);
+    curl.setOpt('SSL_VERIFYPEER', false);
+    curl.setOpt('SSL_VERIFYHOST', 0);
+    curl.setOpt('FOLLOWLOCATION', false);
+
+    this.applyCurlBody(curl, options);
+    this.applyCurlTls(curl, options);
+    this.applyCurlTimeout(curl, options);
+    this.applyCurlHeaders(curl, options);
+
+    if (this.options.reuseConnection) {
+      curl.setOpt('TCP_KEEPALIVE', 1);
+    }
+
+    const proxyUrl = this.resolveProxy(options);
+
+    if (proxyUrl) {
+      curl.setOpt('PROXY', proxyUrl);
     }
   }
 
-  private createRequestOptions(request: Request): ClientRequestOptions {
-    const {
-      auth,
-      hostname,
-      port,
-      hash = '',
-      pathname = '/',
-      search = ''
-    } = parseUrl(request.url);
-    const path = `${pathname ?? '/'}${search ?? ''}${hash ?? ''}`;
-    const agent = this.getRequestAgent(request);
-    const timeout = request.timeout ?? this.options.timeout;
+  /**
+   * Extracts the raw path+query+hash from a URL string without any
+   * percent-encoding normalisation.
+   */
+  private buildRawPath(url: string): string {
+    const separatorIndex = url.indexOf('://');
+    const withoutProtocol =
+      separatorIndex === -1 ? url : url.slice(separatorIndex + 3);
+    const pathStart = withoutProtocol.search(/[/?#]/);
 
-    return {
-      hostname,
-      port,
-      path,
-      auth,
-      agent,
-      timeout,
-      ca: request.ca,
-      pfx: request.pfx,
-      passphrase: request.passphrase,
-      method: request.method,
-      rejectUnauthorized: false,
-      maxHeaderSize: RequestExecutorConstants.MAX_HEADERS_SIZE
-    };
+    if (pathStart === -1) return '/';
+
+    return withoutProtocol[pathStart] === '/'
+      ? withoutProtocol.slice(pathStart)
+      : `/${withoutProtocol.slice(pathStart)}`;
   }
 
-  private getRequestAgent(options: Request) {
-    // do not use proxy for domains that are not in the list
+  private applyCurlBody(curl: Curl, options: Request): void {
+    if (!options.body) return;
+
+    const bodyBuffer = options.encoding
+      ? iconv.encode(options.body, options.encoding)
+      : Buffer.from(options.body);
+
+    curl.setOpt('POSTFIELDS', bodyBuffer.toString('binary'));
+  }
+
+  private applyCurlTls(curl: Curl, options: Request): void {
+    if (options.ca) {
+      curl.setOpt('CAINFO_BLOB', options.ca);
+    }
+
+    if (options.pfx) {
+      curl.setOpt('SSLCERT_BLOB', options.pfx);
+
+      if (options.passphrase) {
+        curl.setOpt('KEYPASSWD', options.passphrase);
+      }
+    }
+  }
+
+  private applyCurlTimeout(curl: Curl, options: Request): void {
+    const timeout = options.timeout ?? this.options.timeout;
+
+    if (typeof timeout === 'number') {
+      curl.setOpt('TIMEOUT_MS', timeout);
+    }
+  }
+
+  /**
+   * Builds and applies HTTP headers to the curl handle. Header values are
+   * passed as raw strings so that CRLF-injected values reach the wire
+   * byte-for-byte.
+   */
+  private applyCurlHeaders(curl: Curl, options: Request): void {
+    const curlHeaders = this.buildCurlHeaders(options);
+
+    if (options.decompress) {
+      // Let libcurl handle decompression automatically.
+      curl.setOpt('ACCEPT_ENCODING', '');
+    } else {
+      curlHeaders.push('Accept-Encoding: identity');
+    }
+
+    if (curlHeaders.length > 0) {
+      curl.setOpt('HTTPHEADER', curlHeaders);
+    }
+  }
+
+  /**
+   * Converts request headers into raw `Key: value` strings for libcurl.
+   * Multi-value headers are expanded into one string per value.
+   */
+  private buildCurlHeaders(options: Request): string[] {
+    const lines: string[] = [];
+    const entries = options.headers ? Object.entries(options.headers) : [];
+
+    for (const [key, value] of entries) {
+      if (!key) continue;
+
+      const values = Array.isArray(value) ? value : [value];
+      lines.push(...values.map((v) => `${key}: ${v ?? ''}`));
+    }
+
+    if (!options.keepAlive) {
+      lines.push('Connection: close');
+    }
+
+    return lines;
+  }
+
+  /**
+   * Converts the raw libcurl header array (one entry per redirect hop) into a
+   * flat key→value map using only the final response headers.
+   */
+  private parseCurlHeaders(
+    rawHeaders: CurlHeaderEntry[]
+  ): Record<string, string | string[]> {
+    const lastHeaders = rawHeaders[rawHeaders.length - 1] ?? {};
+    const result: Record<string, string | string[]> = {};
+
+    for (const [key, val] of Object.entries(lastHeaders)) {
+      if (key === 'result') continue;
+
+      result[key.toLowerCase()] = val as string;
+    }
+
+    return result;
+  }
+
+  /**
+   * Resolves which proxy URL to use for a given request, respecting
+   * proxyDomains and proxyDomainsBypass options.
+   */
+  private resolveProxy(options: Request): string | undefined {
+    const hostname = parseUrl(options.url).hostname;
+
     if (
       this.proxyDomains &&
-      !this.proxyDomains.some((domain) =>
-        domain.test(parseUrl(options.url).hostname)
-      )
+      !this.proxyDomains.some((domain) => domain.test(hostname))
     ) {
       logger.debug("Not using proxy for URL '%s'", options.url);
 
-      return options.secureEndpoint ? this.httpsAgent : this.httpAgent;
+      return undefined;
     }
 
-    // do not use proxy for domains that are in the bypass list
     if (
       this.proxyDomainsBypass &&
-      this.proxyDomainsBypass.some((domain) =>
-        domain.test(parseUrl(options.url).hostname)
-      )
+      this.proxyDomainsBypass.some((domain) => domain.test(hostname))
     ) {
       logger.debug("Bypassing proxy for URL '%s'", options.url);
 
-      return options.secureEndpoint ? this.httpsAgent : this.httpAgent;
+      return undefined;
     }
 
-    return options.secureEndpoint
-      ? this.httpsProxyAgent ?? this.httpsAgent
-      : this.httpProxyAgent ?? this.httpAgent;
+    return this.options.proxyUrl;
   }
 
-  private async truncateResponse(
+  private truncateResponse(
     { decompress, encoding, maxContentSize, url }: Request,
-    res: IncomingMessage
-  ) {
-    if (this.responseHasNoBody(res)) {
-      logger.debug('The response does not contain any body.');
-
-      return { res, body: '' };
-    }
-
-    const contentType = this.parseContentType(res);
+    rawBody: Buffer,
+    responseHeaders: Record<string, string | string[]>
+  ): { body: string; headers: Record<string, string | string[]> } {
+    const contentType = this.parseContentType(responseHeaders);
     const { type } = contentType;
     const whiteListedMimeType = this.options.whitelistMimes?.find((mime) =>
       type.startsWith(mime.type)
@@ -280,12 +343,24 @@ export class HttpRequestExecutor implements RequestExecutor {
       ? this.options.maxBodySize
       : (maxContentSize ?? this.options.maxContentLength) * 1024;
 
-    const { body, transform } = await this.parseBody(res, {
-      decompress,
-      allowTruncation:
-        !whiteListedMimeType || whiteListedMimeType.allowTruncation,
-      maxSize
-    });
+    let body = rawBody;
+    let transform: 'truncated' | 'omitted' | false = false;
+
+    if (decompress) {
+      // libcurl already decompressed the body when ACCEPT_ENCODING was set.
+      // Remove the content-encoding header so consumers see the decoded body.
+      delete responseHeaders['content-encoding'];
+    }
+
+    if (body.byteLength > maxSize) {
+      const result = this.truncateBody(body, {
+        maxSize,
+        allowTruncation:
+          !whiteListedMimeType || whiteListedMimeType.allowTruncation
+      });
+      body = result.body;
+      transform = result.transform;
+    }
 
     if (transform && whiteListedMimeType) {
       logger.error(
@@ -296,21 +371,20 @@ export class HttpRequestExecutor implements RequestExecutor {
       );
     }
 
-    res.headers['content-length'] = body.byteLength.toFixed();
+    responseHeaders['content-length'] = body.byteLength.toFixed();
 
-    if (decompress) {
-      delete res.headers['content-encoding'];
-    }
-
-    return { res, body: iconv.decode(body, encoding ?? contentType.encoding) };
+    return {
+      body: iconv.decode(body, encoding ?? contentType.encoding),
+      headers: responseHeaders
+    };
   }
 
-  private parseContentType(res: IncomingMessage): {
+  private parseContentType(headers: Record<string, string | string[]>): {
     type: string;
     encoding: string;
   } {
     const contentType =
-      res.headers['content-type'] || 'application/octet-stream';
+      (headers['content-type'] as string) || 'application/octet-stream';
     const {
       type,
       parameters: { charset }
@@ -325,80 +399,18 @@ export class HttpRequestExecutor implements RequestExecutor {
     return { type, encoding };
   }
 
-  private unzipBody(response: IncomingMessage): Readable {
-    let body: Readable = response;
-
-    if (!this.responseHasNoBody(response)) {
-      let contentEncoding = response.headers['content-encoding'] || 'identity';
-      contentEncoding = contentEncoding.trim().toLowerCase();
-
-      // Always using Z_SYNC_FLUSH is what cURL does.
-      const zlibOptions = {
-        flush: constants.Z_SYNC_FLUSH,
-        finishFlush: constants.Z_SYNC_FLUSH
-      };
-
-      switch (contentEncoding) {
-        case 'gzip':
-          body = response.pipe(createGunzip(zlibOptions));
-          break;
-        case 'deflate':
-          body = response
-            .pipe(new NormalizeZlibDeflateTransformStream())
-            .pipe(createInflate(zlibOptions));
-          break;
-        case 'br':
-          body = response.pipe(createBrotliDecompress());
-          break;
-      }
-    }
-
-    return body;
-  }
-
-  private responseHasNoBody(response: IncomingMessage): boolean {
+  private responseHasNoBody(method: string, statusCode: number): boolean {
     return (
-      response.method === 'HEAD' ||
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      (response.statusCode! >= 100 && response.statusCode! < 200) ||
-      response.statusCode === 204 ||
-      response.statusCode === 304
+      method === 'HEAD' ||
+      (statusCode >= 100 && statusCode < 200) ||
+      statusCode === 204 ||
+      statusCode === 304
     );
-  }
-
-  private async parseBody(
-    res: IncomingMessage,
-    options: {
-      maxSize: number;
-      allowTruncation: boolean;
-      decompress: boolean;
-    }
-  ): Promise<{ body: Buffer; transform: 'truncated' | 'omitted' | false }> {
-    const chunks: Buffer[] = [];
-    const stream = options.decompress ? this.unzipBody(res) : res;
-
-    for await (const chuck of stream) {
-      chunks.push(chuck);
-    }
-
-    let body = Buffer.concat(chunks);
-    let transform: 'truncated' | 'omitted' | false = false;
-
-    if (body.byteLength > options.maxSize) {
-      const result = this.truncateBody(body, options);
-      body = result.body;
-      transform = result.transform;
-    }
-
-    return { body, transform };
   }
 
   private truncateBody(
     body: Buffer,
-    options: {
-      maxSize: number;
-      allowTruncation: boolean;
-    }
+    options: { maxSize: number; allowTruncation: boolean }
   ): { body: Buffer; transform: 'truncated' | 'omitted' } {
     if (options.allowTruncation) {
       logger.debug(
@@ -416,43 +428,7 @@ export class HttpRequestExecutor implements RequestExecutor {
         options.maxSize
       );
 
-      return {
-        body: Buffer.alloc(0),
-        transform: 'omitted'
-      };
-    }
-  }
-
-  /**
-   * Allows to attack headers. Node.js does not accept any other characters
-   * which violate [rfc7230](https://tools.ietf.org/html/rfc7230#section-3.2.6).
-   * To override default behavior bypassing {@link OutgoingMessage.setHeader} method we have to set headers via internal symbol.
-   */
-  private setHeaders(req: OutgoingMessage, options: Request): void {
-    const symbols: symbol[] = Object.getOwnPropertySymbols(req);
-    const headersSymbol: symbol = symbols.find(
-      // ADHOC: Node.js version < 12 uses "outHeadersKey" symbol to set headers
-      (item) =>
-        ['Symbol(kOutHeaders)', 'Symbol(outHeadersKey)'].includes(
-          item.toString()
-        )
-    );
-
-    if (!req.headersSent && headersSymbol && options.headers) {
-      const headers = (req[headersSymbol] =
-        req[headersSymbol] ?? Object.create(null));
-
-      Object.entries(options.headers).forEach(
-        ([key, value]: [string, string | string[]]) => {
-          if (key) {
-            headers[key.toLowerCase()] = [key.toLowerCase(), value ?? ''];
-          }
-        }
-      );
-    }
-
-    if (!options.keepAlive) {
-      req.setHeader('Connection', 'close');
+      return { body: Buffer.alloc(0), transform: 'omitted' };
     }
   }
 
@@ -478,10 +454,8 @@ export class HttpRequestExecutor implements RequestExecutor {
     return new Request(result);
   }
 
-  private async executeRequest(
-    request: Request
-  ): Promise<Response | undefined> {
-    const { res, body, ttfb } = await this.request(request);
+  private async executeRequest(request: Request): Promise<Response> {
+    const { statusCode, headers, rawBody, ttfb } = await this.request(request);
 
     logger.trace(
       'received following response for request %j: headers: %j body: %s',
@@ -490,20 +464,38 @@ export class HttpRequestExecutor implements RequestExecutor {
         protocol: this.protocol,
         method: request.method
       },
-      {
-        statusCode: res.statusCode,
-        headers: res.headers
-      },
-      body.slice(0, 500).concat(body.length > 500 ? '...' : '')
+      { statusCode, headers },
+      rawBody
+        .slice(0, 500)
+        .toString()
+        .concat(rawBody.length > 500 ? '...' : '')
+    );
+
+    if (this.responseHasNoBody(request.method, statusCode)) {
+      logger.debug('The response does not contain any body.');
+
+      return new Response({
+        body: '',
+        ttfb,
+        headers,
+        protocol: this.protocol,
+        statusCode
+      });
+    }
+
+    const { body, headers: finalHeaders } = this.truncateResponse(
+      request,
+      rawBody,
+      headers
     );
 
     return new Response({
       body,
       ttfb,
       encoding: request.encoding,
-      headers: res.headers,
+      headers: finalHeaders,
       protocol: this.protocol,
-      statusCode: res.statusCode
+      statusCode
     });
   }
 

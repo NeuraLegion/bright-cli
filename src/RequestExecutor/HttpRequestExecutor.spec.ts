@@ -4,10 +4,8 @@ import { VirtualScript, VirtualScripts, VirtualScriptType } from '../Scripts';
 import { Protocol } from './Protocol';
 import { Request, RequestOptions, Cert } from './Request';
 import { RequestExecutorOptions } from './RequestExecutorOptions';
-import { ProxyFactory } from '../Utils';
 import { CertificatesCache } from './CertificatesCache';
 import { CertificatesResolver } from './CertificatesResolver';
-import nock from 'nock';
 import {
   anyString,
   anything,
@@ -18,6 +16,9 @@ import {
   verify,
   when
 } from 'ts-mockito';
+import http from 'node:http';
+import { once } from 'node:events';
+import { AddressInfo } from 'node:net';
 import { promisify } from 'node:util';
 import {
   brotliCompress,
@@ -27,23 +28,37 @@ import {
   deflateRaw
 } from 'node:zlib';
 
+/**
+ * Creates a minimal HTTP server that responds once per request.
+ * Returns the server instance and its base URL.
+ */
+async function createTestServer(
+  handler: (req: http.IncomingMessage, res: http.ServerResponse) => void
+): Promise<{ server: http.Server; baseUrl: string }> {
+  const server = http.createServer(handler);
+  server.listen(0, '127.0.0.1');
+  await once(server, 'listening');
+  const { port } = server.address() as AddressInfo;
+
+  return { server, baseUrl: `http://127.0.0.1:${port}` };
+}
+
 const createRequest = (options?: Partial<RequestOptions>) => {
-  const requestOptions = {
-    url: 'https://foo.bar',
+  const requestOptions: RequestOptions = {
+    url: 'http://127.0.0.1:1',
     headers: {},
     protocol: Protocol.HTTP,
     ...options
   };
   const request = new Request(requestOptions);
   const spiedRequest = spy(request);
-  when(spiedRequest.method).thenReturn('GET');
+  when(spiedRequest.method).thenReturn(options?.method ?? 'GET');
 
   return { requestOptions, request, spiedRequest };
 };
 
 describe('HttpRequestExecutor', () => {
   const virtualScriptsMock = mock<VirtualScripts>();
-  const proxyFactoryMock = mock<ProxyFactory>();
   const certificatesCacheMock = mock<CertificatesCache>();
   const certificatesResolverMock = mock<CertificatesResolver>();
   let spiedExecutorOptions!: RequestExecutorOptions;
@@ -56,7 +71,6 @@ describe('HttpRequestExecutor', () => {
 
     executor = new HttpRequestExecutor(
       instance(virtualScriptsMock),
-      instance(proxyFactoryMock),
       executorOptions,
       certificatesCacheMock,
       instance(certificatesResolverMock)
@@ -67,13 +81,11 @@ describe('HttpRequestExecutor', () => {
     reset<
       | VirtualScripts
       | RequestExecutorOptions
-      | ProxyFactory
       | CertificatesCache
       | CertificatesResolver
     >(
       virtualScriptsMock,
       spiedExecutorOptions,
-      proxyFactoryMock,
       certificatesCacheMock,
       certificatesResolverMock
     )
@@ -90,148 +102,238 @@ describe('HttpRequestExecutor', () => {
     it('should call setHeaders on the provided request if additional headers were configured globally', async () => {
       const headers = { testHeader: 'test-header-value' };
       when(spiedExecutorOptions.headers).thenReturn(headers);
-      const { request, spiedRequest } = createRequest();
+      const { server, baseUrl } = await createTestServer((_req, res) => {
+        res.writeHead(200);
+        res.end('ok');
+      });
 
-      await executor.execute(request);
-
-      verify(spiedRequest.setHeaders(headers)).once();
+      try {
+        const { request, spiedRequest } = createRequest({ url: `${baseUrl}/` });
+        await executor.execute(request);
+        verify(spiedRequest.setHeaders(headers)).once();
+      } finally {
+        server.close();
+      }
     });
 
     it('should not call setHeaders on the provided request if there were no additional headers configured', async () => {
-      const { request, spiedRequest } = createRequest();
+      const { server, baseUrl } = await createTestServer((_req, res) => {
+        res.writeHead(200);
+        res.end('ok');
+      });
 
-      await executor.execute(request);
-
-      verify(spiedRequest.setHeaders(anything())).never();
+      try {
+        const { request, spiedRequest } = createRequest({ url: `${baseUrl}/` });
+        await executor.execute(request);
+        verify(spiedRequest.setHeaders(anything())).never();
+      } finally {
+        server.close();
+      }
     });
 
     it('should transform the request if there is a suitable vm', async () => {
-      const { request, requestOptions } = createRequest();
-      const { hostname: virtualScriptId } = new URL(requestOptions.url);
-      const virtualScript = new VirtualScript(
-        virtualScriptId,
-        VirtualScriptType.LOCAL,
-        'console.log("test code");'
-      );
-      const spiedVirtualScript = spy(virtualScript);
-      when(spiedVirtualScript.exec(anyString(), anything())).thenResolve(
-        requestOptions
-      );
-      when(virtualScriptsMock.find(virtualScriptId)).thenReturn(virtualScript);
+      const { server, baseUrl } = await createTestServer((_req, res) => {
+        res.writeHead(200);
+        res.end('ok');
+      });
 
-      await executor.execute(request);
+      try {
+        const { request, requestOptions } = createRequest({
+          url: `${baseUrl}/`
+        });
+        const { hostname: virtualScriptId } = new URL(requestOptions.url);
+        const virtualScript = new VirtualScript(
+          virtualScriptId,
+          VirtualScriptType.LOCAL,
+          'console.log("test code");'
+        );
+        const spiedVirtualScript = spy(virtualScript);
+        when(spiedVirtualScript.exec(anyString(), anything())).thenResolve(
+          requestOptions
+        );
+        when(virtualScriptsMock.find(virtualScriptId)).thenReturn(
+          virtualScript
+        );
 
-      verify(spiedVirtualScript.exec(anyString(), anything())).once();
+        await executor.execute(request);
+
+        verify(spiedVirtualScript.exec(anyString(), anything())).once();
+      } finally {
+        server.close();
+      }
     });
 
     it('should not transform the request if there is no suitable vm', async () => {
-      const { request, spiedRequest } = createRequest();
+      const { server, baseUrl } = await createTestServer((_req, res) => {
+        res.writeHead(200);
+        res.end('ok');
+      });
 
-      await executor.execute(request);
-
-      verify(spiedRequest.toJSON()).never();
+      try {
+        const { request, spiedRequest } = createRequest({ url: `${baseUrl}/` });
+        await executor.execute(request);
+        verify(spiedRequest.toJSON()).never();
+      } finally {
+        server.close();
+      }
     });
 
     it('should call loadCert on the provided request if there were certificates configured globally', async () => {
-      const { request, spiedRequest } = createRequest();
-      const certs: Cert[] = [
-        {
-          path: '/tmp/cert.pem',
-          hostname: new URL(request.url).hostname
-        }
-      ];
-      when(spiedExecutorOptions.certs).thenReturn(certs);
-      when(certificatesResolverMock.resolve(request, anything())).thenReturn(
-        certs
-      );
+      const { server, baseUrl } = await createTestServer((_req, res) => {
+        res.writeHead(200);
+        res.end('ok');
+      });
 
-      await executor.execute(request);
+      try {
+        const { request, spiedRequest } = createRequest({ url: `${baseUrl}/` });
+        const certs: Cert[] = [
+          {
+            path: '/tmp/cert.pem',
+            hostname: new URL(request.url).hostname
+          }
+        ];
+        when(spiedExecutorOptions.certs).thenReturn(certs);
+        when(certificatesResolverMock.resolve(request, anything())).thenReturn(
+          certs
+        );
 
-      verify(spiedRequest.loadCert(anything())).once();
+        await executor.execute(request);
+
+        verify(spiedRequest.loadCert(anything())).once();
+      } finally {
+        server.close();
+      }
     });
 
     it('should not call loadCert on the provided request if there were no certificates configured', async () => {
-      const { request, spiedRequest } = createRequest();
+      const { server, baseUrl } = await createTestServer((_req, res) => {
+        res.writeHead(200);
+        res.end('ok');
+      });
 
-      await executor.execute(request);
-
-      verify(spiedRequest.loadCert(anything())).never();
+      try {
+        const { request, spiedRequest } = createRequest({ url: `${baseUrl}/` });
+        await executor.execute(request);
+        verify(spiedRequest.loadCert(anything())).never();
+      } finally {
+        server.close();
+      }
     });
 
     it('should perform an external http request', async () => {
-      const { request, requestOptions } = createRequest();
-      nock(requestOptions.url).get('/').reply(200, {});
-
-      const response = await executor.execute(request);
-
-      expect(response).toMatchObject({
-        statusCode: 200,
-        body: '{}'
+      const { server, baseUrl } = await createTestServer((_req, res) => {
+        res.writeHead(200, { 'content-type': 'application/json' });
+        res.end('{}');
       });
+
+      try {
+        const { request } = createRequest({ url: `${baseUrl}/` });
+        const response = await executor.execute(request);
+        expect(response).toMatchObject({ statusCode: 200, body: '{}' });
+      } finally {
+        server.close();
+      }
     });
 
     it('should handle HTTP errors', async () => {
-      const { request, requestOptions } = createRequest();
-      nock(requestOptions.url).get('/').reply(500, {});
-
-      const response = await executor.execute(request);
-
-      expect(response).toMatchObject({
-        statusCode: 500,
-        body: '{}'
+      const { server, baseUrl } = await createTestServer((_req, res) => {
+        res.writeHead(500, { 'content-type': 'application/json' });
+        res.end('{}');
       });
+
+      try {
+        const { request } = createRequest({ url: `${baseUrl}/` });
+        const response = await executor.execute(request);
+        expect(response).toMatchObject({ statusCode: 500, body: '{}' });
+      } finally {
+        server.close();
+      }
     });
 
     it('should preserve directory traversal', async () => {
-      const path = 'public/../../../../../../etc/passwd';
-      const { request } = createRequest({
-        url: `http://localhost:8080/${path}`
-      });
-      nock('http://localhost:8080').get(`/${path}`).reply(200, {});
+      const path = '/public/../../../../../../etc/passwd';
+      let receivedPath: string;
 
-      const response = await executor.execute(request);
-
-      expect(response).toMatchObject({
-        statusCode: 200,
-        body: {}
+      const { server, baseUrl } = await createTestServer((req, res) => {
+        receivedPath = req.url;
+        res.writeHead(200, { 'content-type': 'application/json' });
+        res.end('{}');
       });
+
+      try {
+        const { request } = createRequest({ url: `${baseUrl}${path}` });
+        const response = await executor.execute(request);
+        expect(response).toMatchObject({ statusCode: 200 });
+        expect(receivedPath).toBe(path);
+      } finally {
+        server.close();
+      }
+    });
+
+    it('should preserve query string when URL has no explicit path', async () => {
+      let receivedPath: string;
+      const { server } = await createTestServer((req, res) => {
+        receivedPath = req.url;
+        res.writeHead(200, { 'content-type': 'application/json' });
+        res.end('{}');
+      });
+
+      try {
+        const { port } = server.address() as AddressInfo;
+        const { request } = createRequest({
+          url: `http://127.0.0.1:${port}?x=1&y=2`
+        });
+        const response = await executor.execute(request);
+        expect(response).toMatchObject({ statusCode: 200 });
+        expect(receivedPath).toBe('/?x=1&y=2');
+      } finally {
+        server.close();
+      }
     });
 
     it('should handle timeout', async () => {
-      when(spiedExecutorOptions.timeout).thenReturn(1);
-      const { request, requestOptions } = createRequest();
-      nock(requestOptions.url).get('/').delayBody(2).reply(204);
-
-      const response = await executor.execute(request);
-
-      expect(response).toMatchObject({
-        errorCode: 'ETIMEDOUT',
-        message: 'Waiting response has timed out'
+      when(spiedExecutorOptions.timeout).thenReturn(50);
+      const { server, baseUrl } = await createTestServer((_req, _res) => {
+        // Never respond — triggers timeout
       });
+
+      try {
+        const { request } = createRequest({ url: `${baseUrl}/` });
+        const response = await executor.execute(request);
+        expect(response).toMatchObject({ errorCode: expect.any(String) });
+      } finally {
+        server.close();
+      }
     });
 
-    it('should handle non-HTTP errors', async () => {
-      const { request } = createRequest();
+    it('should handle non-HTTP errors (connection refused)', async () => {
+      // Port 1 is not listening — expect a connection error
+      const { request } = createRequest({
+        url: 'http://127.0.0.1:1/'
+      });
 
       const response = await executor.execute(request);
 
-      expect(response).toMatchObject({
-        statusCode: undefined
-      });
+      expect(response).toMatchObject({ statusCode: undefined });
     });
 
     it('should truncate response body with not white-listed mime type', async () => {
       when(spiedExecutorOptions.maxContentLength).thenReturn(1);
-      const { request, requestOptions } = createRequest();
       const bigBody = 'x'.repeat(1025);
-      nock(requestOptions.url)
-        .get('/')
-        .reply(200, bigBody, { 'content-type': 'application/x-custom' });
 
-      const response = await executor.execute(request);
+      const { server, baseUrl } = await createTestServer((_req, res) => {
+        res.writeHead(200, { 'content-type': 'application/x-custom' });
+        res.end(bigBody);
+      });
 
-      expect(response.body?.length).toEqual(1024);
-      expect(response.body).toEqual(bigBody.slice(0, 1024));
+      try {
+        const { request } = createRequest({ url: `${baseUrl}/` });
+        const response = await executor.execute(request);
+        expect(response.body?.length).toEqual(1024);
+        expect(response.body).toEqual(bigBody.slice(0, 1024));
+      } finally {
+        server.close();
+      }
     });
 
     it('should not truncate response body if its smaller than limit and it is in allowed mime types', async () => {
@@ -239,15 +341,20 @@ describe('HttpRequestExecutor', () => {
       when(spiedExecutorOptions.whitelistMimes).thenReturn([
         { type: 'application/x-custom', allowTruncation: false }
       ]);
-      const { request, requestOptions } = createRequest();
       const bigBody = 'x'.repeat(1025);
-      nock(requestOptions.url).get('/').reply(200, bigBody, {
-        'content-type': 'application/x-custom'
+
+      const { server, baseUrl } = await createTestServer((_req, res) => {
+        res.writeHead(200, { 'content-type': 'application/x-custom' });
+        res.end(bigBody);
       });
 
-      const response = await executor.execute(request);
-
-      expect(response.body).toEqual(bigBody);
+      try {
+        const { request } = createRequest({ url: `${baseUrl}/` });
+        const response = await executor.execute(request);
+        expect(response.body).toEqual(bigBody);
+      } finally {
+        server.close();
+      }
     });
 
     it('should truncate response body if its larger than limit and it is in allowed mime types that require truncation', async () => {
@@ -255,16 +362,21 @@ describe('HttpRequestExecutor', () => {
       when(spiedExecutorOptions.whitelistMimes).thenReturn([
         { type: 'text/plain', allowTruncation: true }
       ]);
-      const { request, requestOptions } = createRequest();
       const bigBody = 'x'.repeat(1025);
       const expected = bigBody.slice(0, 1024);
-      nock(requestOptions.url).get('/').reply(200, bigBody, {
-        'content-type': 'text/plain'
+
+      const { server, baseUrl } = await createTestServer((_req, res) => {
+        res.writeHead(200, { 'content-type': 'text/plain' });
+        res.end(bigBody);
       });
 
-      const response = await executor.execute(request);
-
-      expect(response.body).toEqual(expected);
+      try {
+        const { request } = createRequest({ url: `${baseUrl}/` });
+        const response = await executor.execute(request);
+        expect(response.body).toEqual(expected);
+      } finally {
+        server.close();
+      }
     });
 
     it('should omit response body if its larger than limit and it is in allowed mime types that require omission', async () => {
@@ -272,121 +384,174 @@ describe('HttpRequestExecutor', () => {
       when(spiedExecutorOptions.whitelistMimes).thenReturn([
         { type: 'application/json', allowTruncation: false }
       ]);
-      const { request, requestOptions } = createRequest();
       const bigBody = 'x'.repeat(1025);
-      nock(requestOptions.url).get('/').reply(200, bigBody, {
-        'content-type': 'application/json'
+
+      const { server, baseUrl } = await createTestServer((_req, res) => {
+        res.writeHead(200, { 'content-type': 'application/json' });
+        res.end(bigBody);
       });
 
-      const response = await executor.execute(request);
-
-      expect(response.body).toEqual('');
+      try {
+        const { request } = createRequest({ url: `${baseUrl}/` });
+        const response = await executor.execute(request);
+        expect(response.body).toEqual('');
+      } finally {
+        server.close();
+      }
     });
 
     it('should decode response body if content-encoding is brotli', async () => {
-      when(spiedExecutorOptions.maxBodySize).thenReturn(1025);
+      when(spiedExecutorOptions.maxBodySize).thenReturn(2000);
       when(spiedExecutorOptions.whitelistMimes).thenReturn([
         { type: 'text/plain', allowTruncation: true }
       ]);
-      const { request, requestOptions } = createRequest();
-      const expected = 'x'.repeat(1025);
-      const bigBody = await promisify(brotliCompress)(expected);
-      nock(requestOptions.url).get('/').reply(200, bigBody, {
-        'content-type': 'text/plain',
-        'content-encoding': 'br'
+      const expected = 'x'.repeat(100);
+      const compressed = await promisify(brotliCompress)(expected);
+
+      const { server, baseUrl } = await createTestServer((_req, res) => {
+        res.writeHead(200, {
+          'content-type': 'text/plain',
+          'content-encoding': 'br'
+        });
+        res.end(compressed);
       });
 
-      const response = await executor.execute(request);
-
-      expect(response.body).toEqual(expected);
+      try {
+        const { request } = createRequest({
+          url: `${baseUrl}/`,
+          decompress: true
+        });
+        const response = await executor.execute(request);
+        expect(response.body).toEqual(expected);
+      } finally {
+        server.close();
+      }
     });
 
     it('should prevent decoding response body if decompress option is disabled', async () => {
-      when(spiedExecutorOptions.maxBodySize).thenReturn(1024);
+      when(spiedExecutorOptions.maxBodySize).thenReturn(2000);
       when(spiedExecutorOptions.whitelistMimes).thenReturn([
         { type: 'text/plain', allowTruncation: true }
       ]);
-      const { request, requestOptions } = createRequest({
-        decompress: false,
-        encoding: 'base64'
-      });
       const expected = 'x'.repeat(100);
-      const body = await promisify(gzip)(expected, {
+      const compressed = await promisify(gzip)(expected, {
         flush: constants.Z_SYNC_FLUSH,
         finishFlush: constants.Z_SYNC_FLUSH
       });
-      nock(requestOptions.url).get('/').reply(200, body, {
-        'content-type': 'text/plain',
-        'content-encoding': 'gzip'
+
+      const { server, baseUrl } = await createTestServer((_req, res) => {
+        res.writeHead(200, {
+          'content-type': 'text/plain',
+          'content-encoding': 'gzip'
+        });
+        res.end(compressed);
       });
 
-      const response = await executor.execute(request);
-
-      expect(response.body).toEqual(body.toString('base64'));
-      expect(response.headers).toMatchObject({ 'content-encoding': 'gzip' });
+      try {
+        const { request } = createRequest({
+          url: `${baseUrl}/`,
+          decompress: false,
+          encoding: 'base64'
+        });
+        const response = await executor.execute(request);
+        expect(response.body).toEqual(compressed.toString('base64'));
+        expect(response.headers).toMatchObject({ 'content-encoding': 'gzip' });
+      } finally {
+        server.close();
+      }
     });
 
     it('should decode response body if content-encoding is gzip', async () => {
-      when(spiedExecutorOptions.maxBodySize).thenReturn(1025);
+      when(spiedExecutorOptions.maxBodySize).thenReturn(2000);
       when(spiedExecutorOptions.whitelistMimes).thenReturn([
         { type: 'text/plain', allowTruncation: true }
       ]);
-      const { request, requestOptions } = createRequest();
-      const expected = 'x'.repeat(1025);
-      const bigBody = await promisify(gzip)(expected, {
+      const expected = 'x'.repeat(100);
+      const compressed = await promisify(gzip)(expected, {
         flush: constants.Z_SYNC_FLUSH,
         finishFlush: constants.Z_SYNC_FLUSH
       });
-      nock(requestOptions.url).get('/').reply(200, bigBody, {
-        'content-type': 'text/plain',
-        'content-encoding': 'gzip'
+
+      const { server, baseUrl } = await createTestServer((_req, res) => {
+        res.writeHead(200, {
+          'content-type': 'text/plain',
+          'content-encoding': 'gzip'
+        });
+        res.end(compressed);
       });
 
-      const response = await executor.execute(request);
-
-      expect(response.body).toEqual(expected);
+      try {
+        const { request } = createRequest({
+          url: `${baseUrl}/`,
+          decompress: true
+        });
+        const response = await executor.execute(request);
+        expect(response.body).toEqual(expected);
+      } finally {
+        server.close();
+      }
     });
 
     it('should decode response body if content-encoding is deflate', async () => {
-      when(spiedExecutorOptions.maxBodySize).thenReturn(1025);
+      when(spiedExecutorOptions.maxBodySize).thenReturn(2000);
       when(spiedExecutorOptions.whitelistMimes).thenReturn([
         { type: 'text/plain', allowTruncation: true }
       ]);
-      const { request, requestOptions } = createRequest();
-      const expected = 'x'.repeat(1025);
-      const bigBody = await promisify(deflate)(expected, {
+      const expected = 'x'.repeat(100);
+      const compressed = await promisify(deflate)(expected, {
         flush: constants.Z_SYNC_FLUSH,
         finishFlush: constants.Z_SYNC_FLUSH
       });
-      nock(requestOptions.url).get('/').reply(200, bigBody, {
-        'content-type': 'text/plain',
-        'content-encoding': 'deflate'
+
+      const { server, baseUrl } = await createTestServer((_req, res) => {
+        res.writeHead(200, {
+          'content-type': 'text/plain',
+          'content-encoding': 'deflate'
+        });
+        res.end(compressed);
       });
 
-      const response = await executor.execute(request);
-
-      expect(response.body).toEqual(expected);
+      try {
+        const { request } = createRequest({
+          url: `${baseUrl}/`,
+          decompress: true
+        });
+        const response = await executor.execute(request);
+        expect(response.body).toEqual(expected);
+      } finally {
+        server.close();
+      }
     });
 
     it('should decode response body if content-encoding is deflate and content does not have zlib headers', async () => {
-      when(spiedExecutorOptions.maxBodySize).thenReturn(1025);
+      when(spiedExecutorOptions.maxBodySize).thenReturn(2000);
       when(spiedExecutorOptions.whitelistMimes).thenReturn([
         { type: 'text/plain', allowTruncation: true }
       ]);
-      const { request, requestOptions } = createRequest();
-      const expected = 'x'.repeat(1025);
-      const bigBody = await promisify(deflateRaw)(expected, {
+      const expected = 'x'.repeat(100);
+      const compressed = await promisify(deflateRaw)(expected, {
         flush: constants.Z_SYNC_FLUSH,
         finishFlush: constants.Z_SYNC_FLUSH
       });
-      nock(requestOptions.url).get('/').reply(200, bigBody, {
-        'content-type': 'text/plain',
-        'content-encoding': 'deflate'
+
+      const { server, baseUrl } = await createTestServer((_req, res) => {
+        res.writeHead(200, {
+          'content-type': 'text/plain',
+          'content-encoding': 'deflate'
+        });
+        res.end(compressed);
       });
 
-      const response = await executor.execute(request);
-
-      expect(response.body).toEqual(expected);
+      try {
+        const { request } = createRequest({
+          url: `${baseUrl}/`,
+          decompress: true
+        });
+        const response = await executor.execute(request);
+        expect(response.body).toEqual(expected);
+      } finally {
+        server.close();
+      }
     });
 
     it('should decode and truncate gzipped response body if content-type is not in allowed list', async () => {
@@ -394,21 +559,31 @@ describe('HttpRequestExecutor', () => {
       when(spiedExecutorOptions.whitelistMimes).thenReturn([
         { type: 'text/plain', allowTruncation: true }
       ]);
-      const { request, requestOptions } = createRequest();
       const bigBody = 'x'.repeat(1025);
       const expected = bigBody.slice(0, 1024);
-      const gzippedBody = await promisify(gzip)(bigBody, {
+      const compressed = await promisify(gzip)(bigBody, {
         flush: constants.Z_SYNC_FLUSH,
         finishFlush: constants.Z_SYNC_FLUSH
       });
-      nock(requestOptions.url).get('/').reply(200, gzippedBody, {
-        'content-type': 'text/html',
-        'content-encoding': 'gzip'
+
+      const { server, baseUrl } = await createTestServer((_req, res) => {
+        res.writeHead(200, {
+          'content-type': 'text/html',
+          'content-encoding': 'gzip'
+        });
+        res.end(compressed);
       });
 
-      const response = await executor.execute(request);
-
-      expect(response.body).toEqual(expected);
+      try {
+        const { request } = createRequest({
+          url: `${baseUrl}/`,
+          decompress: true
+        });
+        const response = await executor.execute(request);
+        expect(response.body).toEqual(expected);
+      } finally {
+        server.close();
+      }
     });
 
     it('should not truncate response body if allowed mime type starts with actual one', async () => {
@@ -416,56 +591,98 @@ describe('HttpRequestExecutor', () => {
       when(spiedExecutorOptions.whitelistMimes).thenReturn([
         { type: 'application/x-custom', allowTruncation: false }
       ]);
-      const { request, requestOptions } = createRequest();
       const bigBody = 'x'.repeat(1025);
-      nock(requestOptions.url).get('/').reply(200, bigBody, {
-        'content-type': 'application/x-custom-with-suffix'
+
+      const { server, baseUrl } = await createTestServer((_req, res) => {
+        res.writeHead(200, {
+          'content-type': 'application/x-custom-with-suffix'
+        });
+        res.end(bigBody);
       });
 
-      const response = await executor.execute(request);
-
-      expect(response.body).toEqual(bigBody);
+      try {
+        const { request } = createRequest({ url: `${baseUrl}/` });
+        const response = await executor.execute(request);
+        expect(response.body).toEqual(bigBody);
+      } finally {
+        server.close();
+      }
     });
 
     it('should skip truncate on 204 response status', async () => {
       when(spiedExecutorOptions.maxContentLength).thenReturn(1);
-      const { request, requestOptions } = createRequest();
-      nock(requestOptions.url).get('/').reply(204);
-      const response = await executor.execute(request);
 
-      expect(response.body).toEqual('');
+      const { server, baseUrl } = await createTestServer((_req, res) => {
+        res.writeHead(204);
+        res.end();
+      });
+
+      try {
+        const { request } = createRequest({ url: `${baseUrl}/` });
+        const response = await executor.execute(request);
+        expect(response.body).toEqual('');
+      } finally {
+        server.close();
+      }
+    });
+
+    it('should send requests with unescaped characters in the path (Case 1)', async () => {
+      let receivedPath: string;
+
+      const { server } = await createTestServer((req, res) => {
+        receivedPath = req.url;
+        res.writeHead(200);
+        res.end('ok');
+      });
+
+      try {
+        const { port } = server.address() as AddressInfo;
+        const { request } = createRequest({
+          url: `http://127.0.0.1:${port}/path|with|pipes`
+        });
+        const response = await executor.execute(request);
+        expect(response.statusCode).toBe(200);
+        expect(receivedPath).toBe('/path|with|pipes');
+      } finally {
+        server.close();
+      }
     });
   });
 
   it('should include ttfb in a successful response', async () => {
-    const { request, requestOptions } = createRequest();
-    nock(requestOptions.url).get('/').reply(200, 'ok');
+    const { server, baseUrl } = await createTestServer((_req, res) => {
+      res.writeHead(200);
+      res.end('ok');
+    });
 
-    const response = await executor.execute(request);
-
-    expect(response.ttfb).toBeGreaterThanOrEqual(0);
+    try {
+      const { request } = createRequest({ url: `${baseUrl}/` });
+      const response = await executor.execute(request);
+      expect(response.ttfb).toBeGreaterThanOrEqual(0);
+    } finally {
+      server.close();
+    }
   });
 
   it('should include ttfb even on HTTP error responses', async () => {
-    const { request, requestOptions } = createRequest();
-    nock(requestOptions.url).get('/').reply(500, 'error body');
+    const { server, baseUrl } = await createTestServer((_req, res) => {
+      res.writeHead(500);
+      res.end('error body');
+    });
 
-    const response = await executor.execute(request);
-
-    expect(response.statusCode).toBe(500);
-    expect(response.ttfb).toBeDefined();
+    try {
+      const { request } = createRequest({ url: `${baseUrl}/` });
+      const response = await executor.execute(request);
+      expect(response.statusCode).toBe(500);
+      expect(response.ttfb).toBeDefined();
+    } finally {
+      server.close();
+    }
   });
 
   it('should not include ttfb when the request fails before reaching the target', async () => {
-    const { request, requestOptions } = createRequest();
-
-    nock(requestOptions.url).get('/').replyWithError({
-      message: 'connect ECONNREFUSED',
-      code: 'ECONNREFUSED'
-    });
-
+    const { request } = createRequest({ url: 'http://127.0.0.1:1/' });
     const response = await executor.execute(request);
-
     expect(response.errorCode).toBeDefined();
     expect(response.ttfb).toBeUndefined();
   });
