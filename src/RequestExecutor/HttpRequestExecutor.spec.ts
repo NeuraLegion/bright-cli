@@ -687,7 +687,10 @@ describe('HttpRequestExecutor', () => {
       }
     });
 
-    it('should not forward a caller-supplied Host header to avoid duplicate Host', async () => {
+    it('should forward a caller-supplied Host header verbatim to the server', async () => {
+      // The scanner sends security-test payloads in the Host header (e.g. Host
+      // injection, SSRF probes). The value must reach the server byte-for-byte;
+      // libcurl's URL-derived Host is overridden by the HTTPHEADER entry.
       let receivedHeaders: http.IncomingHttpHeaders | undefined;
 
       const { server, baseUrl } = await createTestServer((req, res) => {
@@ -697,15 +700,35 @@ describe('HttpRequestExecutor', () => {
       });
 
       try {
-        const { port } = server.address() as AddressInfo;
         const { request } = createRequest({
           url: `${baseUrl}/`,
           headers: { host: 'evil.example.com' }
         });
         await executor.execute(request);
-        // libcurl derives Host from the URL; the caller-supplied value must
-        // be dropped so the server sees exactly one, correct Host header.
-        expect(receivedHeaders?.['host']).toBe(`127.0.0.1:${port}`);
+        expect(receivedHeaders?.['host']).toBe('evil.example.com');
+      } finally {
+        server.close();
+      }
+    });
+
+    it('should forward a Host header containing an injection payload verbatim', async () => {
+      let receivedHeaders: http.IncomingHttpHeaders | undefined;
+
+      const { server, baseUrl } = await createTestServer((req, res) => {
+        receivedHeaders = req.headers;
+        res.writeHead(200);
+        res.end('ok');
+      });
+
+      const injectionPayload = 'evil.internal; X-Forwarded-Host: attacker.com';
+
+      try {
+        const { request } = createRequest({
+          url: `${baseUrl}/some-proper-url`,
+          headers: { host: injectionPayload }
+        });
+        await executor.execute(request);
+        expect(receivedHeaders?.['host']).toBe(injectionPayload);
       } finally {
         server.close();
       }
