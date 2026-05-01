@@ -110,9 +110,7 @@ export class HttpRequestExecutor implements RequestExecutor {
 
       const bodyChunks: Buffer[] = [];
 
-      curl.on('data', (chunk: Buffer) => {
-        bodyChunks.push(chunk);
-      });
+      curl.on('data', (chunk: Buffer) => bodyChunks.push(chunk));
 
       curl.on(
         'end',
