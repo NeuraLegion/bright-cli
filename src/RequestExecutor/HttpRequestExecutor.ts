@@ -106,25 +106,6 @@ export class HttpRequestExecutor implements RequestExecutor {
     }
   }
 
-  /**
-   * Performs the HTTP request using libcurl.
-   *
-   * libcurl handles all three malformed-URL cases natively:
-   *   - Case 1 (ERR_UNESCAPED_CHARACTERS): PATH_AS_IS prevents re-encoding
-   *   - Case 2 (malformed path/query): REQUEST_TARGET writes path verbatim
-   *   - Case 3 (CRLF injection in header value): passed byte-for-byte to wire
-   *
-   * Connection reuse is handled automatically by node-libcurl's shared global
-   * Multi handle. All Curl instances share the same Multi by default, so the
-   * connection pool lives on the Multi — not on individual easy handles.
-   * Closing a Curl handle after each request does NOT discard the pool; the
-   * open TCP socket is returned to the Multi's cache and picked up by the next
-   * Curl instance targeting the same host.
-   *
-   * When `reuseConnection` is true we omit `Connection: close` and set
-   * TCP_KEEPALIVE so idle sockets survive NAT/firewall eviction between
-   * requests. When false we send `Connection: close` to opt out explicitly.
-   */
   private request(options: Request): Promise<{
     statusCode: number;
     headers: Record<string, string | string[]>;
