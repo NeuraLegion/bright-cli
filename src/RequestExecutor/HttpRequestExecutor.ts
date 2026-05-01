@@ -10,21 +10,12 @@ import { CertificatesResolver } from './CertificatesResolver';
 import { inject, injectable } from 'tsyringe';
 import iconv from 'iconv-lite';
 import { safeParse } from 'fast-content-type-parse';
-import { Curl } from 'node-libcurl';
+import { Curl, HeaderInfo } from 'node-libcurl';
 import { parse as parseUrl } from 'node:url';
 
 type ScriptEntrypoint = (
   options: RequestOptions
 ) => Promise<RequestOptions> | RequestOptions;
-
-/**
- * Header object returned by node-libcurl for each response in the chain.
- * The `result` key holds parsed status-line info.
- */
-interface CurlHeaderEntry {
-  result: { version: string; code: number; reason: string };
-  [name: string]: string | { version: string; code: number; reason: string };
-}
 
 @injectable()
 export class HttpRequestExecutor implements RequestExecutor {
@@ -125,7 +116,7 @@ export class HttpRequestExecutor implements RequestExecutor {
 
       curl.on(
         'end',
-        (statusCode: number, _data: unknown, rawHeaders: CurlHeaderEntry[]) => {
+        (statusCode: number, _data: unknown, rawHeaders: HeaderInfo[]) => {
           const ttfbUs = curl.getInfo('STARTTRANSFER_TIME_T') as number;
           const ttfb = Math.round(ttfbUs / 1000);
 
@@ -291,7 +282,7 @@ export class HttpRequestExecutor implements RequestExecutor {
    * flat key→value map using only the final response headers.
    */
   private parseCurlHeaders(
-    rawHeaders: CurlHeaderEntry[]
+    rawHeaders: HeaderInfo[]
   ): Record<string, string | string[]> {
     const lastHeaders = rawHeaders[rawHeaders.length - 1] ?? {};
     const result: Record<string, string | string[]> = {};
