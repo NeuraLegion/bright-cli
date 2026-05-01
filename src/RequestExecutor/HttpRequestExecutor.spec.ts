@@ -749,4 +749,124 @@ describe('HttpRequestExecutor', () => {
     expect(response.errorCode).toBeDefined();
     expect(response.ttfb).toBeUndefined();
   });
+
+  describe('reuseConnection', () => {
+    it('should reuse the same Curl handle for multiple requests to the same host', async () => {
+      let connectionCount = 0;
+
+      const { server, baseUrl } = await createTestServer((_req, res) => {
+        res.writeHead(200, { 'Content-Type': 'text/plain' });
+        res.end('ok');
+      });
+
+      server.on('connection', () => {
+        connectionCount++;
+      });
+
+      const reuseExecutor = new HttpRequestExecutor(
+        instance(virtualScriptsMock),
+        { reuseConnection: true },
+        certificatesCacheMock,
+        instance(certificatesResolverMock)
+      );
+
+      try {
+        const { request: req1 } = createRequest({ url: `${baseUrl}/a` });
+        const { request: req2 } = createRequest({ url: `${baseUrl}/b` });
+        const { request: req3 } = createRequest({ url: `${baseUrl}/c` });
+
+        await reuseExecutor.execute(req1);
+        await reuseExecutor.execute(req2);
+        await reuseExecutor.execute(req3);
+
+        // libcurl should reuse the single open connection; only 1 TCP
+        // connection should have been established for all 3 requests.
+        expect(connectionCount).toBe(1);
+      } finally {
+        reuseExecutor.dispose();
+        server.close();
+      }
+    });
+
+    it('should open a new TCP connection for each request when reuseConnection is false', async () => {
+      let connectionCount = 0;
+
+      const { server, baseUrl } = await createTestServer((_req, res) => {
+        res.writeHead(200);
+        res.end('ok');
+      });
+
+      server.on('connection', () => {
+        connectionCount++;
+      });
+
+      try {
+        const { request: req1 } = createRequest({
+          url: `${baseUrl}/a`,
+          headers: { Connection: 'close' }
+        });
+        const { request: req2 } = createRequest({
+          url: `${baseUrl}/b`,
+          headers: { Connection: 'close' }
+        });
+
+        await executor.execute(req1);
+        await executor.execute(req2);
+
+        // Each request uses a fresh Curl handle → fresh TCP connection.
+        expect(connectionCount).toBe(2);
+      } finally {
+        server.close();
+      }
+    });
+
+    it('should evict a broken handle from the pool and recover on the next request', async () => {
+      const { server: goodServer, baseUrl } = await createTestServer(
+        (_req, res) => {
+          res.writeHead(200);
+          res.end('ok');
+        }
+      );
+
+      const reuseExecutor = new HttpRequestExecutor(
+        instance(virtualScriptsMock),
+        { reuseConnection: true },
+        certificatesCacheMock,
+        instance(certificatesResolverMock)
+      );
+
+      try {
+        // First successful request — populates the pool.
+        const { request: req1 } = createRequest({ url: `${baseUrl}/a` });
+        const res1 = await reuseExecutor.execute(req1);
+        expect(res1.statusCode).toBe(200);
+
+        // Close the server to simulate a broken connection.
+        await new Promise<void>((resolve) => goodServer.close(() => resolve()));
+
+        // Second request to same host should fail but evict the stale handle.
+        const { request: req2 } = createRequest({ url: `${baseUrl}/b` });
+        const res2 = await reuseExecutor.execute(req2);
+        expect(res2.errorCode).toBeDefined();
+
+        // Start a new server on a different port — the pool entry was evicted,
+        // so the executor will create a fresh handle and succeed.
+        const { server: newServer, baseUrl: newBaseUrl } =
+          await createTestServer((_req, res) => {
+            res.writeHead(200);
+            res.end('recovered');
+          });
+
+        try {
+          const { request: req3 } = createRequest({ url: `${newBaseUrl}/c` });
+          const res3 = await reuseExecutor.execute(req3);
+          expect(res3.statusCode).toBe(200);
+        } finally {
+          newServer.close();
+        }
+      } finally {
+        reuseExecutor.dispose();
+      }
+    });
+  });
 });
