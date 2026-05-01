@@ -31,13 +31,6 @@ export class HttpRequestExecutor implements RequestExecutor {
   private readonly DEFAULT_SCRIPT_ENTRYPOINT = 'handle';
   private readonly proxyDomains?: RegExp[];
   private readonly proxyDomainsBypass?: RegExp[];
-  /**
-   * Per-host pool of reusable libcurl easy handles, keyed by `scheme://host`.
-   * Only populated when `reuseConnection` is true.
-   * libcurl retains an open TCP connection in the handle's connection cache,
-   * so subsequent `.perform()` calls on the same handle reuse the socket.
-   */
-  private readonly curlPool = new Map<string, Curl>();
 
   get protocol(): Protocol {
     return Protocol.HTTP;
@@ -114,17 +107,6 @@ export class HttpRequestExecutor implements RequestExecutor {
   }
 
   /**
-   * Closes all pooled `Curl` handles and clears the pool.
-   * Should be called when the executor is no longer needed to free resources.
-   */
-  public dispose(): void {
-    for (const curl of this.curlPool.values()) {
-      curl.close();
-    }
-    this.curlPool.clear();
-  }
-
-  /**
    * Performs the HTTP request using libcurl.
    *
    * libcurl handles all three malformed-URL cases natively:
@@ -132,11 +114,16 @@ export class HttpRequestExecutor implements RequestExecutor {
    *   - Case 2 (malformed path/query): REQUEST_TARGET writes path verbatim
    *   - Case 3 (CRLF injection in header value): passed byte-for-byte to wire
    *
-   * When `reuseConnection` is enabled the same `Curl` easy handle is reused
-   * across requests to the same host so that libcurl can reuse the open TCP
-   * connection from its internal connection cache.  A fresh `new Curl()` per
-   * request would discard the cache on `close()` — TCP_KEEPALIVE alone is not
-   * enough for connection reuse.
+   * Connection reuse is handled automatically by node-libcurl's shared global
+   * Multi handle. All Curl instances share the same Multi by default, so the
+   * connection pool lives on the Multi — not on individual easy handles.
+   * Closing a Curl handle after each request does NOT discard the pool; the
+   * open TCP socket is returned to the Multi's cache and picked up by the next
+   * Curl instance targeting the same host.
+   *
+   * When `reuseConnection` is true we omit `Connection: close` and set
+   * TCP_KEEPALIVE so idle sockets survive NAT/firewall eviction between
+   * requests. When false we send `Connection: close` to opt out explicitly.
    */
   private request(options: Request): Promise<{
     statusCode: number;
@@ -145,81 +132,35 @@ export class HttpRequestExecutor implements RequestExecutor {
     ttfb: number;
   }> {
     return new Promise((resolve, reject) => {
-      const { protocol, host } = parseUrl(options.url);
-      const poolKey = `${protocol}//${host}`;
-      const reuse = this.options.reuseConnection ?? false;
-
-      let curl: Curl;
-
-      if (reuse) {
-        const existing = this.curlPool.get(poolKey);
-
-        if (existing) {
-          // Re-use the existing handle without calling reset() — curl_easy_reset
-          // clears the internal connection cache, defeating the purpose.
-          // configureCurl sets all options explicitly and clears stale values.
-          curl = existing;
-        } else {
-          curl = new Curl();
-          this.curlPool.set(poolKey, curl);
-        }
-      } else {
-        curl = new Curl();
-      }
+      const curl = new Curl();
 
       this.configureCurl(curl, options);
 
       const bodyChunks: Buffer[] = [];
 
-      const onData = (chunk: Buffer) => {
+      curl.on('data', (chunk: Buffer) => {
         bodyChunks.push(chunk);
+      });
 
-        return chunk.length;
-      };
+      curl.on(
+        'end',
+        (statusCode: number, _data: unknown, rawHeaders: CurlHeaderEntry[]) => {
+          const ttfbUs = curl.getInfo('STARTTRANSFER_TIME_T') as number;
+          const ttfb = Math.round(ttfbUs / 1000);
 
-      const onEnd = (
-        statusCode: number,
-        _data: unknown,
-        rawHeaders: CurlHeaderEntry[]
-      ) => {
-        const ttfbUs = curl.getInfo('STARTTRANSFER_TIME_T') as number;
-        const ttfb = Math.round(ttfbUs / 1000);
-
-        // Remove per-request listeners before resolving so they don't
-        // accumulate on a pooled handle across multiple requests.
-        curl.removeListener('data', onData);
-        curl.removeListener('end', onEnd);
-        curl.removeListener('error', onError);
-
-        if (!reuse) {
           curl.close();
+
+          const headers = this.parseCurlHeaders(rawHeaders);
+          const rawBody = Buffer.concat(bodyChunks);
+
+          resolve({ statusCode, headers, rawBody, ttfb });
         }
+      );
 
-        const headers = this.parseCurlHeaders(rawHeaders);
-        const rawBody = Buffer.concat(bodyChunks);
-
-        resolve({ statusCode, headers, rawBody, ttfb });
-      };
-
-      const onError = (err: Error) => {
-        curl.removeListener('data', onData);
-        curl.removeListener('end', onEnd);
-        curl.removeListener('error', onError);
-
-        if (reuse) {
-          // Evict from pool — the connection may be broken.
-          this.curlPool.delete(poolKey);
-          curl.close();
-        } else {
-          curl.close();
-        }
-
+      curl.on('error', (err: Error) => {
+        curl.close();
         reject(err);
-      };
-
-      curl.on('data', onData);
-      curl.on('end', onEnd);
-      curl.on('error', onError);
+      });
 
       curl.perform();
     });
@@ -248,16 +189,17 @@ export class HttpRequestExecutor implements RequestExecutor {
     this.applyCurlHeaders(curl, options);
 
     if (this.options.reuseConnection) {
-      // TCP_KEEPALIVE prevents NAT/firewall from killing idle pooled sockets
-      // between requests on the same reused handle.
+      // TCP_KEEPALIVE prevents NAT/firewall from dropping idle sockets between
+      // requests. The Multi-level connection pool keeps the socket alive; this
+      // option ensures the OS also keeps it alive.
       curl.setOpt('TCP_KEEPALIVE', 1);
     }
 
     const proxyUrl = this.resolveProxy(options);
 
-    // Always set PROXY — pass empty string to clear it on a reused handle when
-    // the current request does not require a proxy.
-    curl.setOpt('PROXY', proxyUrl ?? '');
+    if (proxyUrl) {
+      curl.setOpt('PROXY', proxyUrl);
+    }
   }
 
   /**
@@ -278,15 +220,7 @@ export class HttpRequestExecutor implements RequestExecutor {
   }
 
   private applyCurlBody(curl: Curl, options: Request): void {
-    if (!options.body) {
-      // Setting HTTPGET to 1 resets libcurl's internal POST mode and clears any
-      // body from a previous request on a reused handle. Using POSTFIELDS: null
-      // would trigger POST mode even when CUSTOMREQUEST overrides the method,
-      // causing CURLE_ABORTED_BY_CALLBACK (42).
-      curl.setOpt('HTTPGET', 1);
-
-      return;
-    }
+    if (!options.body) return;
 
     const bodyBuffer = options.encoding
       ? iconv.encode(options.body, options.encoding)
@@ -296,19 +230,25 @@ export class HttpRequestExecutor implements RequestExecutor {
   }
 
   private applyCurlTls(curl: Curl, options: Request): void {
-    // Always explicitly set (or clear) TLS options so a reused handle does not
-    // carry stale certificate data from a previous request.
-    curl.setOpt('CAINFO_BLOB', options.ca ?? null);
-    curl.setOpt('SSLCERT_BLOB', options.pfx ?? null);
-    curl.setOpt('KEYPASSWD', options.passphrase ?? null);
+    if (options.ca) {
+      curl.setOpt('CAINFO_BLOB', options.ca);
+    }
+
+    if (options.pfx) {
+      curl.setOpt('SSLCERT_BLOB', options.pfx);
+
+      if (options.passphrase) {
+        curl.setOpt('KEYPASSWD', options.passphrase);
+      }
+    }
   }
 
   private applyCurlTimeout(curl: Curl, options: Request): void {
     const timeout = options.timeout ?? this.options.timeout;
 
-    // Set to 0 (no timeout) when not configured, clearing any value from a
-    // previous request on a reused handle.
-    curl.setOpt('TIMEOUT_MS', typeof timeout === 'number' ? timeout : 0);
+    if (typeof timeout === 'number') {
+      curl.setOpt('TIMEOUT_MS', timeout);
+    }
   }
 
   /**
@@ -334,9 +274,6 @@ export class HttpRequestExecutor implements RequestExecutor {
 
     if (curlHeaders.length > 0) {
       curl.setOpt('HTTPHEADER', curlHeaders);
-    } else {
-      // Explicitly clear any headers from a previous request on a reused handle.
-      curl.setOpt('HTTPHEADER', []);
     }
   }
 
