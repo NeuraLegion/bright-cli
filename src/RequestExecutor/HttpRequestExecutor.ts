@@ -159,8 +159,7 @@ export class HttpRequestExecutor implements RequestExecutor {
     this.applyCurlHeaders(curl, options);
 
     if (this.options.reuseConnection) {
-      // TCP_KEEPALIVE prevents NAT/firewall from dropping idle sockets between
-      // requests. The Multi-level connection pool keeps the socket alive; this
+      // The Multi-level connection pool keeps the socket alive; this
       // option ensures the OS also keeps it alive.
       curl.setOpt('TCP_KEEPALIVE', 1);
     }
