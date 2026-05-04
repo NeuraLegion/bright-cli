@@ -195,7 +195,8 @@ export class HttpRequestExecutor implements RequestExecutor {
       ? iconv.encode(options.body, options.encoding)
       : Buffer.from(options.body);
 
-    curl.setOpt('POSTFIELDS', bodyBuffer.toString('binary'));
+    curl.setOpt('POSTFIELDS', bodyBuffer);
+    curl.setOpt('POSTFIELDSIZE', bodyBuffer.length);
   }
 
   private applyCurlTls(curl: Curl, options: Request): void {
