@@ -207,6 +207,7 @@ export class HttpRequestExecutor implements RequestExecutor {
 
     if (options.pfx) {
       curl.setOpt('SSLCERT_BLOB', options.pfx);
+      curl.setOpt('SSLCERTTYPE', 'P12');
 
       if (options.passphrase) {
         curl.setOpt('KEYPASSWD', options.passphrase);
