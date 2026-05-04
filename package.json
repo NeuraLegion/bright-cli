@@ -22,7 +22,7 @@
     ]
   },
   "engines": {
-    "node": ">=22 <=24"
+    "node": ">=22.14 <=24"
   },
   "dependencies": {
     "@neuralegion/os-service": "^2.0.5",
@@ -65,7 +65,7 @@
     "@types/jest": "^30.0.0",
     "@types/js-yaml": "^4.0.2",
     "@types/ms": "^0.7.31",
-    "@types/node": "^22.11.7",
+    "@types/node": "^22.14.0",
     "@types/semver": "^7.5.8",
     "@types/ws": "^7.4.7",
     "@types/yargs": "~16.0.1",
