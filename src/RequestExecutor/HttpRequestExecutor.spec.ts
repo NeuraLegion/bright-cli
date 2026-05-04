@@ -28,6 +28,8 @@ import {
   deflateRaw
 } from 'node:zlib';
 
+const serversToClose: http.Server[] = [];
+
 /**
  * Creates a minimal HTTP server that responds once per request.
  * Returns the server instance and its base URL.
@@ -39,6 +41,7 @@ async function createTestServer(
   server.listen(0, '127.0.0.1');
   await once(server, 'listening');
   const { port } = server.address() as AddressInfo;
+  serversToClose.push(server);
 
   return { server, baseUrl: `http://127.0.0.1:${port}` };
 }
@@ -77,7 +80,7 @@ describe('HttpRequestExecutor', () => {
     );
   });
 
-  afterEach(() =>
+  afterEach(() => {
     reset<
       | VirtualScripts
       | RequestExecutorOptions
@@ -88,8 +91,18 @@ describe('HttpRequestExecutor', () => {
       spiedExecutorOptions,
       certificatesCacheMock,
       certificatesResolverMock
-    )
-  );
+    );
+
+    return Promise.all(
+      serversToClose.splice(0).map(
+        (server) =>
+          new Promise<void>((resolve) => {
+            server.closeAllConnections();
+            server.close(() => resolve());
+          })
+      )
+    );
+  });
 
   describe('protocol', () => {
     it('should return HTTP', () => {
