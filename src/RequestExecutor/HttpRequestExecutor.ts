@@ -118,17 +118,17 @@ export class HttpRequestExecutor implements RequestExecutor {
           const ttfbUs = curl.getInfo('STARTTRANSFER_TIME_T') as number;
           const ttfb = Math.round(ttfbUs / 1000);
 
-          curl.close();
-
           const headers = this.parseCurlHeaders(rawHeaders);
           const rawBody = Buffer.concat(bodyChunks);
+
+          setImmediate(() => curl.close());
 
           resolve({ statusCode, headers, rawBody, ttfb });
         }
       );
 
       curl.on('error', (err: Error) => {
-        curl.close();
+        setImmediate(() => curl.close());
         reject(err);
       });
 
