@@ -148,7 +148,6 @@ export class HttpRequestExecutor implements RequestExecutor {
     curl.setOpt('REQUEST_TARGET', rawPath);
     // Prevent libcurl from normalising (percent-encoding) the path.
     curl.setOpt('PATH_AS_IS', true);
-    curl.setOpt('CUSTOMREQUEST', options.method);
     curl.setOpt('SSL_VERIFYPEER', false);
     curl.setOpt('SSL_VERIFYHOST', 0);
     curl.setOpt('FOLLOWLOCATION', false);
@@ -169,6 +168,8 @@ export class HttpRequestExecutor implements RequestExecutor {
     if (proxyUrl) {
       curl.setOpt('PROXY', proxyUrl);
     }
+
+    curl.setOpt('CUSTOMREQUEST', options.method);
   }
 
   /**
@@ -195,7 +196,7 @@ export class HttpRequestExecutor implements RequestExecutor {
       ? iconv.encode(options.body, options.encoding)
       : Buffer.from(options.body);
 
-    curl.setOpt('POSTFIELDS', bodyBuffer);
+    curl.setOpt('POSTFIELDS', bodyBuffer.toString());
     curl.setOpt('POSTFIELDSIZE', bodyBuffer.length);
   }
 
