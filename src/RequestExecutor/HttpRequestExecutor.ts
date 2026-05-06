@@ -154,10 +154,14 @@ export class HttpRequestExecutor implements RequestExecutor {
     this.applyCurlHeaders(curl, options);
 
     if (this.options.reuseConnection) {
-      // The Multi-level connection pool keeps the socket alive; this
-      // option ensures the OS also keeps it alive.
+      // Match the node agent behaviour: keep the TCP socket alive and limit
+      // the connection pool to 100 concurrent sockets (maxSockets: 100).
       curl.setOpt('TCP_KEEPALIVE', 1);
-    } else if (!options.keepAlive) {
+      curl.setOpt('MAXCONNECTS', 100);
+    } else {
+      // libcurl reuses connections by default, unlike node where keepAlive is
+      // off unless an agent is explicitly created. Disable reuse to match that
+      // default-off behaviour.
       curl.setOpt('FRESH_CONNECT', 1);
       curl.setOpt('FORBID_REUSE', 1);
     }

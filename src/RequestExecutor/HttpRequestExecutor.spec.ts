@@ -790,8 +790,8 @@ describe('HttpRequestExecutor', () => {
     it('should reuse the TCP connection across requests when reuseConnection is true', async () => {
       // Connection reuse is provided by node-libcurl's shared global Multi
       // handle, whose connection pool survives individual Curl handle teardown.
-      // When reuseConnection is true we omit Connection:close so the server
-      // keeps the socket open and libcurl can pick it up for the next request.
+      // When reuseConnection is true we set TCP_KEEPALIVE and MAXCONNECTS so
+      // libcurl keeps the socket open and can reuse it for subsequent requests.
       let connectionCount = 0;
 
       const { server, baseUrl } = await createTestServer((_req, res) => {
@@ -827,9 +827,9 @@ describe('HttpRequestExecutor', () => {
     });
 
     it('should open a new TCP connection for each request when reuseConnection is false', async () => {
-      // When reuseConnection is false we add Connection:close, instructing the
-      // server to close the socket after each response so that a new TCP
-      // handshake is required for every subsequent request.
+      // When reuseConnection is false we set FRESH_CONNECT and FORBID_REUSE
+      // to match the node default-off keepAlive behaviour, ensuring each
+      // request opens a fresh TCP connection.
       let connectionCount = 0;
 
       const { server, baseUrl } = await createTestServer((_req, res) => {
