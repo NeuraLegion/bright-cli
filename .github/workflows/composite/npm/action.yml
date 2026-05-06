@@ -42,17 +42,6 @@ runs:
         # Install node-gyp
         npm i --prefix "$nodeDir\node_modules\npm\node_modules\@npmcli\run-script" node-gyp@9.4.0
 
-    # On Windows, node-libcurl's preinstall script (vcpkg-setup.js) tries to
-    # clone vcpkg and compile libcurl from source, which fails due to Windows
-    # MAX_PATH (260 chars) limitations in the deep cmake directory tree.
-    # Enabling long paths via the registry allows the normal npm ci to succeed.
-    - name: Enable long paths (Windows)
-      if: ${{ runner.os == 'Windows' }}
-      shell: pwsh
-      run: |
-        New-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Control\FileSystem" `
-          -Name "LongPathsEnabled" -Value 1 -PropertyType DWORD -Force
-
     - name: Install deps in quiet mode
       shell: bash
       run: npm ci -q
