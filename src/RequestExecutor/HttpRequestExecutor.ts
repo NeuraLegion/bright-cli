@@ -161,6 +161,9 @@ export class HttpRequestExecutor implements RequestExecutor {
       // The Multi-level connection pool keeps the socket alive; this
       // option ensures the OS also keeps it alive.
       curl.setOpt('TCP_KEEPALIVE', 1);
+    } else if (!options.keepAlive) {
+      curl.setOpt('FRESH_CONNECT', 1);
+      curl.setOpt('FORBID_REUSE', 1);
     }
 
     const proxyUrl = this.resolveProxy(options);
@@ -267,12 +270,6 @@ export class HttpRequestExecutor implements RequestExecutor {
       // verbatim — it may carry a security-test payload (e.g. Host injection).
       // Passing it via HTTPHEADER overrides libcurl's derived value on the wire.
       lines.push(...values.map((v) => `${key}: ${v ?? ''}`));
-    }
-
-    // Send Connection: close unless the request opts into keep-alive OR the
-    // executor is configured to reuse connections (which requires keep-alive).
-    if (!options.keepAlive && !this.options.reuseConnection) {
-      lines.push('Connection: close');
     }
 
     return lines;
