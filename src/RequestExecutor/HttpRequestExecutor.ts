@@ -10,7 +10,7 @@ import { CertificatesResolver } from './CertificatesResolver';
 import { inject, injectable } from 'tsyringe';
 import iconv from 'iconv-lite';
 import { safeParse } from 'fast-content-type-parse';
-import { Curl, HeaderInfo } from 'node-libcurl';
+import { Curl, CurlFeature, HeaderInfo } from 'node-libcurl';
 import { parse as parseUrl } from 'node:url';
 
 type ScriptEntrypoint = (
@@ -106,20 +106,16 @@ export class HttpRequestExecutor implements RequestExecutor {
     return new Promise((resolve, reject) => {
       const curl = new Curl();
 
+      curl.enable(CurlFeature.NoDataParsing);
       this.configureCurl(curl, options);
-
-      const bodyChunks: Buffer[] = [];
-
-      curl.on('data', (chunk: Buffer) => bodyChunks.push(chunk));
 
       curl.on(
         'end',
-        (statusCode: number, _data: unknown, rawHeaders: HeaderInfo[]) => {
+        (statusCode: number, rawBody: Buffer, rawHeaders: HeaderInfo[]) => {
           const ttfbUs = curl.getInfo('STARTTRANSFER_TIME_T') as number;
           const ttfb = Math.round(ttfbUs / 1000);
 
           const headers = this.parseCurlHeaders(rawHeaders);
-          const rawBody = Buffer.concat(bodyChunks);
 
           setImmediate(() => curl.close());
 
