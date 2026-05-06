@@ -136,10 +136,6 @@ export class HttpRequestExecutor implements RequestExecutor {
     });
   }
 
-  /**
-   * Configures a libcurl handle with all options derived from the request and
-   * executor options (URL, method, body, TLS, timeout, headers, proxy).
-   */
   private configureCurl(curl: Curl, options: Request): void {
     const { protocol, host } = parseUrl(options.url);
     const rawPath = this.buildRawPath(options.url);
@@ -226,11 +222,6 @@ export class HttpRequestExecutor implements RequestExecutor {
     }
   }
 
-  /**
-   * Builds and applies HTTP headers to the curl handle. Header values are
-   * passed as raw strings so that CRLF-injected values reach the wire
-   * byte-for-byte.
-   */
   private applyCurlHeaders(curl: Curl, options: Request): void {
     const curlHeaders = this.buildCurlHeaders(options);
 
@@ -252,10 +243,6 @@ export class HttpRequestExecutor implements RequestExecutor {
     }
   }
 
-  /**
-   * Converts request headers into raw `Key: value` strings for libcurl.
-   * Multi-value headers are expanded into one string per value.
-   */
   private buildCurlHeaders(options: Request): string[] {
     const lines: string[] = [];
     const entries = options.headers ? Object.entries(options.headers) : [];
@@ -275,10 +262,6 @@ export class HttpRequestExecutor implements RequestExecutor {
     return lines;
   }
 
-  /**
-   * Converts the raw libcurl header array (one entry per redirect hop) into a
-   * flat key→value map using only the final response headers.
-   */
   private parseCurlHeaders(
     rawHeaders: HeaderInfo[]
   ): Record<string, string | string[]> {
@@ -294,10 +277,6 @@ export class HttpRequestExecutor implements RequestExecutor {
     return result;
   }
 
-  /**
-   * Resolves which proxy URL to use for a given request, respecting
-   * proxyDomains and proxyDomainsBypass options.
-   */
   private resolveProxy(options: Request): string | undefined {
     const hostname = parseUrl(options.url).hostname;
 
