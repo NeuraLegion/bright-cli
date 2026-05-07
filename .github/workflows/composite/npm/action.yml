@@ -47,7 +47,6 @@ runs:
       run: npm ci -q
       env:
         NODE_AUTH_TOKEN: ${{ env.NODE_AUTH_TOKEN }}
-        NPM_CONFIG_NODE_PRE_GYP_BINARY_ONLY: "true"
 
     - name: Print npm debug logs on failure
       if: failure()
