@@ -92,7 +92,7 @@ export class HttpCurlRequestExecutor implements RequestExecutor {
 
       if (targetCerts === undefined || targetCerts.length === 0) {
         logger.debug(
-          'Executing HTTP request with following params: %j',
+          '[HttpCurlRequestExecutor] Executing HTTP request with following params: %j',
           options
         );
 

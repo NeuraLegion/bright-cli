@@ -106,7 +106,7 @@ export class HttpLegacyRequestExecutor implements RequestExecutor {
         // or certificates may not be necessary.
         // If certificates not found try request anyway.
         logger.debug(
-          'Executing HTTP request with following params: %j',
+          '[HttpLegacyRequestExecutor] Executing HTTP request with following params: %j',
           options
         );
 
