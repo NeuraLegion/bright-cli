@@ -59,7 +59,10 @@ export class HttpCurlRequestExecutor implements RequestExecutor {
     private readonly certificatesCache: CertificatesCache,
     private readonly certificatesResolver: CertificatesResolver
   ) {
-    if (this.options.proxyDomains && this.options.proxyDomainsBypass) {
+    if (
+      this.options.proxyDomains?.length &&
+      this.options.proxyDomainsBypass?.length
+    ) {
       throw new Error(
         'cannot use both proxyDomains and proxyDomainsBypass at the same time'
       );
