@@ -21,7 +21,7 @@ import {
 } from 'ts-mockito';
 import http from 'node:http';
 import { once } from 'node:events';
-import { AddressInfo } from 'node:net';
+import net, { AddressInfo } from 'node:net';
 import { promisify } from 'node:util';
 import {
   brotliCompress,
@@ -47,6 +47,53 @@ async function createTestServer(
   serversToClose.push(server);
 
   return { server, baseUrl: `http://127.0.0.1:${port}` };
+}
+
+/**
+ * Creates a raw TCP server that captures the first incoming request verbatim
+ * and immediately replies with a minimal valid HTTP response so that libcurl
+ * can complete normally. An HTTP server cannot be used here because Node's
+ * HTTP parser rejects request-lines with spaces in the path.
+ */
+async function startTcpServer(): Promise<{
+  port: number;
+  received: () => Promise<string>;
+  close: () => void;
+}> {
+  return new Promise((resolve) => {
+    let resolveReceived: (data: string) => void;
+    const receivedPromise = new Promise<string>((res) => {
+      resolveReceived = res;
+    });
+
+    const server = net.createServer((socket) => {
+      let raw = '';
+      socket.on('data', (chunk) => {
+        raw += chunk.toString('latin1');
+        // Resolve immediately so the test can inspect the data, then send a
+        // minimal HTTP/1.1 response so libcurl does not hang waiting for one.
+        resolveReceived(raw);
+        socket.write(
+          'HTTP/1.1 200 OK\r\nContent-Length: 0\r\nConnection: close\r\n\r\n'
+        );
+        socket.end();
+      });
+    });
+
+    server.listen(0, '127.0.0.1', () => {
+      const { port } = server.address() as AddressInfo;
+      resolve({
+        port,
+        received: () => receivedPromise,
+        close: () => server.close()
+      });
+    });
+  });
+}
+
+/** Returns the first line (request-line) of a raw HTTP request string. */
+function extractRequestLine(raw: string): string {
+  return raw.split('\r\n')[0];
 }
 
 const createRequest = (options?: Partial<RequestOptions>) => {
@@ -661,6 +708,30 @@ describe('HttpCurlRequestExecutor', () => {
       }
     });
 
+    it('should write a malformed path verbatim on the wire', async () => {
+      // Paths containing characters that are illegal in an HTTP request-line
+      // (e.g. spaces and colons that mimic a status line) must be forwarded
+      // exactly as supplied. A raw TCP server is used to capture the bytes
+      // before any HTTP parsing can strip or reject them.
+      const fixture = await startTcpServer();
+      const rawPath = '/?msg=Server: ESA1 HTTP/1.1';
+
+      const { request } = createRequest({
+        url: `http://127.0.0.1:${fixture.port}${rawPath}`
+      });
+
+      // Run the executor and the TCP capture concurrently: execute() will
+      // block until it gets an HTTP response, which the TCP server sends as
+      // soon as it receives the request.
+      const results = await Promise.all([
+        sut.execute(request),
+        fixture.received()
+      ]);
+      fixture.close();
+
+      expect(extractRequestLine(results[1])).toBe(`GET ${rawPath} HTTP/1.1`);
+    });
+
     it('should not send the libcurl default User-Agent header', async () => {
       let receivedUserAgent: string | undefined;
 
@@ -786,75 +857,166 @@ describe('HttpCurlRequestExecutor', () => {
     expect(response.ttfb).toBeUndefined();
   });
 
-  describe('reuseConnection', () => {
-    it('should reuse the TCP connection across requests when reuseConnection is true', async () => {
-      // Connection reuse is provided by node-libcurl's shared global Multi
-      // handle, whose connection pool survives individual Curl handle teardown.
-      // When reuseConnection is true we set TCP_KEEPALIVE and MAXCONNECTS so
-      // libcurl keeps the socket open and can reuse it for subsequent requests.
-      let connectionCount = 0;
+  it('should reuse the TCP connection across requests when reuseConnection is true', async () => {
+    // Connection reuse is provided by a per-host Multi handle whose
+    // connection pool survives individual Curl handle teardown.
+    // When reuseConnection is true we set TCP_KEEPALIVE and TCP_KEEPIDLE and
+    // wire each Curl handle to a dedicated per-host Multi so that
+    // MAX_HOST_CONNECTIONS applies per origin.
+    let connectionCount = 0;
 
-      const { server, baseUrl } = await createTestServer((_req, res) => {
-        res.writeHead(200, { 'Content-Type': 'text/plain' });
-        res.end('ok');
-      });
-
-      server.on('connection', () => {
-        connectionCount++;
-      });
-
-      // eslint-disable-next-line @typescript-eslint/no-var-requires, import/no-extraneous-dependencies
-      const curlLib = require('node-libcurl') as CurlLibrary;
-      const reuseExecutor = new HttpCurlRequestExecutor(
-        curlLib,
-        instance(virtualScriptsMock),
-        { reuseConnection: true },
-        certificatesCacheMock,
-        instance(certificatesResolverMock)
-      );
-
-      try {
-        const { request: req1 } = createRequest({ url: `${baseUrl}/a` });
-        const { request: req2 } = createRequest({ url: `${baseUrl}/b` });
-        const { request: req3 } = createRequest({ url: `${baseUrl}/c` });
-
-        await reuseExecutor.execute(req1);
-        await reuseExecutor.execute(req2);
-        await reuseExecutor.execute(req3);
-
-        // All three requests should travel over the same TCP connection.
-        expect(connectionCount).toBe(1);
-      } finally {
-        server.close();
-      }
+    const { server, baseUrl } = await createTestServer((_req, res) => {
+      res.writeHead(200, { 'Content-Type': 'text/plain' });
+      res.end('ok');
     });
 
-    it('should open a new TCP connection for each request when reuseConnection is false', async () => {
-      // When reuseConnection is false we set FRESH_CONNECT and FORBID_REUSE
-      // to match the node default-off keepAlive behaviour, ensuring each
-      // request opens a fresh TCP connection.
-      let connectionCount = 0;
+    server.on('connection', () => {
+      connectionCount++;
+    });
 
-      const { server, baseUrl } = await createTestServer((_req, res) => {
+    // eslint-disable-next-line @typescript-eslint/no-var-requires, import/no-extraneous-dependencies
+    const curlLib = require('node-libcurl') as CurlLibrary;
+    const reuseExecutor = new HttpCurlRequestExecutor(
+      curlLib,
+      instance(virtualScriptsMock),
+      { reuseConnection: true },
+      certificatesCacheMock,
+      instance(certificatesResolverMock)
+    );
+
+    try {
+      const { request: req1 } = createRequest({ url: `${baseUrl}/a` });
+      const { request: req2 } = createRequest({ url: `${baseUrl}/b` });
+      const { request: req3 } = createRequest({ url: `${baseUrl}/c` });
+
+      await reuseExecutor.execute(req1);
+      await reuseExecutor.execute(req2);
+      await reuseExecutor.execute(req3);
+
+      // All three requests should travel over the same TCP connection.
+      expect(connectionCount).toBe(1);
+    } finally {
+      server.close();
+    }
+  });
+
+  it('should open a new TCP connection for each request when reuseConnection is false', async () => {
+    // When reuseConnection is false we set FRESH_CONNECT and FORBID_REUSE
+    // to match the node default-off keepAlive behaviour, ensuring each
+    // request opens a fresh TCP connection.
+    let connectionCount = 0;
+
+    const { server, baseUrl } = await createTestServer((_req, res) => {
+      res.writeHead(200);
+      res.end('ok');
+    });
+
+    server.on('connection', () => {
+      connectionCount++;
+    });
+
+    try {
+      const { request: req1 } = createRequest({ url: `${baseUrl}/a` });
+      const { request: req2 } = createRequest({ url: `${baseUrl}/b` });
+
+      await sut.execute(req1);
+      await sut.execute(req2);
+
+      expect(connectionCount).toBe(2);
+    } finally {
+      server.close();
+    }
+  });
+
+  it('should reuse the same Multi handle for multiple requests to the same host', async () => {
+    const multiSetOptMock = jest.fn();
+    const multiInstance = { setOpt: multiSetOptMock, close: jest.fn() };
+    const MultiConstructorMock = jest.fn(() => multiInstance);
+
+    // eslint-disable-next-line @typescript-eslint/no-var-requires, import/no-extraneous-dependencies
+    const realCurlLib = require('node-libcurl') as CurlLibrary;
+    const curlLib: CurlLibrary = {
+      ...realCurlLib,
+      Multi: MultiConstructorMock as unknown as CurlLibrary['Multi']
+    };
+
+    const { server, baseUrl } = await createTestServer((_req, res) => {
+      res.writeHead(200);
+      res.end('ok');
+    });
+
+    const reuseExecutor = new HttpCurlRequestExecutor(
+      curlLib,
+      instance(virtualScriptsMock),
+      { reuseConnection: true },
+      certificatesCacheMock,
+      instance(certificatesResolverMock)
+    );
+
+    try {
+      const { request: req1 } = createRequest({ url: `${baseUrl}/a` });
+      const { request: req2 } = createRequest({ url: `${baseUrl}/b` });
+      const { request: req3 } = createRequest({ url: `${baseUrl}/c` });
+
+      await reuseExecutor.execute(req1);
+      await reuseExecutor.execute(req2);
+      await reuseExecutor.execute(req3);
+
+      // Multi constructor should have been called exactly once for this host.
+      expect(MultiConstructorMock).toHaveBeenCalledTimes(1);
+      // MAX_HOST_CONNECTIONS should have been set on the Multi handle.
+      expect(multiSetOptMock).toHaveBeenCalledWith('MAX_HOST_CONNECTIONS', 100);
+    } finally {
+      server.close();
+    }
+  });
+
+  it('should create separate Multi handles for different hosts', async () => {
+    const MultiConstructorMock = jest.fn(() => ({
+      setOpt: jest.fn(),
+      close: jest.fn()
+    }));
+
+    // eslint-disable-next-line @typescript-eslint/no-var-requires, import/no-extraneous-dependencies
+    const realCurlLib = require('node-libcurl') as CurlLibrary;
+    const curlLib: CurlLibrary = {
+      ...realCurlLib,
+      Multi: MultiConstructorMock as unknown as CurlLibrary['Multi']
+    };
+
+    const { server: server1, baseUrl: baseUrl1 } = await createTestServer(
+      (_req, res) => {
         res.writeHead(200);
         res.end('ok');
-      });
-
-      server.on('connection', () => {
-        connectionCount++;
-      });
-
-      try {
-        const { request: req1 } = createRequest({ url: `${baseUrl}/a` });
-        const { request: req2 } = createRequest({ url: `${baseUrl}/b` });
-
-        await sut.execute(req1);
-        await sut.execute(req2);
-
-        expect(connectionCount).toBe(2);
-      } finally {
-        server.close();
       }
-    });
+    );
+    const { server: server2, baseUrl: baseUrl2 } = await createTestServer(
+      (_req, res) => {
+        res.writeHead(200);
+        res.end('ok');
+      }
+    );
+
+    const reuseExecutor = new HttpCurlRequestExecutor(
+      curlLib,
+      instance(virtualScriptsMock),
+      { reuseConnection: true },
+      certificatesCacheMock,
+      instance(certificatesResolverMock)
+    );
+
+    try {
+      const { request: req1 } = createRequest({ url: `${baseUrl1}/a` });
+      const { request: req2 } = createRequest({ url: `${baseUrl2}/a` });
+
+      await reuseExecutor.execute(req1);
+      await reuseExecutor.execute(req2);
+
+      // Two different host:port origins → two separate Multi handles.
+      expect(MultiConstructorMock).toHaveBeenCalledTimes(2);
+    } finally {
+      server1.close();
+      server2.close();
+    }
   });
 });

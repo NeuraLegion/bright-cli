@@ -9,12 +9,19 @@ import { CertificatesCache } from './CertificatesCache';
 import { CertificatesResolver } from './CertificatesResolver';
 import iconv from 'iconv-lite';
 import { safeParse } from 'fast-content-type-parse';
+import { TTLCache } from '@isaacs/ttlcache';
 import { parse as parseUrl } from 'node:url';
 
 // ADHOC: Local type stubs for node-libcurl — avoids a hard compile-time dependency. The actual module is loaded lazily at runtime inside request(). Will be removed once node-libcurl stops to be optionalDependency.
+interface MultiInstance {
+  setOpt(key: string, value: unknown): void;
+  close(): void;
+}
+
 interface CurlInstance {
   enable(feature: number): void;
   setOpt(key: string, value: unknown): void;
+  setMulti(multi: MultiInstance): void;
   on(
     event: 'end',
     cb: (statusCode: number, body: Buffer, headers: HeaderInfo[]) => void
@@ -41,12 +48,17 @@ type ScriptEntrypoint = (
 export interface CurlLibrary {
   Curl: new () => CurlInstance;
   CurlFeature: { NoDataParsing: number };
+  Multi: new () => MultiInstance;
 }
 
 export class HttpCurlRequestExecutor implements RequestExecutor {
+  // ADHOC: 60 is curl's default [https://curl.se/libcurl/c/CURLOPT_TCP_KEEPIDLE.html], defined to be explicit.
+  private readonly KEEP_ALIVE_IDLE_TIMEOUT = 60;
+  private readonly MAX_HOST_CONNECTIONS = 100;
   private readonly DEFAULT_SCRIPT_ENTRYPOINT = 'handle';
   private readonly proxyDomains?: RegExp[];
   private readonly proxyDomainsBypass?: RegExp[];
+  private readonly multiHandles?: TTLCache<string, MultiInstance>;
 
   get protocol(): Protocol {
     return Protocol.HTTP;
@@ -78,6 +90,13 @@ export class HttpCurlRequestExecutor implements RequestExecutor {
       this.proxyDomainsBypass = this.options.proxyDomainsBypass.map((domain) =>
         Helpers.wildcardToRegExp(domain)
       );
+    }
+
+    if (this.options.reuseConnection) {
+      this.multiHandles = new TTLCache<string, MultiInstance>({
+        ttl: this.KEEP_ALIVE_IDLE_TIMEOUT * 1000,
+        dispose: (multi) => multi.close()
+      });
     }
   }
 
@@ -157,6 +176,28 @@ export class HttpCurlRequestExecutor implements RequestExecutor {
     });
   }
 
+  private getOrCreateMulti(url: string): MultiInstance {
+    const { protocol, hostname, port } = parseUrl(url);
+    const resolvedPort = port ?? (protocol === 'https:' ? '443' : '80');
+    const key = `${hostname}:${resolvedPort}`;
+
+    if (!this.multiHandles) {
+      throw new Error(
+        'Multi handles cache is not initialized due to missing configuration for connection reuse'
+      );
+    }
+
+    let multi = this.multiHandles.get(key);
+
+    if (!multi) {
+      multi = new this.curl.Multi();
+      multi.setOpt('MAX_HOST_CONNECTIONS', this.MAX_HOST_CONNECTIONS);
+      this.multiHandles.set(key, multi);
+    }
+
+    return multi;
+  }
+
   private configureCurl(curl: Curl, options: Request): void {
     curl.enable(this.curl.CurlFeature.NoDataParsing);
 
@@ -177,10 +218,12 @@ export class HttpCurlRequestExecutor implements RequestExecutor {
     this.applyCurlHeaders(curl, options);
 
     if (this.options.reuseConnection) {
-      // Match the node agent behaviour: keep the TCP socket alive and limit
-      // the connection pool to 100 concurrent sockets (maxSockets: 100).
       curl.setOpt('TCP_KEEPALIVE', 1);
-      curl.setOpt('MAXCONNECTS', 100);
+      curl.setOpt('TCP_KEEPIDLE', this.KEEP_ALIVE_IDLE_TIMEOUT);
+      // Route this request through its host's dedicated Multi handle so that
+      // MAX_HOST_CONNECTIONS applies per origin (equivalent to node's
+      // maxSockets: 100 per host semantics).
+      curl.setMulti(this.getOrCreateMulti(options.url));
     } else {
       // libcurl reuses connections by default, unlike node where keepAlive is
       // off unless an agent is explicitly created. Disable reuse to match that

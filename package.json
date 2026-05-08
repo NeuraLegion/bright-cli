@@ -25,6 +25,7 @@
     "node": ">=22.14 <=24"
   },
   "dependencies": {
+    "@isaacs/ttlcache": "^2.1.4",
     "@neuralegion/os-service": "^2.0.5",
     "@neuralegion/raw-socket": "^2.0.0",
     "@sentry/node": "^7.120.0",
