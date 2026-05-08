@@ -5,8 +5,6 @@ import {
   CertificatesCache,
   CertificatesResolver,
   HttpRequestExecutor,
-  HttpCurlRequestExecutor,
-  HttpLegacyRequestExecutor,
   RequestExecutor,
   WsRequestExecutor
 } from './RequestExecutor';
@@ -78,16 +76,6 @@ container
   .register<CliInfo>(CliInfo, {
     useValue: new CliInfo(__dirname)
   })
-  .register(
-    HttpCurlRequestExecutor,
-    { useClass: HttpCurlRequestExecutor },
-    { lifecycle: Lifecycle.Singleton }
-  )
-  .register(
-    HttpLegacyRequestExecutor,
-    { useClass: HttpLegacyRequestExecutor },
-    { lifecycle: Lifecycle.Singleton }
-  )
   .register(
     RequestExecutor,
     {

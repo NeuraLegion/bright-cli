@@ -7,6 +7,7 @@ import { Protocol } from './Protocol';
 import { RequestExecutorOptions } from './RequestExecutorOptions';
 import { CertificatesCache } from './CertificatesCache';
 import { CertificatesResolver } from './CertificatesResolver';
+import { inject, injectable } from 'tsyringe';
 import iconv from 'iconv-lite';
 import { safeParse } from 'fast-content-type-parse';
 import { TTLCache } from '@isaacs/ttlcache';
@@ -51,7 +52,8 @@ export interface CurlLibrary {
   Multi: new () => MultiInstance;
 }
 
-export class HttpCurlRequestExecutor implements RequestExecutor {
+@injectable()
+export class HttpRequestExecutor implements RequestExecutor {
   // ADHOC: 60 is curl's default [https://curl.se/libcurl/c/CURLOPT_TCP_KEEPIDLE.html], defined to be explicit.
   private readonly KEEP_ALIVE_IDLE_TIMEOUT = 60;
   private readonly MAX_HOST_CONNECTIONS = 100;
@@ -64,11 +66,16 @@ export class HttpCurlRequestExecutor implements RequestExecutor {
     return Protocol.HTTP;
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
+  private readonly curl: CurlLibrary = require('node-libcurl') as CurlLibrary;
+
   constructor(
-    private readonly curl: CurlLibrary,
-    private readonly virtualScripts: VirtualScripts,
+    @inject(VirtualScripts) private readonly virtualScripts: VirtualScripts,
+    @inject(RequestExecutorOptions)
     private readonly options: RequestExecutorOptions,
+    @inject(CertificatesCache)
     private readonly certificatesCache: CertificatesCache,
+    @inject(CertificatesResolver)
     private readonly certificatesResolver: CertificatesResolver
   ) {
     if (
@@ -114,7 +121,7 @@ export class HttpCurlRequestExecutor implements RequestExecutor {
 
       if (targetCerts === undefined || targetCerts.length === 0) {
         logger.debug(
-          '[HttpCurlRequestExecutor] Executing HTTP request with following params: %j',
+          '[HttpRequestExecutor] Executing HTTP request with following params: %j',
           options
         );
 

@@ -1,110 +1,1016 @@
 import 'reflect-metadata';
-import { HttpRequestExecutor } from './HttpRequestExecutor';
-import { VirtualScripts } from '../Scripts';
+import { CurlLibrary, HttpRequestExecutor } from './HttpRequestExecutor';
+import { VirtualScript, VirtualScripts, VirtualScriptType } from '../Scripts';
 import { Protocol } from './Protocol';
-import { Request } from './Request';
+import { Request, RequestOptions, Cert } from './Request';
 import { RequestExecutorOptions } from './RequestExecutorOptions';
 import { CertificatesCache } from './CertificatesCache';
 import { CertificatesResolver } from './CertificatesResolver';
-import { ProxyFactory } from '../Utils';
-import { instance, mock } from 'ts-mockito';
+import {
+  anyString,
+  anything,
+  instance,
+  mock,
+  reset,
+  spy,
+  verify,
+  when
+} from 'ts-mockito';
+import http from 'node:http';
+import { once } from 'node:events';
+import net, { AddressInfo } from 'node:net';
+import { promisify } from 'node:util';
+import {
+  brotliCompress,
+  constants,
+  gzip,
+  deflate,
+  deflateRaw
+} from 'node:zlib';
 
-function buildExecutor(curlAvailable: boolean): HttpRequestExecutor {
-  const virtualScriptsMock = mock<VirtualScripts>();
-  const proxyFactoryMock = mock<ProxyFactory>();
-  const certificatesCacheMock = mock<CertificatesCache>();
-  const certificatesResolverMock = mock<CertificatesResolver>();
-  const options = {} as RequestExecutorOptions;
+const serversToClose: http.Server[] = [];
 
-  jest.resetModules();
+/**
+ * Creates a minimal HTTP server that responds once per request.
+ * Returns the server instance and its base URL.
+ */
+async function createTestServer(
+  handler: (req: http.IncomingMessage, res: http.ServerResponse) => void
+): Promise<{ server: http.Server; baseUrl: string }> {
+  const server = http.createServer(handler);
+  server.listen(0, '127.0.0.1');
+  await once(server, 'listening');
+  const { port } = server.address() as AddressInfo;
+  serversToClose.push(server);
 
-  if (curlAvailable) {
-    jest.mock('node-libcurl', () => ({
-      Curl: jest.fn(),
-      CurlFeature: { NoDataParsing: 0 }
-    }));
-  } else {
-    jest.mock('node-libcurl', () => {
-      throw new Error('Module not found');
-    });
-  }
-
-  return new HttpRequestExecutor(
-    instance(virtualScriptsMock),
-    instance(proxyFactoryMock),
-    options,
-    certificatesCacheMock,
-    instance(certificatesResolverMock)
-  );
+  return { server, baseUrl: `http://127.0.0.1:${port}` };
 }
 
+/**
+ * Creates a raw TCP server that captures the first incoming request verbatim
+ * and immediately replies with a minimal valid HTTP response so that libcurl
+ * can complete normally. An HTTP server cannot be used here because Node's
+ * HTTP parser rejects request-lines with spaces in the path.
+ */
+async function startTcpServer(): Promise<{
+  port: number;
+  received: () => Promise<string>;
+  close: () => void;
+}> {
+  return new Promise((resolve) => {
+    let resolveReceived: (data: string) => void;
+    const receivedPromise = new Promise<string>((res) => {
+      resolveReceived = res;
+    });
+
+    const server = net.createServer((socket) => {
+      let raw = '';
+      socket.on('data', (chunk) => {
+        raw += chunk.toString('latin1');
+        // Resolve immediately so the test can inspect the data, then send a
+        // minimal HTTP/1.1 response so libcurl does not hang waiting for one.
+        resolveReceived(raw);
+        socket.write(
+          'HTTP/1.1 200 OK\r\nContent-Length: 0\r\nConnection: close\r\n\r\n'
+        );
+        socket.end();
+      });
+    });
+
+    server.listen(0, '127.0.0.1', () => {
+      const { port } = server.address() as AddressInfo;
+      resolve({
+        port,
+        received: () => receivedPromise,
+        close: () => server.close()
+      });
+    });
+  });
+}
+
+/** Returns the first line (request-line) of a raw HTTP request string. */
+function extractRequestLine(raw: string): string {
+  return raw.split('\r\n')[0];
+}
+
+const createRequest = (options?: Partial<RequestOptions>) => {
+  const requestOptions: RequestOptions = {
+    url: 'http://127.0.0.1:1',
+    headers: {},
+    protocol: Protocol.HTTP,
+    ...options
+  };
+  const request = new Request(requestOptions);
+  const spiedRequest = spy(request);
+  when(spiedRequest.method).thenReturn(options?.method ?? 'GET');
+
+  return { requestOptions, request, spiedRequest };
+};
+
 describe('HttpRequestExecutor', () => {
+  const virtualScriptsMock = mock<VirtualScripts>();
+  const certificatesCacheMock = mock<CertificatesCache>();
+  const certificatesResolverMock = mock<CertificatesResolver>();
+  let spiedExecutorOptions!: RequestExecutorOptions;
+
+  let sut!: HttpRequestExecutor;
+
+  beforeEach(() => {
+    spiedExecutorOptions = {} as RequestExecutorOptions;
+
+    sut = new HttpRequestExecutor(
+      instance(virtualScriptsMock),
+      spiedExecutorOptions,
+      certificatesCacheMock,
+      instance(certificatesResolverMock)
+    );
+  });
+
   afterEach(() => {
-    jest.resetModules();
-    jest.restoreAllMocks();
+    reset<
+      | VirtualScripts
+      | RequestExecutorOptions
+      | CertificatesCache
+      | CertificatesResolver
+    >(virtualScriptsMock, certificatesCacheMock, certificatesResolverMock);
+
+    return Promise.all(
+      serversToClose.splice(0).map(
+        (server) =>
+          new Promise<void>((resolve) => {
+            server.closeAllConnections();
+            server.close(() => resolve());
+          })
+      )
+    );
   });
 
   describe('protocol', () => {
     it('should return HTTP', () => {
-      // Use the real require to avoid resetting modules for a trivial check.
-      const virtualScriptsMock = mock<VirtualScripts>();
-      const proxyFactoryMock = mock<ProxyFactory>();
-      const certificatesCacheMock = mock<CertificatesCache>();
-      const certificatesResolverMock = mock<CertificatesResolver>();
-      const executor = new HttpRequestExecutor(
-        instance(virtualScriptsMock),
-        instance(proxyFactoryMock),
-        {} as RequestExecutorOptions,
-        certificatesCacheMock,
-        instance(certificatesResolverMock)
-      );
-      expect(executor.protocol).toBe(Protocol.HTTP);
+      const protocol = sut.protocol;
+      expect(protocol).toBe(Protocol.HTTP);
     });
   });
 
-  describe('when node-libcurl is available', () => {
-    it('should delegate to HttpCurlRequestExecutor', () => {
-      const executor = buildExecutor(true);
-      // eslint-disable-next-line @typescript-eslint/dot-notation
-      expect(executor['delegate'].constructor.name).toBe(
-        'HttpCurlRequestExecutor'
-      );
+  describe('execute', () => {
+    it('should call setHeaders on the provided request if additional headers were configured globally', async () => {
+      const headers = { testHeader: 'test-header-value' };
+      spiedExecutorOptions.headers = headers;
+      const { server, baseUrl } = await createTestServer((_req, res) => {
+        res.writeHead(200);
+        res.end('ok');
+      });
+
+      try {
+        const { request, spiedRequest } = createRequest({ url: `${baseUrl}/` });
+        await sut.execute(request);
+        verify(spiedRequest.setHeaders(headers)).once();
+      } finally {
+        server.close();
+      }
     });
 
-    it('should forward execute() calls to the curl delegate', async () => {
-      const executor = buildExecutor(true);
-      const expected = { statusCode: 200, body: 'ok' };
-      // eslint-disable-next-line @typescript-eslint/dot-notation
-      jest
-        .spyOn(executor['delegate'], 'execute')
-        .mockResolvedValue(expected as any);
+    it('should not call setHeaders on the provided request if there were no additional headers configured', async () => {
+      const { server, baseUrl } = await createTestServer((_req, res) => {
+        res.writeHead(200);
+        res.end('ok');
+      });
 
-      const result = await executor.execute({} as Request);
+      try {
+        const { request, spiedRequest } = createRequest({ url: `${baseUrl}/` });
+        await sut.execute(request);
+        verify(spiedRequest.setHeaders(anything())).never();
+      } finally {
+        server.close();
+      }
+    });
 
-      expect(result).toBe(expected);
+    it('should transform the request if there is a suitable vm', async () => {
+      const { server, baseUrl } = await createTestServer((_req, res) => {
+        res.writeHead(200);
+        res.end('ok');
+      });
+
+      try {
+        const { request, requestOptions } = createRequest({
+          url: `${baseUrl}/`
+        });
+        const { hostname: virtualScriptId } = new URL(requestOptions.url);
+        const virtualScript = new VirtualScript(
+          virtualScriptId,
+          VirtualScriptType.LOCAL,
+          'console.log("test code");'
+        );
+        const spiedVirtualScript = spy(virtualScript);
+        when(spiedVirtualScript.exec(anyString(), anything())).thenResolve(
+          requestOptions
+        );
+        when(virtualScriptsMock.find(virtualScriptId)).thenReturn(
+          virtualScript
+        );
+
+        await sut.execute(request);
+
+        verify(spiedVirtualScript.exec(anyString(), anything())).once();
+      } finally {
+        server.close();
+      }
+    });
+
+    it('should not transform the request if there is no suitable vm', async () => {
+      const { server, baseUrl } = await createTestServer((_req, res) => {
+        res.writeHead(200);
+        res.end('ok');
+      });
+
+      try {
+        const { request, spiedRequest } = createRequest({ url: `${baseUrl}/` });
+        await sut.execute(request);
+        verify(spiedRequest.toJSON()).never();
+      } finally {
+        server.close();
+      }
+    });
+
+    it('should call loadCert on the provided request if there were certificates configured globally', async () => {
+      const { server, baseUrl } = await createTestServer((_req, res) => {
+        res.writeHead(200);
+        res.end('ok');
+      });
+
+      try {
+        const { request, spiedRequest } = createRequest({ url: `${baseUrl}/` });
+        const certs: Cert[] = [
+          {
+            path: '/tmp/cert.pem',
+            hostname: new URL(request.url).hostname
+          }
+        ];
+        spiedExecutorOptions.certs = certs;
+        when(certificatesResolverMock.resolve(request, anything())).thenReturn(
+          certs
+        );
+
+        await sut.execute(request);
+
+        verify(spiedRequest.loadCert(anything())).once();
+      } finally {
+        server.close();
+      }
+    });
+
+    it('should not call loadCert on the provided request if there were no certificates configured', async () => {
+      const { server, baseUrl } = await createTestServer((_req, res) => {
+        res.writeHead(200);
+        res.end('ok');
+      });
+
+      try {
+        const { request, spiedRequest } = createRequest({ url: `${baseUrl}/` });
+        await sut.execute(request);
+        verify(spiedRequest.loadCert(anything())).never();
+      } finally {
+        server.close();
+      }
+    });
+
+    it('should perform an external http request', async () => {
+      const { server, baseUrl } = await createTestServer((_req, res) => {
+        res.writeHead(200, { 'content-type': 'application/json' });
+        res.end('{}');
+      });
+
+      try {
+        const { request } = createRequest({ url: `${baseUrl}/` });
+        const response = await sut.execute(request);
+        expect(response).toMatchObject({ statusCode: 200, body: '{}' });
+      } finally {
+        server.close();
+      }
+    });
+
+    it('should handle HTTP errors', async () => {
+      const { server, baseUrl } = await createTestServer((_req, res) => {
+        res.writeHead(500, { 'content-type': 'application/json' });
+        res.end('{}');
+      });
+
+      try {
+        const { request } = createRequest({ url: `${baseUrl}/` });
+        const response = await sut.execute(request);
+        expect(response).toMatchObject({ statusCode: 500, body: '{}' });
+      } finally {
+        server.close();
+      }
+    });
+
+    it('should preserve directory traversal', async () => {
+      const path = '/public/../../../../../../etc/passwd';
+      let receivedPath: string;
+
+      const { server, baseUrl } = await createTestServer((req, res) => {
+        receivedPath = req.url;
+        res.writeHead(200, { 'content-type': 'application/json' });
+        res.end('{}');
+      });
+
+      try {
+        const { request } = createRequest({ url: `${baseUrl}${path}` });
+        const response = await sut.execute(request);
+        expect(response).toMatchObject({ statusCode: 200 });
+        expect(receivedPath).toBe(path);
+      } finally {
+        server.close();
+      }
+    });
+
+    it('should preserve query string when URL has no explicit path', async () => {
+      let receivedPath: string;
+      const { server } = await createTestServer((req, res) => {
+        receivedPath = req.url;
+        res.writeHead(200, { 'content-type': 'application/json' });
+        res.end('{}');
+      });
+
+      try {
+        const { port } = server.address() as AddressInfo;
+        const { request } = createRequest({
+          url: `http://127.0.0.1:${port}?x=1&y=2`
+        });
+        const response = await sut.execute(request);
+        expect(response).toMatchObject({ statusCode: 200 });
+        expect(receivedPath).toBe('/?x=1&y=2');
+      } finally {
+        server.close();
+      }
+    });
+
+    it('should handle timeout', async () => {
+      spiedExecutorOptions.timeout = 50;
+      const { server, baseUrl } = await createTestServer((_req, _res) => {
+        // Never respond — triggers timeout
+      });
+
+      try {
+        const { request } = createRequest({ url: `${baseUrl}/` });
+        const response = await sut.execute(request);
+        expect(response).toMatchObject({ errorCode: expect.any(String) });
+      } finally {
+        server.close();
+      }
+    });
+
+    it('should handle non-HTTP errors (connection refused)', async () => {
+      // Port 1 is not listening — expect a connection error
+      const { request } = createRequest({
+        url: 'http://127.0.0.1:1/'
+      });
+
+      const response = await sut.execute(request);
+
+      expect(response).toMatchObject({ statusCode: undefined });
+    });
+
+    it('should truncate response body with not white-listed mime type', async () => {
+      spiedExecutorOptions.maxContentLength = 1;
+      const bigBody = 'x'.repeat(1025);
+
+      const { server, baseUrl } = await createTestServer((_req, res) => {
+        res.writeHead(200, { 'content-type': 'application/x-custom' });
+        res.end(bigBody);
+      });
+
+      try {
+        const { request } = createRequest({ url: `${baseUrl}/` });
+        const response = await sut.execute(request);
+        expect(response.body?.length).toEqual(1024);
+        expect(response.body).toEqual(bigBody.slice(0, 1024));
+      } finally {
+        server.close();
+      }
+    });
+
+    it('should not truncate response body if its smaller than limit and it is in allowed mime types', async () => {
+      spiedExecutorOptions.maxBodySize = 1025;
+      spiedExecutorOptions.whitelistMimes = [
+        { type: 'application/x-custom', allowTruncation: false }
+      ];
+      const bigBody = 'x'.repeat(1025);
+
+      const { server, baseUrl } = await createTestServer((_req, res) => {
+        res.writeHead(200, { 'content-type': 'application/x-custom' });
+        res.end(bigBody);
+      });
+
+      try {
+        const { request } = createRequest({ url: `${baseUrl}/` });
+        const response = await sut.execute(request);
+        expect(response.body).toEqual(bigBody);
+      } finally {
+        server.close();
+      }
+    });
+
+    it('should truncate response body if its larger than limit and it is in allowed mime types that require truncation', async () => {
+      spiedExecutorOptions.maxBodySize = 1024;
+      spiedExecutorOptions.whitelistMimes = [
+        { type: 'text/plain', allowTruncation: true }
+      ];
+      const bigBody = 'x'.repeat(1025);
+      const expected = bigBody.slice(0, 1024);
+
+      const { server, baseUrl } = await createTestServer((_req, res) => {
+        res.writeHead(200, { 'content-type': 'text/plain' });
+        res.end(bigBody);
+      });
+
+      try {
+        const { request } = createRequest({ url: `${baseUrl}/` });
+        const response = await sut.execute(request);
+        expect(response.body).toEqual(expected);
+      } finally {
+        server.close();
+      }
+    });
+
+    it('should omit response body if its larger than limit and it is in allowed mime types that require omission', async () => {
+      spiedExecutorOptions.maxBodySize = 1024;
+      spiedExecutorOptions.whitelistMimes = [
+        { type: 'application/json', allowTruncation: false }
+      ];
+      const bigBody = 'x'.repeat(1025);
+
+      const { server, baseUrl } = await createTestServer((_req, res) => {
+        res.writeHead(200, { 'content-type': 'application/json' });
+        res.end(bigBody);
+      });
+
+      try {
+        const { request } = createRequest({ url: `${baseUrl}/` });
+        const response = await sut.execute(request);
+        expect(response.body).toEqual('');
+      } finally {
+        server.close();
+      }
+    });
+
+    it('should decode response body if content-encoding is brotli', async () => {
+      spiedExecutorOptions.maxBodySize = 2000;
+      spiedExecutorOptions.whitelistMimes = [
+        { type: 'text/plain', allowTruncation: true }
+      ];
+      const expected = 'x'.repeat(100);
+      const compressed = await promisify(brotliCompress)(expected);
+
+      const { server, baseUrl } = await createTestServer((_req, res) => {
+        res.writeHead(200, {
+          'content-type': 'text/plain',
+          'content-encoding': 'br'
+        });
+        res.end(compressed);
+      });
+
+      try {
+        const { request } = createRequest({
+          url: `${baseUrl}/`,
+          decompress: true
+        });
+        const response = await sut.execute(request);
+        expect(response.body).toEqual(expected);
+      } finally {
+        server.close();
+      }
+    });
+
+    it('should prevent decoding response body if decompress option is disabled', async () => {
+      spiedExecutorOptions.maxBodySize = 2000;
+      spiedExecutorOptions.whitelistMimes = [
+        { type: 'text/plain', allowTruncation: true }
+      ];
+      const expected = 'x'.repeat(100);
+      const compressed = await promisify(gzip)(expected, {
+        flush: constants.Z_SYNC_FLUSH,
+        finishFlush: constants.Z_SYNC_FLUSH
+      });
+
+      const { server, baseUrl } = await createTestServer((_req, res) => {
+        res.writeHead(200, {
+          'content-type': 'text/plain',
+          'content-encoding': 'gzip'
+        });
+        res.end(compressed);
+      });
+
+      try {
+        const { request } = createRequest({
+          url: `${baseUrl}/`,
+          decompress: false,
+          encoding: 'base64'
+        });
+        const response = await sut.execute(request);
+        expect(response.body).toEqual(compressed.toString('base64'));
+        expect(response.headers).toMatchObject({ 'content-encoding': 'gzip' });
+      } finally {
+        server.close();
+      }
+    });
+
+    it('should decode response body if content-encoding is gzip', async () => {
+      spiedExecutorOptions.maxBodySize = 2000;
+      spiedExecutorOptions.whitelistMimes = [
+        { type: 'text/plain', allowTruncation: true }
+      ];
+      const expected = 'x'.repeat(100);
+      const compressed = await promisify(gzip)(expected, {
+        flush: constants.Z_SYNC_FLUSH,
+        finishFlush: constants.Z_SYNC_FLUSH
+      });
+
+      const { server, baseUrl } = await createTestServer((_req, res) => {
+        res.writeHead(200, {
+          'content-type': 'text/plain',
+          'content-encoding': 'gzip'
+        });
+        res.end(compressed);
+      });
+
+      try {
+        const { request } = createRequest({
+          url: `${baseUrl}/`,
+          decompress: true
+        });
+        const response = await sut.execute(request);
+        expect(response.body).toEqual(expected);
+      } finally {
+        server.close();
+      }
+    });
+
+    it('should decode response body if content-encoding is deflate', async () => {
+      spiedExecutorOptions.maxBodySize = 2000;
+      spiedExecutorOptions.whitelistMimes = [
+        { type: 'text/plain', allowTruncation: true }
+      ];
+      const expected = 'x'.repeat(100);
+      const compressed = await promisify(deflate)(expected, {
+        flush: constants.Z_SYNC_FLUSH,
+        finishFlush: constants.Z_SYNC_FLUSH
+      });
+
+      const { server, baseUrl } = await createTestServer((_req, res) => {
+        res.writeHead(200, {
+          'content-type': 'text/plain',
+          'content-encoding': 'deflate'
+        });
+        res.end(compressed);
+      });
+
+      try {
+        const { request } = createRequest({
+          url: `${baseUrl}/`,
+          decompress: true
+        });
+        const response = await sut.execute(request);
+        expect(response.body).toEqual(expected);
+      } finally {
+        server.close();
+      }
+    });
+
+    it('should decode response body if content-encoding is deflate and content does not have zlib headers', async () => {
+      spiedExecutorOptions.maxBodySize = 2000;
+      spiedExecutorOptions.whitelistMimes = [
+        { type: 'text/plain', allowTruncation: true }
+      ];
+      const expected = 'x'.repeat(100);
+      const compressed = await promisify(deflateRaw)(expected, {
+        flush: constants.Z_SYNC_FLUSH,
+        finishFlush: constants.Z_SYNC_FLUSH
+      });
+
+      const { server, baseUrl } = await createTestServer((_req, res) => {
+        res.writeHead(200, {
+          'content-type': 'text/plain',
+          'content-encoding': 'deflate'
+        });
+        res.end(compressed);
+      });
+
+      try {
+        const { request } = createRequest({
+          url: `${baseUrl}/`,
+          decompress: true
+        });
+        const response = await sut.execute(request);
+        expect(response.body).toEqual(expected);
+      } finally {
+        server.close();
+      }
+    });
+
+    it('should decode and truncate gzipped response body if content-type is not in allowed list', async () => {
+      spiedExecutorOptions.maxContentLength = 1;
+      spiedExecutorOptions.whitelistMimes = [
+        { type: 'text/plain', allowTruncation: true }
+      ];
+      const bigBody = 'x'.repeat(1025);
+      const expected = bigBody.slice(0, 1024);
+      const compressed = await promisify(gzip)(bigBody, {
+        flush: constants.Z_SYNC_FLUSH,
+        finishFlush: constants.Z_SYNC_FLUSH
+      });
+
+      const { server, baseUrl } = await createTestServer((_req, res) => {
+        res.writeHead(200, {
+          'content-type': 'text/html',
+          'content-encoding': 'gzip'
+        });
+        res.end(compressed);
+      });
+
+      try {
+        const { request } = createRequest({
+          url: `${baseUrl}/`,
+          decompress: true
+        });
+        const response = await sut.execute(request);
+        expect(response.body).toEqual(expected);
+      } finally {
+        server.close();
+      }
+    });
+
+    it('should not truncate response body if allowed mime type starts with actual one', async () => {
+      spiedExecutorOptions.maxBodySize = 1025;
+      spiedExecutorOptions.whitelistMimes = [
+        { type: 'application/x-custom', allowTruncation: false }
+      ];
+      const bigBody = 'x'.repeat(1025);
+
+      const { server, baseUrl } = await createTestServer((_req, res) => {
+        res.writeHead(200, {
+          'content-type': 'application/x-custom-with-suffix'
+        });
+        res.end(bigBody);
+      });
+
+      try {
+        const { request } = createRequest({ url: `${baseUrl}/` });
+        const response = await sut.execute(request);
+        expect(response.body).toEqual(bigBody);
+      } finally {
+        server.close();
+      }
+    });
+
+    it('should skip truncate on 204 response status', async () => {
+      spiedExecutorOptions.maxContentLength = 1;
+
+      const { server, baseUrl } = await createTestServer((_req, res) => {
+        res.writeHead(204);
+        res.end();
+      });
+
+      try {
+        const { request } = createRequest({ url: `${baseUrl}/` });
+        const response = await sut.execute(request);
+        expect(response.body).toEqual('');
+      } finally {
+        server.close();
+      }
+    });
+
+    it('should send requests with unescaped characters in the path (Case 1)', async () => {
+      let receivedPath: string;
+
+      const { server } = await createTestServer((req, res) => {
+        receivedPath = req.url;
+        res.writeHead(200);
+        res.end('ok');
+      });
+
+      try {
+        const { port } = server.address() as AddressInfo;
+        const { request } = createRequest({
+          url: `http://127.0.0.1:${port}/path|with|pipes`
+        });
+        const response = await sut.execute(request);
+        expect(response.statusCode).toBe(200);
+        expect(receivedPath).toBe('/path|with|pipes');
+      } finally {
+        server.close();
+      }
+    });
+
+    it('should write a malformed path verbatim on the wire', async () => {
+      // Paths containing characters that are illegal in an HTTP request-line
+      // (e.g. spaces and colons that mimic a status line) must be forwarded
+      // exactly as supplied. A raw TCP server is used to capture the bytes
+      // before any HTTP parsing can strip or reject them.
+      const fixture = await startTcpServer();
+      const rawPath = '/?msg=Server: ESA1 HTTP/1.1';
+
+      const { request } = createRequest({
+        url: `http://127.0.0.1:${fixture.port}${rawPath}`
+      });
+
+      // Run the executor and the TCP capture concurrently: execute() will
+      // block until it gets an HTTP response, which the TCP server sends as
+      // soon as it receives the request.
+      const results = await Promise.all([
+        sut.execute(request),
+        fixture.received()
+      ]);
+      fixture.close();
+
+      expect(extractRequestLine(results[1])).toBe(`GET ${rawPath} HTTP/1.1`);
+    });
+
+    it('should not send the libcurl default User-Agent header', async () => {
+      let receivedUserAgent: string | undefined;
+
+      const { server, baseUrl } = await createTestServer((req, res) => {
+        receivedUserAgent = req.headers['user-agent'];
+        res.writeHead(200);
+        res.end('ok');
+      });
+
+      try {
+        const { request } = createRequest({ url: `${baseUrl}/` });
+        await sut.execute(request);
+        expect(receivedUserAgent).toBeUndefined();
+      } finally {
+        server.close();
+      }
+    });
+
+    it('should preserve a caller-supplied User-Agent header', async () => {
+      let receivedUserAgent: string | undefined;
+
+      const { server, baseUrl } = await createTestServer((req, res) => {
+        receivedUserAgent = req.headers['user-agent'];
+        res.writeHead(200);
+        res.end('ok');
+      });
+
+      try {
+        const { request } = createRequest({
+          url: `${baseUrl}/`,
+          headers: { 'User-Agent': 'my-scanner/1.0' }
+        });
+        await sut.execute(request);
+        expect(receivedUserAgent).toBe('my-scanner/1.0');
+      } finally {
+        server.close();
+      }
+    });
+
+    it('should forward a caller-supplied Host header verbatim to the server', async () => {
+      // The scanner sends security-test payloads in the Host header (e.g. Host
+      // injection, SSRF probes). The value must reach the server byte-for-byte;
+      // libcurl's URL-derived Host is overridden by the HTTPHEADER entry.
+      let receivedHeaders: http.IncomingHttpHeaders | undefined;
+
+      const { server, baseUrl } = await createTestServer((req, res) => {
+        receivedHeaders = req.headers;
+        res.writeHead(200);
+        res.end('ok');
+      });
+
+      try {
+        const { request } = createRequest({
+          url: `${baseUrl}/`,
+          headers: { host: 'evil.example.com' }
+        });
+        await sut.execute(request);
+        expect(receivedHeaders?.['host']).toBe('evil.example.com');
+      } finally {
+        server.close();
+      }
+    });
+
+    it('should forward a Host header containing an injection payload verbatim', async () => {
+      let receivedHeaders: http.IncomingHttpHeaders | undefined;
+
+      const { server, baseUrl } = await createTestServer((req, res) => {
+        receivedHeaders = req.headers;
+        res.writeHead(200);
+        res.end('ok');
+      });
+
+      const injectionPayload = 'evil.internal; X-Forwarded-Host: attacker.com';
+
+      try {
+        const { request } = createRequest({
+          url: `${baseUrl}/some-proper-url`,
+          headers: { host: injectionPayload }
+        });
+        await sut.execute(request);
+        expect(receivedHeaders?.['host']).toBe(injectionPayload);
+      } finally {
+        server.close();
+      }
     });
   });
 
-  describe('when node-libcurl is unavailable', () => {
-    it('should delegate to HttpLegacyRequestExecutor', () => {
-      const executor = buildExecutor(false);
-      // eslint-disable-next-line @typescript-eslint/dot-notation
-      expect(executor['delegate'].constructor.name).toBe(
-        'HttpLegacyRequestExecutor'
-      );
+  it('should include ttfb in a successful response', async () => {
+    const { server, baseUrl } = await createTestServer((_req, res) => {
+      res.writeHead(200);
+      res.end('ok');
     });
 
-    it('should forward execute() calls to the legacy delegate', async () => {
-      const executor = buildExecutor(false);
-      const expected = { statusCode: 200, body: 'ok' };
-      // eslint-disable-next-line @typescript-eslint/dot-notation
-      jest
-        .spyOn(executor['delegate'], 'execute')
-        .mockResolvedValue(expected as any);
+    try {
+      const { request } = createRequest({ url: `${baseUrl}/` });
+      const response = await sut.execute(request);
+      expect(response.ttfb).toBeGreaterThanOrEqual(0);
+    } finally {
+      server.close();
+    }
+  });
 
-      const result = await executor.execute({} as Request);
-
-      expect(result).toBe(expected);
+  it('should include ttfb even on HTTP error responses', async () => {
+    const { server, baseUrl } = await createTestServer((_req, res) => {
+      res.writeHead(500);
+      res.end('error body');
     });
+
+    try {
+      const { request } = createRequest({ url: `${baseUrl}/` });
+      const response = await sut.execute(request);
+      expect(response.statusCode).toBe(500);
+      expect(response.ttfb).toBeDefined();
+    } finally {
+      server.close();
+    }
+  });
+
+  it('should not include ttfb when the request fails before reaching the target', async () => {
+    const { request } = createRequest({ url: 'http://127.0.0.1:1/' });
+    const response = await sut.execute(request);
+    expect(response.errorCode).toBeDefined();
+    expect(response.ttfb).toBeUndefined();
+  });
+
+  it('should reuse the TCP connection across requests when reuseConnection is true', async () => {
+    // Connection reuse is provided by a per-host Multi handle whose
+    // connection pool survives individual Curl handle teardown.
+    // When reuseConnection is true we set TCP_KEEPALIVE and TCP_KEEPIDLE and
+    // wire each Curl handle to a dedicated per-host Multi so that
+    // MAX_HOST_CONNECTIONS applies per origin.
+    let connectionCount = 0;
+
+    const { server, baseUrl } = await createTestServer((_req, res) => {
+      res.writeHead(200, { 'Content-Type': 'text/plain' });
+      res.end('ok');
+    });
+
+    server.on('connection', () => {
+      connectionCount++;
+    });
+
+    // eslint-disable-next-line @typescript-eslint/no-var-requires, import/no-extraneous-dependencies
+    const curlLib = require('node-libcurl') as CurlLibrary;
+    const reuseExecutor = new HttpRequestExecutor(
+      instance(virtualScriptsMock),
+      { reuseConnection: true },
+      certificatesCacheMock,
+      instance(certificatesResolverMock),
+      curlLib
+    );
+
+    try {
+      const { request: req1 } = createRequest({ url: `${baseUrl}/a` });
+      const { request: req2 } = createRequest({ url: `${baseUrl}/b` });
+      const { request: req3 } = createRequest({ url: `${baseUrl}/c` });
+
+      await reuseExecutor.execute(req1);
+      await reuseExecutor.execute(req2);
+      await reuseExecutor.execute(req3);
+
+      // All three requests should travel over the same TCP connection.
+      expect(connectionCount).toBe(1);
+    } finally {
+      server.close();
+    }
+  });
+
+  it('should open a new TCP connection for each request when reuseConnection is false', async () => {
+    // When reuseConnection is false we set FRESH_CONNECT and FORBID_REUSE
+    // to match the node default-off keepAlive behaviour, ensuring each
+    // request opens a fresh TCP connection.
+    let connectionCount = 0;
+
+    const { server, baseUrl } = await createTestServer((_req, res) => {
+      res.writeHead(200);
+      res.end('ok');
+    });
+
+    server.on('connection', () => {
+      connectionCount++;
+    });
+
+    try {
+      const { request: req1 } = createRequest({ url: `${baseUrl}/a` });
+      const { request: req2 } = createRequest({ url: `${baseUrl}/b` });
+
+      await sut.execute(req1);
+      await sut.execute(req2);
+
+      expect(connectionCount).toBe(2);
+    } finally {
+      server.close();
+    }
+  });
+
+  it('should reuse the same Multi handle for multiple requests to the same host', async () => {
+    const multiSetOptMock = jest.fn();
+    const multiInstance = { setOpt: multiSetOptMock, close: jest.fn() };
+    const MultiConstructorMock = jest.fn(() => multiInstance);
+
+    // eslint-disable-next-line @typescript-eslint/no-var-requires, import/no-extraneous-dependencies
+    const realCurlLib = require('node-libcurl') as CurlLibrary;
+    const curlLib: CurlLibrary = {
+      ...realCurlLib,
+      Multi: MultiConstructorMock as unknown as CurlLibrary['Multi']
+    };
+
+    const { server, baseUrl } = await createTestServer((_req, res) => {
+      res.writeHead(200);
+      res.end('ok');
+    });
+
+    const reuseExecutor = new HttpRequestExecutor(
+      instance(virtualScriptsMock),
+      { reuseConnection: true },
+      certificatesCacheMock,
+      instance(certificatesResolverMock),
+      curlLib
+    );
+
+    try {
+      const { request: req1 } = createRequest({ url: `${baseUrl}/a` });
+      const { request: req2 } = createRequest({ url: `${baseUrl}/b` });
+      const { request: req3 } = createRequest({ url: `${baseUrl}/c` });
+
+      await reuseExecutor.execute(req1);
+      await reuseExecutor.execute(req2);
+      await reuseExecutor.execute(req3);
+
+      // Multi constructor should have been called exactly once for this host.
+      expect(MultiConstructorMock).toHaveBeenCalledTimes(1);
+      // MAX_HOST_CONNECTIONS should have been set on the Multi handle.
+      expect(multiSetOptMock).toHaveBeenCalledWith('MAX_HOST_CONNECTIONS', 100);
+    } finally {
+      server.close();
+    }
+  });
+
+  it('should create separate Multi handles for different hosts', async () => {
+    const MultiConstructorMock = jest.fn(() => ({
+      setOpt: jest.fn(),
+      close: jest.fn()
+    }));
+
+    // eslint-disable-next-line @typescript-eslint/no-var-requires, import/no-extraneous-dependencies
+    const realCurlLib = require('node-libcurl') as CurlLibrary;
+    const curlLib: CurlLibrary = {
+      ...realCurlLib,
+      Multi: MultiConstructorMock as unknown as CurlLibrary['Multi']
+    };
+
+    const { server: server1, baseUrl: baseUrl1 } = await createTestServer(
+      (_req, res) => {
+        res.writeHead(200);
+        res.end('ok');
+      }
+    );
+    const { server: server2, baseUrl: baseUrl2 } = await createTestServer(
+      (_req, res) => {
+        res.writeHead(200);
+        res.end('ok');
+      }
+    );
+
+    const reuseExecutor = new HttpRequestExecutor(
+      instance(virtualScriptsMock),
+      { reuseConnection: true },
+      certificatesCacheMock,
+      instance(certificatesResolverMock),
+      curlLib
+    );
+
+    try {
+      const { request: req1 } = createRequest({ url: `${baseUrl1}/a` });
+      const { request: req2 } = createRequest({ url: `${baseUrl2}/a` });
+
+      await reuseExecutor.execute(req1);
+      await reuseExecutor.execute(req2);
+
+      // Two different host:port origins → two separate Multi handles.
+      expect(MultiConstructorMock).toHaveBeenCalledTimes(2);
+    } finally {
+      server1.close();
+      server2.close();
+    }
   });
 });
