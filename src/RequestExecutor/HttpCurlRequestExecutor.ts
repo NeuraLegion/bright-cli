@@ -132,7 +132,6 @@ export class HttpCurlRequestExecutor implements RequestExecutor {
     return new Promise((resolve, reject) => {
       const curl: Curl = new this.curl.Curl();
 
-      curl.enable(this.curl.CurlFeature.NoDataParsing);
       this.configureCurl(curl, options);
 
       curl.on(
@@ -159,10 +158,12 @@ export class HttpCurlRequestExecutor implements RequestExecutor {
   }
 
   private configureCurl(curl: Curl, options: Request): void {
-    const { protocol, host } = parseUrl(options.url);
-    const rawPath = this.buildRawPath(options.url);
+    curl.enable(this.curl.CurlFeature.NoDataParsing);
 
+    const { protocol, host } = parseUrl(options.url);
     curl.setOpt('URL', `${protocol}//${host}`);
+
+    const rawPath = this.buildRawPath(options.url);
     curl.setOpt('REQUEST_TARGET', rawPath);
     // Prevent libcurl from normalising (percent-encoding) the path.
     curl.setOpt('PATH_AS_IS', true);
