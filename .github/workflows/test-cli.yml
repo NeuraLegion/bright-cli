@@ -258,26 +258,26 @@ jobs:
       fail-fast: false
       matrix:
         os: [macos-latest, windows-latest, ubuntu-latest]
-        node: [22.20.0, 24.11.1]
+        node: [22.20.0, 24.13.0]
         include:
           - os: ubuntu-latest
             container: ubuntu:22.04
             node: 22.20.0
           - os: ubuntu-latest
             container: ubuntu:22.04
-            node: 24.11.1
+            node: 24.13.0
           - os: ubuntu-latest
             container: rockylinux:8
             node: 22.20.0
           - os: ubuntu-latest
             container: rockylinux:8
-            node: 24.11.1
+            node: 24.13.0
           - os: ubuntu-latest
             container: rockylinux:9
             node: 22.20.0
           - os: ubuntu-latest
             container: rockylinux:9
-            node: 24.11.1
+            node: 24.13.0
 
     steps:
       - name: Install Packages (RHEL-based)
