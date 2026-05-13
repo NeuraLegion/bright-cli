@@ -47,21 +47,3 @@ runs:
       run: npm ci -q
       env:
         NODE_AUTH_TOKEN: ${{ env.NODE_AUTH_TOKEN }}
-
-    - name: Print npm debug logs on failure
-      if: failure()
-      shell: bash
-      run: |
-        npm_cache=$(npm config get cache 2>/dev/null || true)
-        log_dir="${npm_cache}/_logs"
-        if [ -d "$log_dir" ]; then
-          echo "=== npm debug logs from: $log_dir ==="
-          for f in "$log_dir"/*.log; do
-            [ -f "$f" ] || continue
-            echo ""
-            echo "--- $f ---"
-            cat "$f"
-          done
-        else
-          echo "No npm log directory found at: $log_dir"
-        fi
