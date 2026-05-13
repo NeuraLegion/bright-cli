@@ -22,7 +22,7 @@
     ]
   },
   "engines": {
-    "node": ">=22.22.2 <=24"
+    "node": ">=22.20.0 <=24"
   },
   "dependencies": {
     "@isaacs/ttlcache": "^2.1.4",
@@ -42,6 +42,7 @@
     "iconv-lite": "^0.6.3",
     "js-yaml": "^4.1.0",
     "ms": "^2.1.3",
+    "node-libcurl": "^5.0.2",
     "reflect-metadata": "^0.1.13",
     "rotating-file-stream": "^3.2.5",
     "semver": "^7.6.0",
@@ -50,7 +51,6 @@
     "socks-proxy-agent": "~8.0.2",
     "tslib": "^2.3.1",
     "tsyringe": "~4.6.0",
-    "node-libcurl": "JCMais/node-libcurl#8c635653f28cd4c9a5c1e827a4908b17945c2767",
     "win-ca": "^3.5.0",
     "ws": "^8.18.0",
     "yargs": "^17.7.2"
@@ -163,7 +163,6 @@
     "build": "webpack --config webpack.config.js --mode=production",
     "build:pkg": "pkg .",
     "prepare": "is-ci || husky install",
-    "postinstall": "node tools/scripts/build-node-libcurl-dist.js",
     "start": "node -r ts-node/register/transpile-only -r tsconfig-paths/register src/index.ts"
   },
   "brightCli": {
