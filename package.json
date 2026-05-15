@@ -42,7 +42,7 @@
     "iconv-lite": "^0.6.3",
     "js-yaml": "^4.1.0",
     "ms": "^2.1.3",
-    "@brightsec/node-libcurl": "5.0.7-0",
+    "@brightsec/node-libcurl": "5.0.6",
     "reflect-metadata": "^0.1.13",
     "rotating-file-stream": "^3.2.5",
     "semver": "^7.6.0",
