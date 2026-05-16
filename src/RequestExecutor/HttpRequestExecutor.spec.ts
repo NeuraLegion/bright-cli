@@ -28,8 +28,6 @@ import {
   deflateRaw
 } from 'node:zlib';
 
-let MultiSpy: jest.SpyInstance;
-
 const serversToClose: http.Server[] = [];
 
 /**
@@ -115,6 +113,7 @@ describe('HttpRequestExecutor', () => {
   const certificatesResolverMock = mock<CertificatesResolver>();
   let spiedExecutorOptions!: RequestExecutorOptions;
 
+  let MultiSpy!: jest.SpyInstance;
   let sut!: HttpRequestExecutor;
 
   beforeEach(() => {
