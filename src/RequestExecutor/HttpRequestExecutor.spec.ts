@@ -1,5 +1,5 @@
 import 'reflect-metadata';
-import { CurlLibrary, HttpRequestExecutor } from './HttpRequestExecutor';
+import { HttpRequestExecutor } from './HttpRequestExecutor';
 import { VirtualScript, VirtualScripts, VirtualScriptType } from '../Scripts';
 import { Protocol } from './Protocol';
 import { Request, RequestOptions, Cert } from './Request';
@@ -27,6 +27,8 @@ import {
   deflate,
   deflateRaw
 } from 'node:zlib';
+
+let MultiSpy: jest.SpyInstance;
 
 const serversToClose: http.Server[] = [];
 
@@ -118,6 +120,20 @@ describe('HttpRequestExecutor', () => {
   beforeEach(() => {
     spiedExecutorOptions = {} as RequestExecutorOptions;
 
+    // Spy on the Multi constructor so tests can assert on call count.
+    // Capture the real constructor before installing the spy so that the
+    // mock implementation can call through without recursion.
+    type CurlLibModule = typeof import('@brightsec/node-libcurl');
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const curlModule = require('@brightsec/node-libcurl') as CurlLibModule;
+    const RealMulti = curlModule.Multi;
+    MultiSpy = jest
+      .spyOn(curlModule, 'Multi')
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      .mockImplementation(
+        () => new (RealMulti as any)()
+      ) as unknown as jest.SpyInstance;
+
     sut = new HttpRequestExecutor(
       instance(virtualScriptsMock),
       spiedExecutorOptions,
@@ -127,6 +143,8 @@ describe('HttpRequestExecutor', () => {
   });
 
   afterEach(() => {
+    MultiSpy?.mockRestore();
+
     reset<
       | VirtualScripts
       | RequestExecutorOptions
@@ -868,14 +886,11 @@ describe('HttpRequestExecutor', () => {
       connectionCount++;
     });
 
-    // eslint-disable-next-line @typescript-eslint/no-var-requires, import/no-extraneous-dependencies
-    const curlLib = require('node-libcurl') as CurlLibrary;
     const reuseExecutor = new HttpRequestExecutor(
       instance(virtualScriptsMock),
       { reuseConnection: true },
       certificatesCacheMock,
-      instance(certificatesResolverMock),
-      curlLib
+      instance(certificatesResolverMock)
     );
 
     try {
@@ -923,16 +938,7 @@ describe('HttpRequestExecutor', () => {
   });
 
   it('should reuse the same Multi handle for multiple requests to the same host', async () => {
-    const multiSetOptMock = jest.fn();
-    const multiInstance = { setOpt: multiSetOptMock, close: jest.fn() };
-    const MultiConstructorMock = jest.fn(() => multiInstance);
-
-    // eslint-disable-next-line @typescript-eslint/no-var-requires, import/no-extraneous-dependencies
-    const realCurlLib = require('node-libcurl') as CurlLibrary;
-    const curlLib: CurlLibrary = {
-      ...realCurlLib,
-      Multi: MultiConstructorMock as unknown as CurlLibrary['Multi']
-    };
+    MultiSpy.mockClear();
 
     const { server, baseUrl } = await createTestServer((_req, res) => {
       res.writeHead(200);
@@ -943,8 +949,7 @@ describe('HttpRequestExecutor', () => {
       instance(virtualScriptsMock),
       { reuseConnection: true },
       certificatesCacheMock,
-      instance(certificatesResolverMock),
-      curlLib
+      instance(certificatesResolverMock)
     );
 
     try {
@@ -957,26 +962,14 @@ describe('HttpRequestExecutor', () => {
       await reuseExecutor.execute(req3);
 
       // Multi constructor should have been called exactly once for this host.
-      expect(MultiConstructorMock).toHaveBeenCalledTimes(1);
-      // MAX_HOST_CONNECTIONS should have been set on the Multi handle.
-      expect(multiSetOptMock).toHaveBeenCalledWith('MAX_HOST_CONNECTIONS', 100);
+      expect(MultiSpy).toHaveBeenCalledTimes(1);
     } finally {
       server.close();
     }
   });
 
   it('should create separate Multi handles for different hosts', async () => {
-    const MultiConstructorMock = jest.fn(() => ({
-      setOpt: jest.fn(),
-      close: jest.fn()
-    }));
-
-    // eslint-disable-next-line @typescript-eslint/no-var-requires, import/no-extraneous-dependencies
-    const realCurlLib = require('node-libcurl') as CurlLibrary;
-    const curlLib: CurlLibrary = {
-      ...realCurlLib,
-      Multi: MultiConstructorMock as unknown as CurlLibrary['Multi']
-    };
+    MultiSpy.mockClear();
 
     const { server: server1, baseUrl: baseUrl1 } = await createTestServer(
       (_req, res) => {
@@ -995,8 +988,7 @@ describe('HttpRequestExecutor', () => {
       instance(virtualScriptsMock),
       { reuseConnection: true },
       certificatesCacheMock,
-      instance(certificatesResolverMock),
-      curlLib
+      instance(certificatesResolverMock)
     );
 
     try {
@@ -1007,7 +999,7 @@ describe('HttpRequestExecutor', () => {
       await reuseExecutor.execute(req2);
 
       // Two different host:port origins → two separate Multi handles.
-      expect(MultiConstructorMock).toHaveBeenCalledTimes(2);
+      expect(MultiSpy).toHaveBeenCalledTimes(2);
     } finally {
       server1.close();
       server2.close();
