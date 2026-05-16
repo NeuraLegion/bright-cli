@@ -307,6 +307,28 @@ describe('HttpRequestExecutor', () => {
       }
     });
 
+    it('should populate ttfb as a non-negative integer milliseconds value', async () => {
+      const { server, baseUrl } = await createTestServer((_req, res) => {
+        res.writeHead(200, { 'content-type': 'application/json' });
+        res.end('{}');
+      });
+
+      try {
+        const { request } = createRequest({ url: `${baseUrl}/` });
+        const response = await sut.execute(request);
+        expect(response.ttfb).toBeGreaterThanOrEqual(0);
+        expect(Number.isInteger(response.ttfb)).toBe(true);
+      } finally {
+        server.close();
+      }
+    });
+
+    it('should not populate ttfb on connection error', async () => {
+      const { request } = createRequest({ url: 'http://127.0.0.1:1/' });
+      const response = await sut.execute(request);
+      expect(response.ttfb).toBeUndefined();
+    });
+
     it('should handle HTTP errors', async () => {
       const { server, baseUrl } = await createTestServer((_req, res) => {
         res.writeHead(500, { 'content-type': 'application/json' });
