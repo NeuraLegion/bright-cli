@@ -63,9 +63,12 @@ export class HttpRequestExecutor implements RequestExecutor {
     }
 
     if (this.options.reuseConnection) {
-      this.multiHandles = new TTLCache<string, Multi>({
+      this.multiHandles = new TTLCache({
         ttl: this.KEEP_ALIVE_IDLE_TIMEOUT * 1000,
-        dispose: (multi) => multi.close()
+        dispose: (multi) => multi.close(),
+        updateAgeOnGet: true,
+        checkAgeOnGet: true,
+        checkAgeOnHas: true
       });
     }
   }
