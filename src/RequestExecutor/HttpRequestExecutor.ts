@@ -87,7 +87,7 @@ export class HttpRequestExecutor implements RequestExecutor {
 
       if (targetCerts === undefined || targetCerts.length === 0) {
         logger.debug(
-          '[HttpRequestExecutor] Executing HTTP request with following params: %j',
+          'Executing HTTP request with following params: %j',
           options
         );
 
