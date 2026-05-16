@@ -11,46 +11,12 @@ import { inject, injectable } from 'tsyringe';
 import iconv from 'iconv-lite';
 import { safeParse } from 'fast-content-type-parse';
 import { TTLCache } from '@isaacs/ttlcache';
+import { Curl, CurlFeature, HeaderInfo, Multi } from '@brightsec/node-libcurl';
 import { parse as parseUrl } from 'node:url';
-
-// ADHOC: Local type stubs for node-libcurl — avoids a hard compile-time dependency. The actual module is loaded lazily at runtime inside request(). Will be removed once node-libcurl stops to be optionalDependency.
-interface MultiInstance {
-  setOpt(key: string, value: unknown): void;
-  close(): void;
-}
-
-interface CurlInstance {
-  enable(feature: number): void;
-  setOpt(key: string, value: unknown): void;
-  setMulti(multi: MultiInstance): void;
-  on(
-    event: 'end',
-    cb: (statusCode: number, body: Buffer, headers: HeaderInfo[]) => void
-  ): void;
-  on(event: 'error', cb: (err: Error) => void): void;
-  perform(): void;
-  close(): void;
-  getInfo(key: string): unknown;
-}
-
-// Re-alias so existing private method signatures continue to compile unchanged.
-type Curl = CurlInstance;
-
-type HeaderInfo = Record<
-  string,
-  string | { code: number; reason: string; version: string }
->;
-// ---------------------------------------------------------------------------
 
 type ScriptEntrypoint = (
   options: RequestOptions
 ) => Promise<RequestOptions> | RequestOptions;
-
-export interface CurlLibrary {
-  Curl: new () => CurlInstance;
-  CurlFeature: { NoDataParsing: number };
-  Multi: new () => MultiInstance;
-}
 
 @injectable()
 export class HttpRequestExecutor implements RequestExecutor {
@@ -60,7 +26,7 @@ export class HttpRequestExecutor implements RequestExecutor {
   private readonly DEFAULT_SCRIPT_ENTRYPOINT = 'handle';
   private readonly proxyDomains?: RegExp[];
   private readonly proxyDomainsBypass?: RegExp[];
-  private readonly multiHandles?: TTLCache<string, MultiInstance>;
+  private readonly multiHandles?: TTLCache<string, Multi>;
 
   get protocol(): Protocol {
     return Protocol.HTTP;
@@ -73,9 +39,7 @@ export class HttpRequestExecutor implements RequestExecutor {
     @inject(CertificatesCache)
     private readonly certificatesCache: CertificatesCache,
     @inject(CertificatesResolver)
-    private readonly certificatesResolver: CertificatesResolver,
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
-    private readonly curl: CurlLibrary = require('node-libcurl') as CurlLibrary
+    private readonly certificatesResolver: CertificatesResolver
   ) {
     if (
       this.options.proxyDomains?.length &&
@@ -99,7 +63,7 @@ export class HttpRequestExecutor implements RequestExecutor {
     }
 
     if (this.options.reuseConnection) {
-      this.multiHandles = new TTLCache<string, MultiInstance>({
+      this.multiHandles = new TTLCache<string, Multi>({
         ttl: this.KEEP_ALIVE_IDLE_TIMEOUT * 1000,
         dispose: (multi) => multi.close()
       });
@@ -155,7 +119,7 @@ export class HttpRequestExecutor implements RequestExecutor {
     ttfb: number;
   }> {
     return new Promise((resolve, reject) => {
-      const curl: Curl = new this.curl.Curl();
+      const curl = new Curl();
 
       this.configureCurl(curl, options);
 
@@ -182,7 +146,7 @@ export class HttpRequestExecutor implements RequestExecutor {
     });
   }
 
-  private getOrCreateMulti(url: string): MultiInstance {
+  private getOrCreateMulti(url: string): Multi {
     const { protocol, hostname, port } = parseUrl(url);
     const resolvedPort = port ?? (protocol === 'https:' ? '443' : '80');
     const key = `${hostname}:${resolvedPort}`;
@@ -196,7 +160,7 @@ export class HttpRequestExecutor implements RequestExecutor {
     let multi = this.multiHandles.get(key);
 
     if (!multi) {
-      multi = new this.curl.Multi();
+      multi = new Multi();
       multi.setOpt('MAX_HOST_CONNECTIONS', this.MAX_HOST_CONNECTIONS);
       this.multiHandles.set(key, multi);
     }
@@ -205,7 +169,7 @@ export class HttpRequestExecutor implements RequestExecutor {
   }
 
   private configureCurl(curl: Curl, options: Request): void {
-    curl.enable(this.curl.CurlFeature.NoDataParsing);
+    curl.enable(CurlFeature.NoDataParsing);
 
     const { protocol, host } = parseUrl(options.url);
     curl.setOpt('URL', `${protocol}//${host}`);
