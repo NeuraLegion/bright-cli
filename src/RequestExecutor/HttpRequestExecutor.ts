@@ -247,12 +247,7 @@ export class HttpRequestExecutor implements RequestExecutor {
     // HTTPHEADER, which overrides USERAGENT for that header.
     curl.setOpt('USERAGENT', '');
 
-    // When not reusing connections, explicitly tell the server to close the
-    // connection after this request — mirroring Node.js behaviour when no
-    // keep-alive agent is in use. FRESH_CONNECT / FORBID_REUSE are client-side
-    // libcurl options only; without this header the server may still hold the
-    // socket open with keep-alive. Skip if the caller already supplied a
-    // Connection header to avoid duplicates.
+// When not reusing connections, explicitly tell the server to close the connection after this request
     const hasConnectionHeader =
       options.headers &&
       Object.keys(options.headers).some(
