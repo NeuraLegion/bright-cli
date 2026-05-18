@@ -85,9 +85,9 @@ jobs:
           - os: macos-15-intel
             executable: bright-cli-macos-x64
           - os: macos-14
-            executable: bright-cli-macos-x64
+            executable: bright-cli-macos-arm64
           - os: macos-latest
-            executable: bright-cli-macos-x64
+            executable: bright-cli-macos-arm64
           - os: windows-2022
             executable: bright-cli-win-x64.exe
           - os: windows-latest
