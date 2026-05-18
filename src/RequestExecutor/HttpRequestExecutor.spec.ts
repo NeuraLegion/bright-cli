@@ -825,6 +825,49 @@ describe('HttpRequestExecutor', () => {
     expect(MultiSpy).not.toHaveBeenCalled();
   });
 
+  it('should send Connection: close header on the wire when reuseConnection is false', async () => {
+    // FRESH_CONNECT / FORBID_REUSE are client-side only; the server still needs
+    // to be told to close the connection.  The executor must inject the header
+    // when the caller has not supplied one.
+    const fixture = await startTcpServer();
+
+    const { request } = createRequest({
+      url: `http://127.0.0.1:${fixture.port}/`
+    });
+
+    const results = await Promise.all([
+      sut.execute(request),
+      fixture.received()
+    ]);
+    fixture.close();
+
+    const headers = results[1].toLowerCase();
+    expect(headers).toContain('connection: close');
+  });
+
+  it('should not duplicate Connection header when the caller already supplies one', async () => {
+    // If the caller provides their own Connection header (e.g. "keep-alive")
+    // the executor must NOT append an additional Connection: close line.
+    const fixture = await startTcpServer();
+
+    const { request } = createRequest({
+      url: `http://127.0.0.1:${fixture.port}/`,
+      headers: { Connection: 'keep-alive' }
+    });
+
+    const results = await Promise.all([
+      sut.execute(request),
+      fixture.received()
+    ]);
+    fixture.close();
+
+    const connectionHeaders = results[1]
+      .split('\r\n')
+      .filter((line) => line.toLowerCase().startsWith('connection:'));
+    expect(connectionHeaders).toHaveLength(1);
+    expect(connectionHeaders[0].toLowerCase()).toBe('connection: keep-alive');
+  });
+
   it('should reuse the same Multi handle for multiple requests to the same host', async () => {
     const { baseUrl } = await createTestServer((_req, res) => {
       res.writeHead(200);
