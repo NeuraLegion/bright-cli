@@ -148,8 +148,12 @@ export class HttpRequestExecutor implements RequestExecutor {
   private configureCurl(curl: Curl, options: Request): void {
     curl.enable(CurlFeature.NoDataParsing);
 
-    const { protocol, host } = parseUrl(options.url);
+    const { protocol, host, auth } = parseUrl(options.url);
     curl.setOpt('URL', `${protocol}//${host}`);
+
+    if (auth) {
+      curl.setOpt('USERPWD', auth);
+    }
 
     const rawPath = this.buildRawPath(options.url);
     curl.setOpt('REQUEST_TARGET', rawPath);

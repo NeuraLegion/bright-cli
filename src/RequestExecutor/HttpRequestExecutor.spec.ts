@@ -732,6 +732,42 @@ describe('HttpRequestExecutor', () => {
       await sut.execute(request);
       expect(receivedHeaders?.['host']).toBe(injectionPayload);
     });
+
+    it('should send Authorization header when URL contains embedded credentials', async () => {
+      let receivedAuthorization: string | undefined;
+
+      const { server } = await createTestServer((req, res) => {
+        receivedAuthorization = req.headers['authorization'];
+        res.writeHead(200);
+        res.end('ok');
+      });
+
+      const { port } = server.address() as AddressInfo;
+      const { request } = createRequest({
+        url: `http://user:password@127.0.0.1:${port}/`
+      });
+      await sut.execute(request);
+
+      // libcurl sends HTTP Basic auth when USERPWD is set
+      expect(receivedAuthorization).toBe(
+        `Basic ${Buffer.from('user:password').toString('base64')}`
+      );
+    });
+
+    it('should not send Authorization header when URL has no embedded credentials', async () => {
+      let receivedAuthorization: string | undefined;
+
+      const { baseUrl } = await createTestServer((req, res) => {
+        receivedAuthorization = req.headers['authorization'];
+        res.writeHead(200);
+        res.end('ok');
+      });
+
+      const { request } = createRequest({ url: `${baseUrl}/` });
+      await sut.execute(request);
+
+      expect(receivedAuthorization).toBeUndefined();
+    });
   });
 
   it('should include ttfb in a successful response', async () => {
