@@ -25,6 +25,7 @@
     "node": ">=22 <=24"
   },
   "dependencies": {
+    "@brightsec/node-libcurl": "5.0.6",
     "@neuralegion/os-service": "^2.0.5",
     "@neuralegion/raw-socket": "^2.0.0",
     "@sentry/node": "^7.120.0",
@@ -128,6 +129,7 @@
   "pkg": {
     "scripts": "dist/**/*.js",
     "assets": [
+      "./node_modules/@brightsec/node-libcurl/lib/binding/node_libcurl.node",
       "./node_modules/axios/**",
       "./node_modules/win-ca/lib/crypt32-*.node",
       "./node_modules/@neuralegion/os-service/prebuilds/win32-x64/@neuralegion+os-service.abi127.node",
