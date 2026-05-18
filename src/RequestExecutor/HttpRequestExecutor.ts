@@ -197,9 +197,6 @@ export class HttpRequestExecutor implements RequestExecutor {
       // maxSockets: 100 per host semantics).
       curl.setMulti(this.getOrCreateMulti(options.url));
     } else {
-      // libcurl reuses connections by default, unlike node where keepAlive is
-      // off unless an agent is explicitly created. Disable reuse to match that
-      // default-off behaviour.
       curl.setOpt('FRESH_CONNECT', 1);
       curl.setOpt('FORBID_REUSE', 1);
     }
