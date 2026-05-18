@@ -24,7 +24,7 @@ export class HttpRequestExecutor implements RequestExecutor {
   private readonly DEFAULT_SCRIPT_ENTRYPOINT = 'handle';
   private readonly proxyDomains?: RegExp[];
   private readonly proxyDomainsBypass?: RegExp[];
-  private readonly sharedMulti: Multi;
+  private readonly sharedMulti = new Multi();
 
   get protocol(): Protocol {
     return Protocol.HTTP;
@@ -59,8 +59,6 @@ export class HttpRequestExecutor implements RequestExecutor {
         Helpers.wildcardToRegExp(domain)
       );
     }
-
-    this.sharedMulti = new Multi();
 
     if (this.options.reuseConnection) {
       this.sharedMulti.setOpt(
