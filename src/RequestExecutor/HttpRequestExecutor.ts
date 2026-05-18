@@ -24,7 +24,7 @@ export class HttpRequestExecutor implements RequestExecutor {
   private readonly DEFAULT_SCRIPT_ENTRYPOINT = 'handle';
   private readonly proxyDomains?: RegExp[];
   private readonly proxyDomainsBypass?: RegExp[];
-  private readonly sharedMulti?: Multi;
+  private readonly sharedMulti: Multi;
 
   get protocol(): Protocol {
     return Protocol.HTTP;
@@ -60,8 +60,9 @@ export class HttpRequestExecutor implements RequestExecutor {
       );
     }
 
+    this.sharedMulti = new Multi();
+
     if (this.options.reuseConnection) {
-      this.sharedMulti = new Multi();
       this.sharedMulti.setOpt(
         'MAX_HOST_CONNECTIONS',
         this.MAX_HOST_CONNECTIONS
@@ -171,8 +172,7 @@ export class HttpRequestExecutor implements RequestExecutor {
     if (this.options.reuseConnection) {
       curl.setOpt('TCP_KEEPALIVE', 1);
       curl.setOpt('TCP_KEEPIDLE', this.KEEP_ALIVE_IDLE_TIMEOUT);
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      curl.setMulti(this.sharedMulti!);
+      curl.setMulti(this.sharedMulti);
     } else {
       curl.setOpt('FRESH_CONNECT', 1);
       curl.setOpt('FORBID_REUSE', 1);
@@ -247,7 +247,7 @@ export class HttpRequestExecutor implements RequestExecutor {
     // HTTPHEADER, which overrides USERAGENT for that header.
     curl.setOpt('USERAGENT', '');
 
-// When not reusing connections, explicitly tell the server to close the connection after this request
+    // When not reusing connections, explicitly tell the server to close the connection after this request
     const hasConnectionHeader =
       options.headers &&
       Object.keys(options.headers).some(
