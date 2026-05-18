@@ -30,29 +30,32 @@ import {
 
 const serversToClose: http.Server[] = [];
 
-async function createTestServer(
-  handler: (req: http.IncomingMessage, res: http.ServerResponse) => void
-): Promise<{ server: http.Server; baseUrl: string }> {
-  const server = http.createServer(handler);
-  server.listen(0, '127.0.0.1');
-  await once(server, 'listening');
-  const { port } = server.address() as AddressInfo;
-  serversToClose.push(server);
-
-  return { server, baseUrl: `http://127.0.0.1:${port}` };
-}
-
-/**
- * Creates a raw TCP server that captures the first incoming request verbatim
- * and immediately replies with a minimal valid HTTP response so that libcurl
- * can complete normally. An HTTP server cannot be used here because Node's
- * HTTP parser rejects request-lines with spaces in the path.
- */
-async function startTcpServer(): Promise<{
+async function startServer(
+  handler?: (req: http.IncomingMessage, res: http.ServerResponse) => void
+): Promise<{
   port: number;
+  baseUrl: string;
+  server: net.Server;
   received: () => Promise<string>;
   close: () => void;
 }> {
+  if (handler) {
+    const server = http.createServer(handler);
+    server.listen(0, '127.0.0.1');
+    await once(server, 'listening');
+    const { port } = server.address() as AddressInfo;
+    serversToClose.push(server);
+
+    return {
+      port,
+      baseUrl: `http://127.0.0.1:${port}`,
+      server,
+      received: () =>
+        Promise.reject(new Error('received() is not available in HTTP mode')),
+      close: () => server.close()
+    };
+  }
+
   return new Promise((resolve) => {
     let resolveReceived: (data: string) => void;
     const receivedPromise = new Promise<string>((res) => {
@@ -77,6 +80,8 @@ async function startTcpServer(): Promise<{
       const { port } = server.address() as AddressInfo;
       resolve({
         port,
+        baseUrl: `http://127.0.0.1:${port}`,
+        server,
         received: () => receivedPromise,
         close: () => server.close()
       });
@@ -149,7 +154,7 @@ describe('HttpRequestExecutor', () => {
         (server) =>
           new Promise<void>((resolve) => {
             server.closeAllConnections();
-            server.close(() => resolve());
+            server.close(resolve);
           })
       )
     );
@@ -173,7 +178,7 @@ describe('HttpRequestExecutor', () => {
       // arrange
       const headers = { testHeader: 'test-header-value' };
       const sut = buildSut({ headers });
-      const { baseUrl } = await createTestServer((_req, res) => {
+      const { baseUrl } = await startServer((_req, res) => {
         res.writeHead(200);
         res.end('ok');
       });
@@ -188,7 +193,7 @@ describe('HttpRequestExecutor', () => {
 
     it('should not call setHeaders on the provided request if there were no additional headers configured', async () => {
       // arrange
-      const { baseUrl } = await createTestServer((_req, res) => {
+      const { baseUrl } = await startServer((_req, res) => {
         res.writeHead(200);
         res.end('ok');
       });
@@ -204,7 +209,7 @@ describe('HttpRequestExecutor', () => {
 
     it('should transform the request if there is a suitable vm', async () => {
       // arrange
-      const { baseUrl } = await createTestServer((_req, res) => {
+      const { baseUrl } = await startServer((_req, res) => {
         res.writeHead(200);
         res.end('ok');
       });
@@ -233,7 +238,7 @@ describe('HttpRequestExecutor', () => {
 
     it('should not transform the request if there is no suitable vm', async () => {
       // arrange
-      const { baseUrl } = await createTestServer((_req, res) => {
+      const { baseUrl } = await startServer((_req, res) => {
         res.writeHead(200);
         res.end('ok');
       });
@@ -249,7 +254,7 @@ describe('HttpRequestExecutor', () => {
 
     it('should call loadCert on the provided request if there were certificates configured globally', async () => {
       // arrange
-      const { baseUrl } = await createTestServer((_req, res) => {
+      const { baseUrl } = await startServer((_req, res) => {
         res.writeHead(200);
         res.end('ok');
       });
@@ -274,7 +279,7 @@ describe('HttpRequestExecutor', () => {
 
     it('should not call loadCert on the provided request if there were no certificates configured', async () => {
       // arrange
-      const { baseUrl } = await createTestServer((_req, res) => {
+      const { baseUrl } = await startServer((_req, res) => {
         res.writeHead(200);
         res.end('ok');
       });
@@ -290,7 +295,7 @@ describe('HttpRequestExecutor', () => {
 
     it('should perform an external http request', async () => {
       // arrange
-      const { baseUrl } = await createTestServer((_req, res) => {
+      const { baseUrl } = await startServer((_req, res) => {
         res.writeHead(200, { 'content-type': 'application/json' });
         res.end('{}');
       });
@@ -306,7 +311,7 @@ describe('HttpRequestExecutor', () => {
 
     it('should populate ttfb as a non-negative integer milliseconds value', async () => {
       // arrange
-      const { baseUrl } = await createTestServer((_req, res) => {
+      const { baseUrl } = await startServer((_req, res) => {
         res.writeHead(200, { 'content-type': 'application/json' });
         res.end('{}');
       });
@@ -335,7 +340,7 @@ describe('HttpRequestExecutor', () => {
 
     it('should handle HTTP errors', async () => {
       // arrange
-      const { baseUrl } = await createTestServer((_req, res) => {
+      const { baseUrl } = await startServer((_req, res) => {
         res.writeHead(500, { 'content-type': 'application/json' });
         res.end('{}');
       });
@@ -353,7 +358,7 @@ describe('HttpRequestExecutor', () => {
       // arrange
       const path = '/public/../../../../../../etc/passwd';
       let receivedPath: string;
-      const { baseUrl } = await createTestServer((req, res) => {
+      const { baseUrl } = await startServer((req, res) => {
         receivedPath = req.url;
         res.writeHead(200, { 'content-type': 'application/json' });
         res.end('{}');
@@ -372,12 +377,11 @@ describe('HttpRequestExecutor', () => {
     it('should preserve query string when URL has no explicit path', async () => {
       // arrange
       let receivedPath: string;
-      const { server } = await createTestServer((req, res) => {
+      const { port } = await startServer((req, res) => {
         receivedPath = req.url;
         res.writeHead(200, { 'content-type': 'application/json' });
         res.end('{}');
       });
-      const { port } = server.address() as AddressInfo;
       const { request } = createRequest({
         url: `http://127.0.0.1:${port}?x=1&y=2`
       });
@@ -393,7 +397,7 @@ describe('HttpRequestExecutor', () => {
 
     it('should handle timeout', async () => {
       // arrange
-      const { baseUrl } = await createTestServer((_req, _res) => {
+      const { baseUrl } = await startServer((_req, _res) => {
         // Never respond — triggers timeout
       });
       const { request } = createRequest({ url: `${baseUrl}/` });
@@ -423,7 +427,7 @@ describe('HttpRequestExecutor', () => {
     it('should truncate response body with not white-listed mime type', async () => {
       // arrange
       const bigBody = 'x'.repeat(1025);
-      const { baseUrl } = await createTestServer((_req, res) => {
+      const { baseUrl } = await startServer((_req, res) => {
         res.writeHead(200, { 'content-type': 'application/x-custom' });
         res.end(bigBody);
       });
@@ -441,7 +445,7 @@ describe('HttpRequestExecutor', () => {
     it('should not truncate response body if its smaller than limit and it is in allowed mime types', async () => {
       // arrange
       const bigBody = 'x'.repeat(1025);
-      const { baseUrl } = await createTestServer((_req, res) => {
+      const { baseUrl } = await startServer((_req, res) => {
         res.writeHead(200, { 'content-type': 'application/x-custom' });
         res.end(bigBody);
       });
@@ -464,7 +468,7 @@ describe('HttpRequestExecutor', () => {
       // arrange
       const bigBody = 'x'.repeat(1025);
       const expected = bigBody.slice(0, 1024);
-      const { baseUrl } = await createTestServer((_req, res) => {
+      const { baseUrl } = await startServer((_req, res) => {
         res.writeHead(200, { 'content-type': 'text/plain' });
         res.end(bigBody);
       });
@@ -484,7 +488,7 @@ describe('HttpRequestExecutor', () => {
     it('should omit response body if its larger than limit and it is in allowed mime types that require omission', async () => {
       // arrange
       const bigBody = 'x'.repeat(1025);
-      const { baseUrl } = await createTestServer((_req, res) => {
+      const { baseUrl } = await startServer((_req, res) => {
         res.writeHead(200, { 'content-type': 'application/json' });
         res.end(bigBody);
       });
@@ -505,7 +509,7 @@ describe('HttpRequestExecutor', () => {
       // arrange
       const expected = 'x'.repeat(100);
       const compressed = await promisify(brotliCompress)(expected);
-      const { baseUrl } = await createTestServer((_req, res) => {
+      const { baseUrl } = await startServer((_req, res) => {
         res.writeHead(200, {
           'content-type': 'text/plain',
           'content-encoding': 'br'
@@ -535,7 +539,7 @@ describe('HttpRequestExecutor', () => {
         flush: constants.Z_SYNC_FLUSH,
         finishFlush: constants.Z_SYNC_FLUSH
       });
-      const { baseUrl } = await createTestServer((_req, res) => {
+      const { baseUrl } = await startServer((_req, res) => {
         res.writeHead(200, {
           'content-type': 'text/plain',
           'content-encoding': 'gzip'
@@ -567,7 +571,7 @@ describe('HttpRequestExecutor', () => {
         flush: constants.Z_SYNC_FLUSH,
         finishFlush: constants.Z_SYNC_FLUSH
       });
-      const { baseUrl } = await createTestServer((_req, res) => {
+      const { baseUrl } = await startServer((_req, res) => {
         res.writeHead(200, {
           'content-type': 'text/plain',
           'content-encoding': 'gzip'
@@ -597,7 +601,7 @@ describe('HttpRequestExecutor', () => {
         flush: constants.Z_SYNC_FLUSH,
         finishFlush: constants.Z_SYNC_FLUSH
       });
-      const { baseUrl } = await createTestServer((_req, res) => {
+      const { baseUrl } = await startServer((_req, res) => {
         res.writeHead(200, {
           'content-type': 'text/plain',
           'content-encoding': 'deflate'
@@ -627,7 +631,7 @@ describe('HttpRequestExecutor', () => {
         flush: constants.Z_SYNC_FLUSH,
         finishFlush: constants.Z_SYNC_FLUSH
       });
-      const { baseUrl } = await createTestServer((_req, res) => {
+      const { baseUrl } = await startServer((_req, res) => {
         res.writeHead(200, {
           'content-type': 'text/plain',
           'content-encoding': 'deflate'
@@ -658,7 +662,7 @@ describe('HttpRequestExecutor', () => {
         flush: constants.Z_SYNC_FLUSH,
         finishFlush: constants.Z_SYNC_FLUSH
       });
-      const { baseUrl } = await createTestServer((_req, res) => {
+      const { baseUrl } = await startServer((_req, res) => {
         res.writeHead(200, {
           'content-type': 'text/html',
           'content-encoding': 'gzip'
@@ -684,7 +688,7 @@ describe('HttpRequestExecutor', () => {
     it('should not truncate response body if allowed mime type starts with actual one', async () => {
       // arrange
       const bigBody = 'x'.repeat(1025);
-      const { baseUrl } = await createTestServer((_req, res) => {
+      const { baseUrl } = await startServer((_req, res) => {
         res.writeHead(200, {
           'content-type': 'application/x-custom-with-suffix'
         });
@@ -707,7 +711,7 @@ describe('HttpRequestExecutor', () => {
 
     it('should skip truncate on 204 response status', async () => {
       // arrange
-      const { baseUrl } = await createTestServer((_req, res) => {
+      const { baseUrl } = await startServer((_req, res) => {
         res.writeHead(204);
         res.end();
       });
@@ -724,12 +728,11 @@ describe('HttpRequestExecutor', () => {
     it('should send requests with unescaped characters in the path (Case 1)', async () => {
       // arrange
       let receivedPath: string;
-      const { server } = await createTestServer((req, res) => {
+      const { port } = await startServer((req, res) => {
         receivedPath = req.url;
         res.writeHead(200);
         res.end('ok');
       });
-      const { port } = server.address() as AddressInfo;
       const { request } = createRequest({
         url: `http://127.0.0.1:${port}/path|with|pipes`
       });
@@ -749,7 +752,7 @@ describe('HttpRequestExecutor', () => {
       // (e.g. spaces and colons that mimic a status line) must be forwarded
       // exactly as supplied. A raw TCP server is used to capture the bytes
       // before any HTTP parsing can strip or reject them.
-      const fixture = await startTcpServer();
+      const fixture = await startServer();
       const rawPath = '/?msg=Server: ESA1 HTTP/1.1';
       const { request } = createRequest({
         url: `http://127.0.0.1:${fixture.port}${rawPath}`
@@ -773,7 +776,7 @@ describe('HttpRequestExecutor', () => {
     it('should not send the libcurl default User-Agent header', async () => {
       // arrange
       let receivedUserAgent: string | undefined;
-      const { baseUrl } = await createTestServer((req, res) => {
+      const { baseUrl } = await startServer((req, res) => {
         receivedUserAgent = req.headers['user-agent'];
         res.writeHead(200);
         res.end('ok');
@@ -791,7 +794,7 @@ describe('HttpRequestExecutor', () => {
     it('should preserve a caller-supplied User-Agent header', async () => {
       // arrange
       let receivedUserAgent: string | undefined;
-      const { baseUrl } = await createTestServer((req, res) => {
+      const { baseUrl } = await startServer((req, res) => {
         receivedUserAgent = req.headers['user-agent'];
         res.writeHead(200);
         res.end('ok');
@@ -815,7 +818,7 @@ describe('HttpRequestExecutor', () => {
       // injection, SSRF probes). The value must reach the server byte-for-byte;
       // libcurl's URL-derived Host is overridden by the HTTPHEADER entry.
       let receivedHeaders: http.IncomingHttpHeaders | undefined;
-      const { baseUrl } = await createTestServer((req, res) => {
+      const { baseUrl } = await startServer((req, res) => {
         receivedHeaders = req.headers;
         res.writeHead(200);
         res.end('ok');
@@ -836,7 +839,7 @@ describe('HttpRequestExecutor', () => {
     it('should forward a Host header containing an injection payload verbatim', async () => {
       // arrange
       let receivedHeaders: http.IncomingHttpHeaders | undefined;
-      const { baseUrl } = await createTestServer((req, res) => {
+      const { baseUrl } = await startServer((req, res) => {
         receivedHeaders = req.headers;
         res.writeHead(200);
         res.end('ok');
@@ -858,12 +861,11 @@ describe('HttpRequestExecutor', () => {
     it('should send Authorization header when URL contains embedded credentials', async () => {
       // arrange
       let receivedAuthorization: string | undefined;
-      const { server } = await createTestServer((req, res) => {
+      const { port } = await startServer((req, res) => {
         receivedAuthorization = req.headers['authorization'];
         res.writeHead(200);
         res.end('ok');
       });
-      const { port } = server.address() as AddressInfo;
       const { request } = createRequest({
         url: `http://user:password@127.0.0.1:${port}/`
       });
@@ -882,7 +884,7 @@ describe('HttpRequestExecutor', () => {
     it('should not send Authorization header when URL has no embedded credentials', async () => {
       // arrange
       let receivedAuthorization: string | undefined;
-      const { baseUrl } = await createTestServer((req, res) => {
+      const { baseUrl } = await startServer((req, res) => {
         receivedAuthorization = req.headers['authorization'];
         res.writeHead(200);
         res.end('ok');
@@ -900,7 +902,7 @@ describe('HttpRequestExecutor', () => {
 
   it('should include ttfb in a successful response', async () => {
     // arrange
-    const { baseUrl } = await createTestServer((_req, res) => {
+    const { baseUrl } = await startServer((_req, res) => {
       res.writeHead(200);
       res.end('ok');
     });
@@ -916,7 +918,7 @@ describe('HttpRequestExecutor', () => {
 
   it('should include ttfb even on HTTP error responses', async () => {
     // arrange
-    const { baseUrl } = await createTestServer((_req, res) => {
+    const { baseUrl } = await startServer((_req, res) => {
       res.writeHead(500);
       res.end('error body');
     });
@@ -952,7 +954,7 @@ describe('HttpRequestExecutor', () => {
     // wire each Curl handle to a dedicated per-host Multi so that
     // MAX_HOST_CONNECTIONS applies per origin.
     let connectionCount = 0;
-    const { server, baseUrl } = await createTestServer((_req, res) => {
+    const { server, baseUrl } = await startServer((_req, res) => {
       res.writeHead(200, { 'Content-Type': 'text/plain' });
       res.end('ok');
     });
@@ -985,7 +987,7 @@ describe('HttpRequestExecutor', () => {
     // to match the node default-off keepAlive behaviour, ensuring each
     // request opens a fresh TCP connection.
     let connectionCount = 0;
-    const { server, baseUrl } = await createTestServer((_req, res) => {
+    const { server, baseUrl } = await startServer((_req, res) => {
       res.writeHead(200);
       res.end('ok');
     });
@@ -1009,7 +1011,7 @@ describe('HttpRequestExecutor', () => {
     // FRESH_CONNECT / FORBID_REUSE are client-side only; the server still needs
     // to be told to close the connection.  The executor must inject the header
     // when the caller has not supplied one.
-    const fixture = await startTcpServer();
+    const fixture = await startServer();
     const { request } = createRequest({
       url: `http://127.0.0.1:${fixture.port}/`
     });
@@ -1031,7 +1033,7 @@ describe('HttpRequestExecutor', () => {
     // arrange
     // If the caller provides their own Connection header (e.g. "keep-alive")
     // the executor must NOT append an additional Connection: close line.
-    const fixture = await startTcpServer();
+    const fixture = await startServer();
     const { request } = createRequest({
       url: `http://127.0.0.1:${fixture.port}/`,
       headers: { Connection: 'keep-alive' }
@@ -1055,7 +1057,7 @@ describe('HttpRequestExecutor', () => {
 
   it('should reuse the same Multi handle for multiple requests to the same host', async () => {
     // arrange
-    const { baseUrl } = await createTestServer((_req, res) => {
+    const { baseUrl } = await startServer((_req, res) => {
       res.writeHead(200);
       res.end('ok');
     });
