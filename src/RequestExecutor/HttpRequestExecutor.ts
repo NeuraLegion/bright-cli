@@ -20,7 +20,6 @@ type ScriptEntrypoint = (
 
 @injectable()
 export class HttpRequestExecutor implements RequestExecutor {
-  // ADHOC: 60 is curl's default [https://curl.se/libcurl/c/CURLOPT_TCP_KEEPIDLE.html], defined to be explicit.
   private readonly KEEP_ALIVE_IDLE_TIMEOUT = 60;
   private readonly MAX_HOST_CONNECTIONS = 100;
   private readonly DEFAULT_SCRIPT_ENTRYPOINT = 'handle';
