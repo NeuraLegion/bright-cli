@@ -10,7 +10,6 @@ import { CertificatesResolver } from './CertificatesResolver';
 import { inject, injectable } from 'tsyringe';
 import iconv from 'iconv-lite';
 import { safeParse } from 'fast-content-type-parse';
-import { TTLCache } from '@isaacs/ttlcache';
 import { Curl, CurlFeature, HeaderInfo, Multi } from '@brightsec/node-libcurl';
 import { parse as parseUrl } from 'node:url';
 
@@ -25,7 +24,7 @@ export class HttpRequestExecutor implements RequestExecutor {
   private readonly DEFAULT_SCRIPT_ENTRYPOINT = 'handle';
   private readonly proxyDomains?: RegExp[];
   private readonly proxyDomainsBypass?: RegExp[];
-  private readonly multiHandles?: TTLCache<string, Multi>;
+  private readonly sharedMulti?: Multi;
 
   get protocol(): Protocol {
     return Protocol.HTTP;
@@ -62,13 +61,11 @@ export class HttpRequestExecutor implements RequestExecutor {
     }
 
     if (this.options.reuseConnection) {
-      this.multiHandles = new TTLCache({
-        ttl: this.KEEP_ALIVE_IDLE_TIMEOUT * 1000,
-        dispose: (multi) => multi.close(),
-        updateAgeOnGet: true,
-        checkAgeOnGet: true,
-        checkAgeOnHas: true
-      });
+      this.sharedMulti = new Multi();
+      this.sharedMulti.setOpt(
+        'MAX_HOST_CONNECTIONS',
+        this.MAX_HOST_CONNECTIONS
+      );
     }
   }
 
@@ -148,28 +145,6 @@ export class HttpRequestExecutor implements RequestExecutor {
     });
   }
 
-  private getOrCreateMulti(url: string): Multi {
-    const { protocol, hostname, port } = parseUrl(url);
-    const resolvedPort = port ?? (protocol === 'https:' ? '443' : '80');
-    const key = `${hostname}:${resolvedPort}`;
-
-    if (!this.multiHandles) {
-      throw new Error(
-        'Multi handles cache is not initialized due to missing configuration for connection reuse'
-      );
-    }
-
-    let multi = this.multiHandles.get(key);
-
-    if (!multi) {
-      multi = new Multi();
-      multi.setOpt('MAX_HOST_CONNECTIONS', this.MAX_HOST_CONNECTIONS);
-      this.multiHandles.set(key, multi);
-    }
-
-    return multi;
-  }
-
   private configureCurl(curl: Curl, options: Request): void {
     curl.enable(CurlFeature.NoDataParsing);
 
@@ -192,10 +167,8 @@ export class HttpRequestExecutor implements RequestExecutor {
     if (this.options.reuseConnection) {
       curl.setOpt('TCP_KEEPALIVE', 1);
       curl.setOpt('TCP_KEEPIDLE', this.KEEP_ALIVE_IDLE_TIMEOUT);
-      // Route this request through its host's dedicated Multi handle so that
-      // MAX_HOST_CONNECTIONS applies per origin (equivalent to node's
-      // maxSockets: 100 per host semantics).
-      curl.setMulti(this.getOrCreateMulti(options.url));
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      curl.setMulti(this.sharedMulti!);
     } else {
       curl.setOpt('FRESH_CONNECT', 1);
       curl.setOpt('FORBID_REUSE', 1);

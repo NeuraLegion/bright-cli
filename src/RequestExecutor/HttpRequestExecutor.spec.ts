@@ -173,153 +173,119 @@ describe('HttpRequestExecutor', () => {
     it('should call setHeaders on the provided request if additional headers were configured globally', async () => {
       const headers = { testHeader: 'test-header-value' };
       spiedExecutorOptions.headers = headers;
-      const { server, baseUrl } = await createTestServer((_req, res) => {
+      const { baseUrl } = await createTestServer((_req, res) => {
         res.writeHead(200);
         res.end('ok');
       });
 
-      try {
-        const { request, spiedRequest } = createRequest({ url: `${baseUrl}/` });
-        await sut.execute(request);
-        verify(spiedRequest.setHeaders(headers)).once();
-      } finally {
-        server.close();
-      }
+      const { request, spiedRequest } = createRequest({ url: `${baseUrl}/` });
+      await sut.execute(request);
+      verify(spiedRequest.setHeaders(headers)).once();
     });
 
     it('should not call setHeaders on the provided request if there were no additional headers configured', async () => {
-      const { server, baseUrl } = await createTestServer((_req, res) => {
+      const { baseUrl } = await createTestServer((_req, res) => {
         res.writeHead(200);
         res.end('ok');
       });
 
-      try {
-        const { request, spiedRequest } = createRequest({ url: `${baseUrl}/` });
-        await sut.execute(request);
-        verify(spiedRequest.setHeaders(anything())).never();
-      } finally {
-        server.close();
-      }
+      const { request, spiedRequest } = createRequest({ url: `${baseUrl}/` });
+      await sut.execute(request);
+      verify(spiedRequest.setHeaders(anything())).never();
     });
 
     it('should transform the request if there is a suitable vm', async () => {
-      const { server, baseUrl } = await createTestServer((_req, res) => {
+      const { baseUrl } = await createTestServer((_req, res) => {
         res.writeHead(200);
         res.end('ok');
       });
 
-      try {
-        const { request, requestOptions } = createRequest({
-          url: `${baseUrl}/`
-        });
-        const { hostname: virtualScriptId } = new URL(requestOptions.url);
-        const virtualScript = new VirtualScript(
-          virtualScriptId,
-          VirtualScriptType.LOCAL,
-          'console.log("test code");'
-        );
-        const spiedVirtualScript = spy(virtualScript);
-        when(spiedVirtualScript.exec(anyString(), anything())).thenResolve(
-          requestOptions
-        );
-        when(virtualScriptsMock.find(virtualScriptId)).thenReturn(
-          virtualScript
-        );
+      const { request, requestOptions } = createRequest({
+        url: `${baseUrl}/`
+      });
+      const { hostname: virtualScriptId } = new URL(requestOptions.url);
+      const virtualScript = new VirtualScript(
+        virtualScriptId,
+        VirtualScriptType.LOCAL,
+        'console.log("test code");'
+      );
+      const spiedVirtualScript = spy(virtualScript);
+      when(spiedVirtualScript.exec(anyString(), anything())).thenResolve(
+        requestOptions
+      );
+      when(virtualScriptsMock.find(virtualScriptId)).thenReturn(virtualScript);
 
-        await sut.execute(request);
+      await sut.execute(request);
 
-        verify(spiedVirtualScript.exec(anyString(), anything())).once();
-      } finally {
-        server.close();
-      }
+      verify(spiedVirtualScript.exec(anyString(), anything())).once();
     });
 
     it('should not transform the request if there is no suitable vm', async () => {
-      const { server, baseUrl } = await createTestServer((_req, res) => {
+      const { baseUrl } = await createTestServer((_req, res) => {
         res.writeHead(200);
         res.end('ok');
       });
 
-      try {
-        const { request, spiedRequest } = createRequest({ url: `${baseUrl}/` });
-        await sut.execute(request);
-        verify(spiedRequest.toJSON()).never();
-      } finally {
-        server.close();
-      }
+      const { request, spiedRequest } = createRequest({ url: `${baseUrl}/` });
+      await sut.execute(request);
+      verify(spiedRequest.toJSON()).never();
     });
 
     it('should call loadCert on the provided request if there were certificates configured globally', async () => {
-      const { server, baseUrl } = await createTestServer((_req, res) => {
+      const { baseUrl } = await createTestServer((_req, res) => {
         res.writeHead(200);
         res.end('ok');
       });
 
-      try {
-        const { request, spiedRequest } = createRequest({ url: `${baseUrl}/` });
-        const certs: Cert[] = [
-          {
-            path: '/tmp/cert.pem',
-            hostname: new URL(request.url).hostname
-          }
-        ];
-        spiedExecutorOptions.certs = certs;
-        when(certificatesResolverMock.resolve(request, anything())).thenReturn(
-          certs
-        );
+      const { request, spiedRequest } = createRequest({ url: `${baseUrl}/` });
+      const certs: Cert[] = [
+        {
+          path: '/tmp/cert.pem',
+          hostname: new URL(request.url).hostname
+        }
+      ];
+      spiedExecutorOptions.certs = certs;
+      when(certificatesResolverMock.resolve(request, anything())).thenReturn(
+        certs
+      );
 
-        await sut.execute(request);
+      await sut.execute(request);
 
-        verify(spiedRequest.loadCert(anything())).once();
-      } finally {
-        server.close();
-      }
+      verify(spiedRequest.loadCert(anything())).once();
     });
 
     it('should not call loadCert on the provided request if there were no certificates configured', async () => {
-      const { server, baseUrl } = await createTestServer((_req, res) => {
+      const { baseUrl } = await createTestServer((_req, res) => {
         res.writeHead(200);
         res.end('ok');
       });
 
-      try {
-        const { request, spiedRequest } = createRequest({ url: `${baseUrl}/` });
-        await sut.execute(request);
-        verify(spiedRequest.loadCert(anything())).never();
-      } finally {
-        server.close();
-      }
+      const { request, spiedRequest } = createRequest({ url: `${baseUrl}/` });
+      await sut.execute(request);
+      verify(spiedRequest.loadCert(anything())).never();
     });
 
     it('should perform an external http request', async () => {
-      const { server, baseUrl } = await createTestServer((_req, res) => {
+      const { baseUrl } = await createTestServer((_req, res) => {
         res.writeHead(200, { 'content-type': 'application/json' });
         res.end('{}');
       });
 
-      try {
-        const { request } = createRequest({ url: `${baseUrl}/` });
-        const response = await sut.execute(request);
-        expect(response).toMatchObject({ statusCode: 200, body: '{}' });
-      } finally {
-        server.close();
-      }
+      const { request } = createRequest({ url: `${baseUrl}/` });
+      const response = await sut.execute(request);
+      expect(response).toMatchObject({ statusCode: 200, body: '{}' });
     });
 
     it('should populate ttfb as a non-negative integer milliseconds value', async () => {
-      const { server, baseUrl } = await createTestServer((_req, res) => {
+      const { baseUrl } = await createTestServer((_req, res) => {
         res.writeHead(200, { 'content-type': 'application/json' });
         res.end('{}');
       });
 
-      try {
-        const { request } = createRequest({ url: `${baseUrl}/` });
-        const response = await sut.execute(request);
-        expect(response.ttfb).toBeGreaterThanOrEqual(0);
-        expect(Number.isInteger(response.ttfb)).toBe(true);
-      } finally {
-        server.close();
-      }
+      const { request } = createRequest({ url: `${baseUrl}/` });
+      const response = await sut.execute(request);
+      expect(response.ttfb).toBeGreaterThanOrEqual(0);
+      expect(Number.isInteger(response.ttfb)).toBe(true);
     });
 
     it('should not populate ttfb on connection error', async () => {
@@ -329,38 +295,30 @@ describe('HttpRequestExecutor', () => {
     });
 
     it('should handle HTTP errors', async () => {
-      const { server, baseUrl } = await createTestServer((_req, res) => {
+      const { baseUrl } = await createTestServer((_req, res) => {
         res.writeHead(500, { 'content-type': 'application/json' });
         res.end('{}');
       });
 
-      try {
-        const { request } = createRequest({ url: `${baseUrl}/` });
-        const response = await sut.execute(request);
-        expect(response).toMatchObject({ statusCode: 500, body: '{}' });
-      } finally {
-        server.close();
-      }
+      const { request } = createRequest({ url: `${baseUrl}/` });
+      const response = await sut.execute(request);
+      expect(response).toMatchObject({ statusCode: 500, body: '{}' });
     });
 
     it('should preserve directory traversal', async () => {
       const path = '/public/../../../../../../etc/passwd';
       let receivedPath: string;
 
-      const { server, baseUrl } = await createTestServer((req, res) => {
+      const { baseUrl } = await createTestServer((req, res) => {
         receivedPath = req.url;
         res.writeHead(200, { 'content-type': 'application/json' });
         res.end('{}');
       });
 
-      try {
-        const { request } = createRequest({ url: `${baseUrl}${path}` });
-        const response = await sut.execute(request);
-        expect(response).toMatchObject({ statusCode: 200 });
-        expect(receivedPath).toBe(path);
-      } finally {
-        server.close();
-      }
+      const { request } = createRequest({ url: `${baseUrl}${path}` });
+      const response = await sut.execute(request);
+      expect(response).toMatchObject({ statusCode: 200 });
+      expect(receivedPath).toBe(path);
     });
 
     it('should preserve query string when URL has no explicit path', async () => {
@@ -371,17 +329,13 @@ describe('HttpRequestExecutor', () => {
         res.end('{}');
       });
 
-      try {
-        const { port } = server.address() as AddressInfo;
-        const { request } = createRequest({
-          url: `http://127.0.0.1:${port}?x=1&y=2`
-        });
-        const response = await sut.execute(request);
-        expect(response).toMatchObject({ statusCode: 200 });
-        expect(receivedPath).toBe('/?x=1&y=2');
-      } finally {
-        server.close();
-      }
+      const { port } = server.address() as AddressInfo;
+      const { request } = createRequest({
+        url: `http://127.0.0.1:${port}?x=1&y=2`
+      });
+      const response = await sut.execute(request);
+      expect(response).toMatchObject({ statusCode: 200 });
+      expect(receivedPath).toBe('/?x=1&y=2');
     });
 
     it('should handle timeout', async () => {
@@ -390,13 +344,9 @@ describe('HttpRequestExecutor', () => {
         // Never respond — triggers timeout
       });
 
-      try {
-        const { request } = createRequest({ url: `${baseUrl}/` });
-        const response = await sut.execute(request);
-        expect(response).toMatchObject({ errorCode: expect.any(String) });
-      } finally {
-        server.close();
-      }
+      const { request } = createRequest({ url: `${baseUrl}/` });
+      const response = await sut.execute(request);
+      expect(response).toMatchObject({ errorCode: expect.any(String) });
     });
 
     it('should handle non-HTTP errors (connection refused)', async () => {
@@ -414,19 +364,15 @@ describe('HttpRequestExecutor', () => {
       spiedExecutorOptions.maxContentLength = 1;
       const bigBody = 'x'.repeat(1025);
 
-      const { server, baseUrl } = await createTestServer((_req, res) => {
+      const { baseUrl } = await createTestServer((_req, res) => {
         res.writeHead(200, { 'content-type': 'application/x-custom' });
         res.end(bigBody);
       });
 
-      try {
-        const { request } = createRequest({ url: `${baseUrl}/` });
-        const response = await sut.execute(request);
-        expect(response.body?.length).toEqual(1024);
-        expect(response.body).toEqual(bigBody.slice(0, 1024));
-      } finally {
-        server.close();
-      }
+      const { request } = createRequest({ url: `${baseUrl}/` });
+      const response = await sut.execute(request);
+      expect(response.body?.length).toEqual(1024);
+      expect(response.body).toEqual(bigBody.slice(0, 1024));
     });
 
     it('should not truncate response body if its smaller than limit and it is in allowed mime types', async () => {
@@ -436,18 +382,14 @@ describe('HttpRequestExecutor', () => {
       ];
       const bigBody = 'x'.repeat(1025);
 
-      const { server, baseUrl } = await createTestServer((_req, res) => {
+      const { baseUrl } = await createTestServer((_req, res) => {
         res.writeHead(200, { 'content-type': 'application/x-custom' });
         res.end(bigBody);
       });
 
-      try {
-        const { request } = createRequest({ url: `${baseUrl}/` });
-        const response = await sut.execute(request);
-        expect(response.body).toEqual(bigBody);
-      } finally {
-        server.close();
-      }
+      const { request } = createRequest({ url: `${baseUrl}/` });
+      const response = await sut.execute(request);
+      expect(response.body).toEqual(bigBody);
     });
 
     it('should truncate response body if its larger than limit and it is in allowed mime types that require truncation', async () => {
@@ -458,18 +400,14 @@ describe('HttpRequestExecutor', () => {
       const bigBody = 'x'.repeat(1025);
       const expected = bigBody.slice(0, 1024);
 
-      const { server, baseUrl } = await createTestServer((_req, res) => {
+      const { baseUrl } = await createTestServer((_req, res) => {
         res.writeHead(200, { 'content-type': 'text/plain' });
         res.end(bigBody);
       });
 
-      try {
-        const { request } = createRequest({ url: `${baseUrl}/` });
-        const response = await sut.execute(request);
-        expect(response.body).toEqual(expected);
-      } finally {
-        server.close();
-      }
+      const { request } = createRequest({ url: `${baseUrl}/` });
+      const response = await sut.execute(request);
+      expect(response.body).toEqual(expected);
     });
 
     it('should omit response body if its larger than limit and it is in allowed mime types that require omission', async () => {
@@ -479,18 +417,14 @@ describe('HttpRequestExecutor', () => {
       ];
       const bigBody = 'x'.repeat(1025);
 
-      const { server, baseUrl } = await createTestServer((_req, res) => {
+      const { baseUrl } = await createTestServer((_req, res) => {
         res.writeHead(200, { 'content-type': 'application/json' });
         res.end(bigBody);
       });
 
-      try {
-        const { request } = createRequest({ url: `${baseUrl}/` });
-        const response = await sut.execute(request);
-        expect(response.body).toEqual('');
-      } finally {
-        server.close();
-      }
+      const { request } = createRequest({ url: `${baseUrl}/` });
+      const response = await sut.execute(request);
+      expect(response.body).toEqual('');
     });
 
     it('should decode response body if content-encoding is brotli', async () => {
@@ -501,7 +435,7 @@ describe('HttpRequestExecutor', () => {
       const expected = 'x'.repeat(100);
       const compressed = await promisify(brotliCompress)(expected);
 
-      const { server, baseUrl } = await createTestServer((_req, res) => {
+      const { baseUrl } = await createTestServer((_req, res) => {
         res.writeHead(200, {
           'content-type': 'text/plain',
           'content-encoding': 'br'
@@ -509,16 +443,12 @@ describe('HttpRequestExecutor', () => {
         res.end(compressed);
       });
 
-      try {
-        const { request } = createRequest({
-          url: `${baseUrl}/`,
-          decompress: true
-        });
-        const response = await sut.execute(request);
-        expect(response.body).toEqual(expected);
-      } finally {
-        server.close();
-      }
+      const { request } = createRequest({
+        url: `${baseUrl}/`,
+        decompress: true
+      });
+      const response = await sut.execute(request);
+      expect(response.body).toEqual(expected);
     });
 
     it('should prevent decoding response body if decompress option is disabled', async () => {
@@ -532,7 +462,7 @@ describe('HttpRequestExecutor', () => {
         finishFlush: constants.Z_SYNC_FLUSH
       });
 
-      const { server, baseUrl } = await createTestServer((_req, res) => {
+      const { baseUrl } = await createTestServer((_req, res) => {
         res.writeHead(200, {
           'content-type': 'text/plain',
           'content-encoding': 'gzip'
@@ -540,18 +470,14 @@ describe('HttpRequestExecutor', () => {
         res.end(compressed);
       });
 
-      try {
-        const { request } = createRequest({
-          url: `${baseUrl}/`,
-          decompress: false,
-          encoding: 'base64'
-        });
-        const response = await sut.execute(request);
-        expect(response.body).toEqual(compressed.toString('base64'));
-        expect(response.headers).toMatchObject({ 'content-encoding': 'gzip' });
-      } finally {
-        server.close();
-      }
+      const { request } = createRequest({
+        url: `${baseUrl}/`,
+        decompress: false,
+        encoding: 'base64'
+      });
+      const response = await sut.execute(request);
+      expect(response.body).toEqual(compressed.toString('base64'));
+      expect(response.headers).toMatchObject({ 'content-encoding': 'gzip' });
     });
 
     it('should decode response body if content-encoding is gzip', async () => {
@@ -565,7 +491,7 @@ describe('HttpRequestExecutor', () => {
         finishFlush: constants.Z_SYNC_FLUSH
       });
 
-      const { server, baseUrl } = await createTestServer((_req, res) => {
+      const { baseUrl } = await createTestServer((_req, res) => {
         res.writeHead(200, {
           'content-type': 'text/plain',
           'content-encoding': 'gzip'
@@ -573,16 +499,12 @@ describe('HttpRequestExecutor', () => {
         res.end(compressed);
       });
 
-      try {
-        const { request } = createRequest({
-          url: `${baseUrl}/`,
-          decompress: true
-        });
-        const response = await sut.execute(request);
-        expect(response.body).toEqual(expected);
-      } finally {
-        server.close();
-      }
+      const { request } = createRequest({
+        url: `${baseUrl}/`,
+        decompress: true
+      });
+      const response = await sut.execute(request);
+      expect(response.body).toEqual(expected);
     });
 
     it('should decode response body if content-encoding is deflate', async () => {
@@ -596,7 +518,7 @@ describe('HttpRequestExecutor', () => {
         finishFlush: constants.Z_SYNC_FLUSH
       });
 
-      const { server, baseUrl } = await createTestServer((_req, res) => {
+      const { baseUrl } = await createTestServer((_req, res) => {
         res.writeHead(200, {
           'content-type': 'text/plain',
           'content-encoding': 'deflate'
@@ -604,16 +526,12 @@ describe('HttpRequestExecutor', () => {
         res.end(compressed);
       });
 
-      try {
-        const { request } = createRequest({
-          url: `${baseUrl}/`,
-          decompress: true
-        });
-        const response = await sut.execute(request);
-        expect(response.body).toEqual(expected);
-      } finally {
-        server.close();
-      }
+      const { request } = createRequest({
+        url: `${baseUrl}/`,
+        decompress: true
+      });
+      const response = await sut.execute(request);
+      expect(response.body).toEqual(expected);
     });
 
     it('should decode response body if content-encoding is deflate and content does not have zlib headers', async () => {
@@ -627,7 +545,7 @@ describe('HttpRequestExecutor', () => {
         finishFlush: constants.Z_SYNC_FLUSH
       });
 
-      const { server, baseUrl } = await createTestServer((_req, res) => {
+      const { baseUrl } = await createTestServer((_req, res) => {
         res.writeHead(200, {
           'content-type': 'text/plain',
           'content-encoding': 'deflate'
@@ -635,16 +553,12 @@ describe('HttpRequestExecutor', () => {
         res.end(compressed);
       });
 
-      try {
-        const { request } = createRequest({
-          url: `${baseUrl}/`,
-          decompress: true
-        });
-        const response = await sut.execute(request);
-        expect(response.body).toEqual(expected);
-      } finally {
-        server.close();
-      }
+      const { request } = createRequest({
+        url: `${baseUrl}/`,
+        decompress: true
+      });
+      const response = await sut.execute(request);
+      expect(response.body).toEqual(expected);
     });
 
     it('should decode and truncate gzipped response body if content-type is not in allowed list', async () => {
@@ -659,7 +573,7 @@ describe('HttpRequestExecutor', () => {
         finishFlush: constants.Z_SYNC_FLUSH
       });
 
-      const { server, baseUrl } = await createTestServer((_req, res) => {
+      const { baseUrl } = await createTestServer((_req, res) => {
         res.writeHead(200, {
           'content-type': 'text/html',
           'content-encoding': 'gzip'
@@ -667,16 +581,12 @@ describe('HttpRequestExecutor', () => {
         res.end(compressed);
       });
 
-      try {
-        const { request } = createRequest({
-          url: `${baseUrl}/`,
-          decompress: true
-        });
-        const response = await sut.execute(request);
-        expect(response.body).toEqual(expected);
-      } finally {
-        server.close();
-      }
+      const { request } = createRequest({
+        url: `${baseUrl}/`,
+        decompress: true
+      });
+      const response = await sut.execute(request);
+      expect(response.body).toEqual(expected);
     });
 
     it('should not truncate response body if allowed mime type starts with actual one', async () => {
@@ -686,37 +596,29 @@ describe('HttpRequestExecutor', () => {
       ];
       const bigBody = 'x'.repeat(1025);
 
-      const { server, baseUrl } = await createTestServer((_req, res) => {
+      const { baseUrl } = await createTestServer((_req, res) => {
         res.writeHead(200, {
           'content-type': 'application/x-custom-with-suffix'
         });
         res.end(bigBody);
       });
 
-      try {
-        const { request } = createRequest({ url: `${baseUrl}/` });
-        const response = await sut.execute(request);
-        expect(response.body).toEqual(bigBody);
-      } finally {
-        server.close();
-      }
+      const { request } = createRequest({ url: `${baseUrl}/` });
+      const response = await sut.execute(request);
+      expect(response.body).toEqual(bigBody);
     });
 
     it('should skip truncate on 204 response status', async () => {
       spiedExecutorOptions.maxContentLength = 1;
 
-      const { server, baseUrl } = await createTestServer((_req, res) => {
+      const { baseUrl } = await createTestServer((_req, res) => {
         res.writeHead(204);
         res.end();
       });
 
-      try {
-        const { request } = createRequest({ url: `${baseUrl}/` });
-        const response = await sut.execute(request);
-        expect(response.body).toEqual('');
-      } finally {
-        server.close();
-      }
+      const { request } = createRequest({ url: `${baseUrl}/` });
+      const response = await sut.execute(request);
+      expect(response.body).toEqual('');
     });
 
     it('should send requests with unescaped characters in the path (Case 1)', async () => {
@@ -728,17 +630,13 @@ describe('HttpRequestExecutor', () => {
         res.end('ok');
       });
 
-      try {
-        const { port } = server.address() as AddressInfo;
-        const { request } = createRequest({
-          url: `http://127.0.0.1:${port}/path|with|pipes`
-        });
-        const response = await sut.execute(request);
-        expect(response.statusCode).toBe(200);
-        expect(receivedPath).toBe('/path|with|pipes');
-      } finally {
-        server.close();
-      }
+      const { port } = server.address() as AddressInfo;
+      const { request } = createRequest({
+        url: `http://127.0.0.1:${port}/path|with|pipes`
+      });
+      const response = await sut.execute(request);
+      expect(response.statusCode).toBe(200);
+      expect(receivedPath).toBe('/path|with|pipes');
     });
 
     it('should write a malformed path verbatim on the wire', async () => {
@@ -768,40 +666,32 @@ describe('HttpRequestExecutor', () => {
     it('should not send the libcurl default User-Agent header', async () => {
       let receivedUserAgent: string | undefined;
 
-      const { server, baseUrl } = await createTestServer((req, res) => {
+      const { baseUrl } = await createTestServer((req, res) => {
         receivedUserAgent = req.headers['user-agent'];
         res.writeHead(200);
         res.end('ok');
       });
 
-      try {
-        const { request } = createRequest({ url: `${baseUrl}/` });
-        await sut.execute(request);
-        expect(receivedUserAgent).toBeUndefined();
-      } finally {
-        server.close();
-      }
+      const { request } = createRequest({ url: `${baseUrl}/` });
+      await sut.execute(request);
+      expect(receivedUserAgent).toBeUndefined();
     });
 
     it('should preserve a caller-supplied User-Agent header', async () => {
       let receivedUserAgent: string | undefined;
 
-      const { server, baseUrl } = await createTestServer((req, res) => {
+      const { baseUrl } = await createTestServer((req, res) => {
         receivedUserAgent = req.headers['user-agent'];
         res.writeHead(200);
         res.end('ok');
       });
 
-      try {
-        const { request } = createRequest({
-          url: `${baseUrl}/`,
-          headers: { 'User-Agent': 'my-scanner/1.0' }
-        });
-        await sut.execute(request);
-        expect(receivedUserAgent).toBe('my-scanner/1.0');
-      } finally {
-        server.close();
-      }
+      const { request } = createRequest({
+        url: `${baseUrl}/`,
+        headers: { 'User-Agent': 'my-scanner/1.0' }
+      });
+      await sut.execute(request);
+      expect(receivedUserAgent).toBe('my-scanner/1.0');
     });
 
     it('should forward a caller-supplied Host header verbatim to the server', async () => {
@@ -810,28 +700,24 @@ describe('HttpRequestExecutor', () => {
       // libcurl's URL-derived Host is overridden by the HTTPHEADER entry.
       let receivedHeaders: http.IncomingHttpHeaders | undefined;
 
-      const { server, baseUrl } = await createTestServer((req, res) => {
+      const { baseUrl } = await createTestServer((req, res) => {
         receivedHeaders = req.headers;
         res.writeHead(200);
         res.end('ok');
       });
 
-      try {
-        const { request } = createRequest({
-          url: `${baseUrl}/`,
-          headers: { host: 'evil.example.com' }
-        });
-        await sut.execute(request);
-        expect(receivedHeaders?.['host']).toBe('evil.example.com');
-      } finally {
-        server.close();
-      }
+      const { request } = createRequest({
+        url: `${baseUrl}/`,
+        headers: { host: 'evil.example.com' }
+      });
+      await sut.execute(request);
+      expect(receivedHeaders?.['host']).toBe('evil.example.com');
     });
 
     it('should forward a Host header containing an injection payload verbatim', async () => {
       let receivedHeaders: http.IncomingHttpHeaders | undefined;
 
-      const { server, baseUrl } = await createTestServer((req, res) => {
+      const { baseUrl } = await createTestServer((req, res) => {
         receivedHeaders = req.headers;
         res.writeHead(200);
         res.end('ok');
@@ -839,48 +725,36 @@ describe('HttpRequestExecutor', () => {
 
       const injectionPayload = 'evil.internal; X-Forwarded-Host: attacker.com';
 
-      try {
-        const { request } = createRequest({
-          url: `${baseUrl}/some-proper-url`,
-          headers: { host: injectionPayload }
-        });
-        await sut.execute(request);
-        expect(receivedHeaders?.['host']).toBe(injectionPayload);
-      } finally {
-        server.close();
-      }
+      const { request } = createRequest({
+        url: `${baseUrl}/some-proper-url`,
+        headers: { host: injectionPayload }
+      });
+      await sut.execute(request);
+      expect(receivedHeaders?.['host']).toBe(injectionPayload);
     });
   });
 
   it('should include ttfb in a successful response', async () => {
-    const { server, baseUrl } = await createTestServer((_req, res) => {
+    const { baseUrl } = await createTestServer((_req, res) => {
       res.writeHead(200);
       res.end('ok');
     });
 
-    try {
-      const { request } = createRequest({ url: `${baseUrl}/` });
-      const response = await sut.execute(request);
-      expect(response.ttfb).toBeGreaterThanOrEqual(0);
-    } finally {
-      server.close();
-    }
+    const { request } = createRequest({ url: `${baseUrl}/` });
+    const response = await sut.execute(request);
+    expect(response.ttfb).toBeGreaterThanOrEqual(0);
   });
 
   it('should include ttfb even on HTTP error responses', async () => {
-    const { server, baseUrl } = await createTestServer((_req, res) => {
+    const { baseUrl } = await createTestServer((_req, res) => {
       res.writeHead(500);
       res.end('error body');
     });
 
-    try {
-      const { request } = createRequest({ url: `${baseUrl}/` });
-      const response = await sut.execute(request);
-      expect(response.statusCode).toBe(500);
-      expect(response.ttfb).toBeDefined();
-    } finally {
-      server.close();
-    }
+    const { request } = createRequest({ url: `${baseUrl}/` });
+    const response = await sut.execute(request);
+    expect(response.statusCode).toBe(500);
+    expect(response.ttfb).toBeDefined();
   });
 
   it('should not include ttfb when the request fails before reaching the target', async () => {
@@ -914,20 +788,16 @@ describe('HttpRequestExecutor', () => {
       instance(certificatesResolverMock)
     );
 
-    try {
-      const { request: req1 } = createRequest({ url: `${baseUrl}/a` });
-      const { request: req2 } = createRequest({ url: `${baseUrl}/b` });
-      const { request: req3 } = createRequest({ url: `${baseUrl}/c` });
+    const { request: req1 } = createRequest({ url: `${baseUrl}/a` });
+    const { request: req2 } = createRequest({ url: `${baseUrl}/b` });
+    const { request: req3 } = createRequest({ url: `${baseUrl}/c` });
 
-      await reuseExecutor.execute(req1);
-      await reuseExecutor.execute(req2);
-      await reuseExecutor.execute(req3);
+    await reuseExecutor.execute(req1);
+    await reuseExecutor.execute(req2);
+    await reuseExecutor.execute(req3);
 
-      // All three requests should travel over the same TCP connection.
-      expect(connectionCount).toBe(1);
-    } finally {
-      server.close();
-    }
+    // All three requests should travel over the same TCP connection.
+    expect(connectionCount).toBe(1);
   });
 
   it('should open a new TCP connection for each request when reuseConnection is false', async () => {
@@ -945,23 +815,18 @@ describe('HttpRequestExecutor', () => {
       connectionCount++;
     });
 
-    try {
-      const { request: req1 } = createRequest({ url: `${baseUrl}/a` });
-      const { request: req2 } = createRequest({ url: `${baseUrl}/b` });
+    const { request: req1 } = createRequest({ url: `${baseUrl}/a` });
+    const { request: req2 } = createRequest({ url: `${baseUrl}/b` });
 
-      await sut.execute(req1);
-      await sut.execute(req2);
+    await sut.execute(req1);
+    await sut.execute(req2);
 
-      expect(connectionCount).toBe(2);
-    } finally {
-      server.close();
-    }
+    expect(connectionCount).toBe(2);
+    expect(MultiSpy).not.toHaveBeenCalled();
   });
 
   it('should reuse the same Multi handle for multiple requests to the same host', async () => {
-    MultiSpy.mockClear();
-
-    const { server, baseUrl } = await createTestServer((_req, res) => {
+    const { baseUrl } = await createTestServer((_req, res) => {
       res.writeHead(200);
       res.end('ok');
     });
@@ -973,57 +838,14 @@ describe('HttpRequestExecutor', () => {
       instance(certificatesResolverMock)
     );
 
-    try {
-      const { request: req1 } = createRequest({ url: `${baseUrl}/a` });
-      const { request: req2 } = createRequest({ url: `${baseUrl}/b` });
-      const { request: req3 } = createRequest({ url: `${baseUrl}/c` });
+    const { request: req1 } = createRequest({ url: `${baseUrl}/a` });
+    const { request: req2 } = createRequest({ url: `${baseUrl}/b` });
+    const { request: req3 } = createRequest({ url: `${baseUrl}/c` });
 
-      await reuseExecutor.execute(req1);
-      await reuseExecutor.execute(req2);
-      await reuseExecutor.execute(req3);
+    await reuseExecutor.execute(req1);
+    await reuseExecutor.execute(req2);
+    await reuseExecutor.execute(req3);
 
-      // Multi constructor should have been called exactly once for this host.
-      expect(MultiSpy).toHaveBeenCalledTimes(1);
-    } finally {
-      server.close();
-    }
-  });
-
-  it('should create separate Multi handles for different hosts', async () => {
-    MultiSpy.mockClear();
-
-    const { server: server1, baseUrl: baseUrl1 } = await createTestServer(
-      (_req, res) => {
-        res.writeHead(200);
-        res.end('ok');
-      }
-    );
-    const { server: server2, baseUrl: baseUrl2 } = await createTestServer(
-      (_req, res) => {
-        res.writeHead(200);
-        res.end('ok');
-      }
-    );
-
-    const reuseExecutor = new HttpRequestExecutor(
-      instance(virtualScriptsMock),
-      { reuseConnection: true },
-      certificatesCacheMock,
-      instance(certificatesResolverMock)
-    );
-
-    try {
-      const { request: req1 } = createRequest({ url: `${baseUrl1}/a` });
-      const { request: req2 } = createRequest({ url: `${baseUrl2}/a` });
-
-      await reuseExecutor.execute(req1);
-      await reuseExecutor.execute(req2);
-
-      // Two different host:port origins → two separate Multi handles.
-      expect(MultiSpy).toHaveBeenCalledTimes(2);
-    } finally {
-      server1.close();
-      server2.close();
-    }
+    expect(MultiSpy).toHaveBeenCalledTimes(1);
   });
 });
