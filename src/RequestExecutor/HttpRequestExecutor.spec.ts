@@ -1077,8 +1077,8 @@ describe('HttpRequestExecutor', () => {
     expect(MultiSpy).toHaveBeenCalledTimes(1);
   });
 
-  describe('rawHeaders injection', () => {
-    it('should include a raw header line in the outgoing request at the correct position', async () => {
+  describe('malformedHeaderLines injection', () => {
+    it('should include a malformed header line in the outgoing request at the correct position', async () => {
       // arrange
       const { baseUrl, received, close } = await startServer();
       const sut = buildSut();
@@ -1090,7 +1090,7 @@ describe('HttpRequestExecutor', () => {
           'accept': 'application/json', // index 0
           'x-after-raw': 'after' //       index 1
         },
-        rawHeaders: [{ index: 1, line: rawLine }]
+        malformedHeaderLines: [{ index: 1, line: rawLine }]
       });
 
       // act
@@ -1109,7 +1109,7 @@ describe('HttpRequestExecutor', () => {
       expect(rawIdx).toBeLessThan(afterIdx);
     });
 
-    it('should include multiple raw header lines in the correct order', async () => {
+    it('should include multiple malformed header lines in the correct order', async () => {
       // arrange
       const { baseUrl, received, close } = await startServer();
       const sut = buildSut();
@@ -1121,7 +1121,7 @@ describe('HttpRequestExecutor', () => {
           'accept': 'text/plain', // index 0
           'x-after': 'value' //      index 1
         },
-        rawHeaders: [
+        malformedHeaderLines: [
           { index: 1, line: lineA },
           { index: 2, line: lineB }
         ]
@@ -1146,7 +1146,7 @@ describe('HttpRequestExecutor', () => {
       expect(idxB).toBeLessThan(idxAfter);
     });
 
-    it('should not include raw headers when rawHeaders is absent', async () => {
+    it('should not send malformed header lines when malformedHeaderLines is absent', async () => {
       // arrange
       const { baseUrl, received, close } = await startServer();
       const sut = buildSut();

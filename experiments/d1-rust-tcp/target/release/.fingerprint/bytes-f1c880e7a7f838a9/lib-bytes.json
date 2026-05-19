@@ -1,0 +1,20 @@
+{
+  "rustc": 7458672600737419911,
+  "features": "[\"default\", \"std\"]",
+  "declared_features": "[\"default\", \"extra-platforms\", \"serde\", \"std\"]",
+  "target": 11402411492164584411,
+  "profile": 3654867079619179846,
+  "path": 7855325321849605637,
+  "deps": [],
+  "local": [
+    {
+      "CheckDepInfo": {
+        "dep_info": "release/.fingerprint/bytes-f1c880e7a7f838a9/dep-lib-bytes",
+        "checksum": false
+      }
+    }
+  ],
+  "rustflags": [],
+  "config": 8247474407144887393,
+  "compile_kind": 0
+}

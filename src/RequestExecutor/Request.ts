@@ -4,7 +4,7 @@ import { readFile } from 'node:fs/promises';
 import { basename, extname } from 'node:path';
 import { createSecureContext } from 'node:tls';
 
-export interface RawHeader {
+export interface MalformedHeaderLine {
   readonly index: number;
   readonly line: string;
 }
@@ -13,7 +13,7 @@ export interface RequestOptions {
   protocol: Protocol;
   url: string;
   headers?: Record<string, string | string[]>;
-  rawHeaders?: readonly RawHeader[];
+  malformedHeaderLines?: readonly MalformedHeaderLine[];
   method?: string;
   pfx?: Buffer | string;
   ca?: Buffer | string;
@@ -61,7 +61,7 @@ export class Request {
   public readonly decompress?: boolean;
   public readonly timeout?: number;
   public readonly keepAlive?: boolean;
-  public readonly rawHeaders?: readonly RawHeader[];
+  public readonly malformedHeaderLines?: readonly MalformedHeaderLine[];
 
   private _method: string;
 
@@ -112,7 +112,7 @@ export class Request {
     decompress = true,
     headers = {},
     keepAlive,
-    rawHeaders
+    malformedHeaderLines
   }: RequestOptions) {
     this.protocol = protocol;
     this._method = method?.toUpperCase() ?? 'GET';
@@ -142,7 +142,7 @@ export class Request {
     this.maxContentSize = maxContentSize;
     this.decompress = !!decompress;
     this.keepAlive = keepAlive;
-    this.rawHeaders = rawHeaders;
+    this.malformedHeaderLines = malformedHeaderLines;
   }
 
   public setHeaders(headers: Record<string, string | string[]>): void {
@@ -204,7 +204,7 @@ export class Request {
       ca: this._ca?.toString('utf8'),
       pfx: this._pfx?.toString('utf8'),
       correlationIdRegex: this.correlationIdRegex,
-      rawHeaders: this.rawHeaders
+      malformedHeaderLines: this.malformedHeaderLines
     };
   }
 

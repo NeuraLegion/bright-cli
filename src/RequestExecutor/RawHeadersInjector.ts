@@ -1,4 +1,4 @@
-import type { RawHeader, Request } from './Request';
+import type { MalformedHeaderLine, Request } from './Request';
 import { Response } from './Response';
 import { Protocol } from './Protocol';
 import { injectable } from 'tsyringe';
@@ -22,7 +22,7 @@ interface ResponseState {
  * server.  To preserve them we bypass libcurl entirely for these requests and
  * write the raw bytes directly to a TCP (or TLS) socket.
  *
- * The `index` carried by each {@link RawHeader} is the 0-based position of the
+ * The `index` carried by each {@link MalformedHeaderLine} is the 0-based position of the
  * line in the **original** full header section (clean + raw lines combined).
  * We use that information to reconstruct the original header order when
  * assembling the outgoing request string.
@@ -33,7 +33,7 @@ export class RawHeadersInjector {
   private readonly HEADER_TERMINATOR = '\r\n\r\n';
 
   /**
-   * Send `request` to its target host with `rawHeaders` spliced back into
+   * Send `request` to its target host with `malformedHeaderLines` spliced back into
    * the header block at their original positions.
    *
    * Returns a {@link Response} matching the structure returned by
@@ -47,26 +47,26 @@ export class RawHeadersInjector {
   }
 
   /**
-   * Splice `rawHeaders` into `curlHeaderLines` at their original positions and
+   * Splice `malformedHeaderLines` into `curlHeaderLines` at their original positions and
    * return the resulting list.  The input array is not mutated.
    *
-   * The `index` on each raw header is its 0-based position in the original
+   * The `index` on each malformed header line is its 0-based position in the original
    * full header section (both clean and raw lines combined).  We walk through
-   * the original position space and re-interleave the raw lines.
+   * the original position space and re-interleave the malformed lines.
    *
-   * @param curlHeaderLines  The clean header lines already built for libcurl.
-   * @param rawHeaders       The malformed header lines to re-inject.
-   * @returns A new array with the raw lines inserted at the correct positions.
+   * @param curlHeaderLines       The clean header lines already built for libcurl.
+   * @param malformedHeaderLines  The malformed header lines to re-inject.
+   * @returns A new array with the malformed lines inserted at the correct positions.
    */
   public inject(
     curlHeaderLines: string[],
-    rawHeaders: readonly RawHeader[]
+    malformedHeaderLines: readonly MalformedHeaderLine[]
   ): string[] {
-    if (!rawHeaders.length) {
+    if (!malformedHeaderLines.length) {
       return curlHeaderLines;
     }
 
-    const sorted = [...rawHeaders].sort((a, b) => a.index - b.index);
+    const sorted = [...malformedHeaderLines].sort((a, b) => a.index - b.index);
 
     const result: string[] = [];
     let cleanIdx = 0;
@@ -100,8 +100,8 @@ export class RawHeadersInjector {
 
     const cleanHeaderLines = this.buildCleanHeaderLines(request);
 
-    const allHeaderLines = request.rawHeaders?.length
-      ? this.inject(cleanHeaderLines, request.rawHeaders)
+    const allHeaderLines = request.malformedHeaderLines?.length
+      ? this.inject(cleanHeaderLines, request.malformedHeaderLines)
       : cleanHeaderLines;
 
     const requestLine = `${request.method} ${path} HTTP/1.1`;

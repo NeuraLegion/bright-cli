@@ -75,7 +75,7 @@ describe('RawHeadersInjector', () => {
   });
 
   describe('inject', () => {
-    it('should return the same array reference when rawHeaders is empty', () => {
+    it('should return the same array reference when malformedHeaderLines is empty', () => {
       // arrange
       const curlHeaders = ['Accept: application/json', 'Host: example.com'];
 
@@ -281,7 +281,7 @@ describe('RawHeadersInjector', () => {
           'accept': 'application/json',
           'x-after-raw': 'after'
         },
-        rawHeaders: [{ index: 1, line: rawLine }]
+        malformedHeaderLines: [{ index: 1, line: rawLine }]
       });
 
       // act
@@ -307,7 +307,7 @@ describe('RawHeadersInjector', () => {
           'accept': 'application/json',
           'x-after': 'yes'
         },
-        rawHeaders: [{ index: 1, line: rawLine }]
+        malformedHeaderLines: [{ index: 1, line: rawLine }]
       });
 
       // act
@@ -344,7 +344,7 @@ describe('RawHeadersInjector', () => {
           'accept': 'text/plain',
           'x-after': 'value'
         },
-        rawHeaders: [
+        malformedHeaderLines: [
           { index: 1, line: lineA },
           { index: 2, line: lineB }
         ]
@@ -378,7 +378,7 @@ describe('RawHeadersInjector', () => {
         protocol: Protocol.HTTP,
         url: `http://127.0.0.1:${fixture.port}/`,
         method: 'GET',
-        rawHeaders: [{ index: 0, line: ';injected' }]
+        malformedHeaderLines: [{ index: 0, line: ';injected' }]
       });
 
       // act

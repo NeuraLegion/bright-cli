@@ -454,7 +454,7 @@ export class HttpRequestExecutor implements RequestExecutor {
   }
 
   private dispatchRequest(request: Request): Promise<Response> {
-    if (request.rawHeaders?.length) {
+    if (request.malformedHeaderLines?.length) {
       return this.rawHeadersInjector.send(request);
     }
 

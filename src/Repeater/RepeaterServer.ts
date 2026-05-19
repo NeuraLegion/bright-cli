@@ -1,5 +1,5 @@
 import { Protocol } from '../RequestExecutor';
-import { type RawHeader } from '../RequestExecutor/Request';
+import { type MalformedHeaderLine } from '../RequestExecutor/Request';
 import { NetworkTestType } from './NetworkTestType';
 
 export interface RepeaterServerDeployedEvent {
@@ -11,7 +11,7 @@ export interface RepeaterServerRequestEvent {
   url: string;
   method?: string;
   headers?: Record<string, string | string[]>;
-  rawHeaders?: readonly RawHeader[];
+  malformedHeaderLines?: readonly MalformedHeaderLine[];
   correlationIdRegex?: string;
   body?: string;
   encoding?: 'base64';
