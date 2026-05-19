@@ -2,11 +2,13 @@ import type { MalformedHeaderLine, Request } from './Request';
 import { Response } from './Response';
 import { Protocol } from './Protocol';
 import { injectable } from 'tsyringe';
-import net from 'node:net';
-import tls from 'node:tls';
-import { parse as parseUrl } from 'node:url';
+import { CurlCode, Easy } from '@brightsec/node-libcurl';
 
-interface ResponseState {
+const HEADER_TERMINATOR = '\r\n\r\n';
+const DEFAULT_TIMEOUT_MS = 10_000;
+const RECV_BUFFER_SIZE = 65_536;
+
+interface RecvState {
   headersDone: boolean;
   contentLength: number;
   bodyReceived: number;
@@ -19,8 +21,10 @@ interface ResponseState {
  * libcurl validates and normalises header field names — it silently drops any
  * entry in the `HTTPHEADER` list that does not contain a colon, which means
  * lines like `;response.writeHead(…)` are lost before reaching the target
- * server.  To preserve them we bypass libcurl entirely for these requests and
- * write the raw bytes directly to a TCP (or TLS) socket.
+ * server.  To preserve them we use libcurl's `CONNECT_ONLY` option to let
+ * libcurl establish the TCP/TLS connection (honouring all TLS options, proxy
+ * settings, etc.), then send the raw request bytes via `Easy.send()` and read
+ * the response via `Easy.recv()`.
  *
  * The `index` carried by each {@link MalformedHeaderLine} is the 0-based position of the
  * line in the **original** full header section (clean + raw lines combined).
@@ -29,9 +33,6 @@ interface ResponseState {
  */
 @injectable()
 export class RawHeadersInjector {
-  private readonly CONNECTION_TIMEOUT_MS = 10_000;
-  private readonly HEADER_TERMINATOR = '\r\n\r\n';
-
   /**
    * Send `request` to its target host with `malformedHeaderLines` spliced back into
    * the header block at their original positions.
@@ -41,7 +42,7 @@ export class RawHeadersInjector {
    */
   public async send(request: Request): Promise<Response> {
     const rawRequest = this.buildRawRequest(request);
-    const rawResponse = await this.sendRaw(request, rawRequest);
+    const rawResponse = await this.sendViaLibcurl(request, rawRequest);
 
     return this.parseResponse(rawResponse, request);
   }
@@ -109,7 +110,7 @@ export class RawHeadersInjector {
       requestLine +
       '\r\n' +
       allHeaderLines.join('\r\n') +
-      this.HEADER_TERMINATOR +
+      HEADER_TERMINATOR +
       (request.body ?? '');
 
     return Buffer.from(raw, 'latin1');
@@ -132,82 +133,134 @@ export class RawHeadersInjector {
     return lines;
   }
 
-  private sendRaw(request: Request, rawRequest: Buffer): Promise<Buffer> {
+  /**
+   * Use libcurl's `CONNECT_ONLY` mode to establish a TCP/TLS connection
+   * (inheriting all TLS and proxy options from the request), then send
+   * `rawRequest` verbatim and accumulate the response bytes.
+   */
+  private sendViaLibcurl(
+    request: Request,
+    rawRequest: Buffer
+  ): Promise<Buffer> {
     return new Promise((resolve, reject) => {
-      const { hostname, port, protocol } = parseUrl(request.url);
-      const portNumber = port
-        ? parseInt(port, 10)
-        : protocol === 'https:'
-        ? 443
-        : 80;
+      const easy = new Easy();
 
+      try {
+        this.configureEasy(easy, request);
+      } catch (err) {
+        easy.close();
+
+        return reject(err);
+      }
+
+      // Establish the connection only — no request is sent by libcurl itself.
+      const connectCode = easy.perform();
+
+      if (connectCode !== CurlCode.CURLE_OK) {
+        easy.close();
+
+        return reject(
+          new Error(
+            `libcurl CONNECT_ONLY failed (code ${connectCode}): ${CurlCode[connectCode]}`
+          )
+        );
+      }
+
+      // Send the raw request bytes verbatim over the established connection.
+      const { code: sendCode } = easy.send(rawRequest);
+
+      if (sendCode !== CurlCode.CURLE_OK) {
+        easy.close();
+
+        return reject(
+          new Error(
+            `libcurl send failed (code ${sendCode}): ${CurlCode[sendCode]}`
+          )
+        );
+      }
+
+      // Read the response.  We poll with a short delay because the server may
+      // not have flushed its response yet by the time send() returns.
+      const timeout = request.timeout ?? DEFAULT_TIMEOUT_MS;
+      const deadline = Date.now() + timeout;
       const chunks: Buffer[] = [];
-      const state: ResponseState = {
+      const recvBuf = Buffer.alloc(RECV_BUFFER_SIZE);
+      const recvState: RecvState = {
         headersDone: false,
         contentLength: -1,
         bodyReceived: 0
       };
 
-      const socket = this.openSocket(
-        request,
-        hostname,
-        portNumber,
-        protocol ?? ''
-      );
-
-      socket.setTimeout(request.timeout ?? this.CONNECTION_TIMEOUT_MS);
-
-      socket.on('connect', () => socket.write(rawRequest));
-      socket.on('secureConnect', () => socket.write(rawRequest));
-
-      socket.on('data', (chunk: Buffer) => {
-        chunks.push(chunk);
-        this.processChunk(Buffer.concat(chunks), chunk, state);
+      const poll = (): void => {
+        const { code: recvCode, bytesReceived } = easy.recv(recvBuf);
 
         if (
-          state.contentLength === 0 ||
-          state.bodyReceived >= state.contentLength
+          recvCode !== CurlCode.CURLE_OK &&
+          recvCode !== CurlCode.CURLE_AGAIN
         ) {
-          resolve(Buffer.concat(chunks));
-          socket.destroy();
+          easy.close();
+
+          return reject(
+            new Error(
+              `libcurl recv failed (code ${recvCode}): ${CurlCode[recvCode]}`
+            )
+          );
         }
-      });
 
-      socket.on('end', () => {
-        if (chunks.length > 0) {
-          resolve(Buffer.concat(chunks));
+        this.processRecvChunk(recvBuf, bytesReceived, chunks, recvState);
+
+        if (this.isResponseComplete(recvState)) {
+          easy.close();
+
+          return resolve(Buffer.concat(chunks));
         }
-      });
 
-      socket.on('timeout', () => socket.destroy(new Error('Socket timed out')));
+        if (recvCode === CurlCode.CURLE_AGAIN || bytesReceived === 0) {
+          if (bytesReceived === 0 && recvCode === CurlCode.CURLE_OK) {
+            // Server closed connection — return whatever we have.
+            easy.close();
 
-      socket.on('error', reject);
+            return resolve(Buffer.concat(chunks));
+          }
+
+          if (Date.now() > deadline) {
+            easy.close();
+
+            return reject(new Error('libcurl recv timed out'));
+          }
+
+          return void setTimeout(poll, 10);
+        }
+
+        // More data may be available — read immediately.
+        poll();
+      };
+
+      // Delay the first recv to give the server time to flush its response.
+      setTimeout(poll, 10);
     });
   }
 
-  private openSocket(
-    request: Request,
-    hostname: string,
-    port: number,
-    protocol: string
-  ): net.Socket | tls.TLSSocket {
-    const connectOptions = { host: hostname, port };
-
-    if (protocol === 'https:' || request.secureEndpoint) {
-      return tls.connect({ ...connectOptions, rejectUnauthorized: false });
+  private processRecvChunk(
+    recvBuf: Buffer,
+    bytesReceived: number,
+    chunks: Buffer[],
+    state: RecvState
+  ): void {
+    if (bytesReceived <= 0) {
+      return;
     }
 
-    return net.connect(connectOptions);
-  }
+    chunks.push(Buffer.from(recvBuf.slice(0, bytesReceived)));
 
-  private processChunk(all: Buffer, chunk: Buffer, state: ResponseState): void {
     if (state.headersDone) {
-      state.bodyReceived += chunk.length;
+      state.bodyReceived += bytesReceived;
 
       return;
     }
 
-    const terminator = Buffer.from(this.HEADER_TERMINATOR);
+    const all = Buffer.concat(chunks);
+    const terminator = Buffer.from(HEADER_TERMINATOR);
     const idx = all.indexOf(terminator);
 
     if (idx === -1) {
@@ -219,6 +272,41 @@ export class RawHeadersInjector {
     const clMatch = headerBlock.match(/content-length:\s*(\d+)/i);
     state.contentLength = clMatch ? parseInt(clMatch[1], 10) : 0;
     state.bodyReceived = all.length - idx - terminator.length;
+  }
+
+  private isResponseComplete(state: RecvState): boolean {
+    return (
+      state.headersDone &&
+      (state.contentLength === 0 || state.bodyReceived >= state.contentLength)
+    );
+  }
+
+  private configureEasy(easy: Easy, request: Request): void {
+    const { protocol, host } = new URL(request.url);
+
+    easy.setOpt('URL', `${protocol}//${host}`);
+    easy.setOpt('CONNECT_ONLY', true);
+    easy.setOpt('SSL_VERIFYPEER', false);
+    easy.setOpt('SSL_VERIFYHOST', 0);
+
+    if (request.ca) {
+      easy.setOpt('CAINFO_BLOB', request.ca);
+    }
+
+    if (request.pfx) {
+      easy.setOpt('SSLCERT_BLOB', request.pfx);
+      easy.setOpt('SSLCERTTYPE', 'P12');
+
+      if (request.passphrase) {
+        easy.setOpt('KEYPASSWD', request.passphrase);
+      }
+    }
+
+    const timeout = request.timeout;
+
+    if (typeof timeout === 'number') {
+      easy.setOpt('TIMEOUT_MS', timeout);
+    }
   }
 
   private parseResponse(rawResponse: Buffer, request: Request): Response {
@@ -238,7 +326,7 @@ export class RawHeadersInjector {
     request: Request
   ): Response {
     const raw = rawResponse.toString('latin1');
-    const headerEnd = raw.indexOf(this.HEADER_TERMINATOR);
+    const headerEnd = raw.indexOf(HEADER_TERMINATOR);
 
     if (headerEnd === -1) {
       return new Response({
@@ -249,7 +337,7 @@ export class RawHeadersInjector {
     }
 
     const headerBlock = raw.slice(0, headerEnd);
-    const bodyRaw = raw.slice(headerEnd + this.HEADER_TERMINATOR.length);
+    const bodyRaw = raw.slice(headerEnd + HEADER_TERMINATOR.length);
     const lines = headerBlock.split('\r\n');
     const statusMatch = lines[0].match(/^HTTP\/\d\.\d\s+(\d+)/);
     const statusCode = statusMatch ? parseInt(statusMatch[1], 10) : 0;
