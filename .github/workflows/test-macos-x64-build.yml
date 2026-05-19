@@ -35,6 +35,9 @@ jobs:
       - name: Set distribution
         run: npx json -I -f package.json -e "this.brightCli.distribution='macos-x64-executable'"
 
+      - name: Build TypeScript
+        run: npm run build
+
       - name: Build macos-x64 executable
         run: npm run build:pkg -- -t node22-macos-x64
 
