@@ -96,6 +96,10 @@ jobs:
             target: macos
             arch: x64
             pkg_target: node22-macos-x64
+          - os: macos-15
+            target: macos
+            arch: arm64
+            pkg_target: node22-macos-arm64
           - os: ubuntu-22.04
             target: linux
             arch: x64
