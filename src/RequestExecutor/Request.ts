@@ -4,10 +4,16 @@ import { readFile } from 'node:fs/promises';
 import { basename, extname } from 'node:path';
 import { createSecureContext } from 'node:tls';
 
+export interface RawHeader {
+  readonly index: number;
+  readonly line: string;
+}
+
 export interface RequestOptions {
   protocol: Protocol;
   url: string;
   headers?: Record<string, string | string[]>;
+  rawHeaders?: readonly RawHeader[];
   method?: string;
   pfx?: Buffer | string;
   ca?: Buffer | string;
@@ -55,6 +61,7 @@ export class Request {
   public readonly decompress?: boolean;
   public readonly timeout?: number;
   public readonly keepAlive?: boolean;
+  public readonly rawHeaders?: readonly RawHeader[];
 
   private _method: string;
 
@@ -104,7 +111,8 @@ export class Request {
     encoding,
     decompress = true,
     headers = {},
-    keepAlive
+    keepAlive,
+    rawHeaders
   }: RequestOptions) {
     this.protocol = protocol;
     this._method = method?.toUpperCase() ?? 'GET';
@@ -134,6 +142,7 @@ export class Request {
     this.maxContentSize = maxContentSize;
     this.decompress = !!decompress;
     this.keepAlive = keepAlive;
+    this.rawHeaders = rawHeaders;
   }
 
   public setHeaders(headers: Record<string, string | string[]>): void {
@@ -194,7 +203,8 @@ export class Request {
       passphrase: this._passphrase,
       ca: this._ca?.toString('utf8'),
       pfx: this._pfx?.toString('utf8'),
-      correlationIdRegex: this.correlationIdRegex
+      correlationIdRegex: this.correlationIdRegex,
+      rawHeaders: this.rawHeaders
     };
   }
 

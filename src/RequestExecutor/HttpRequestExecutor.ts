@@ -7,6 +7,7 @@ import { Protocol } from './Protocol';
 import { RequestExecutorOptions } from './RequestExecutorOptions';
 import { CertificatesCache } from './CertificatesCache';
 import { CertificatesResolver } from './CertificatesResolver';
+import { RawHeadersInjector } from './RawHeadersInjector';
 import { inject, injectable } from 'tsyringe';
 import iconv from 'iconv-lite';
 import { safeParse } from 'fast-content-type-parse';
@@ -37,7 +38,9 @@ export class HttpRequestExecutor implements RequestExecutor {
     @inject(CertificatesCache)
     private readonly certificatesCache: CertificatesCache,
     @inject(CertificatesResolver)
-    private readonly certificatesResolver: CertificatesResolver
+    private readonly certificatesResolver: CertificatesResolver,
+    @inject(RawHeadersInjector)
+    private readonly rawHeadersInjector: RawHeadersInjector
   ) {
     if (
       this.options.proxyDomains?.length &&
@@ -86,7 +89,7 @@ export class HttpRequestExecutor implements RequestExecutor {
           options
         );
 
-        return await this.executeRequest(options);
+        return await this.dispatchRequest(options);
       }
 
       return await this.tryRequestWithCertificates(options, targetCerts);
@@ -448,6 +451,14 @@ export class HttpRequestExecutor implements RequestExecutor {
     );
 
     return new Request(result);
+  }
+
+  private dispatchRequest(request: Request): Promise<Response> {
+    if (request.rawHeaders?.length) {
+      return this.rawHeadersInjector.send(request);
+    }
+
+    return this.executeRequest(request);
   }
 
   private async executeRequest(request: Request): Promise<Response> {

@@ -6,6 +6,7 @@ import { Request, RequestOptions, Cert } from './Request';
 import { RequestExecutorOptions } from './RequestExecutorOptions';
 import { CertificatesCache } from './CertificatesCache';
 import { CertificatesResolver } from './CertificatesResolver';
+import { RawHeadersInjector } from './RawHeadersInjector';
 import {
   anyString,
   anything,
@@ -120,7 +121,8 @@ describe('HttpRequestExecutor', () => {
       instance(virtualScriptsMock),
       options,
       certificatesCacheMock,
-      instance(certificatesResolverMock)
+      instance(certificatesResolverMock),
+      new RawHeadersInjector()
     );
 
   beforeEach(() => {
@@ -1073,5 +1075,98 @@ describe('HttpRequestExecutor', () => {
 
     // assert
     expect(MultiSpy).toHaveBeenCalledTimes(1);
+  });
+
+  describe('rawHeaders injection', () => {
+    it('should include a raw header line in the outgoing request at the correct position', async () => {
+      // arrange
+      const { baseUrl, received, close } = await startServer();
+      const sut = buildSut();
+      const rawLine =
+        ';response.writeHead(200, {"token": "token"});response.write("token");';
+      const { request } = createRequest({
+        url: `${baseUrl}/path`,
+        headers: {
+          'accept': 'application/json', // index 0
+          'x-after-raw': 'after' //       index 1
+        },
+        rawHeaders: [{ index: 1, line: rawLine }]
+      });
+
+      // act
+      await sut.execute(request);
+
+      const raw = await received();
+      close();
+
+      // assert: raw line is in the request
+      expect(raw).toContain(rawLine);
+      // and it appears between 'accept' and 'x-after-raw'
+      const rawIdx = raw.indexOf(rawLine);
+      const acceptIdx = raw.toLowerCase().indexOf('accept:');
+      const afterIdx = raw.toLowerCase().indexOf('x-after-raw:');
+      expect(rawIdx).toBeGreaterThan(acceptIdx);
+      expect(rawIdx).toBeLessThan(afterIdx);
+    });
+
+    it('should include multiple raw header lines in the correct order', async () => {
+      // arrange
+      const { baseUrl, received, close } = await startServer();
+      const sut = buildSut();
+      const lineA = ';first-malformed-header';
+      const lineB = ';second-malformed-header';
+      const { request } = createRequest({
+        url: `${baseUrl}/path`,
+        headers: {
+          'accept': 'text/plain', // index 0
+          'x-after': 'value' //      index 1
+        },
+        rawHeaders: [
+          { index: 1, line: lineA },
+          { index: 2, line: lineB }
+        ]
+      });
+
+      // act
+      await sut.execute(request);
+
+      const raw = await received();
+      close();
+
+      // assert
+      const idxA = raw.indexOf(lineA);
+      const idxB = raw.indexOf(lineB);
+      const idxAfter = raw.toLowerCase().indexOf('x-after:');
+
+      expect(idxA).toBeGreaterThan(-1);
+      expect(idxB).toBeGreaterThan(-1);
+      // A before B, both before x-after
+      expect(idxA).toBeLessThan(idxB);
+      expect(idxA).toBeLessThan(idxAfter);
+      expect(idxB).toBeLessThan(idxAfter);
+    });
+
+    it('should not include raw headers when rawHeaders is absent', async () => {
+      // arrange
+      const { baseUrl, received, close } = await startServer();
+      const sut = buildSut();
+      const { request } = createRequest({
+        url: `${baseUrl}/path`,
+        headers: { accept: 'application/json' }
+      });
+
+      // act
+      await sut.execute(request);
+
+      const raw = await received();
+      close();
+
+      // assert: no semicolon-prefixed header lines
+      const headerLines = raw
+        .split('\r\n')
+        .slice(1) // skip request-line
+        .filter((l) => l.length > 0);
+      expect(headerLines.every((l) => !l.startsWith(';'))).toBe(true);
+    });
   });
 });
