@@ -7,6 +7,9 @@ name: "[TEST] macOS x64 Binary Build"
 
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - fix/macos-arm64-binary-support
 
 jobs:
   build-and-verify:
