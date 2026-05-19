@@ -141,7 +141,6 @@
     "targets": [
       "node22-linux-x64",
       "node22-macos-x64",
-      "node22-macos-arm64",
       "node22-windows-x64"
     ],
     "outputPath": "bin",
