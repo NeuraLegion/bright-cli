@@ -266,9 +266,6 @@ export class HttpRequestExecutor implements RequestExecutor {
     }
 
     if (curlHeaders.length > 0) {
-      // eslint-disable-next-line no-console
-      console.log('Define Curl header:\n', curlHeaders.join('\n'));
-
       curl.setOpt('HTTPHEADER', curlHeaders);
     }
   }

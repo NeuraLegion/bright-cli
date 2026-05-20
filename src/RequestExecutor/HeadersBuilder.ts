@@ -24,7 +24,7 @@ export class HeadersBuilder {
       allHeaders.splice(malformedLine.index, 0, malformedLine.line);
     }
 
-    return allHeaders;
+    return this.foldColonlessHeaders(allHeaders);
   }
 
   private buildHeaderLines(
@@ -42,5 +42,26 @@ export class HeadersBuilder {
     }
 
     return lines;
+  }
+
+  /**
+   * ADHOC: libcurl drops `CURLOPT_HTTPHEADER` entries that contain no colon.
+   * Fold any such entry into the preceding entry by appending `\r\n<line>`;
+   * libcurl sends the combined string verbatim, producing two wire lines.
+   * A colon-less entry with no preceding entry cannot be injected this way
+   * and is left in place (libcurl will still drop it — known limitation).
+   */
+  private foldColonlessHeaders(headers: string[]): string[] {
+    const result: string[] = [];
+
+    for (const header of headers) {
+      if (!header.includes(':') && result.length > 0) {
+        result[result.length - 1] += `\r\n${header}`;
+      } else {
+        result.push(header);
+      }
+    }
+
+    return result;
   }
 }
