@@ -37,9 +37,6 @@ RUN set -eux; \
     chown -R 1000:1000 $NPM_CONFIG_PREFIX/
 
 #  upgrade packages to get latest security fixes
-# also install build tools needed to compile native modules from source
-# (e.g. @brightsec/node-libcurl) when a pre-built binary is not available
-# for the target platform/ABI combination (e.g. linux-arm64-musl + node-v137)
 RUN echo 'http://dl-cdn.alpinelinux.org/alpine/edge/main' >> /etc/apk/repositories && \
     apk upgrade --no-cache && \
     apk add --no-cache python3 make g++ curl-dev
