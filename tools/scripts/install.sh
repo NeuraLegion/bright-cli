@@ -12,16 +12,10 @@
   OS=$(uname -s | tr '[:upper:]' '[:lower:]')
   DOWNLOAD_URL=https://github.com/NeuraLegion/$PRODUCT_NAME/releases/latest/download/$PRODUCT_NAME
 
-  ARCH=$(uname -m)
-
   if [[ "$OS" == "linux-gnu"* ]]; then
     DOWNLOAD_URL+="-linux-x64"
   elif [[ "$OSTYPE" == "darwin"* ]]; then
-    if [[ "$ARCH" == "arm64" ]]; then
-      DOWNLOAD_URL+="-macos-arm64"
-    else
-      DOWNLOAD_URL+="-macos-x64"
-    fi
+    DOWNLOAD_URL+="-macos-x64"
   else
     echo "Error: unknown OS type."
     exit 1
