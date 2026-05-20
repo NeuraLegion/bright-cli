@@ -8,10 +8,19 @@ import { RequestExecutorOptions } from './RequestExecutorOptions';
 import { CertificatesCache } from './CertificatesCache';
 import { CertificatesResolver } from './CertificatesResolver';
 import { HeadersBuilder } from './HeadersBuilder';
+import { RawHttpResponseParser } from './RawHttpResponseParser';
 import { inject, injectable } from 'tsyringe';
 import iconv from 'iconv-lite';
 import { safeParse } from 'fast-content-type-parse';
-import { Curl, CurlFeature, HeaderInfo, Multi } from '@brightsec/node-libcurl';
+import {
+  Curl,
+  CurlCode,
+  CurlFeature,
+  Easy,
+  HeaderInfo,
+  Multi,
+  SocketState
+} from '@brightsec/node-libcurl';
 import { parse as parseUrl } from 'node:url';
 
 type ScriptEntrypoint = (
@@ -271,6 +280,214 @@ export class HttpRequestExecutor implements RequestExecutor {
     }
   }
 
+  /**
+   * Bypass libcurl's HTTP machinery for requests that carry malformed header
+   * lines. libcurl drops any CURLOPT_HTTPHEADER entry that contains no colon,
+   * so we instead use CONNECT_ONLY to let libcurl establish TCP/TLS and then
+   * write the raw HTTP/1.1 request bytes ourselves via easy.send().
+   */
+  private requestViaRawSocket(request: Request): Promise<{
+    statusCode: number;
+    headers: Record<string, string | string[]>;
+    rawBody: Buffer;
+    ttfb: number;
+  }> {
+    // eslint-disable-next-line complexity
+    return new Promise((resolve, reject) => {
+      const easy = new Easy();
+
+      const { protocol, host, auth } = parseUrl(request.url);
+      easy.setOpt('URL', `${protocol}//${host}`);
+      easy.setOpt('CONNECT_ONLY', true);
+      easy.setOpt('SSL_VERIFYPEER', false);
+      easy.setOpt('SSL_VERIFYHOST', 0);
+
+      if (auth) {
+        easy.setOpt('USERPWD', auth);
+      }
+
+      if (request.ca) {
+        easy.setOpt('CAINFO_BLOB', request.ca);
+      }
+
+      if (request.pfx) {
+        easy.setOpt('SSLCERT_BLOB', request.pfx);
+        easy.setOpt('SSLCERTTYPE', 'P12');
+
+        if (request.passphrase) {
+          easy.setOpt('KEYPASSWD', request.passphrase);
+        }
+      }
+
+      const proxyUrl = this.resolveProxy(request);
+
+      if (proxyUrl) {
+        easy.setOpt('PROXY', proxyUrl);
+      }
+
+      const timeout = request.timeout ?? this.options.timeout;
+
+      if (typeof timeout === 'number') {
+        easy.setOpt('TIMEOUT_MS', timeout);
+      }
+
+      // Establish TCP + TLS (blocking, but only for the handshake phase).
+      const connectCode = easy.perform();
+
+      if (connectCode !== CurlCode.CURLE_OK) {
+        easy.close();
+        reject(new Error(`CONNECT_ONLY failed with code ${connectCode}`));
+
+        return;
+      }
+
+      // Build the full header list the same way applyCurlHeaders() does, but
+      // without any libcurl involvement so all lines — including colon-less
+      // malformed ones — are forwarded verbatim.
+      const headers = this.headersBuilder.build(request);
+
+      const hasConnectionHeader =
+        request.headers &&
+        Object.keys(request.headers).some(
+          (k) => k.toLowerCase() === 'connection'
+        );
+
+      if (!this.options.reuseConnection && !hasConnectionHeader) {
+        headers.push('Connection: close');
+      }
+
+      if (!request.decompress) {
+        headers.push('Accept-Encoding: identity');
+      }
+
+      const rawRequest = this.buildRawHttpRequest(request, headers);
+
+      const chunks: Buffer[] = [];
+      let bytesSent = 0;
+      const ttfbStart = Date.now();
+      let ttfb = 0;
+
+      const cleanup = () => {
+        try {
+          easy.unmonitorSocketEvents();
+        } catch {
+          // already unmonitored
+        }
+
+        easy.close();
+      };
+
+      easy.monitorSocketEvents();
+
+      // eslint-disable-next-line complexity
+      easy.onSocketEvent((err: Error | null, events: SocketState) => {
+        if (err) {
+          cleanup();
+          reject(err);
+
+          return;
+        }
+
+        // Send phase: keep writing until the entire request is flushed.
+        // eslint-disable-next-line no-bitwise
+        if (events & SocketState.Writable && bytesSent < rawRequest.length) {
+          const { code, bytesSent: sent } = easy.send(
+            rawRequest.subarray(bytesSent)
+          );
+
+          if (code === CurlCode.CURLE_OK || code === CurlCode.CURLE_AGAIN) {
+            bytesSent += sent;
+          } else {
+            cleanup();
+            reject(new Error(`send() failed with code ${code}`));
+          }
+
+          return;
+        }
+
+        // Receive phase: accumulate until EOF or content-length satisfied.
+        // eslint-disable-next-line no-bitwise
+        if (events & SocketState.Readable) {
+          const buf = Buffer.alloc(65536);
+          const { code, bytesReceived } = easy.recv(buf);
+
+          if (code === CurlCode.CURLE_AGAIN) {
+            return;
+          }
+
+          if (code !== CurlCode.CURLE_OK) {
+            cleanup();
+            reject(new Error(`recv() failed with code ${code}`));
+
+            return;
+          }
+
+          if (bytesReceived === 0) {
+            // Server closed the connection — response is complete.
+            cleanup();
+            const raw = Buffer.concat(chunks);
+            const parsed = new RawHttpResponseParser().parse(raw, ttfb);
+            resolve(parsed);
+
+            return;
+          }
+
+          if (ttfb === 0) {
+            ttfb = Date.now() - ttfbStart;
+          }
+
+          chunks.push(buf.subarray(0, bytesReceived));
+
+          // Stop early if we have received the declared content-length.
+          const accumulated = Buffer.concat(chunks);
+          const headEnd = accumulated.indexOf('\r\n\r\n');
+
+          if (headEnd !== -1) {
+            const headerSection = accumulated
+              .subarray(0, headEnd)
+              .toString('latin1');
+            const clMatch = headerSection.match(/\r\ncontent-length:\s*(\d+)/i);
+
+            // eslint-disable-next-line max-depth
+            if (clMatch) {
+              const contentLength = parseInt(clMatch[1], 10);
+              const bodyReceived = accumulated.length - headEnd - 4;
+
+              // eslint-disable-next-line max-depth
+              if (bodyReceived >= contentLength) {
+                cleanup();
+                const parsed = new RawHttpResponseParser().parse(
+                  accumulated,
+                  ttfb
+                );
+                resolve(parsed);
+              }
+            }
+          }
+        }
+      });
+    });
+  }
+
+  private buildRawHttpRequest(request: Request, headers: string[]): Buffer {
+    const rawPath = this.buildRawPath(request.url);
+    const requestLine = `${request.method} ${rawPath} HTTP/1.1`;
+    const headerBlock = headers.join('\r\n');
+
+    const bodyBuffer = request.body
+      ? request.encoding
+        ? iconv.encode(request.body, request.encoding)
+        : Buffer.from(request.body)
+      : Buffer.alloc(0);
+
+    const head = Buffer.from(
+      `${requestLine}\r\n${headerBlock}\r\n\r\n`,
+      'latin1'
+    );
+
+    return Buffer.concat([head, bodyBuffer]);
+  }
+
   private parseCurlHeaders(
     rawHeaders: HeaderInfo[]
   ): Record<string, string | string[]> {
@@ -436,7 +653,10 @@ export class HttpRequestExecutor implements RequestExecutor {
   }
 
   private async executeRequest(request: Request): Promise<Response> {
-    const { statusCode, headers, rawBody, ttfb } = await this.request(request);
+    const { statusCode, headers, rawBody, ttfb } = request.malformedHeaderLines
+      ?.length
+      ? await this.requestViaRawSocket(request)
+      : await this.request(request);
 
     logger.trace(
       'received following response for request %j: headers: %j body: %s',

@@ -106,16 +106,15 @@ describe('HeadersBuilder', () => {
       const result = sut.build({ headers, malformedHeaderLines });
 
       // assert
-      // The colon-less line is folded into the preceding header entry via \r\n
-      const foldedEntry = 'accept: application/json\r\n;in-middle';
-      expect(result).toContain(foldedEntry);
-      expect(result).toContain('host: example.com');
-      expect(result.indexOf(foldedEntry)).toBeLessThan(
-        result.indexOf('host: example.com')
-      );
+      const acceptIdx = result.indexOf('accept: application/json');
+      const rawIdx = result.indexOf(';in-middle');
+      const hostIdx = result.indexOf('host: example.com');
+
+      expect(rawIdx).toBeGreaterThan(acceptIdx);
+      expect(rawIdx).toBeLessThan(hostIdx);
     });
 
-    it('should append a malformed line with an out-of-range index folded into the last header', () => {
+    it('should append a malformed line with an out-of-range index at the end', () => {
       // arrange
       const headers = { accept: 'application/json', host: 'example.com' };
       const malformedHeaderLines: MalformedHeaderLine[] = [
@@ -126,14 +125,12 @@ describe('HeadersBuilder', () => {
       const result = sut.build({ headers, malformedHeaderLines });
 
       // assert
-      // Appended after all entries → folds into the last clean header
-      expect(result.at(-1)).toBe('host: example.com\r\n;at-end');
+      expect(result.at(-1)).toBe(';at-end');
     });
 
     it('should insert multiple malformed lines at correct positions even when provided out of order', () => {
       // arrange
-      // Logical layout before folding: ;first(0), accept(1), ;second(2), host(3)
-      // After folding: ;first stays (no preceding entry), ;second folds into accept
+      // Resulting layout: ;first(0), accept(1), ;second(2), host(3)
       const headers = { accept: 'application/json', host: 'example.com' };
       const malformedHeaderLines: MalformedHeaderLine[] = [
         { index: 2, line: ';second' },
@@ -144,18 +141,19 @@ describe('HeadersBuilder', () => {
       const result = sut.build({ headers, malformedHeaderLines });
 
       // assert
-      expect(result[0]).toBe(';first');
-      expect(result).toContain('accept: application/json\r\n;second');
-      expect(result).toContain('host: example.com');
-      expect(result.indexOf(';first')).toBeLessThan(
-        result.indexOf('accept: application/json\r\n;second')
-      );
+      const firstIdx = result.indexOf(';first');
+      const acceptIdx = result.indexOf('accept: application/json');
+      const secondIdx = result.indexOf(';second');
+      const hostIdx = result.indexOf('host: example.com');
+
+      expect(firstIdx).toBeLessThan(acceptIdx);
+      expect(secondIdx).toBeGreaterThan(acceptIdx);
+      expect(secondIdx).toBeLessThan(hostIdx);
     });
 
     it('should insert consecutive malformed lines at adjacent indices in order', () => {
       // arrange
-      // Logical layout before folding: host(0), ;lineA(1), ;lineB(2), accept(3)
-      // After folding: both colon-less lines fold into host consecutively
+      // Resulting layout: host(0), ;lineA(1), ;lineB(2), accept(3)
       const headers = { host: 'example.com', accept: 'text/html' };
       const malformedHeaderLines: MalformedHeaderLine[] = [
         { index: 1, line: ';lineA' },
@@ -166,9 +164,13 @@ describe('HeadersBuilder', () => {
       const result = sut.build({ headers, malformedHeaderLines });
 
       // assert
-      expect(result[0]).toBe('host: example.com\r\n;lineA\r\n;lineB');
-      expect(result[1]).toBe('accept: text/html');
-      expect(result).toHaveLength(2);
+      const idxA = result.indexOf(';lineA');
+      const idxB = result.indexOf(';lineB');
+      const acceptIdx = result.indexOf('accept: text/html');
+
+      expect(idxA).toBeLessThan(idxB);
+      expect(idxA).toBeLessThan(acceptIdx);
+      expect(idxB).toBeLessThan(acceptIdx);
     });
 
     it('should preserve all clean headers alongside malformed lines', () => {
@@ -186,11 +188,11 @@ describe('HeadersBuilder', () => {
       const result = sut.build({ headers, malformedHeaderLines });
 
       // assert
-      // ;injected folds into accept, reducing the total entry count by 1
-      expect(result).toContain('accept: application/json\r\n;injected');
+      expect(result).toContain('accept: application/json');
       expect(result).toContain('user-agent: test');
       expect(result).toContain('host: example.com');
-      expect(result).toHaveLength(3);
+      expect(result).toContain(';injected');
+      expect(result).toHaveLength(4);
     });
 
     it('should place a malformed line correctly when headers is an empty object', () => {
@@ -204,64 +206,6 @@ describe('HeadersBuilder', () => {
 
       // assert
       expect(result).toEqual([';only-raw']);
-    });
-  });
-
-  describe('foldColonlessHeaders behavior', () => {
-    it('should fold a colon-less line into the preceding header via \\r\\n', () => {
-      // arrange
-      const headers = { accept: 'application/json', host: 'example.com' };
-      const malformedHeaderLines: MalformedHeaderLine[] = [
-        { index: 1, line: ';no-colon' }
-      ];
-
-      // act
-      const result = sut.build({ headers, malformedHeaderLines });
-
-      // assert
-      expect(result).toContain('accept: application/json\r\n;no-colon');
-      expect(result).not.toContain(';no-colon');
-    });
-
-    it('should leave a colon-less line at index 0 as-is when there is no preceding entry', () => {
-      // arrange
-      const headers = { host: 'example.com' };
-      const malformedHeaderLines: MalformedHeaderLine[] = [
-        { index: 0, line: ';leading' }
-      ];
-
-      // act
-      const result = sut.build({ headers, malformedHeaderLines });
-
-      // assert
-      expect(result[0]).toBe(';leading');
-      expect(result[1]).toBe('host: example.com');
-    });
-
-    it('should fold multiple consecutive colon-less lines into a single preceding entry', () => {
-      // arrange
-      const headers = { accept: 'text/html' };
-      const malformedHeaderLines: MalformedHeaderLine[] = [
-        { index: 1, line: ';first' },
-        { index: 2, line: ';second' }
-      ];
-
-      // act
-      const result = sut.build({ headers, malformedHeaderLines });
-
-      // assert
-      expect(result).toEqual(['accept: text/html\r\n;first\r\n;second']);
-    });
-
-    it('should not alter entries that already contain a colon', () => {
-      // arrange
-      const headers = { accept: 'application/json', host: 'example.com' };
-
-      // act
-      const result = sut.build({ headers });
-
-      // assert
-      expect(result).toEqual(['accept: application/json', 'host: example.com']);
     });
   });
 });

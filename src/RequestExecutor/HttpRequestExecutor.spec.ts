@@ -1170,4 +1170,28 @@ describe('HttpRequestExecutor', () => {
       .filter((l) => l.length > 0);
     expect(headerLines.every((l) => !l.startsWith(';'))).toBe(true);
   });
+
+  it('should include a colon-less malformed header line at index 0 verbatim on the wire', async () => {
+    // arrange
+    const { baseUrl, received, close } = await startServer();
+    const sut = buildSut();
+    const rawLine = ';leading-injected-payload';
+    const { request } = createRequest({
+      url: `${baseUrl}/path`,
+      headers: { 'accept': 'application/json', 'x-after': 'value' },
+      malformedHeaderLines: [{ index: 0, line: rawLine }]
+    });
+
+    // act
+    await sut.execute(request);
+
+    const raw = await received();
+    close();
+
+    // assert: colon-less line at index 0 appears verbatim before all clean headers
+    expect(raw).toContain(rawLine);
+    const rawIdx = raw.indexOf(rawLine);
+    const acceptIdx = raw.toLowerCase().indexOf('accept:');
+    expect(rawIdx).toBeLessThan(acceptIdx);
+  });
 });
