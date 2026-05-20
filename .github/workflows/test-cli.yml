@@ -75,10 +75,10 @@ jobs:
             container: ubuntu:24.04
             executable: bright-cli-linux-x64
           - os: ubuntu-latest
-            container: rockylinux:8
+            container: rockylinux:9
             executable: bright-cli-linux-x64
           - os: ubuntu-latest
-            container: rockylinux:9
+            container: rockylinux:10
             executable: bright-cli-linux-x64
           - os: ubuntu-latest
             executable: bright-cli-linux-x64
@@ -267,16 +267,16 @@ jobs:
             container: ubuntu:22.04
             node: 24.11.1
           - os: ubuntu-latest
-            container: rockylinux:8
+            container: rockylinux:9
             node: 22
           - os: ubuntu-latest
-            container: rockylinux:8
+            container: rockylinux:9
             node: 24.11.1
           - os: ubuntu-latest
-            container: rockylinux:9
+            container: rockylinux:10
             node: 22
           - os: ubuntu-latest
-            container: rockylinux:9
+            container: rockylinux:10
             node: 24.11.1
 
     steps:
