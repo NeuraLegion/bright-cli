@@ -91,19 +91,15 @@ jobs:
           - os: windows-2022
             target: win
             arch: x64
-            pkg_target: node22-win-x64
           - os: macos-15-intel
             target: macos
             arch: x64
-            pkg_target: node22-macos-x64
           - os: macos-15
             target: macos
             arch: arm64
-            pkg_target: node22-macos-arm64
           - os: ubuntu-22.04
             target: linux
             arch: x64
-            pkg_target: node22-linux-x64
             container:
               image: redhat/ubi8
               options: "--user root"
@@ -129,15 +125,11 @@ jobs:
       - name: Install deps
         uses: ./.github/workflows/composite/npm
 
-      - name: Re-install node-libcurl for target x64 architecture
-        if: runner.os == 'macOS' && matrix.arch == 'x64'
-        run: npm_config_arch=x64 npm rebuild @brightsec/node-libcurl
-
       - name: Set distribution
         run: npx json -I -f package.json -e "this.brightCli.distribution='${{ matrix.target }}-${{ matrix.arch }}-executable'"
 
       - name: Build executable file
-        run: npm run build:pkg -- -t ${{ matrix.pkg_target }}
+        run: npm run build:pkg -- -t node22-${{ matrix.target }}-${{ matrix.arch }}
 
       - name: Build MSI
         if: startsWith(matrix.os, 'win')

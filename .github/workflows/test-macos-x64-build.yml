@@ -1,0 +1,61 @@
+name: "[TEST] macOS x64 Binary Build"
+
+# Temporary workflow to validate the macos-x64 binary fix from PR #745
+# (fix/macos-arm64-binary-support branch).
+# Uses actions/upload-artifact — does NOT publish to any GitHub Release.
+# Safe to run alongside real release pipelines.
+# TODO: remove this file before or after merging PR #745.
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - fix/macos-arm64-binary-support
+
+jobs:
+  build-and-verify:
+    runs-on: macos-15-intel
+    steps:
+      - name: Checkout branch
+        uses: actions/checkout@v4
+
+      - name: Install deps
+        uses: ./.github/workflows/composite/npm
+
+      - name: Verify native addon is x64
+        run: |
+          NODE=$(file node_modules/@brightsec/node-libcurl/lib/binding/node_libcurl.node)
+          echo "node_libcurl.node: $NODE"
+          echo "$NODE" | grep -q 'x86_64' \
+            && echo "PASS: native addon is x86_64" \
+            || (echo "FAIL: native addon is NOT x86_64 — architecture mismatch will occur" && exit 1)
+
+      - name: Set distribution
+        run: npx json -I -f package.json -e "this.brightCli.distribution='macos-x64-executable'"
+
+      - name: Build TypeScript
+        run: npm run build
+
+      - name: Build macos-x64 executable
+        run: npm run build:pkg -- -t node22-macos-x64
+
+      - name: Verify binary is x86_64
+        run: |
+          BIN=$(file ./bin/cli)
+          echo "binary: $BIN"
+          echo "$BIN" | grep -q 'x86_64' \
+            && echo "PASS: binary is x86_64" \
+            || (echo "FAIL: binary is NOT x86_64" && exit 1)
+
+      - name: Smoke test — run binary
+        run: |
+          ./bin/cli --version \
+            && echo "PASS: binary executed successfully" \
+            || (echo "FAIL: binary crashed" && exit 1)
+
+      - name: Upload binary artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: bright-cli-macos-x64-test
+          path: ./bin/cli
+          retention-days: 3
