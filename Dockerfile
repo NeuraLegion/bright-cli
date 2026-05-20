@@ -38,13 +38,20 @@ RUN set -eux; \
 
 #  upgrade packages to get latest security fixes
 RUN echo 'http://dl-cdn.alpinelinux.org/alpine/edge/main' >> /etc/apk/repositories && \
-    apk upgrade --no-cache && \
-    apk add --no-cache python3 make g++ curl-dev
+    apk upgrade --no-cache
 
 # install @brightsec/cli from NPM
+# Build tools are installed as a virtual package so they can be purged in the
+# same layer after compilation, keeping only the runtime libcurl shared library.
+# This is needed when node-pre-gyp cannot find a pre-built binary for the
+# current platform/ABI (e.g. linux-arm64-musl + node-v137) and falls back to
+# compiling @brightsec/node-libcurl from source via node-gyp.
 RUN set -eux; \
+    apk add --no-cache --virtual .build-deps python3 make g++ curl-dev && \
     npm i -g -q @brightsec/cli@${VERSION} && \
-    NPM_CONFIG_PREFIX=/usr/local npm uninstall -g npm
+    NPM_CONFIG_PREFIX=/usr/local npm uninstall -g npm && \
+    apk del .build-deps && \
+    apk add --no-cache libcurl
 
 # set the directory and file permissions to allow users in the root group to access files
 # for details please refer to the doc at https://docs.openshift.com/container-platform/3.11/creating_images/guidelines.html#openshift-specific-guidelines
