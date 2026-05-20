@@ -1,5 +1,4 @@
-import { Protocol } from '../RequestExecutor';
-import { type MalformedHeaderLine } from '../RequestExecutor/Request';
+import { Protocol, type MalformedHeaderLine } from '../RequestExecutor';
 import { NetworkTestType } from './NetworkTestType';
 
 export interface RepeaterServerDeployedEvent {

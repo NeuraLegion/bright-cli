@@ -240,8 +240,6 @@ export class HttpRequestExecutor implements RequestExecutor {
   }
 
   private applyCurlHeaders(curl: Curl, request: Request): void {
-    const curlHeaders = this.headersBuilder.build(request);
-
     // Suppress libcurl's default "User-Agent: node-libcurl/<version>" by
     // setting USERAGENT to an empty string. If the caller supplied their own
     // User-Agent it is already present in curlHeaders and takes precedence via
@@ -254,6 +252,9 @@ export class HttpRequestExecutor implements RequestExecutor {
       Object.keys(request.headers).some(
         (k) => k.toLowerCase() === 'connection'
       );
+
+    const curlHeaders = this.headersBuilder.build(request);
+
     if (!this.options.reuseConnection && !hasConnectionHeader) {
       curlHeaders.push('Connection: close');
     }

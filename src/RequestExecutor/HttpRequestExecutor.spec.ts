@@ -70,10 +70,6 @@ async function startServer(
         // Resolve immediately so the test can inspect the data, then send a
         // minimal HTTP/1.1 response so libcurl does not hang waiting for one.
         resolveReceived(raw);
-
-        // eslint-disable-next-line no-console
-        console.log('Received raw request:\n', raw);
-
         socket.write(
           'HTTP/1.1 200 OK\r\nContent-Length: 0\r\nConnection: close\r\n\r\n'
         );
