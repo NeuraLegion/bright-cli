@@ -7,7 +7,7 @@ import { Protocol } from './Protocol';
 import { RequestExecutorOptions } from './RequestExecutorOptions';
 import { CertificatesCache } from './CertificatesCache';
 import { CertificatesResolver } from './CertificatesResolver';
-import { RawHeadersInjector } from './RawHeadersInjector';
+import { HeadersBuilder } from './HeadersBuilder';
 import { inject, injectable } from 'tsyringe';
 import iconv from 'iconv-lite';
 import { safeParse } from 'fast-content-type-parse';
@@ -39,8 +39,8 @@ export class HttpRequestExecutor implements RequestExecutor {
     private readonly certificatesCache: CertificatesCache,
     @inject(CertificatesResolver)
     private readonly certificatesResolver: CertificatesResolver,
-    @inject(RawHeadersInjector)
-    private readonly rawHeadersInjector: RawHeadersInjector
+    @inject(HeadersBuilder)
+    private readonly headersBuilder: HeadersBuilder
   ) {
     if (
       this.options.proxyDomains?.length &&
@@ -89,7 +89,7 @@ export class HttpRequestExecutor implements RequestExecutor {
           options
         );
 
-        return await this.dispatchRequest(options);
+        return await this.executeRequest(options);
       }
 
       return await this.tryRequestWithCertificates(options, targetCerts);
@@ -147,17 +147,17 @@ export class HttpRequestExecutor implements RequestExecutor {
     });
   }
 
-  private configureCurl(curl: Curl, options: Request): void {
+  private configureCurl(curl: Curl, request: Request): void {
     curl.enable(CurlFeature.NoDataParsing);
 
-    const { protocol, host, auth } = parseUrl(options.url);
+    const { protocol, host, auth } = parseUrl(request.url);
     curl.setOpt('URL', `${protocol}//${host}`);
 
     if (auth) {
       curl.setOpt('USERPWD', auth);
     }
 
-    const rawPath = this.buildRawPath(options.url);
+    const rawPath = this.buildRawPath(request.url);
     curl.setOpt('REQUEST_TARGET', rawPath);
     // Prevent libcurl from normalising (percent-encoding) the path.
     curl.setOpt('PATH_AS_IS', true);
@@ -165,10 +165,10 @@ export class HttpRequestExecutor implements RequestExecutor {
     curl.setOpt('SSL_VERIFYHOST', 0);
     curl.setOpt('FOLLOWLOCATION', false);
 
-    this.applyCurlBody(curl, options);
-    this.applyCurlTls(curl, options);
-    this.applyCurlTimeout(curl, options);
-    this.applyCurlHeaders(curl, options);
+    this.applyCurlBody(curl, request);
+    this.applyCurlTls(curl, request);
+    this.applyCurlTimeout(curl, request);
+    this.applyCurlHeaders(curl, request);
 
     if (this.options.reuseConnection) {
       curl.setOpt('TCP_KEEPALIVE', 1);
@@ -179,13 +179,13 @@ export class HttpRequestExecutor implements RequestExecutor {
       curl.setOpt('FORBID_REUSE', 1);
     }
 
-    const proxyUrl = this.resolveProxy(options);
+    const proxyUrl = this.resolveProxy(request);
 
     if (proxyUrl) {
       curl.setOpt('PROXY', proxyUrl);
     }
 
-    curl.setOpt('CUSTOMREQUEST', options.method);
+    curl.setOpt('CUSTOMREQUEST', request.method);
   }
 
   /**
@@ -239,8 +239,8 @@ export class HttpRequestExecutor implements RequestExecutor {
     }
   }
 
-  private applyCurlHeaders(curl: Curl, options: Request): void {
-    const curlHeaders = this.buildCurlHeaders(options);
+  private applyCurlHeaders(curl: Curl, request: Request): void {
+    const curlHeaders = this.headersBuilder.build(request);
 
     // Suppress libcurl's default "User-Agent: node-libcurl/<version>" by
     // setting USERAGENT to an empty string. If the caller supplied their own
@@ -250,15 +250,15 @@ export class HttpRequestExecutor implements RequestExecutor {
 
     // When not reusing connections, explicitly tell the server to close the connection after this request
     const hasConnectionHeader =
-      options.headers &&
-      Object.keys(options.headers).some(
+      request.headers &&
+      Object.keys(request.headers).some(
         (k) => k.toLowerCase() === 'connection'
       );
     if (!this.options.reuseConnection && !hasConnectionHeader) {
       curlHeaders.push('Connection: close');
     }
 
-    if (options.decompress) {
+    if (request.decompress) {
       // Let libcurl handle decompression automatically.
       curl.setOpt('ACCEPT_ENCODING', '');
     } else {
@@ -266,27 +266,11 @@ export class HttpRequestExecutor implements RequestExecutor {
     }
 
     if (curlHeaders.length > 0) {
+      // eslint-disable-next-line no-console
+      console.log('Define Curl header:\n', curlHeaders.join('\n'));
+
       curl.setOpt('HTTPHEADER', curlHeaders);
     }
-  }
-
-  private buildCurlHeaders(options: Request): string[] {
-    const lines: string[] = [];
-    const entries = options.headers ? Object.entries(options.headers) : [];
-
-    for (const [key, value] of entries) {
-      if (!key) continue;
-
-      const values = Array.isArray(value) ? value : [value];
-
-      // The Host header requires special handling: libcurl derives Host from
-      // the URL by default, but a caller-supplied Host must be forwarded
-      // verbatim — it may carry a security-test payload (e.g. Host injection).
-      // Passing it via HTTPHEADER overrides libcurl's derived value on the wire.
-      lines.push(...values.map((v) => `${key}: ${v ?? ''}`));
-    }
-
-    return lines;
   }
 
   private parseCurlHeaders(
@@ -451,14 +435,6 @@ export class HttpRequestExecutor implements RequestExecutor {
     );
 
     return new Request(result);
-  }
-
-  private dispatchRequest(request: Request): Promise<Response> {
-    if (request.malformedHeaderLines?.length) {
-      return this.rawHeadersInjector.send(request);
-    }
-
-    return this.executeRequest(request);
   }
 
   private async executeRequest(request: Request): Promise<Response> {

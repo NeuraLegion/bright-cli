@@ -6,7 +6,7 @@ import { Request, RequestOptions, Cert } from './Request';
 import { RequestExecutorOptions } from './RequestExecutorOptions';
 import { CertificatesCache } from './CertificatesCache';
 import { CertificatesResolver } from './CertificatesResolver';
-import { RawHeadersInjector } from './RawHeadersInjector';
+import { HeadersBuilder } from './HeadersBuilder';
 import {
   anyString,
   anything,
@@ -70,6 +70,10 @@ async function startServer(
         // Resolve immediately so the test can inspect the data, then send a
         // minimal HTTP/1.1 response so libcurl does not hang waiting for one.
         resolveReceived(raw);
+
+        // eslint-disable-next-line no-console
+        console.log('Received raw request:\n', raw);
+
         socket.write(
           'HTTP/1.1 200 OK\r\nContent-Length: 0\r\nConnection: close\r\n\r\n'
         );
@@ -122,7 +126,7 @@ describe('HttpRequestExecutor', () => {
       options,
       certificatesCacheMock,
       instance(certificatesResolverMock),
-      new RawHeadersInjector()
+      new HeadersBuilder()
     );
 
   beforeEach(() => {
@@ -963,11 +967,13 @@ describe('HttpRequestExecutor', () => {
     server.on('connection', () => {
       connectionCount++;
     });
+
     const reuseExecutor = new HttpRequestExecutor(
       instance(virtualScriptsMock),
       { reuseConnection: true },
       certificatesCacheMock,
-      instance(certificatesResolverMock)
+      instance(certificatesResolverMock),
+      new HeadersBuilder()
     );
     const { request: req1 } = createRequest({ url: `${baseUrl}/a` });
     const { request: req2 } = createRequest({ url: `${baseUrl}/b` });
@@ -1077,96 +1083,95 @@ describe('HttpRequestExecutor', () => {
     expect(MultiSpy).toHaveBeenCalledTimes(1);
   });
 
-  describe('malformedHeaderLines injection', () => {
-    it('should include a malformed header line in the outgoing request at the correct position', async () => {
-      // arrange
-      const { baseUrl, received, close } = await startServer();
-      const sut = buildSut();
-      const rawLine =
-        ';response.writeHead(200, {"token": "token"});response.write("token");';
-      const { request } = createRequest({
-        url: `${baseUrl}/path`,
-        headers: {
-          'accept': 'application/json', // index 0
-          'x-after-raw': 'after' //       index 1
-        },
-        malformedHeaderLines: [{ index: 1, line: rawLine }]
-      });
-
-      // act
-      await sut.execute(request);
-
-      const raw = await received();
-      close();
-
-      // assert: raw line is in the request
-      expect(raw).toContain(rawLine);
-      // and it appears between 'accept' and 'x-after-raw'
-      const rawIdx = raw.indexOf(rawLine);
-      const acceptIdx = raw.toLowerCase().indexOf('accept:');
-      const afterIdx = raw.toLowerCase().indexOf('x-after-raw:');
-      expect(rawIdx).toBeGreaterThan(acceptIdx);
-      expect(rawIdx).toBeLessThan(afterIdx);
+  it('should include a malformed header line in the outgoing request at the correct position', async () => {
+    // arrange
+    const { baseUrl, received, close } = await startServer();
+    const sut = buildSut();
+    const rawLine = ';response.writeHead(200, "OK");response.write("token");';
+    const { request } = createRequest({
+      url: `${baseUrl}/path`,
+      headers: {
+        'accept': 'application/json', // index 0
+        'x-after-raw': 'after' //       index 1
+      },
+      malformedHeaderLines: [{ index: 1, line: rawLine }]
     });
 
-    it('should include multiple malformed header lines in the correct order', async () => {
-      // arrange
-      const { baseUrl, received, close } = await startServer();
-      const sut = buildSut();
-      const lineA = ';first-malformed-header';
-      const lineB = ';second-malformed-header';
-      const { request } = createRequest({
-        url: `${baseUrl}/path`,
-        headers: {
-          'accept': 'text/plain', // index 0
-          'x-after': 'value' //      index 1
-        },
-        malformedHeaderLines: [
-          { index: 1, line: lineA },
-          { index: 2, line: lineB }
-        ]
-      });
+    // act
+    await sut.execute(request);
 
-      // act
-      await sut.execute(request);
+    const raw = await received();
+    close();
 
-      const raw = await received();
-      close();
+    // assert: raw line is in the request
+    expect(raw).toContain(rawLine);
+    // and it appears between 'accept' and 'x-after-raw'
+    const rawIdx = raw.indexOf(rawLine);
+    const acceptIdx = raw.toLowerCase().indexOf('accept:');
+    const afterIdx = raw.toLowerCase().indexOf('x-after-raw:');
+    expect(rawIdx).toBeGreaterThan(acceptIdx);
+    expect(rawIdx).toBeLessThan(afterIdx);
+  });
 
-      // assert
-      const idxA = raw.indexOf(lineA);
-      const idxB = raw.indexOf(lineB);
-      const idxAfter = raw.toLowerCase().indexOf('x-after:');
-
-      expect(idxA).toBeGreaterThan(-1);
-      expect(idxB).toBeGreaterThan(-1);
-      // A before B, both before x-after
-      expect(idxA).toBeLessThan(idxB);
-      expect(idxA).toBeLessThan(idxAfter);
-      expect(idxB).toBeLessThan(idxAfter);
+  it('should include multiple malformed header lines in the correct order', async () => {
+    // arrange
+    const { baseUrl, received, close } = await startServer();
+    const sut = buildSut();
+    const lineA =
+      ';response.writeHead(200, "OK");response.write("token");first-malformed-header';
+    const lineB =
+      ';response.writeHead(200, "OK");response.write("token");second-malformed-header';
+    const { request } = createRequest({
+      url: `${baseUrl}/path`,
+      headers: {
+        'accept': 'text/plain', // index 0
+        'x-after': 'value' //      index 1
+      },
+      malformedHeaderLines: [
+        { index: 1, line: lineA },
+        { index: 2, line: lineB }
+      ]
     });
 
-    it('should not send malformed header lines when malformedHeaderLines is absent', async () => {
-      // arrange
-      const { baseUrl, received, close } = await startServer();
-      const sut = buildSut();
-      const { request } = createRequest({
-        url: `${baseUrl}/path`,
-        headers: { accept: 'application/json' }
-      });
+    // act
+    await sut.execute(request);
 
-      // act
-      await sut.execute(request);
+    const raw = await received();
+    close();
 
-      const raw = await received();
-      close();
+    // assert
+    const idxA = raw.indexOf(lineA);
+    const idxB = raw.indexOf(lineB);
+    const idxAfter = raw.toLowerCase().indexOf('x-after:');
 
-      // assert: no semicolon-prefixed header lines
-      const headerLines = raw
-        .split('\r\n')
-        .slice(1) // skip request-line
-        .filter((l) => l.length > 0);
-      expect(headerLines.every((l) => !l.startsWith(';'))).toBe(true);
+    expect(idxA).toBeGreaterThan(-1);
+    expect(idxB).toBeGreaterThan(-1);
+    // A before B, both before x-after
+    expect(idxA).toBeLessThan(idxB);
+    expect(idxA).toBeLessThan(idxAfter);
+    expect(idxB).toBeLessThan(idxAfter);
+  });
+
+  it('should not send malformed header lines when malformedHeaderLines is absent', async () => {
+    // arrange
+    const { baseUrl, received, close } = await startServer();
+    const sut = buildSut();
+    const { request } = createRequest({
+      url: `${baseUrl}/path`,
+      headers: { accept: 'application/json' }
     });
+
+    // act
+    await sut.execute(request);
+
+    const raw = await received();
+    close();
+
+    // assert: no semicolon-prefixed header lines
+    const headerLines = raw
+      .split('\r\n')
+      .slice(1) // skip request-line
+      .filter((l) => l.length > 0);
+    expect(headerLines.every((l) => !l.startsWith(';'))).toBe(true);
   });
 });
