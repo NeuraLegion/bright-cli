@@ -246,29 +246,35 @@ export class HttpRequestExecutor implements RequestExecutor {
     // HTTPHEADER, which overrides USERAGENT for that header.
     curl.setOpt('USERAGENT', '');
 
-    // When not reusing connections, explicitly tell the server to close the connection after this request
-    const hasConnectionHeader =
-      request.headers &&
-      Object.keys(request.headers).some(
-        (k) => k.toLowerCase() === 'connection'
-      );
-
     const curlHeaders = this.headersBuilder.build(request);
 
-    if (!this.options.reuseConnection && !hasConnectionHeader) {
+    if (
+      !this.options.reuseConnection &&
+      !this.hasHeader(request, 'connection')
+    ) {
       curlHeaders.push('Connection: close');
     }
 
     if (request.decompress) {
       // Let libcurl handle decompression automatically.
       curl.setOpt('ACCEPT_ENCODING', '');
-    } else {
+    } else if (!this.hasHeader(request, 'accept-encoding')) {
       curlHeaders.push('Accept-Encoding: identity');
     }
+    // else: caller header is already in curlHeaders; respect it as-is.
 
     if (curlHeaders.length > 0) {
       curl.setOpt('HTTPHEADER', curlHeaders);
     }
+  }
+
+  private hasHeader(request: Request, headerName: string): boolean {
+    return (
+      request.headers &&
+      Object.keys(request.headers).some(
+        (k) => k.toLowerCase() === headerName.toLowerCase()
+      )
+    );
   }
 
   private parseCurlHeaders(

@@ -900,6 +900,77 @@ describe('HttpRequestExecutor', () => {
       // assert
       expect(receivedAuthorization).toBeUndefined();
     });
+
+    it('should send Accept-Encoding: identity when decompress is false and no accept-encoding header is provided', async () => {
+      // arrange
+      const fixture = await startServer();
+      const { request } = createRequest({
+        url: `http://127.0.0.1:${fixture.port}/`,
+        decompress: false
+      });
+      const sut = buildSut();
+
+      // act
+      const results = await Promise.all([
+        sut.execute(request),
+        fixture.received()
+      ]);
+      fixture.close();
+
+      // assert
+      const headers = results[1].toLowerCase();
+      expect(headers).toContain('accept-encoding: identity');
+    });
+
+    it('should not duplicate Accept-Encoding when caller already supplies one and decompress is false', async () => {
+      // arrange
+      const fixture = await startServer();
+      const { request } = createRequest({
+        url: `http://127.0.0.1:${fixture.port}/`,
+        decompress: false,
+        headers: { 'accept-encoding': 'gzip, deflate' }
+      });
+      const sut = buildSut();
+
+      // act
+      const results = await Promise.all([
+        sut.execute(request),
+        fixture.received()
+      ]);
+      fixture.close();
+
+      // assert
+      const acceptEncodingHeaders = results[1]
+        .split('\r\n')
+        .filter((line) => line.toLowerCase().startsWith('accept-encoding:'));
+      expect(acceptEncodingHeaders).toHaveLength(1);
+      expect(acceptEncodingHeaders[0].toLowerCase()).toBe(
+        'accept-encoding: gzip, deflate'
+      );
+    });
+
+    it('should not send Accept-Encoding: identity when decompress is true', async () => {
+      // arrange
+      const fixture = await startServer();
+      const { request } = createRequest({
+        url: `http://127.0.0.1:${fixture.port}/`,
+        decompress: true
+      });
+      const sut = buildSut();
+
+      // act
+      const results = await Promise.all([
+        sut.execute(request),
+        fixture.received()
+      ]);
+      fixture.close();
+
+      // assert
+      const identityHeaders = results[1]
+        .split('\r\n')
+        .filter((line) => line.toLowerCase() === 'accept-encoding: identity');
+      expect(identityHeaders).toHaveLength(0);
+    });
   });
 
   it('should include ttfb in a successful response', async () => {
