@@ -94,9 +94,6 @@ jobs:
           - os: macos-15-intel
             target: macos
             arch: x64
-          - os: macos-15
-            target: macos
-            arch: arm64
           - os: ubuntu-22.04
             target: linux
             arch: x64
