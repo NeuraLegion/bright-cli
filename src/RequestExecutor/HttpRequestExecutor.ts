@@ -236,8 +236,8 @@ export class HttpRequestExecutor implements RequestExecutor {
     }
   }
 
-  private applyCurlHeaders(curl: Curl, options: Request): void {
-    const curlHeaders = this.buildCurlHeaders(options);
+  private applyCurlHeaders(curl: Curl, request: Request): void {
+    const curlHeaders = this.buildCurlHeaders(request);
 
     // Suppress libcurl's default "User-Agent: node-libcurl/<version>" by
     // setting USERAGENT to an empty string. If the caller supplied their own
@@ -245,26 +245,33 @@ export class HttpRequestExecutor implements RequestExecutor {
     // HTTPHEADER, which overrides USERAGENT for that header.
     curl.setOpt('USERAGENT', '');
 
-    // When not reusing connections, explicitly tell the server to close the connection after this request
-    const hasConnectionHeader =
-      options.headers &&
-      Object.keys(options.headers).some(
-        (k) => k.toLowerCase() === 'connection'
-      );
-    if (!this.options.reuseConnection && !hasConnectionHeader) {
+    if (
+      !this.options.reuseConnection &&
+      !this.hasHeader(request, 'connection')
+    ) {
       curlHeaders.push('Connection: close');
     }
 
-    if (options.decompress) {
+    if (request.decompress) {
       // Let libcurl handle decompression automatically.
       curl.setOpt('ACCEPT_ENCODING', '');
-    } else {
+    } else if (!this.hasHeader(request, 'accept-encoding')) {
       curlHeaders.push('Accept-Encoding: identity');
     }
+    // else: caller header is already in curlHeaders; respect it as-is.
 
     if (curlHeaders.length > 0) {
       curl.setOpt('HTTPHEADER', curlHeaders);
     }
+  }
+
+  private hasHeader(request: Request, headerName: string): boolean {
+    return (
+      request.headers &&
+      Object.keys(request.headers).some(
+        (k) => k.toLowerCase() === headerName.toLowerCase()
+      )
+    );
   }
 
   private buildCurlHeaders(options: Request): string[] {
