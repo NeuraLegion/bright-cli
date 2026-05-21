@@ -119,6 +119,37 @@ export class RunRepeater implements CommandModule {
         boolean: true,
         describe: 'Configure ntlm support (enables TCP connection reuse)'
       })
+      .option('kerberos', {
+        boolean: true,
+        describe: 'Enable Kerberos/SPNEGO authentication for target requests'
+      })
+      .option('kerberos-domains', {
+        requiresArg: true,
+        array: true,
+        describe:
+          'Space-separated list of domains that should use Kerberos authentication. If omitted, applies to all domains.',
+        coerce(arg: string[]): string[] {
+          if (arg[0] === undefined) {
+            return undefined;
+          }
+
+          if (arg.length === 1 && arg[0].includes(' ')) {
+            return arg[0].trim().split(' ');
+          }
+
+          return arg;
+        }
+      })
+      .option('kerberos-credentials', {
+        requiresArg: true,
+        string: true,
+        describe:
+          'Kerberos credentials in user:password format. If omitted, system keytab or existing ticket (kinit) is used.'
+      })
+      .option('kerberos-delegation', {
+        boolean: true,
+        describe: 'Allow Kerberos credential delegation to the target server'
+      })
       .option('daemon', {
         requiresArg: false,
         alias: 'd',
@@ -182,9 +213,13 @@ export class RunRepeater implements CommandModule {
       })
       .conflicts({
         daemon: 'remove-daemon',
-        ntlm: ['proxy', 'experimental-connection-reuse']
+        ntlm: ['proxy', 'experimental-connection-reuse', 'kerberos'],
+        kerberos: ['ntlm']
       })
       .conflicts('proxy-domains', 'proxy-domains-bypass')
+      .implies('kerberos-domains', 'kerberos')
+      .implies('kerberos-credentials', 'kerberos')
+      .implies('kerberos-delegation', 'kerberos')
       .env('REPEATER')
       .middleware((args: Arguments) => {
         if (Object.hasOwnProperty.call(args, '')) {
@@ -256,7 +291,15 @@ export class RunRepeater implements CommandModule {
                 { type: 'application/graphql', allowTruncation: false }
               ],
               proxyDomains: args.proxyDomains as string[],
-              proxyDomainsBypass: args.proxyDomainsBypass as string[]
+              proxyDomainsBypass: args.proxyDomainsBypass as string[],
+              kerberos: args.kerberos
+                ? {
+                    enabled: true,
+                    domains: args.kerberosDomains as string[],
+                    credentials: args.kerberosCredentials as string,
+                    delegation: !!args.kerberosDelegation
+                  }
+                : undefined
             }
           })
           .register<DefaultRepeaterServerOptions>(
