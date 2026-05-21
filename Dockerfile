@@ -42,8 +42,11 @@ RUN echo 'http://dl-cdn.alpinelinux.org/alpine/edge/main' >> /etc/apk/repositori
 
 # install @brightsec/cli from NPM
 RUN set -eux; \
+    apk add --no-cache --virtual .build-deps python3 make g++ curl-dev krb5-dev && \
     npm i -g -q @brightsec/cli@${VERSION} && \
-    NPM_CONFIG_PREFIX=/usr/local npm uninstall -g npm
+    NPM_CONFIG_PREFIX=/usr/local npm uninstall -g npm && \
+    apk del .build-deps && \
+    apk add --no-cache libcurl krb5-libs krb5
 
 # set the directory and file permissions to allow users in the root group to access files
 # for details please refer to the doc at https://docs.openshift.com/container-platform/3.11/creating_images/guidelines.html#openshift-specific-guidelines
