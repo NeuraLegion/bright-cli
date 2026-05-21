@@ -123,7 +123,7 @@ jobs:
         uses: ./.github/workflows/composite/npm
 
       - name: Set distribution
-        run: npx json -I -f package.json -e "this.brightCli.distribution='${{ matrix.target }}-${{ matrix.arch }}-executable'"
+        run: npx json -I -f package.json -e "this.brightCli.distribution='${{ matrix.target }}-executable'"
 
       - name: Build executable file
         run: npm run build:pkg -- -t node22-${{ matrix.target }}-${{ matrix.arch }}
