@@ -41,11 +41,6 @@ RUN echo 'http://dl-cdn.alpinelinux.org/alpine/edge/main' >> /etc/apk/repositori
     apk upgrade --no-cache
 
 # install @brightsec/cli from NPM
-# Build tools are installed as a virtual package so they can be purged in the
-# same layer after compilation, keeping only the runtime libcurl shared library.
-# This is needed when node-pre-gyp cannot find a pre-built binary for the
-# current platform/ABI (e.g. linux-arm64-musl + node-v137) and falls back to
-# compiling @brightsec/node-libcurl from source via node-gyp.
 RUN set -eux; \
     apk add --no-cache --virtual .build-deps python3 make g++ curl-dev && \
     npm i -g -q @brightsec/cli@${VERSION} && \
