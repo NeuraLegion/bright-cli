@@ -1,0 +1,30 @@
+diff --git a/node_modules/@brightsec/node-libcurl/dist/Curl.js b/node_modules/@brightsec/node-libcurl/dist/Curl.js
+index 4ad5160..f88aaf1 100644
+--- a/node_modules/@brightsec/node-libcurl/dist/Curl.js
++++ b/node_modules/@brightsec/node-libcurl/dist/Curl.js
+@@ -585,11 +585,23 @@ class Curl extends events_1.EventEmitter {
+         multi
+             .perform(this.handle)
+             .then(() => {
+-            multi.removeHandle(this.handle);
++            // Defer removeHandle to avoid CURLM_RECURSIVE_API_CALL (code 8).
++            // In libcurl >= 8.17, CURLMOPT_NOTIFYFUNCTION fires from within
++            // curl_multi_socket_action (in_callback=true). Napi's deferred
++            // resolution triggers a V8 microtask checkpoint at that point,
++            // so the .then() runs while in_callback is still true.
++            // Using setImmediate defers removal to the check phase, after
++            // curl_multi_socket_action has returned (in_callback=false).
++            // Crucially, this setImmediate is registered *before* onEnd()
++            // triggers the user's setImmediate(() => curl.close()), so FIFO
++            // ordering ensures removeHandle fires first, close() fires second.
++            const handle = this.handle;
++            setImmediate(() => multi.removeHandle(handle));
+             this.onEnd();
+         })
+             .catch((error) => {
+-            multi.removeHandle(this.handle);
++            const handle = this.handle;
++            setImmediate(() => multi.removeHandle(handle));
+             this.onError(error, error.code);
+         });
+         return this;

@@ -10,7 +10,14 @@ import { CertificatesResolver } from './CertificatesResolver';
 import { inject, injectable } from 'tsyringe';
 import iconv from 'iconv-lite';
 import { safeParse } from 'fast-content-type-parse';
-import { Curl, CurlFeature, HeaderInfo, Multi } from '@brightsec/node-libcurl';
+import {
+  Curl,
+  CurlFeature,
+  CurlShareLock,
+  CurlShareOption,
+  HeaderInfo,
+  Share
+} from '@brightsec/node-libcurl';
 import { parse as parseUrl } from 'node:url';
 
 type ScriptEntrypoint = (
@@ -20,11 +27,10 @@ type ScriptEntrypoint = (
 @injectable()
 export class HttpRequestExecutor implements RequestExecutor {
   private readonly KEEP_ALIVE_IDLE_TIMEOUT = 60;
-  private readonly MAX_HOST_CONNECTIONS = 100;
   private readonly DEFAULT_SCRIPT_ENTRYPOINT = 'handle';
   private readonly proxyDomains?: RegExp[];
   private readonly proxyDomainsBypass?: RegExp[];
-  private readonly sharedMulti = new Multi();
+  private readonly sharedShare = new Share();
 
   get protocol(): Protocol {
     return Protocol.HTTP;
@@ -61,9 +67,11 @@ export class HttpRequestExecutor implements RequestExecutor {
     }
 
     if (this.options.reuseConnection) {
-      this.sharedMulti.setOpt(
-        'MAX_HOST_CONNECTIONS',
-        this.MAX_HOST_CONNECTIONS
+      this.sharedShare.setOpt(CurlShareOption.SHARE, CurlShareLock.DataConnect);
+      this.sharedShare.setOpt(CurlShareOption.SHARE, CurlShareLock.DataDns);
+      this.sharedShare.setOpt(
+        CurlShareOption.SHARE,
+        CurlShareLock.DataSslSession
       );
     }
   }
@@ -170,7 +178,7 @@ export class HttpRequestExecutor implements RequestExecutor {
     if (this.options.reuseConnection) {
       curl.setOpt('TCP_KEEPALIVE', 1);
       curl.setOpt('TCP_KEEPIDLE', this.KEEP_ALIVE_IDLE_TIMEOUT);
-      curl.setMulti(this.sharedMulti);
+      curl.setOpt('SHARE', this.sharedShare);
     } else {
       curl.setOpt('FRESH_CONNECT', 1);
       curl.setOpt('FORBID_REUSE', 1);
@@ -479,7 +487,7 @@ export class HttpRequestExecutor implements RequestExecutor {
 
       return new Response({
         body: '',
-        ttfb,
+        // ttfb,
         headers,
         protocol: this.protocol,
         statusCode
@@ -494,7 +502,7 @@ export class HttpRequestExecutor implements RequestExecutor {
 
     return new Response({
       body,
-      ttfb,
+      // ttfb,
       encoding: request.encoding,
       headers: finalHeaders,
       protocol: this.protocol,
