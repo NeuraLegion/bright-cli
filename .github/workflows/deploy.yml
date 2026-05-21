@@ -90,10 +90,13 @@ jobs:
         include:
           - os: windows-2022
             target: win
-          - os: macos-14
+            arch: x64
+          - os: macos-15-intel
             target: macos
+            arch: x64
           - os: ubuntu-22.04
             target: linux
+            arch: x64
             container:
               image: redhat/ubi8
               options: "--user root"
@@ -123,7 +126,7 @@ jobs:
         run: npx json -I -f package.json -e "this.brightCli.distribution='${{ matrix.target }}-executable'"
 
       - name: Build executable file
-        run: npm run build:pkg -- -t node22-${{ matrix.target }}-x64
+        run: npm run build:pkg -- -t node22-${{ matrix.target }}-${{ matrix.arch }}
 
       - name: Build MSI
         if: startsWith(matrix.os, 'win')
@@ -134,7 +137,7 @@ jobs:
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           file: ${{ startsWith(matrix.os, 'win') && '.\bin\cli.exe' || './bin/cli' }}
-          asset_name: ${{ format('bright-cli-{0}-x64{1}', matrix.target, startsWith(matrix.os, 'win') && '.exe' || '') }}
+          asset_name: ${{ format('bright-cli-{0}-{1}{2}', matrix.target, matrix.arch, startsWith(matrix.os, 'win') && '.exe' || '') }}
           tag: ${{ github.ref }}
 
       - uses: svenstaro/upload-release-action@2.9.0
@@ -151,7 +154,7 @@ jobs:
           if [[ "${{ matrix.os }}" == "windows-2022" ]]; then
             certutil -hashfile ./bin/cli.exe SHA256 | grep -v "CertUtil" | sed 's/SHA256 hash of .*://' | tr -d " \t\n\r" > checksum.txt
             certutil -hashfile ./bin/bright-cli.msi SHA256 | grep -v "CertUtil" | sed 's/SHA256 hash of .*://' | tr -d " \t\n\r" > checksum.msi.txt
-          elif [[ "${{ matrix.os }}" == "macos-14" ]]; then
+          elif [[ "${{ runner.os }}" == "macOS" ]]; then
             shasum -a 256 ./bin/cli | cut -d' ' -f1 > checksum.txt
           else
             sha256sum ./bin/cli | cut -d' ' -f1 > checksum.txt
@@ -161,7 +164,7 @@ jobs:
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           file: checksum.txt
-          asset_name: ${{ format('bright-cli-{0}-x64{1}.sha256', matrix.target, startsWith(matrix.os, 'win') && '.exe' || '') }}
+          asset_name: ${{ format('bright-cli-{0}-{1}{2}.sha256', matrix.target, matrix.arch, startsWith(matrix.os, 'win') && '.exe' || '') }}
           tag: ${{ github.ref }}
 
       - uses: svenstaro/upload-release-action@2.9.0
