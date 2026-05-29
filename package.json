@@ -25,6 +25,7 @@
     "node": ">=22 <=24"
   },
   "dependencies": {
+    "@modelcontextprotocol/sdk": "1.17.5",
     "@neuralegion/os-service": "^2.0.5",
     "@neuralegion/raw-socket": "^2.0.0",
     "@sentry/node": "^7.120.0",

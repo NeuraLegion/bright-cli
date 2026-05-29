@@ -67,6 +67,11 @@ import { DefaultHostUpdateJobStatusPollingFactory } from './EntryPoint/DefaultHo
 import { HostUpdateJobStatusPollingFactory } from './EntryPoint/HostUpdateJobStatusPollingFactory';
 import { DefaultCertificatesCache } from './RequestExecutor/DefaultCertificatesCache';
 import { DefaultCertificatesResolver } from './RequestExecutor/DefaultCertificatesResolver';
+import {
+  DefaultRepeaterTools,
+  RepeaterRunCommandOptions,
+  RepeaterTools
+} from './Mcp';
 import { container, Lifecycle } from 'tsyringe';
 
 container
@@ -259,6 +264,18 @@ container
       useClass: ServerRepeaterLauncher
     },
     { lifecycle: Lifecycle.Singleton }
-  );
+  )
+  .register(
+    RepeaterTools,
+    {
+      useClass: DefaultRepeaterTools
+    },
+    { lifecycle: Lifecycle.Singleton }
+  )
+  .register<RepeaterRunCommandOptions>(RepeaterRunCommandOptions, {
+    useValue: {
+      startupGraceMs: 500
+    }
+  });
 
 export default container;

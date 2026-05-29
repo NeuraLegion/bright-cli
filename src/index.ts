@@ -9,7 +9,8 @@ import {
   UploadArchive,
   VersionCommand,
   Configure,
-  GetEntryPoints
+  GetEntryPoints,
+  RunMcpServer
 } from './Commands';
 import { CliBuilder } from './Config';
 import container from './container';
@@ -36,6 +37,7 @@ container.resolve(CliBuilder).build({
     new UploadArchive(),
     new Configure(),
     new GetEntryPoints(),
-    new EntryPointsUpdateHost()
+    new EntryPointsUpdateHost(),
+    new RunMcpServer()
   ]
 }).argv;
