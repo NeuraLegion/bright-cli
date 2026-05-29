@@ -5,5 +5,6 @@ export { RetestScan } from './RetestScan';
 export { StopScan } from './StopScan';
 export { PollingScanStatus } from './PollingScanStatus';
 export { RunRepeater } from './RunRepeater';
+export { RunMcpServer } from './RunMcpServer';
 export { Configure } from './Configure';
 export { GetEntryPoints } from './GetEntryPoints';
