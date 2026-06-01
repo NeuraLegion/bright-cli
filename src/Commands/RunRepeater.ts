@@ -253,7 +253,12 @@ export class RunRepeater implements CommandModule {
                 },
                 { type: 'application/msgpack', allowTruncation: false },
                 { type: 'application/ld+json', allowTruncation: false },
-                { type: 'application/graphql', allowTruncation: false }
+                { type: 'application/graphql', allowTruncation: false },
+                {
+                  type: 'application/octet-stream',
+                  allowTruncation: true,
+                  maxBodySize: 1024 * 1024
+                }
               ],
               proxyDomains: args.proxyDomains as string[],
               proxyDomainsBypass: args.proxyDomainsBypass as string[]

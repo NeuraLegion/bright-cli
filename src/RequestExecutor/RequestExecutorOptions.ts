@@ -3,6 +3,7 @@ import { Cert } from './Request';
 export interface WhitelistMimeType {
   type: string;
   allowTruncation?: boolean;
+  maxBodySize?: number;
 }
 
 export interface RequestExecutorOptions {

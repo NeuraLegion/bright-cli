@@ -442,6 +442,60 @@ describe('HttpRequestExecutor', () => {
       expect(response.body).toEqual(bigBody.slice(0, 1024));
     });
 
+    it('should not truncate application/octet-stream response body up to 1 MiB', async () => {
+      // arrange
+      const oneMiB = 1024 * 1024;
+      const body = 'x'.repeat(oneMiB);
+      const { baseUrl } = await startServer((_req, res) => {
+        res.writeHead(200, { 'content-type': 'application/octet-stream' });
+        res.end(body);
+      });
+      const { request } = createRequest({ url: `${baseUrl}/` });
+      const sut = buildSut({
+        whitelistMimes: [
+          {
+            type: 'application/octet-stream',
+            allowTruncation: true,
+            maxBodySize: oneMiB
+          }
+        ]
+      });
+
+      // act
+      const response = await sut.execute(request);
+
+      // assert
+      expect(response.body?.length).toEqual(oneMiB);
+      expect(response.body).toEqual(body);
+    });
+
+    it('should truncate application/octet-stream response body exceeding 1 MiB', async () => {
+      // arrange
+      const oneMiB = 1024 * 1024;
+      const body = 'x'.repeat(oneMiB + 1);
+      const { baseUrl } = await startServer((_req, res) => {
+        res.writeHead(200, { 'content-type': 'application/octet-stream' });
+        res.end(body);
+      });
+      const { request } = createRequest({ url: `${baseUrl}/` });
+      const sut = buildSut({
+        whitelistMimes: [
+          {
+            type: 'application/octet-stream',
+            allowTruncation: true,
+            maxBodySize: oneMiB
+          }
+        ]
+      });
+
+      // act
+      const response = await sut.execute(request);
+
+      // assert
+      expect(response.body?.length).toEqual(oneMiB);
+      expect(response.body).toEqual(body.slice(0, oneMiB));
+    });
+
     it('should not truncate response body if its smaller than limit and it is in allowed mime types', async () => {
       // arrange
       const bigBody = 'x'.repeat(1025);
