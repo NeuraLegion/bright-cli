@@ -343,7 +343,7 @@ export class HttpRequestExecutor implements RequestExecutor {
       type.startsWith(mime.type)
     );
     const maxSize = whiteListedMimeType
-      ? (whiteListedMimeType.maxBodySize ?? this.options.maxBodySize)
+      ? whiteListedMimeType.maxBodySize ?? this.options.maxBodySize
       : (maxContentSize ?? this.options.maxContentLength) * 1024;
 
     let body = rawBody;
