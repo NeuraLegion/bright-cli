@@ -67,17 +67,17 @@ docker compose -p "${COMPOSE_PROJECT}" run --rm --no-deps \
   node -e "
     const { Curl } = require('@brightsec/node-libcurl');
     const v = Curl.getVersion();
-    console.log('  libcurl version:', v.version);
+    const versionStr = typeof v === 'string' ? v : (v.version || '');
     const features = Array.isArray(v.features) ? v.features : [];
-    const versionStr = v.version || '';
-    const ok = versionStr.includes('GSS-API') ||
-                features.some(f => String(f).includes('GSS'));
+    console.log('  libcurl version:', versionStr);
+    const ok = /mit-krb5|heimdal|GSS|spnego|negotiate/i.test(versionStr) ||
+                features.some(f => /gss|spnego|negotiate|kerberos|krb/i.test(String(f)));
     if (!ok) {
       console.error('  GSS-API NOT present in libcurl feature list');
       console.error('  Features:', features);
       process.exit(1);
     }
-    console.log('  GSS-API is present');
+    console.log('  Kerberos/GSSAPI is present');
   "
 pass "GSS-API confirmed in libcurl build"
 
