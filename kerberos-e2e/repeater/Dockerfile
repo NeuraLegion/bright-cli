@@ -92,10 +92,14 @@ RUN node /gen-vcpkg-json.js
 RUN ${VCPKG_ROOT}/vcpkg install --triplet x64-linux
 
 # ── Build the native addon ────────────────────────────────────────────────
-# Pass explicit paths so node-pre-gyp never calls curl-config.
-RUN ./node_modules/.bin/node-pre-gyp configure build \
-      --curl_include_dirs="$(pwd)/vcpkg_installed/x64-linux/include" \
-      --curl_libraries="-L$(pwd)/vcpkg_installed/x64-linux/lib -lcurl"
+# vcpkg builds static libraries (x64-linux triplet).  Linking only -lcurl
+# leaves transitive GSSAPI/krb5 symbols unresolved.  Use pkg-config --static
+# to collect all transitive link flags automatically.
+RUN VCPKG_INSTALLED="$(pwd)/vcpkg_installed/x64-linux" \
+ && CURL_LIBS=$(PKG_CONFIG_PATH="$VCPKG_INSTALLED/lib/pkgconfig" pkg-config --libs --static libcurl) \
+ && ./node_modules/.bin/node-pre-gyp configure build \
+      --curl_include_dirs="$VCPKG_INSTALLED/include" \
+      --curl_libraries="$CURL_LIBS"
 
 # Compile TypeScript -> dist/ so the package's main entry point is available
 RUN npm run build:dist
