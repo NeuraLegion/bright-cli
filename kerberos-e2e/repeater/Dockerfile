@@ -122,8 +122,13 @@ WORKDIR /app
 # Install all dependencies (published @brightsec/node-libcurl as placeholder)
 RUN npm install --legacy-peer-deps
 
-# Replace with our GSSAPI-enabled local build
-RUN npm install /tmp/brightsec-node-libcurl-*.tgz
+# Replace with our GSSAPI-enabled local build.
+# Use --ignore-scripts to prevent node-pre-gyp from re-running (it would fail
+# without curl-config), then manually copy the pre-built native binary.
+RUN npm install --ignore-scripts /tmp/brightsec-node-libcurl-*.tgz \
+ && mkdir -p /app/node_modules/@brightsec/node-libcurl/lib/binding \
+ && cp /node-libcurl-gssapi/lib/binding/node_libcurl.node \
+       /app/node_modules/@brightsec/node-libcurl/lib/binding/node_libcurl.node
 
 # Compile TypeScript -> dist/
 RUN npm run build
