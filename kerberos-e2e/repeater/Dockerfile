@@ -46,6 +46,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     unzip \
     tar \
     ninja-build \
+    autoconf \
+    autoconf-archive \
+    automake \
+    libtool \
     libkrb5-dev \
     krb5-user \
     ca-certificates \
