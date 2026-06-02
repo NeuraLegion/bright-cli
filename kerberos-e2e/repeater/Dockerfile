@@ -49,6 +49,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     autoconf \
     autoconf-archive \
     automake \
+    bison \
+    flex \
     libtool \
     libkrb5-dev \
     krb5-user \
