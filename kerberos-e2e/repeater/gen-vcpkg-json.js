@@ -22,9 +22,10 @@ const curl = manifest.dependencies.find(
 );
 if (curl && curl.features) {
   // sspi is Windows-only; vcpkg rejects it on Linux
-  // ldap and gsasl require autoconf/automake/libtool which are not worth
-  // pulling in — we only need GSSAPI/SPNEGO support for this E2E harness
-  const linuxExclusions = new Set(['sspi', 'ldap', 'gsasl']);
+  // ldap and gsasl require autoconf/automake (present, but openldap fails for
+  //   other reasons); we don't need them for SPNEGO testing
+  // http3 pulls in ngtcp2 which fails to build in the container
+  const linuxExclusions = new Set(['sspi', 'ldap', 'gsasl', 'http3']);
   curl.features = curl.features.filter((f) => !linuxExclusions.has(f));
   if (!curl.features.includes('gssapi')) {
     curl.features.push('gssapi');
