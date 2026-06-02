@@ -68,7 +68,6 @@ services:
     domainname: EXAMPLE.COM
     networks:
       kerbnet:
-        ipv4_address: 172.30.0.4
     depends_on:
       kdc:
         condition: service_healthy
