@@ -20,8 +20,12 @@ const manifest = JSON.parse(tpl);
 const curl = manifest.dependencies.find(
   (d) => (typeof d === 'string' ? d : d.name) === 'curl'
 );
-if (curl && curl.features && !curl.features.includes('gssapi')) {
-  curl.features.push('gssapi');
+if (curl && curl.features) {
+  // sspi is Windows-only; vcpkg rejects it on Linux
+  curl.features = curl.features.filter((f) => f !== 'sspi');
+  if (!curl.features.includes('gssapi')) {
+    curl.features.push('gssapi');
+  }
 }
 
 const outPath = path.join(root, 'vcpkg.json');
