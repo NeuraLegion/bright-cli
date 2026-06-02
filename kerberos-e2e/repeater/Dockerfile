@@ -16,18 +16,18 @@ FROM ubuntu:22.04
 #   scripts/vcpkg-common.js calls `process.exit(0)` immediately on non-Windows
 #   platforms, so `scripts/vcpkg-setup.js` is a complete no-op on Linux.
 #   The npm `install` script then falls through to `node-pre-gyp install
-#   --fallback-to-build`, which calls `scripts/curl-config.js` → system
+#   --fallback-to-build`, which calls `scripts/curl-config.js` -> system
 #   `curl-config` (not installed, and wouldn't have GSSAPI anyway).
 #
 # Build strategy (Linux):
 #   1. Clone node-libcurl feat/gssapi-support
 #   2. npm install --ignore-scripts  (skip the broken preinstall/install hooks)
 #   3. Generate vcpkg.json manually (substitute version/OpenSSL placeholders,
-#      inject `gssapi` into curl features — it is absent from the template)
+#      inject `gssapi` into curl features -- it is absent from the template)
 #   4. vcpkg install --triplet x64-linux  (compiles libcurl + MIT Kerberos GSSAPI)
 #   5. node-pre-gyp configure build with explicit --curl_include_dirs /
 #      --curl_libraries pointing at vcpkg_installed/ (bypasses curl-config)
-#   6. npm pack → .tgz installed into bright-cli in place of the published pkg
+#   6. npm pack -> .tgz installed into bright-cli in place of the published pkg
 # ─────────────────────────────────────────────────────────────────────────────
 
 ENV DEBIAN_FRONTEND=noninteractive
@@ -77,51 +77,25 @@ RUN npm install --ignore-scripts --legacy-peer-deps
 
 # ── Generate vcpkg.json with gssapi feature injected ─────────────────────
 # The template lacks `gssapi`; substitute both placeholders and add it.
-# OpenSSL 3.3.2 is the latest 3.3.x release available in the vcpkg baseline
+# OpenSSL 3.3.2 is a recent stable release available in the vcpkg baseline
 # used by this version of node-libcurl.
-RUN node -e "
-const fs = require('fs');
-const pkg = require('./package.json');
-let tpl = fs.readFileSync('vcpkg.template.json', 'utf8');
-tpl = tpl.replace(/\\\$\\\$NODE_LIBCURL_VERSION\\\$\\\$/g, pkg.version);
-tpl = tpl.replace(/\\\$\\\$OPENSSL_VERSION\\\$\\\$/g, '3.3.2');
-const manifest = JSON.parse(tpl);
-const curl = manifest.dependencies.find(d =>
-  (typeof d === 'string' ? d : d.name) === 'curl'
-);
-if (curl && curl.features && !curl.features.includes('gssapi')) {
-  curl.features.push('gssapi');
-}
-fs.writeFileSync('vcpkg.json', JSON.stringify(manifest, null, 2));
-console.log('vcpkg.json written:', JSON.stringify(manifest, null, 2));
-"
+COPY gen-vcpkg-json.js /gen-vcpkg-json.js
+RUN node /gen-vcpkg-json.js
 
 # ── Compile libcurl with GSSAPI via vcpkg ────────────────────────────────
 RUN ${VCPKG_ROOT}/vcpkg install --triplet x64-linux
 
 # ── Build the native addon ────────────────────────────────────────────────
 # Pass explicit paths so node-pre-gyp never calls curl-config.
-# curl_libraries uses -L/-l flags so the linker finds libcurl in the vcpkg
-# tree; LD_LIBRARY_PATH makes the .so loadable at runtime inside the container.
 RUN ./node_modules/.bin/node-pre-gyp configure build \
       --curl_include_dirs="$(pwd)/vcpkg_installed/x64-linux/include" \
       --curl_libraries="-L$(pwd)/vcpkg_installed/x64-linux/lib -lcurl"
 
-ENV LD_LIBRARY_PATH=/node-libcurl-gssapi/vcpkg_installed/x64-linux/lib:${LD_LIBRARY_PATH}
+ENV LD_LIBRARY_PATH=/node-libcurl-gssapi/vcpkg_installed/x64-linux/lib
 
-# ── Quick GSSAPI sanity check ─────────────────────────────────────────────
-RUN node -e "
-const { Curl } = require('./lib/index.js');
-const v = Curl.getVersion();
-console.log('libcurl version info:', JSON.stringify(v, null, 2));
-const hasGss = (v.version || '').includes('GSS-API') ||
-               (v.features || []).some(f => /gss/i.test(f));
-if (!hasGss) {
-  console.error('GSS-API NOT present in libcurl build — aborting');
-  process.exit(1);
-}
-console.log('GSS-API confirmed in libcurl build');
-"
+# ── GSSAPI sanity check ───────────────────────────────────────────────────
+COPY check-gssapi.js /check-gssapi.js
+RUN node /check-gssapi.js
 
 # ── Pack as a tarball for installation into bright-cli ────────────────────
 RUN npm pack --pack-destination /tmp/
@@ -138,7 +112,7 @@ RUN npm install --legacy-peer-deps
 # Replace with our GSSAPI-enabled local build
 RUN npm install /tmp/brightsec-node-libcurl-*.tgz
 
-# Compile TypeScript → dist/
+# Compile TypeScript -> dist/
 RUN npm run build
 
 ENTRYPOINT ["node", "dist/index.js", "repeater"]
