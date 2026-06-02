@@ -118,7 +118,8 @@ docker compose -p "${COMPOSE_PROJECT}" run --rm --no-deps \
     // kerberos enabled, make a request to a capture server, inspect headers.
     // We check the compiled source directly for the bug signature.
     const fs = require('fs');
-    const src = fs.readFileSync('./dist/RequestExecutor/HttpRequestExecutor.js', 'utf8');
+    // bright-cli is webpack-bundled into a single dist/index.js
+    const src = fs.readFileSync('./dist/index.js', 'utf8');
 
     // The bug: applyCurlHeaders does NOT guard against Kerberos when appending
     // Connection: close. We look for the guard in the compiled output.
@@ -167,7 +168,8 @@ docker compose -p "${COMPOSE_PROJECT}" run --rm --no-deps \
 
     // Check what the compiled executor actually uses for GSSAPI_DELEGATION
     const fs = require('fs');
-    const src = fs.readFileSync('./dist/RequestExecutor/HttpRequestExecutor.js', 'utf8');
+    // bright-cli is webpack-bundled into a single dist/index.js
+    const src = fs.readFileSync('./dist/index.js', 'utf8');
     const match = src.match(/CURLGSSAPI_DELEGATION_FLAG\s*=\s*(\d+)/);
     if (match) {
       const val = parseInt(match[1], 10);
