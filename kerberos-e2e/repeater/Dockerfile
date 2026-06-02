@@ -97,6 +97,9 @@ RUN ./node_modules/.bin/node-pre-gyp configure build \
       --curl_include_dirs="$(pwd)/vcpkg_installed/x64-linux/include" \
       --curl_libraries="-L$(pwd)/vcpkg_installed/x64-linux/lib -lcurl"
 
+# Compile TypeScript -> dist/ so the package's main entry point is available
+RUN npm run build:dist
+
 ENV LD_LIBRARY_PATH=/node-libcurl-gssapi/vcpkg_installed/x64-linux/lib
 
 # ── GSSAPI sanity check ───────────────────────────────────────────────────

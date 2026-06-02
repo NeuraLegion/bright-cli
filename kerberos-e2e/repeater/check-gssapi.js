@@ -1,7 +1,8 @@
 // check-gssapi.js
 // Verifies that the built node-libcurl reports GSS-API in its feature set.
 'use strict';
-const { Curl } = require('/node-libcurl-gssapi/lib/index.js');
+// node-libcurl main entry point is dist/index.js (TypeScript compiled output)
+const { Curl } = require('/node-libcurl-gssapi');
 const v = Curl.getVersion();
 console.log('libcurl version info:', JSON.stringify(v, null, 2));
 const hasGss =
