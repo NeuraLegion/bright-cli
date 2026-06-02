@@ -6,12 +6,13 @@ const { Curl } = require('/node-libcurl-gssapi');
 const v = Curl.getVersion();
 console.log('libcurl version info:', JSON.stringify(v, null, 2));
 
-// Accept any of these as evidence of GSSAPI/Kerberos/SPNEGO capability:
-//   - "mit-krb5" or "heimdal" in version string (library linked)
-//   - "GSS-API", "SPNEGO", "GSS-Negotiate", "GSSNEGOTIATE" in version string or features
-const versionStr = v.version || '';
+// getVersion() may return a plain string or an object with .version / .features
+const versionStr = typeof v === 'string' ? v : v.version || '';
 const features = Array.isArray(v.features) ? v.features : [];
 
+// Accept any of these as evidence of Kerberos/GSSAPI/SPNEGO capability:
+//   - "mit-krb5" or "heimdal" in version string (library linked)
+//   - "GSS-API", "SPNEGO", "GSS-Negotiate", "GSSNEGOTIATE" in version string or features
 const hasGss =
   /mit-krb5|heimdal/i.test(versionStr) ||
   /gss|spnego|negotiate/i.test(versionStr) ||
