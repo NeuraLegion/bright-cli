@@ -256,7 +256,7 @@ export class RunRepeater implements CommandModule {
                 { type: 'application/graphql', allowTruncation: false },
                 {
                   type: 'application/octet-stream',
-                  allowTruncation: true,
+                  allowTruncation: false,
                   maxBodySize: 1024 * 1024
                 }
               ],
