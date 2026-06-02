@@ -110,7 +110,7 @@ pass "Baseline check complete (see output above)"
 # ── Step 5: Verify Connection: close is NOT injected for Kerberos requests ────
 step 5 "Regression: Connection: close must not be injected for Kerberos requests"
 docker compose -p "${COMPOSE_PROJECT}" run --rm --no-deps \
-  --entrypoint "" repeater \
+  --entrypoint "" --workdir /app repeater \
   node -e "
     const http = require('http');
 
@@ -152,7 +152,7 @@ pass "Connection: close check complete (see output above)"
 # ── Step 6: Verify GSSAPI_DELEGATION enum value ────────────────────────────────
 step 6 "Regression: CURLGSSAPI_DELEGATION_FLAG must be 2 (unconditional), not 1 (policy)"
 docker compose -p "${COMPOSE_PROJECT}" run --rm --no-deps \
-  --entrypoint "" repeater \
+  --entrypoint "" --workdir /app repeater \
   node -e "
     const { CurlGssApi } = require('@brightsec/node-libcurl');
     console.log('  CurlGssApi.None        =', CurlGssApi.None);
