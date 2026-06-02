@@ -1,0 +1,86 @@
+version: "3.9"
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Kerberos/SPNEGO E2E test stack for bright-cli repeater
+#
+# Services
+#   kdc       — MIT Kerberos KDC: creates realm, principals, exports keytab
+#   httpd     — Apache httpd with mod_auth_gssapi: SPNEGO-protected endpoint
+#   repeater  — bright-cli built from feat/kerberos-auth + node-libcurl gssapi
+#
+# Usage
+#   BRIGHT_TOKEN=<token> REPEATER_ID=<id> docker compose up --build
+#   See README.md for the full step-by-step guide.
+# ─────────────────────────────────────────────────────────────────────────────
+
+networks:
+  kerbnet:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.30.0.0/24
+
+services:
+  # ── MIT Kerberos KDC ───────────────────────────────────────────────────────
+  kdc:
+    build: ./kdc
+    hostname: kdc.EXAMPLE.COM
+    domainname: EXAMPLE.COM
+    networks:
+      kerbnet:
+        ipv4_address: 172.30.0.2
+    volumes:
+      - keytab_vol:/keytabs      # KDC writes HTTP.keytab here; httpd reads it
+      - /dev/urandom:/dev/random # prevent entropy starvation during realm init
+    healthcheck:
+      test: ["CMD", "sh", "-c", "nc -z 127.0.0.1 88"]
+      interval: 3s
+      timeout: 5s
+      retries: 20
+
+  # ── Apache httpd with mod_auth_gssapi ──────────────────────────────────────
+  httpd:
+    build: ./httpd
+    hostname: www.EXAMPLE.COM
+    domainname: EXAMPLE.COM
+    networks:
+      kerbnet:
+        ipv4_address: 172.30.0.3
+    volumes:
+      - keytab_vol:/keytabs:ro   # receives the keytab produced by kdc
+    depends_on:
+      kdc:
+        condition: service_healthy
+    ports:
+      - "8880:80"                # expose on host for direct curl smoke-tests
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://localhost/health"]
+      interval: 5s
+      timeout: 5s
+      retries: 15
+
+  # ── bright-cli repeater ────────────────────────────────────────────────────
+  # Built from feat/kerberos-auth with @brightsec/node-libcurl overridden to
+  # the unmerged feat/gssapi-support branch that adds GSSAPI to the curl build.
+  repeater:
+    build: ./repeater
+    hostname: repeater.EXAMPLE.COM
+    domainname: EXAMPLE.COM
+    networks:
+      kerbnet:
+        ipv4_address: 172.30.0.4
+    depends_on:
+      kdc:
+        condition: service_healthy
+      httpd:
+        condition: service_healthy
+    environment:
+      - REPEATER_TOKEN=${BRIGHT_TOKEN}
+      - REPEATER_ID=${REPEATER_ID}
+      - REPEATER_KERBEROS=true
+      - REPEATER_KERBEROS_CREDENTIALS=scanner@EXAMPLE.COM:ScannerPass1
+      - REPEATER_KERBEROS_DOMAINS=www.EXAMPLE.COM
+    restart: on-failure
+
+volumes:
+  keytab_vol:
