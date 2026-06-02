@@ -58,7 +58,10 @@ RUN git clone --depth 1 --branch feat/gssapi-support \
 
 WORKDIR /node-libcurl-gssapi
 
-RUN npm install
+# --legacy-peer-deps: node-libcurl has a dev-only typedoc peer conflict
+# (typedoc@0.28 vs typedoc-plugin-ga requiring ^0.27); this does not affect
+# the native C++ build or the published package at all.
+RUN npm install --legacy-peer-deps
 # The build script calls vcpkg-setup.js which injects the gssapi feature,
 # then compiles the native addon via node-gyp.
 RUN npm run build
@@ -73,7 +76,7 @@ RUN git clone --depth 1 --branch feat/kerberos-auth \
 WORKDIR /app
 
 # Install all dependencies first (uses the published node-libcurl as a base)
-RUN npm install
+RUN npm install --legacy-peer-deps
 
 # Override @brightsec/node-libcurl with our GSSAPI-enabled local build
 RUN npm install /tmp/brightsec-node-libcurl-*.tgz
