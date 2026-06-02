@@ -496,6 +496,33 @@ describe('HttpRequestExecutor', () => {
       expect(response.body).toEqual(body.slice(0, oneMiB));
     });
 
+    it('should not allow whitelist mime maxBodySize to exceed global maxBodySize', async () => {
+      // arrange
+      const body = 'x'.repeat(2001);
+      const { baseUrl } = await startServer((_req, res) => {
+        res.writeHead(200, { 'content-type': 'application/octet-stream' });
+        res.end(body);
+      });
+      const { request } = createRequest({ url: `${baseUrl}/` });
+      const sut = buildSut({
+        maxBodySize: 1024,
+        whitelistMimes: [
+          {
+            type: 'application/octet-stream',
+            allowTruncation: true,
+            maxBodySize: 2048
+          }
+        ]
+      });
+
+      // act
+      const response = await sut.execute(request);
+
+      // assert
+      expect(response.body?.length).toEqual(1024);
+      expect(response.body).toEqual(body.slice(0, 1024));
+    });
+
     it('should not truncate response body if its smaller than limit and it is in allowed mime types', async () => {
       // arrange
       const bigBody = 'x'.repeat(1025);

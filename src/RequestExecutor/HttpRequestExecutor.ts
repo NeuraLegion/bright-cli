@@ -4,7 +4,10 @@ import { Cert, Request, RequestOptions } from './Request';
 import { Helpers, logger } from '../Utils';
 import { VirtualScripts } from '../Scripts';
 import { Protocol } from './Protocol';
-import { RequestExecutorOptions } from './RequestExecutorOptions';
+import {
+  RequestExecutorOptions,
+  WhitelistMimeType
+} from './RequestExecutorOptions';
 import { CertificatesCache } from './CertificatesCache';
 import { CertificatesResolver } from './CertificatesResolver';
 import { inject, injectable } from 'tsyringe';
@@ -342,9 +345,10 @@ export class HttpRequestExecutor implements RequestExecutor {
     const whiteListedMimeType = this.options.whitelistMimes?.find((mime) =>
       type.startsWith(mime.type)
     );
-    const maxSize = whiteListedMimeType
-      ? whiteListedMimeType.maxBodySize ?? this.options.maxBodySize
-      : (maxContentSize ?? this.options.maxContentLength) * 1024;
+    const maxSize = this.calculateMaxBodySize({
+      maxContentSize,
+      whiteListedMimeType
+    });
 
     let body = rawBody;
     let transform: 'truncated' | 'omitted' | false = false;
@@ -355,7 +359,7 @@ export class HttpRequestExecutor implements RequestExecutor {
       delete responseHeaders['content-encoding'];
     }
 
-    if (body.byteLength > maxSize) {
+    if (maxSize !== undefined && body.byteLength > maxSize) {
       const result = this.truncateBody(body, {
         maxSize,
         allowTruncation:
@@ -380,6 +384,31 @@ export class HttpRequestExecutor implements RequestExecutor {
       body: iconv.decode(body, encoding ?? contentType.encoding),
       headers: responseHeaders
     };
+  }
+
+  private calculateMaxBodySize({
+    maxContentSize,
+    whiteListedMimeType
+  }: {
+    maxContentSize?: number;
+    whiteListedMimeType?: WhitelistMimeType;
+  }): number | undefined {
+    const globalContentLimit = maxContentSize ?? this.options.maxContentLength;
+    const defaultMaxBodySize =
+      globalContentLimit === undefined ? undefined : globalContentLimit * 1024;
+
+    if (!whiteListedMimeType) {
+      return defaultMaxBodySize;
+    }
+
+    if (this.options.maxBodySize === undefined) {
+      return whiteListedMimeType.maxBodySize ?? defaultMaxBodySize;
+    }
+
+    return Math.min(
+      whiteListedMimeType.maxBodySize ?? this.options.maxBodySize,
+      this.options.maxBodySize
+    );
   }
 
   private parseContentType(headers: Record<string, string | string[]>): {
