@@ -22,7 +22,10 @@ const curl = manifest.dependencies.find(
 );
 if (curl && curl.features) {
   // sspi is Windows-only; vcpkg rejects it on Linux
-  curl.features = curl.features.filter((f) => f !== 'sspi');
+  // ldap and gsasl require autoconf/automake/libtool which are not worth
+  // pulling in — we only need GSSAPI/SPNEGO support for this E2E harness
+  const linuxExclusions = new Set(['sspi', 'ldap', 'gsasl']);
+  curl.features = curl.features.filter((f) => !linuxExclusions.has(f));
   if (!curl.features.includes('gssapi')) {
     curl.features.push('gssapi');
   }
