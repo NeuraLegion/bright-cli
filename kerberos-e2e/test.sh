@@ -28,7 +28,7 @@ step() {
   echo -e "\033[1m[$1/$TOTAL_STEPS] $2\033[0m"
 }
 
-TOTAL_STEPS=7
+TOTAL_STEPS=8
 
 echo ""
 echo "╔═══════════════════════════════════════════════════════════╗"
@@ -150,8 +150,15 @@ docker compose -p "${COMPOSE_PROJECT}" run --rm --no-deps \
   "
 pass "Connection: close check complete (see output above)"
 
-# ── Step 6: Verify GSSAPI_DELEGATION enum value ────────────────────────────────
-step 6 "Regression: CURLGSSAPI_DELEGATION_FLAG must be 2 (unconditional), not 1 (policy)"
+# ── Step 6: Full SPNEGO flow through HttpRequestExecutor ──────────────────────
+step 6 "Full E2E: HttpRequestExecutor SPNEGO request → httpd → HTTP 200"
+docker compose -p "${COMPOSE_PROJECT}" run --rm --no-deps \
+  --entrypoint "" --workdir /app repeater \
+  ./node_modules/.bin/ts-node --transpile-only kerberos-integration-test.ts
+pass "SPNEGO end-to-end authentication confirmed"
+
+# ── Step 7: Verify GSSAPI_DELEGATION enum value ────────────────────────────────
+step 7 "Regression: CURLGSSAPI_DELEGATION_FLAG must be 2 (unconditional), not 1 (policy)"
 docker compose -p "${COMPOSE_PROJECT}" run --rm --no-deps \
   --entrypoint "" --workdir /app repeater \
   node -e "
@@ -186,8 +193,8 @@ docker compose -p "${COMPOSE_PROJECT}" run --rm --no-deps \
   "
 pass "Delegation flag check complete (see output above)"
 
-# ── Step 7: Repeater platform registration (optional) ─────────────────────────
-step 7 "Repeater: register with Bright platform"
+# ── Step 8: Repeater platform registration (optional) ─────────────────────────
+step 8 "Repeater: register with Bright platform"
 if [ -z "${BRIGHT_TOKEN:-}" ] || [ -z "${REPEATER_ID:-}" ]; then
   skip "Set BRIGHT_TOKEN and REPEATER_ID environment variables to run this step"
 else

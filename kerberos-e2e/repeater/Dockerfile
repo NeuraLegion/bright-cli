@@ -133,4 +133,7 @@ RUN npm install --ignore-scripts /tmp/brightsec-node-libcurl-*.tgz \
 # Compile TypeScript -> dist/
 RUN npm run build
 
+# ── Copy E2E integration test (run at container runtime, not build time) ──────
+COPY kerberos-integration-test.ts /app/kerberos-integration-test.ts
+
 ENTRYPOINT ["node", "dist/index.js", "repeater"]
