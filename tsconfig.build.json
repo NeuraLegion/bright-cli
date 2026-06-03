@@ -3,5 +3,12 @@
   "compilerOptions": {
     "outDir": "dist"
   },
-  "exclude": ["node_modules", "dist", "**/.*/", "**/*.spec.ts", "tests"]
+  "exclude": [
+    "node_modules",
+    "dist",
+    "**/.*/",
+    "**/*.spec.ts",
+    "tests",
+    "kerberos-e2e"
+  ]
 }
