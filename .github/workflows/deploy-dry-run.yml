@@ -1,0 +1,122 @@
+name: Deploy dry-run (build validation only)
+
+# Temporary workflow: validates that the release build pipeline succeeds
+# without publishing or releasing anything anywhere (no npm, no Docker Hub,
+# no GitHub releases, no Helm registry).
+# Triggered automatically on push to this branch so CI proves the pipeline
+# will work once the real release is cut.
+# TODO: remove this file before or after the PR is merged.
+
+on:
+  push:
+    branches:
+      - feat/bump-libcurl-5.0.13-0-deploy-dry-run
+
+env:
+  TARGET_REF: feat/bump-libcurl-5.0.13-0-deploy-dry-run
+  ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION: true
+
+jobs:
+  resolve-tag:
+    runs-on: ubuntu-latest
+    outputs:
+      tag: ${{ steps.set-tag.outputs.tag }}
+    steps:
+      - name: Set TAG (dry-run hardcoded to next)
+        id: set-tag
+        run: echo "tag=next" >> $GITHUB_OUTPUT
+
+  install-deps:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ env.TARGET_REF }}
+          token: ${{ secrets.GPR_TOKEN }}
+
+      - name: Install deps
+        uses: ./.github/workflows/composite/npm
+
+  build:
+    runs-on: ubuntu-latest
+    needs: install-deps
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.TARGET_REF }}
+          token: ${{ secrets.GPR_TOKEN }}
+
+      - name: Install deps
+        uses: ./.github/workflows/composite/npm
+
+      - name: Set default distribution
+        run: npm pkg set brightCli.distribution=package
+
+      - name: Build package
+        run: npm run build
+        env:
+          SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
+
+      # Intentionally skipped: npm pack, svenstaro/upload-release-action, publish steps
+      - uses: actions/upload-artifact@v4
+        with:
+          name: build
+          path: |
+            dist
+            Dockerfile
+            package.json
+            package-lock.json
+            README.md
+            LICENSE
+            tools
+
+  generate-binary:
+    needs: build
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-2022
+            target: win
+          - os: macos-14
+            target: macos
+          - os: ubuntu-22.04
+            target: linux
+            container:
+              image: redhat/ubi8
+              options: "--user root"
+    runs-on: ${{ matrix.os }}
+    container: ${{ matrix.container }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.TARGET_REF }}
+          token: ${{ secrets.GPR_TOKEN }}
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: build
+
+      - name: Install dev-deps
+        if: startsWith(matrix.os, 'ubuntu')
+        run: |
+          dnf install -y dnf-utils \
+          && dnf install -y python3 gcc gcc-c++ make \
+          && rm -rf /var/cache/dnf
+
+      - name: Install deps
+        uses: ./.github/workflows/composite/npm
+
+      - name: Set distribution
+        run: npx json -I -f package.json -e "this.brightCli.distribution='${{ matrix.target }}-executable'"
+
+      - name: Build executable file
+        run: npm run build:pkg -- -t node22-${{ matrix.target }}-x64
+
+      - name: Build MSI
+        if: startsWith(matrix.os, 'win')
+        run: .\tools\scripts\build-msi.ps1
+        shell: pwsh
+
+      # Intentionally skipped: svenstaro/upload-release-action (no publishing)
