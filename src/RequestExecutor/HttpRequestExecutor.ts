@@ -489,8 +489,17 @@ export class HttpRequestExecutor implements RequestExecutor {
           body: response.body
         }
       );
-    } catch {
-      // onResponse is optional, skip if not exported
+    } catch (e) {
+      if (e instanceof Error && e.message.includes('missing function')) {
+        return response;
+      }
+
+      logger.warn(
+        'Error in onResponse script for "%s": %s',
+        request.url,
+        (e as Error).message
+      );
+
       return response;
     }
 

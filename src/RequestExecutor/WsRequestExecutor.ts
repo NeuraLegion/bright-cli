@@ -247,7 +247,17 @@ export class WsRequestExecutor implements RequestExecutor {
           body: response.body
         }
       );
-    } catch {
+    } catch (e) {
+      if (e instanceof Error && e.message.includes('missing function')) {
+        return response;
+      }
+
+      logger.warn(
+        'Error in onResponse script for "%s": %s',
+        request.url,
+        (e as Error).message
+      );
+
       return response;
     }
 
