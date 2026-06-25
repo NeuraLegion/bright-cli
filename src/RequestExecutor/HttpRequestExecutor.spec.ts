@@ -1145,4 +1145,76 @@ describe('HttpRequestExecutor', () => {
     // assert
     expect(MultiSpy).toHaveBeenCalledTimes(1);
   });
+
+  it('should call onResponse script hook and modify response', async () => {
+    // arrange
+    const { baseUrl } = await startServer((_req, res) => {
+      res.writeHead(200, { 'content-type': 'text/plain' });
+      res.end('original');
+    });
+    const { request } = createRequest({ url: baseUrl });
+    const { hostname: virtualScriptId } = new URL(baseUrl);
+    const virtualScript = new VirtualScript(
+      virtualScriptId,
+      VirtualScriptType.LOCAL,
+      'module.exports.handle = (req) => req; module.exports.onResponse = (res) => ({ ...res, body: "intercepted" });'
+    );
+    virtualScript.compile();
+    when(virtualScriptsMock.find(virtualScriptId)).thenReturn(virtualScript);
+    const sut = buildSut();
+
+    // act
+    const response = await sut.execute(request);
+
+    // assert
+    expect(response.body).toEqual('intercepted');
+  });
+
+  it('should pass through response if onResponse returns void', async () => {
+    // arrange
+    const { baseUrl } = await startServer((_req, res) => {
+      res.writeHead(200, { 'content-type': 'text/plain' });
+      res.end('original');
+    });
+    const { request } = createRequest({ url: baseUrl });
+    const { hostname: virtualScriptId } = new URL(baseUrl);
+    const virtualScript = new VirtualScript(
+      virtualScriptId,
+      VirtualScriptType.LOCAL,
+      'module.exports.handle = (req) => req; module.exports.onResponse = () => {};'
+    );
+    virtualScript.compile();
+    when(virtualScriptsMock.find(virtualScriptId)).thenReturn(virtualScript);
+    const sut = buildSut();
+
+    // act
+    const response = await sut.execute(request);
+
+    // assert
+    expect(response.body).toEqual('original');
+  });
+
+  it('should pass through response if onResponse is not exported', async () => {
+    // arrange
+    const { baseUrl } = await startServer((_req, res) => {
+      res.writeHead(200, { 'content-type': 'text/plain' });
+      res.end('original');
+    });
+    const { request } = createRequest({ url: baseUrl });
+    const { hostname: virtualScriptId } = new URL(baseUrl);
+    const virtualScript = new VirtualScript(
+      virtualScriptId,
+      VirtualScriptType.LOCAL,
+      'module.exports.handle = (req) => req;'
+    );
+    virtualScript.compile();
+    when(virtualScriptsMock.find(virtualScriptId)).thenReturn(virtualScript);
+    const sut = buildSut();
+
+    // act
+    const response = await sut.execute(request);
+
+    // assert
+    expect(response.body).toEqual('original');
+  });
 });

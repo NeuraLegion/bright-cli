@@ -7,6 +7,7 @@ import { RequestExecutorOptions } from './RequestExecutorOptions';
 import { CertificatesCache } from './CertificatesCache';
 import { CertificatesResolver } from './CertificatesResolver';
 import { RequestExecutorConstants } from './RequestExecutorConstants';
+import { VirtualScripts } from '../Scripts';
 import { inject, injectable } from 'tsyringe';
 import WebSocket from 'ws';
 import { once } from 'node:events';
@@ -19,6 +20,13 @@ interface WSMessage {
   code?: number;
 }
 
+type ResponseScriptEntrypoint = (options: {
+  protocol: string;
+  statusCode?: number;
+  headers?: Record<string, string | string[]>;
+  body?: string;
+}) => Promise<Response | void> | Response | void;
+
 @injectable()
 export class WsRequestExecutor implements RequestExecutor {
   public static readonly FORBIDDEN_HEADERS: ReadonlySet<string> = new Set([
@@ -26,10 +34,12 @@ export class WsRequestExecutor implements RequestExecutor {
     'sec-websocket-key'
   ]);
 
+  private readonly RESPONSE_SCRIPT_ENTRYPOINT = 'onResponse';
   private readonly httpProxyAgent?: http.Agent;
   private readonly httpsProxyAgent?: https.Agent;
 
   constructor(
+    @inject(VirtualScripts) private readonly virtualScripts: VirtualScripts,
     @inject(ProxyFactory) private readonly proxyFactory: ProxyFactory,
     @inject(RequestExecutorOptions)
     private readonly options: RequestExecutorOptions,
@@ -194,12 +204,14 @@ export class WsRequestExecutor implements RequestExecutor {
 
       const msg = await this.consume(client, request.correlationIdRegex);
 
-      return new Response({
+      const response = new Response({
         protocol: this.protocol,
         statusCode: msg.code ?? res.statusCode,
         headers: res.headers,
         body: msg.body
       });
+
+      return await this.handleResponseScript(request, response);
     } finally {
       if (timeout) {
         clearTimeout(timeout);
@@ -209,6 +221,46 @@ export class WsRequestExecutor implements RequestExecutor {
         client.close(1000);
       }
     }
+  }
+
+  private async handleResponseScript(
+    request: Request,
+    response: Response
+  ): Promise<Response> {
+    const { hostname } = new URL(request.url);
+
+    const vm = this.virtualScripts.find(hostname);
+
+    if (!vm) {
+      return response;
+    }
+
+    let result: Response | void;
+
+    try {
+      result = await vm.exec<ResponseScriptEntrypoint>(
+        this.RESPONSE_SCRIPT_ENTRYPOINT,
+        {
+          protocol: response.protocol,
+          statusCode: response.statusCode,
+          headers: response.headers,
+          body: response.body
+        }
+      );
+    } catch {
+      return response;
+    }
+
+    if (!result) {
+      return response;
+    }
+
+    return new Response({
+      protocol: response.protocol,
+      statusCode: result.statusCode ?? response.statusCode,
+      headers: result.headers ?? response.headers,
+      body: result.body ?? response.body
+    });
   }
 
   private tryRequestWithCertificates(

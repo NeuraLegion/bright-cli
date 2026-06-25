@@ -17,11 +17,19 @@ type ScriptEntrypoint = (
   options: RequestOptions
 ) => Promise<RequestOptions> | RequestOptions;
 
+type ResponseScriptEntrypoint = (options: {
+  protocol: string;
+  statusCode?: number;
+  headers?: Record<string, string | string[]>;
+  body?: string;
+}) => Promise<Response | void> | Response | void;
+
 @injectable()
 export class HttpRequestExecutor implements RequestExecutor {
   private readonly KEEP_ALIVE_IDLE_TIMEOUT = 60;
   private readonly MAX_HOST_CONNECTIONS = 100;
   private readonly DEFAULT_SCRIPT_ENTRYPOINT = 'handle';
+  private readonly RESPONSE_SCRIPT_ENTRYPOINT = 'onResponse';
   private readonly proxyDomains?: RegExp[];
   private readonly proxyDomainsBypass?: RegExp[];
   private readonly sharedMulti = new Multi();
@@ -457,6 +465,49 @@ export class HttpRequestExecutor implements RequestExecutor {
     return new Request(result);
   }
 
+  private async handleResponseScript(
+    request: Request,
+    response: Response
+  ): Promise<Response> {
+    const { hostname } = new URL(request.url);
+
+    const vm = this.virtualScripts.find(hostname);
+
+    if (!vm) {
+      return response;
+    }
+
+    let result: Response | void;
+
+    try {
+      result = await vm.exec<ResponseScriptEntrypoint>(
+        this.RESPONSE_SCRIPT_ENTRYPOINT,
+        {
+          protocol: response.protocol,
+          statusCode: response.statusCode,
+          headers: response.headers,
+          body: response.body
+        }
+      );
+    } catch {
+      // onResponse is optional, skip if not exported
+      return response;
+    }
+
+    if (!result) {
+      return response;
+    }
+
+    return new Response({
+      protocol: response.protocol,
+      statusCode: result.statusCode ?? response.statusCode,
+      headers: result.headers ?? response.headers,
+      body: result.body ?? response.body,
+      encoding: response.encoding,
+      ttfb: response.ttfb
+    });
+  }
+
   private async executeRequest(request: Request): Promise<Response> {
     const { statusCode, headers, rawBody, ttfb } = await this.request(request);
 
@@ -477,13 +528,16 @@ export class HttpRequestExecutor implements RequestExecutor {
     if (this.responseHasNoBody(request.method, statusCode)) {
       logger.debug('The response does not contain any body.');
 
-      return new Response({
-        body: '',
-        ttfb,
-        headers,
-        protocol: this.protocol,
-        statusCode
-      });
+      return this.handleResponseScript(
+        request,
+        new Response({
+          body: '',
+          ttfb,
+          headers,
+          protocol: this.protocol,
+          statusCode
+        })
+      );
     }
 
     const { body, headers: finalHeaders } = this.truncateResponse(
@@ -492,7 +546,7 @@ export class HttpRequestExecutor implements RequestExecutor {
       headers
     );
 
-    return new Response({
+    const response = new Response({
       body,
       ttfb,
       encoding: request.encoding,
@@ -500,6 +554,8 @@ export class HttpRequestExecutor implements RequestExecutor {
       protocol: this.protocol,
       statusCode
     });
+
+    return this.handleResponseScript(request, response);
   }
 
   private tryRequestWithCertificates(
