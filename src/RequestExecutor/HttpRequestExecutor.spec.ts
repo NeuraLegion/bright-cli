@@ -226,7 +226,10 @@ describe('HttpRequestExecutor', () => {
       when(spiedVirtualScript.exec(anyString(), anything())).thenResolve(
         requestOptions
       );
-      when(virtualScriptsMock.find(virtualScriptId)).thenReturn(virtualScript);
+      when(virtualScriptsMock.find(virtualScriptId)).thenReturn(
+        virtualScript,
+        undefined
+      );
       const sut = buildSut();
 
       // act
@@ -1160,7 +1163,10 @@ describe('HttpRequestExecutor', () => {
       'module.exports.handle = (req) => req; module.exports.onResponse = (res) => ({ ...res, body: "intercepted" });'
     );
     virtualScript.compile();
-    when(virtualScriptsMock.find(virtualScriptId)).thenReturn(virtualScript);
+    when(virtualScriptsMock.find(virtualScriptId)).thenReturn(
+      undefined,
+      virtualScript
+    );
     const sut = buildSut();
 
     // act
@@ -1184,7 +1190,10 @@ describe('HttpRequestExecutor', () => {
       'module.exports.handle = (req) => req; module.exports.onResponse = () => {};'
     );
     virtualScript.compile();
-    when(virtualScriptsMock.find(virtualScriptId)).thenReturn(virtualScript);
+    when(virtualScriptsMock.find(virtualScriptId)).thenReturn(
+      undefined,
+      virtualScript
+    );
     const sut = buildSut();
 
     // act
@@ -1208,7 +1217,10 @@ describe('HttpRequestExecutor', () => {
       'module.exports.handle = (req) => req;'
     );
     virtualScript.compile();
-    when(virtualScriptsMock.find(virtualScriptId)).thenReturn(virtualScript);
+    when(virtualScriptsMock.find(virtualScriptId)).thenReturn(
+      undefined,
+      virtualScript
+    );
     const sut = buildSut();
 
     // act
