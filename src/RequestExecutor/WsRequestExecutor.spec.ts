@@ -6,7 +6,6 @@ import { CertificatesCache } from './CertificatesCache';
 import { CertificatesResolver } from './CertificatesResolver';
 import { Cert, Request } from './Request';
 import { ProxyFactory } from '../Utils';
-import { VirtualScript, VirtualScripts, VirtualScriptType } from '../Scripts';
 import { anything, instance, mock, reset, spy, verify, when } from 'ts-mockito';
 import { Server } from 'ws';
 import { once } from 'node:events';
@@ -17,7 +16,6 @@ describe('WsRequestExecutor', () => {
   const certificatesCacheMock = mock<CertificatesCache>();
   const certificatesResolverMock = mock<CertificatesResolver>();
   const proxyFactoryMock = mock<ProxyFactory>();
-  const virtualScriptsMock = mock<VirtualScripts>();
 
   let executor!: WsRequestExecutor;
 
@@ -25,7 +23,6 @@ describe('WsRequestExecutor', () => {
     // ADHOC: ts-mockito resets object's property descriptor as well
     Object.assign(executorOptions, { timeout: 2000 });
     executor = new WsRequestExecutor(
-      instance(virtualScriptsMock),
       instance(proxyFactoryMock),
       executorOptions,
       certificatesCacheMock,
@@ -35,13 +32,11 @@ describe('WsRequestExecutor', () => {
 
   afterEach(() =>
     reset<
-      | VirtualScripts
       | RequestExecutorOptions
       | ProxyFactory
       | CertificatesCache
       | CertificatesResolver
     >(
-      virtualScriptsMock,
       proxyFactoryMock,
       spiedExecutorOptions,
       certificatesCacheMock,
@@ -201,50 +196,6 @@ describe('WsRequestExecutor', () => {
       const response = await executor.execute(request);
 
       expect(response.body).toBe('test reply');
-    });
-
-    it('should call onResponse script hook and modify response', async () => {
-      const url = `ws://localhost:${wsPort}`;
-      const request = new Request({ url, headers: {}, protocol: Protocol.WS });
-      const virtualScript = new VirtualScript(
-        'localhost',
-        VirtualScriptType.LOCAL,
-        'module.exports.onResponse = (res) => ({ ...res, body: "modified" });'
-      );
-      virtualScript.compile();
-      when(virtualScriptsMock.find('localhost')).thenReturn(virtualScript);
-
-      server.on('connection', (socket) => {
-        socket.on('message', () => {
-          socket.send('original', { binary: false, compress: false });
-        });
-      });
-
-      const response = await executor.execute(request);
-
-      expect(response.body).toBe('modified');
-    });
-
-    it('should pass through response if onResponse is not exported', async () => {
-      const url = `ws://localhost:${wsPort}`;
-      const request = new Request({ url, headers: {}, protocol: Protocol.WS });
-      const virtualScript = new VirtualScript(
-        'localhost',
-        VirtualScriptType.LOCAL,
-        'module.exports.handle = (req) => req;'
-      );
-      virtualScript.compile();
-      when(virtualScriptsMock.find('localhost')).thenReturn(virtualScript);
-
-      server.on('connection', (socket) => {
-        socket.on('message', () => {
-          socket.send('untouched', { binary: false, compress: false });
-        });
-      });
-
-      const response = await executor.execute(request);
-
-      expect(response.body).toBe('untouched');
     });
   });
 });

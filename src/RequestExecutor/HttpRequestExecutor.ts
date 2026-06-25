@@ -473,35 +473,19 @@ export class HttpRequestExecutor implements RequestExecutor {
 
     const vm = this.virtualScripts.find(hostname);
 
-    if (!vm) {
+    if (!vm || !vm.has(this.RESPONSE_SCRIPT_ENTRYPOINT)) {
       return response;
     }
 
-    let result: Response | void;
-
-    try {
-      result = await vm.exec<ResponseScriptEntrypoint>(
-        this.RESPONSE_SCRIPT_ENTRYPOINT,
-        {
-          protocol: response.protocol,
-          statusCode: response.statusCode,
-          headers: response.headers,
-          body: response.body
-        }
-      );
-    } catch (e) {
-      if (e instanceof Error && e.message.includes('missing function')) {
-        return response;
+    const result = await vm.exec<ResponseScriptEntrypoint>(
+      this.RESPONSE_SCRIPT_ENTRYPOINT,
+      {
+        protocol: response.protocol,
+        statusCode: response.statusCode,
+        headers: response.headers,
+        body: response.body
       }
-
-      logger.warn(
-        'Error in onResponse script for "%s": %s',
-        request.url,
-        (e as Error).message
-      );
-
-      return response;
-    }
+    );
 
     if (!result) {
       return response;
