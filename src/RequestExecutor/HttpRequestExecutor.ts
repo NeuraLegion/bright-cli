@@ -10,7 +10,14 @@ import { CertificatesResolver } from './CertificatesResolver';
 import { inject, injectable } from 'tsyringe';
 import iconv from 'iconv-lite';
 import { safeParse } from 'fast-content-type-parse';
-import { Curl, CurlFeature, HeaderInfo, Multi } from '@brightsec/node-libcurl';
+import {
+  Curl,
+  CurlAuth,
+  CurlFeature,
+  CurlGssApi,
+  HeaderInfo,
+  Multi
+} from '@brightsec/node-libcurl';
 import { parse as parseUrl } from 'node:url';
 
 type ScriptEntrypoint = (
@@ -30,8 +37,6 @@ export class HttpRequestExecutor implements RequestExecutor {
   private readonly MAX_HOST_CONNECTIONS = 100;
   private readonly DEFAULT_SCRIPT_ENTRYPOINT = 'handle';
   private readonly RESPONSE_SCRIPT_ENTRYPOINT = 'onResponse';
-  private readonly CURLAUTH_NEGOTIATE = 4;
-  private readonly CURLGSSAPI_DELEGATION_FLAG = 1;
   private readonly proxyDomains?: RegExp[];
   private readonly proxyDomainsBypass?: RegExp[];
   private readonly kerberosDomains?: RegExp[];
@@ -266,6 +271,7 @@ export class HttpRequestExecutor implements RequestExecutor {
 
     if (
       !this.options.reuseConnection &&
+      !this.shouldApplyKerberos(request) &&
       !this.hasHeader(request, 'connection')
     ) {
       curlHeaders.push('Connection: close');
@@ -370,11 +376,11 @@ export class HttpRequestExecutor implements RequestExecutor {
       return;
     }
 
-    curl.setOpt('HTTPAUTH', this.CURLAUTH_NEGOTIATE);
+    curl.setOpt('HTTPAUTH', CurlAuth.Negotiate);
     curl.setOpt('USERPWD', this.options.kerberos.credentials || ':');
 
     if (this.options.kerberos.delegation) {
-      curl.setOpt('GSSAPI_DELEGATION', this.CURLGSSAPI_DELEGATION_FLAG);
+      curl.setOpt('GSSAPI_DELEGATION', CurlGssApi.DelegationFlag);
     }
 
     logger.debug(
