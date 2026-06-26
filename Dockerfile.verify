@@ -1,7 +1,10 @@
 FROM node:24-alpine
-# Install without a native toolchain - prebuilt binary required.
-# This file is used by tmp-verify-docker-build.yaml to verify that
-# @brightsec/node-libcurl@5.0.14-0 ships a linux-arm64-musl prebuilt binary.
-RUN npm install --ignore-scripts=false @brightsec/node-libcurl@5.0.14-0 \
-    && node -e "require('@brightsec/node-libcurl')" \
-    && echo "node-libcurl loaded successfully"
+# Verify that @brightsec/node-libcurl@5.0.14-0 ships a linux-arm64-musl
+# prebuilt binary. Install in a project directory (required by npm) WITHOUT
+# a native toolchain — build succeeds only if the prebuilt binary is present.
+RUN mkdir /verify && \
+    cd /verify && \
+    npm init -y && \
+    npm install @brightsec/node-libcurl@5.0.14-0 && \
+    node -e "require('@brightsec/node-libcurl')" && \
+    echo "node-libcurl loaded successfully"
