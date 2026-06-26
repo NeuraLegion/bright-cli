@@ -6,10 +6,9 @@
 #
 # The critical test is whether `npm i @brightsec/node-libcurl@5.0.14-0`
 # inside an Alpine arm64 layer succeeds without a native build toolchain.
-# We use a minimal inline Dockerfile so we don't need a published
-# @brightsec/cli release for this check.
+# Dockerfile.verify contains the minimal Alpine build definition.
 #
-# To remove: delete this single file.
+# To remove: delete this file and Dockerfile.verify.
 name: tmp-verify-docker-build
 
 defaults:
@@ -30,26 +29,23 @@ jobs:
   verify-docker-build:
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      # Build a minimal Alpine image for linux/amd64 + linux/arm64 that only
-      # installs @brightsec/node-libcurl@5.0.14-0. This validates that the
-      # prebuilt binary for linux-arm64-musl is present in the package and
-      # can be loaded without a native build toolchain (no gcc/python/make).
-      # `--output type=cacheonly` builds both platforms fully but writes
-      # nothing to any registry.
+      # Build Dockerfile.verify for linux/amd64 + linux/arm64.
+      # It installs @brightsec/node-libcurl@5.0.14-0 on Alpine WITHOUT a
+      # native toolchain (no gcc/python/make). The build succeeds only if the
+      # linux-arm64-musl prebuilt binary is present — exactly what this PR
+      # verifies. `--output type=cacheonly` builds both platforms fully but
+      # writes nothing to any registry.
       - name: Verify node-libcurl prebuilt binary on linux/amd64 and linux/arm64
-        run: |
-          cat > /tmp/Dockerfile.verify <<'DOCKERFILE'
-FROM node:24-alpine
-# Install without a native toolchain — must succeed via prebuilt only
-RUN npm install --ignore-scripts=false @brightsec/node-libcurl@5.0.14-0 \
-    && node -e "require('@brightsec/node-libcurl')" \
-    && echo "node-libcurl loaded successfully"
-DOCKERFILE
-          docker buildx build \
-            --platform linux/amd64,linux/arm64 \
-            --output type=cacheonly \
-            --file /tmp/Dockerfile.verify \
-            /tmp
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./Dockerfile.verify
+          platforms: linux/amd64,linux/arm64
+          push: false
+          outputs: type=cacheonly
