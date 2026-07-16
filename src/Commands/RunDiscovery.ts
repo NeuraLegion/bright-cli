@@ -41,7 +41,6 @@ export class RunDiscovery implements CommandModule {
       .option('repeater', {
         alias: 'agent',
         requiresArg: true,
-        array: true,
         describe: 'ID of any repeaters connected with the discovery.'
       })
       .option('archive', {
@@ -137,7 +136,7 @@ export class RunDiscovery implements CommandModule {
           hostsFilter: args.hostFilter,
           crawlerUrls: args.crawler,
           fileId: args.archive,
-          repeaters: args.repeater,
+          repeaters: args.repeater ? [args.repeater as string] : undefined,
           optimizedCrawler: args.smart,
           poolSize: args.concurrency,
           maxInteractionsChainLength: args.interactionsDepth,

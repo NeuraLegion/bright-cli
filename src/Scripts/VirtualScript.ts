@@ -62,6 +62,13 @@ export class VirtualScript {
     return this;
   }
 
+  public has(functionName: string): boolean {
+    this.script.runInContext(this.context, { timeout: 100 });
+    const { exports = {} } = this.context.module;
+
+    return typeof exports[functionName] === 'function';
+  }
+
   // eslint-disable-next-line @typescript-eslint/require-await
   public async exec<Fun extends (...args: any[]) => any>(
     functionName: string,

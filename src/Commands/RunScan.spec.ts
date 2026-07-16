@@ -220,7 +220,7 @@ describe('RunScan', () => {
         header: ['header1', 'header2'],
         crawler: ['test-crawler'],
         archive: 'test-archive',
-        repeater: ['test-repeater'],
+        repeater: 'test-repeater',
         smart: true,
         param: ['param1', 'param2'],
         excludeEntryPoint: ['exclude-entry-point'],
@@ -243,7 +243,7 @@ describe('RunScan', () => {
             hostsFilter: args.hostFilter as string[],
             crawlerUrls: args.crawler as string[],
             fileId: args.archive as string,
-            repeaters: args.repeater as string[],
+            repeaters: [args.repeater as string],
             smart: args.smart as boolean,
             attackParamLocations: args.param as AttackParamLocation[],
             exclusions: {

@@ -1,6 +1,6 @@
 {
   "name": "@brightsec/cli",
-  "version": "13.11.0",
+  "version": "13.12.0-next.1",
   "private": false,
   "repository": {
     "type": "git",
@@ -25,6 +25,7 @@
     "node": ">=22 <=24"
   },
   "dependencies": {
+    "@brightsec/node-libcurl": "5.1.2",
     "@modelcontextprotocol/sdk": "1.17.5",
     "@neuralegion/os-service": "^2.0.5",
     "@neuralegion/raw-socket": "^2.0.0",
@@ -129,6 +130,7 @@
   "pkg": {
     "scripts": "dist/**/*.js",
     "assets": [
+      "./node_modules/@brightsec/node-libcurl/lib/binding/node_libcurl.node",
       "./node_modules/axios/**",
       "./node_modules/win-ca/lib/crypt32-*.node",
       "./node_modules/@neuralegion/os-service/prebuilds/win32-x64/@neuralegion+os-service.abi127.node",

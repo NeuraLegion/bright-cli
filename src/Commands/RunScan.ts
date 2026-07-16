@@ -62,7 +62,6 @@ export class RunScan implements CommandModule {
       .option('repeater', {
         alias: 'agent',
         requiresArg: true,
-        array: true,
         describe: 'ID of any repeaters connected with the scan.'
       })
       .option('archive', {
@@ -218,7 +217,7 @@ export class RunScan implements CommandModule {
         headers: Helpers.parseHeaders(args.header as string[]),
         crawlerUrls: args.crawler,
         fileId: args.archive,
-        repeaters: args.repeater,
+        repeaters: args.repeater ? [args.repeater as string] : undefined,
         smart: args.smart,
         attackParamLocations: args.param,
         poolSize: args.concurrency,

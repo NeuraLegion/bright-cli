@@ -43,6 +43,8 @@ export type RepeaterServerRequestResponse =
       errorCode?: string;
       headers?: Record<string, string | string[] | undefined>;
       body?: string;
+      encoding?: 'base64';
+      ttfb?: number;
     }
   | {
       protocol: Protocol;

@@ -24,7 +24,7 @@ The NPM allows you to install the Bright Command Line Interface (CLI) on your ma
 Before you can use **Bright CLI** make sure you have the following:
 
 - An active user in [the Bright app](https://app.brightsec.com/)
-- You have Docker installed on your machine.
+- You have Docker installed on your machine (optional, required only if you run Bright CLI as a Docker container).
 - You have a valid [organization API key](https://docs.brightsec.com/docs/manage-your-organization#manage-organization-apicli-authentication-tokens) or a [personal API key](https://docs.brightsec.com/docs/manage-your-personal-account#manage-your-personal-api-keys-authentication-tokens) with the following scopes: `bot`, `scans:run` and `scans:read`.
 - You have registered (created) a Repeater in the Bright app and copied the generated Repeater ID. For the instructions on how to register a Repeater, see [here](https://docs.brightsec.com/docs/manage-repeaters#create-a-new-repeater).
 - You have copied the Bright Project ID under which you want to run a scan. A Project ID is required. If you do not have any custom projects, use the Default Project ID.
