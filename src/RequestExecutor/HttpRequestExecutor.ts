@@ -10,7 +10,14 @@ import { CertificatesResolver } from './CertificatesResolver';
 import { inject, injectable } from 'tsyringe';
 import iconv from 'iconv-lite';
 import { safeParse } from 'fast-content-type-parse';
-import { Curl, CurlFeature, HeaderInfo, Multi } from '@brightsec/node-libcurl';
+import {
+  Curl,
+  CurlAuth,
+  CurlFeature,
+  CurlGssApi,
+  HeaderInfo,
+  Multi
+} from '@brightsec/node-libcurl';
 import { parse as parseUrl } from 'node:url';
 
 type ScriptEntrypoint = (
@@ -32,6 +39,7 @@ export class HttpRequestExecutor implements RequestExecutor {
   private readonly RESPONSE_SCRIPT_ENTRYPOINT = 'onResponse';
   private readonly proxyDomains?: RegExp[];
   private readonly proxyDomainsBypass?: RegExp[];
+  private readonly kerberosDomains?: RegExp[];
   private readonly sharedMulti = new Multi();
 
   get protocol(): Protocol {
@@ -68,7 +76,13 @@ export class HttpRequestExecutor implements RequestExecutor {
       );
     }
 
-    if (this.options.reuseConnection) {
+    if (this.options.kerberos?.enabled && this.options.kerberos.domains) {
+      this.kerberosDomains = this.options.kerberos.domains.map((domain) =>
+        Helpers.wildcardToRegExp(domain)
+      );
+    }
+
+    if (this.options.reuseConnection || this.options.kerberos?.enabled) {
       this.sharedMulti.setOpt(
         'MAX_HOST_CONNECTIONS',
         this.MAX_HOST_CONNECTIONS
@@ -175,7 +189,7 @@ export class HttpRequestExecutor implements RequestExecutor {
     this.applyCurlTimeout(curl, options);
     this.applyCurlHeaders(curl, options);
 
-    if (this.options.reuseConnection) {
+    if (this.options.reuseConnection || this.shouldApplyKerberos(options)) {
       curl.setOpt('TCP_KEEPALIVE', 1);
       curl.setOpt('TCP_KEEPIDLE', this.KEEP_ALIVE_IDLE_TIMEOUT);
       curl.setMulti(this.sharedMulti);
@@ -183,6 +197,8 @@ export class HttpRequestExecutor implements RequestExecutor {
       curl.setOpt('FRESH_CONNECT', 1);
       curl.setOpt('FORBID_REUSE', 1);
     }
+
+    this.applyCurlKerberos(curl, options);
 
     const proxyUrl = this.resolveProxy(options);
 
@@ -255,6 +271,7 @@ export class HttpRequestExecutor implements RequestExecutor {
 
     if (
       !this.options.reuseConnection &&
+      !this.shouldApplyKerberos(request) &&
       !this.hasHeader(request, 'connection')
     ) {
       curlHeaders.push('Connection: close');
@@ -338,6 +355,38 @@ export class HttpRequestExecutor implements RequestExecutor {
     }
 
     return this.options.proxyUrl;
+  }
+
+  private shouldApplyKerberos(options: Request): boolean {
+    if (!this.options.kerberos?.enabled) {
+      return false;
+    }
+
+    if (!this.kerberosDomains) {
+      return true;
+    }
+
+    const hostname = parseUrl(options.url).hostname;
+
+    return this.kerberosDomains.some((domain) => domain.test(hostname));
+  }
+
+  private applyCurlKerberos(curl: Curl, options: Request): void {
+    if (!this.shouldApplyKerberos(options)) {
+      return;
+    }
+
+    curl.setOpt('HTTPAUTH', CurlAuth.Negotiate);
+    curl.setOpt('USERPWD', this.options.kerberos.credentials || ':');
+
+    if (this.options.kerberos.delegation) {
+      curl.setOpt('GSSAPI_DELEGATION', CurlGssApi.DelegationFlag);
+    }
+
+    logger.debug(
+      'Applying Kerberos/SPNEGO authentication for URL "%s"',
+      options.url
+    );
   }
 
   private truncateResponse(

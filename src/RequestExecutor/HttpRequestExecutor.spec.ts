@@ -1229,4 +1229,80 @@ describe('HttpRequestExecutor', () => {
     // assert
     expect(response.body).toEqual('original');
   });
+
+  describe('Kerberos authentication', () => {
+    it('should handle kerberos-enabled requests gracefully', async () => {
+      // When kerberos is enabled, the executor sets HTTPAUTH=Negotiate and
+      // activates connection reuse (shared Multi) for SPNEGO handshake.
+      // If GSSAPI is unavailable, curl returns an error response (not a throw).
+      const { baseUrl } = await startServer((_req, res) => {
+        res.writeHead(200, { 'Content-Type': 'text/plain' });
+        res.end('ok');
+      });
+      const sut = buildSut({
+        kerberos: { enabled: true }
+      });
+      const { request } = createRequest({ url: `${baseUrl}/a` });
+
+      // Must not throw — returns either 200 (if GSSAPI works) or error response
+      const response = await sut.execute(request);
+
+      expect(response).toBeDefined();
+      expect(response.protocol).toBe(Protocol.HTTP);
+    });
+
+    it('should not apply kerberos when kerberos is not enabled', async () => {
+      // arrange
+      let connectionCount = 0;
+      const { server, baseUrl } = await startServer((_req, res) => {
+        res.writeHead(200, { 'Content-Type': 'text/plain' });
+        res.end('ok');
+      });
+      server.on('connection', () => {
+        connectionCount++;
+      });
+      const sut = buildSut({});
+      const { request: req1 } = createRequest({ url: `${baseUrl}/a` });
+      const { request: req2 } = createRequest({ url: `${baseUrl}/b` });
+
+      // act
+      await sut.execute(req1);
+      await sut.execute(req2);
+
+      // assert — no connection reuse without kerberos or reuseConnection
+      expect(connectionCount).toBe(2);
+    });
+
+    it('should only apply kerberos to matching domains when kerberos-domains is specified', async () => {
+      // arrange
+      let connectionCount = 0;
+      const { server, baseUrl } = await startServer((_req, res) => {
+        res.writeHead(200, { 'Content-Type': 'text/plain' });
+        res.end('ok');
+      });
+      server.on('connection', () => {
+        connectionCount++;
+      });
+
+      // kerberos only for *.example.com — 127.0.0.1 won't match
+      const sut = buildSut({
+        kerberos: {
+          enabled: true,
+          domains: ['*.example.com']
+        }
+      });
+
+      // Requests to 127.0.0.1 do NOT match *.example.com,
+      // so kerberos won't apply and connections won't be reused
+      const { request: req1 } = createRequest({ url: `${baseUrl}/a` });
+      const { request: req2 } = createRequest({ url: `${baseUrl}/b` });
+
+      // act
+      await sut.execute(req1);
+      await sut.execute(req2);
+
+      // assert — no kerberos applied, so FRESH_CONNECT used
+      expect(connectionCount).toBe(2);
+    });
+  });
 });
