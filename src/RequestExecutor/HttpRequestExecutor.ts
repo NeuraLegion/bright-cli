@@ -35,6 +35,11 @@ type ResponseScriptEntrypoint = (options: {
 export class HttpRequestExecutor implements RequestExecutor {
   private readonly KEEP_ALIVE_IDLE_TIMEOUT = 60;
   private readonly MAX_HOST_CONNECTIONS = 100;
+  // libcurl seek callback contract, see CURLOPT_SEEKFUNCTION.
+  private readonly CURL_SEEKFUNC_OK = 0;
+  private readonly CURL_SEEKFUNC_FAIL = 1;
+  private readonly SEEK_CUR = 1;
+  private readonly SEEK_END = 2;
   private readonly DEFAULT_SCRIPT_ENTRYPOINT = 'handle';
   private readonly RESPONSE_SCRIPT_ENTRYPOINT = 'onResponse';
   private readonly proxyDomains?: RegExp[];
@@ -233,8 +238,51 @@ export class HttpRequestExecutor implements RequestExecutor {
       ? iconv.encode(options.body, options.encoding)
       : Buffer.from(options.body);
 
-    curl.setOpt('POSTFIELDS', bodyBuffer.toString());
-    curl.setOpt('POSTFIELDSIZE', bodyBuffer.length);
+    // The body has to reach libcurl as raw bytes. POSTFIELDS cannot be used for
+    // that: it only accepts a JS string and the binding re-encodes it as UTF-8,
+    // which replaces every byte that is not valid UTF-8 with U+FFFD (EF BF BD)
+    // and silently corrupts binary bodies. Feeding the buffer through the read
+    // callback keeps it byte-exact.
+    let offset = 0;
+
+    curl.setOpt('UPLOAD', true);
+    curl.setOpt('INFILESIZE_LARGE', bodyBuffer.length);
+    curl.setOpt(
+      'READFUNCTION',
+      (target: Buffer, size: number, nmemb: number) => {
+        const length = Math.min(size * nmemb, bodyBuffer.length - offset);
+
+        if (length <= 0) {
+          return 0;
+        }
+
+        bodyBuffer.copy(target, 0, offset, offset + length);
+        offset += length;
+
+        return length;
+      }
+    );
+
+    // libcurl replays the body when a request has to be sent twice, e.g. during
+    // authentication negotiation. A read callback without a seek callback is
+    // reported as non-seekable, which fails the replay.
+    curl.setOpt('SEEKFUNCTION', (position: number, origin: number) => {
+      const base =
+        origin === this.SEEK_CUR
+          ? offset
+          : origin === this.SEEK_END
+          ? bodyBuffer.length
+          : 0;
+      const target = base + position;
+
+      if (target < 0 || target > bodyBuffer.length) {
+        return this.CURL_SEEKFUNC_FAIL;
+      }
+
+      offset = target;
+
+      return this.CURL_SEEKFUNC_OK;
+    });
   }
 
   private applyCurlTls(curl: Curl, options: Request): void {
@@ -501,17 +549,27 @@ export class HttpRequestExecutor implements RequestExecutor {
       return script;
     }
 
+    // Scripts see a decoded, string view of the body. That view is lossy for
+    // bytes that are not valid UTF-8, so the original body and its encoding are
+    // restored whenever the script leaves the body untouched.
+    const decodedBody = script.encoding
+      ? iconv.encode(script.body, script.encoding).toString()
+      : script.body;
+
     const result = await vm.exec<ScriptEntrypoint>(
       this.DEFAULT_SCRIPT_ENTRYPOINT,
       {
         ...script.toJSON(),
-        body: script.encoding
-          ? iconv.encode(script.body, script.encoding).toString()
-          : script.body
+        body: decodedBody
       }
     );
+    const bodyUntouched = !!result && result.body === decodedBody;
 
-    return new Request(result);
+    return new Request(
+      bodyUntouched
+        ? { ...result, body: script.body, encoding: script.encoding }
+        : result
+    );
   }
 
   private async handleResponseScript(

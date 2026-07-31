@@ -16,6 +16,7 @@ import {
   verify,
   when
 } from 'ts-mockito';
+import { Curl } from '@brightsec/node-libcurl';
 import http from 'node:http';
 import { once } from 'node:events';
 import net, { AddressInfo } from 'node:net';
@@ -1228,6 +1229,575 @@ describe('HttpRequestExecutor', () => {
 
     // assert
     expect(response.body).toEqual('original');
+  });
+
+  describe('request body', () => {
+    /** Builds a deterministic 0x00..0xFF repeating pattern. */
+    const binaryPattern = (size: number): Buffer => {
+      const pattern = Buffer.alloc(size);
+
+      for (let i = 0; i < size; i++) {
+        pattern[i] = i % 256;
+      }
+
+      return pattern;
+    };
+
+    /** Offset of the first differing byte, or -1 when both buffers match. */
+    const firstMismatch = (actual: Buffer, expected: Buffer): number => {
+      const length = Math.min(actual.length, expected.length);
+
+      for (let i = 0; i < length; i++) {
+        if (actual[i] !== expected[i]) {
+          return i;
+        }
+      }
+
+      return actual.length === expected.length ? -1 : length;
+    };
+
+    const startBodyCapturingServer = async () => {
+      let resolveRequest!: (value: {
+        method: string;
+        headers: http.IncomingHttpHeaders;
+        body: Buffer;
+      }) => void;
+      const received = new Promise<{
+        method: string;
+        headers: http.IncomingHttpHeaders;
+        body: Buffer;
+      }>((resolve) => {
+        resolveRequest = resolve;
+      });
+
+      const { baseUrl } = await startServer((req, res) => {
+        const chunks: Buffer[] = [];
+        req.on('data', (chunk: Buffer) => chunks.push(chunk));
+        req.on('end', () => {
+          resolveRequest({
+            method: req.method,
+            headers: req.headers,
+            body: Buffer.concat(chunks)
+          });
+          res.writeHead(200);
+          res.end('ok');
+        });
+      });
+
+      return { baseUrl, received };
+    };
+
+    it('should forward a base64 encoded binary body byte-exactly', async () => {
+      // arrange
+      const expected = binaryPattern(4096);
+      const { baseUrl, received } = await startBodyCapturingServer();
+      const { request } = createRequest({
+        url: `${baseUrl}/`,
+        method: 'POST',
+        body: expected.toString('base64'),
+        encoding: 'base64'
+      });
+      const sut = buildSut();
+
+      // act
+      await sut.execute(request);
+      const { body } = await received;
+
+      // assert
+      expect(firstMismatch(body, expected)).toBe(-1);
+      expect(body.length).toBe(expected.length);
+    });
+
+    it('should forward a binary body larger than the libcurl upload buffer byte-exactly', async () => {
+      // arrange
+      // 256 KiB spans several read callback invocations.
+      const expected = binaryPattern(256 * 1024);
+      const { baseUrl, received } = await startBodyCapturingServer();
+      const { request } = createRequest({
+        url: `${baseUrl}/`,
+        method: 'POST',
+        body: expected.toString('base64'),
+        encoding: 'base64'
+      });
+      const sut = buildSut();
+
+      // act
+      await sut.execute(request);
+      const { body } = await received;
+
+      // assert
+      expect(firstMismatch(body, expected)).toBe(-1);
+      expect(body.length).toBe(expected.length);
+    });
+
+    it('should forward multi-byte UTF-8 characters in an unencoded body byte-exactly', async () => {
+      // arrange
+      const text = 'héllo wörld — 日本語 🎉';
+      const expected = Buffer.from(text, 'utf8');
+      const { baseUrl, received } = await startBodyCapturingServer();
+      const { request } = createRequest({
+        url: `${baseUrl}/`,
+        method: 'POST',
+        body: text
+      });
+      const sut = buildSut();
+
+      // act
+      await sut.execute(request);
+      const { body } = await received;
+
+      // assert
+      expect(body.toString('utf8')).toEqual(text);
+      expect(firstMismatch(body, expected)).toBe(-1);
+    });
+
+    it('should declare the decoded byte length as Content-Length', async () => {
+      // arrange
+      const expected = binaryPattern(4096);
+      const { baseUrl, received } = await startBodyCapturingServer();
+      const { request } = createRequest({
+        url: `${baseUrl}/`,
+        method: 'POST',
+        body: expected.toString('base64'),
+        encoding: 'base64'
+      });
+      const sut = buildSut();
+
+      // act
+      await sut.execute(request);
+      const { headers } = await received;
+
+      // assert
+      expect(headers['content-length']).toEqual(`${expected.length}`);
+      expect(headers['transfer-encoding']).toBeUndefined();
+    });
+
+    it.each(['POST', 'PUT', 'PATCH', 'DELETE', 'GET'])(
+      'should preserve the %s method while sending a body',
+      async (method: string) => {
+        // arrange
+        const expected = binaryPattern(1024);
+        const { baseUrl, received } = await startBodyCapturingServer();
+        const { request } = createRequest({
+          url: `${baseUrl}/`,
+          method,
+          body: expected.toString('base64'),
+          encoding: 'base64'
+        });
+        const sut = buildSut();
+
+        // act
+        await sut.execute(request);
+        const { method: receivedMethod, body } = await received;
+
+        // assert
+        expect(receivedMethod).toEqual(method);
+        expect(firstMismatch(body, expected)).toBe(-1);
+      }
+    );
+
+    /**
+     * Registers a script for the host of the given URL. The request is built
+     * without the ts-mockito spy used by `createRequest`, because the spy
+     * replaces the private method field and breaks `Request.toJSON()`, which
+     * the script transformation relies on.
+     */
+    const withVirtualScript = (
+      url: string,
+      handle: (options: RequestOptions) => RequestOptions
+    ) => {
+      const { hostname: virtualScriptId } = new URL(url);
+      const virtualScript = new VirtualScript(
+        virtualScriptId,
+        VirtualScriptType.LOCAL,
+        'console.log("test code");'
+      );
+      const spiedVirtualScript = spy(virtualScript);
+      when(spiedVirtualScript.exec(anyString(), anything())).thenCall(
+        (_entrypoint: string, options: RequestOptions) =>
+          Promise.resolve(handle(options))
+      );
+      when(virtualScriptsMock.find(virtualScriptId)).thenReturn(
+        virtualScript,
+        undefined
+      );
+    };
+
+    it('should keep the body byte-exact when a script leaves it untouched', async () => {
+      // arrange
+      const expected = binaryPattern(4096);
+      const { baseUrl, received } = await startBodyCapturingServer();
+      const request = new Request({
+        protocol: Protocol.HTTP,
+        url: `${baseUrl}/`,
+        method: 'POST',
+        body: expected.toString('base64'),
+        encoding: 'base64'
+      });
+      withVirtualScript(request.url, (options) => options);
+      const sut = buildSut();
+
+      // act
+      await sut.execute(request);
+      const { body } = await received;
+
+      // assert
+      expect(firstMismatch(body, expected)).toBe(-1);
+      expect(body.length).toBe(expected.length);
+    });
+
+    it('should send the rewritten body when a script modifies it', async () => {
+      // arrange
+      const { baseUrl, received } = await startBodyCapturingServer();
+      const request = new Request({
+        protocol: Protocol.HTTP,
+        url: `${baseUrl}/`,
+        method: 'POST',
+        body: binaryPattern(4096).toString('base64'),
+        encoding: 'base64'
+      });
+      withVirtualScript(request.url, (options) => ({
+        ...options,
+        body: 'rewritten by the script'
+      }));
+      const sut = buildSut();
+
+      // act
+      await sut.execute(request);
+      const { body } = await received;
+
+      // assert
+      expect(body.toString()).toEqual('rewritten by the script');
+    });
+
+    it('should keep the body byte-exact when a script only changes headers', async () => {
+      // arrange
+      const expected = binaryPattern(4096);
+      const { baseUrl, received } = await startBodyCapturingServer();
+      const request = new Request({
+        protocol: Protocol.HTTP,
+        url: `${baseUrl}/`,
+        method: 'POST',
+        body: expected.toString('base64'),
+        encoding: 'base64'
+      });
+      withVirtualScript(request.url, (options) => ({
+        ...options,
+        headers: { ...options.headers, 'x-script': 'applied' }
+      }));
+      const sut = buildSut();
+
+      // act
+      await sut.execute(request);
+      const { headers, body } = await received;
+
+      // assert
+      expect(headers['x-script']).toEqual('applied');
+      expect(firstMismatch(body, expected)).toBe(-1);
+    });
+
+    it('should not send an Expect: 100-continue header', async () => {
+      // arrange
+      // A 100-continue handshake changes what the target observes and stalls
+      // the body by up to a second when the target does not answer it.
+      const expected = binaryPattern(8192);
+      const { baseUrl, received } = await startBodyCapturingServer();
+      const { request } = createRequest({
+        url: `${baseUrl}/`,
+        method: 'POST',
+        body: expected.toString('base64'),
+        encoding: 'base64'
+      });
+      const sut = buildSut();
+
+      // act
+      await sut.execute(request);
+      const { headers } = await received;
+
+      // assert
+      expect(headers.expect).toBeUndefined();
+    });
+
+    it('should not add a default Content-Type to a body sent without one', async () => {
+      // arrange
+      // libcurl adds "Content-Type: application/x-www-form-urlencoded" on its
+      // own for a POSTFIELDS body but not for an upload. Leaving it off matches
+      // the pre-v13.12.0 behaviour, which wrote the body to a raw node socket.
+      const { baseUrl, received } = await startBodyCapturingServer();
+      const { request } = createRequest({
+        url: `${baseUrl}/`,
+        method: 'POST',
+        body: 'payload'
+      });
+      const sut = buildSut();
+
+      // act
+      await sut.execute(request);
+      const { headers } = await received;
+
+      // assert
+      expect(headers['content-type']).toBeUndefined();
+    });
+
+    it('should forward a caller-supplied Content-Type verbatim', async () => {
+      // arrange
+      const { baseUrl, received } = await startBodyCapturingServer();
+      const { request } = createRequest({
+        url: `${baseUrl}/`,
+        method: 'POST',
+        headers: { 'content-type': 'application/octet-stream' },
+        body: binaryPattern(1024).toString('base64'),
+        encoding: 'base64'
+      });
+      const sut = buildSut();
+
+      // act
+      await sut.execute(request);
+      const { headers } = await received;
+
+      // assert
+      expect(headers['content-type']).toEqual('application/octet-stream');
+    });
+
+    it('should not duplicate or override a caller-supplied Content-Length', async () => {
+      // arrange
+      // Security payloads deliberately declare a Content-Length that does not
+      // match the body, so the upload path must not append its own value.
+      const { baseUrl, received } = await startServer();
+      const { request } = createRequest({
+        url: `${baseUrl}/`,
+        method: 'POST',
+        headers: { 'Content-Length': '5' },
+        body: '0123456789'
+      });
+      const sut = buildSut();
+
+      // act
+      await sut.execute(request);
+      const raw = await received();
+
+      // assert
+      expect(
+        raw.split('\r\n').filter((line) => /^content-length:/i.test(line))
+      ).toEqual(['Content-Length: 5']);
+    });
+
+    it('should send neither a body nor Content-Length when the request has no body', async () => {
+      // arrange
+      const { baseUrl, received } = await startBodyCapturingServer();
+      const { request } = createRequest({ url: `${baseUrl}/`, method: 'POST' });
+      const sut = buildSut();
+
+      // act
+      await sut.execute(request);
+      const { method, headers, body } = await received;
+
+      // assert
+      expect(method).toEqual('POST');
+      expect(body.length).toBe(0);
+      expect(headers['content-length']).toBeUndefined();
+      expect(headers['transfer-encoding']).toBeUndefined();
+    });
+
+    it('should send an empty body when the encoded body decodes to zero bytes', async () => {
+      // arrange
+      // A pad-only base64 string decodes to no bytes at all.
+      const { baseUrl, received } = await startBodyCapturingServer();
+      const { request } = createRequest({
+        url: `${baseUrl}/`,
+        method: 'POST',
+        body: '=',
+        encoding: 'base64'
+      });
+      const sut = buildSut();
+
+      // act
+      await sut.execute(request);
+      const { headers, body } = await received;
+
+      // assert
+      expect(body.length).toBe(0);
+      expect(headers['content-length']).toEqual('0');
+    });
+
+    describe('libcurl upload callbacks', () => {
+      // CURLOPT_SEEKFUNCTION contract, see the libcurl documentation.
+      const SEEK_SET = 0;
+      const SEEK_CUR = 1;
+      const SEEK_END = 2;
+      const CURL_SEEKFUNC_OK = 0;
+      const CURL_SEEKFUNC_FAIL = 1;
+
+      type ReadCallback = (
+        target: Buffer,
+        size: number,
+        nmemb: number
+      ) => number;
+      type SeekCallback = (position: number, origin: number) => number;
+
+      /**
+       * Runs a request and returns the options the executor handed to libcurl,
+       * so the read and seek callbacks can be exercised the way libcurl drives
+       * them when it has to send the same request twice.
+       */
+      const executeCapturingCurlOptions = async (
+        request: Request
+      ): Promise<Map<string, unknown>> => {
+        const setOptSpy = jest.spyOn(Curl.prototype, 'setOpt');
+
+        try {
+          await buildSut().execute(request);
+
+          const captured = new Map<string, unknown>();
+
+          for (const call of setOptSpy.mock.calls) {
+            captured.set(String(call[0]), call[1]);
+          }
+
+          return captured;
+        } finally {
+          setOptSpy.mockRestore();
+        }
+      };
+
+      /** Drains the read callback in fixed-size chunks, as libcurl does. */
+      const drain = (read: ReadCallback, chunkSize: number): Buffer => {
+        const chunks: Buffer[] = [];
+        let written: number;
+        let guard = 0;
+
+        do {
+          const target = Buffer.alloc(chunkSize);
+          written = read(target, 1, chunkSize);
+          chunks.push(target.subarray(0, Math.max(written, 0)));
+        } while (written > 0 && ++guard < 1024);
+
+        return Buffer.concat(chunks);
+      };
+
+      const uploadRequest = (baseUrl: string, body: Buffer) =>
+        createRequest({
+          url: `${baseUrl}/`,
+          method: 'POST',
+          body: body.toString('base64'),
+          encoding: 'base64'
+        }).request;
+
+      it('should register a seek callback alongside the read callback', async () => {
+        // arrange
+        const { baseUrl } = await startBodyCapturingServer();
+        const request = uploadRequest(baseUrl, binaryPattern(1024));
+
+        // act
+        const options = await executeCapturingCurlOptions(request);
+
+        // assert
+        expect(options.get('UPLOAD')).toBe(true);
+        expect(options.get('INFILESIZE_LARGE')).toBe(1024);
+        expect(typeof options.get('READFUNCTION')).toBe('function');
+        // Without a seek callback libcurl reports the body as non-seekable and
+        // cannot replay it, which breaks authentication negotiation.
+        expect(typeof options.get('SEEKFUNCTION')).toBe('function');
+      });
+
+      it('should replay the body byte-for-byte after seeking back to the start', async () => {
+        // arrange
+        const expected = binaryPattern(4096);
+        const { baseUrl } = await startBodyCapturingServer();
+        const options = await executeCapturingCurlOptions(
+          uploadRequest(baseUrl, expected)
+        );
+        const read = options.get('READFUNCTION') as ReadCallback;
+        const seek = options.get('SEEKFUNCTION') as SeekCallback;
+
+        // act
+        // The body is fully consumed at this point, which is the state libcurl
+        // is in when it has to send the request a second time.
+        const atEof = read(Buffer.alloc(64), 1, 64);
+        const seekResult = seek(0, SEEK_SET);
+        const replayed = drain(read, 512);
+
+        // assert
+        expect(atEof).toBe(0);
+        expect(seekResult).toBe(CURL_SEEKFUNC_OK);
+        expect(firstMismatch(replayed, expected)).toBe(-1);
+      });
+
+      it('should resolve seek positions against the requested origin', async () => {
+        // arrange
+        const expected = binaryPattern(1024);
+        const { baseUrl } = await startBodyCapturingServer();
+        const options = await executeCapturingCurlOptions(
+          uploadRequest(baseUrl, expected)
+        );
+        const read = options.get('READFUNCTION') as ReadCallback;
+        const seek = options.get('SEEKFUNCTION') as SeekCallback;
+        const readNext = (length: number): Buffer => {
+          const target = Buffer.alloc(length);
+          read(target, 1, length);
+
+          return target;
+        };
+
+        // act
+        const fromSet = seek(8, SEEK_SET);
+        const afterSet = readNext(8);
+        const fromCur = seek(4, SEEK_CUR);
+        const afterCur = readNext(4);
+        const fromEnd = seek(-16, SEEK_END);
+        const afterEnd = drain(read, 64);
+
+        // assert
+        expect(fromSet).toBe(CURL_SEEKFUNC_OK);
+        expect(afterSet).toEqual(expected.subarray(8, 16));
+        expect(fromCur).toBe(CURL_SEEKFUNC_OK);
+        expect(afterCur).toEqual(expected.subarray(20, 24));
+        expect(fromEnd).toBe(CURL_SEEKFUNC_OK);
+        expect(afterEnd).toEqual(expected.subarray(expected.length - 16));
+      });
+
+      it('should reject seek positions outside the body', async () => {
+        // arrange
+        const expected = binaryPattern(1024);
+        const { baseUrl } = await startBodyCapturingServer();
+        const options = await executeCapturingCurlOptions(
+          uploadRequest(baseUrl, expected)
+        );
+        const seek = options.get('SEEKFUNCTION') as SeekCallback;
+
+        // act
+        const beforeStart = seek(-1, SEEK_SET);
+        const pastEnd = seek(expected.length + 1, SEEK_SET);
+        const withinBody = seek(0, SEEK_SET);
+
+        // assert
+        expect(beforeStart).toBe(CURL_SEEKFUNC_FAIL);
+        expect(pastEnd).toBe(CURL_SEEKFUNC_FAIL);
+        expect(withinBody).toBe(CURL_SEEKFUNC_OK);
+      });
+
+      it('should never write past the buffer window libcurl asked for', async () => {
+        // arrange
+        const expected = binaryPattern(4096);
+        const { baseUrl } = await startBodyCapturingServer();
+        const options = await executeCapturingCurlOptions(
+          uploadRequest(baseUrl, expected)
+        );
+        const read = options.get('READFUNCTION') as ReadCallback;
+        const seek = options.get('SEEKFUNCTION') as SeekCallback;
+        const target = Buffer.alloc(expected.length);
+
+        // act
+        seek(0, SEEK_SET);
+        const written = read(target, 1, 128);
+
+        // assert
+        expect(written).toBe(128);
+        expect(target.subarray(0, 128)).toEqual(expected.subarray(0, 128));
+        // Bytes 128.. of the pattern are non-zero, so an overrun would show up.
+        expect(target.subarray(128).every((byte) => byte === 0)).toBe(true);
+      });
+    });
   });
 
   describe('Kerberos authentication', () => {
