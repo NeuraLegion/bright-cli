@@ -1470,6 +1470,33 @@ describe('HttpRequestExecutor', () => {
       expect(body.toString()).toEqual('rewritten by the script');
     });
 
+    it('should honour an encoding a script adds without touching the body', async () => {
+      // arrange
+      // `Request.toJSON()` does not carry `encoding`, so a script that sets one
+      // is asking for its own body to be decoded. Restoring the original body
+      // and encoding here would silently drop that instruction.
+      const expected = binaryPattern(1024);
+      const { baseUrl, received } = await startBodyCapturingServer();
+      const request = new Request({
+        protocol: Protocol.HTTP,
+        url: `${baseUrl}/`,
+        method: 'POST',
+        body: expected.toString('base64')
+      });
+      withVirtualScript(request.url, (options) => ({
+        ...options,
+        encoding: 'base64'
+      }));
+      const sut = buildSut();
+
+      // act
+      await sut.execute(request);
+      const { body } = await received;
+
+      // assert
+      expect(firstMismatch(body, expected)).toBe(-1);
+    });
+
     it('should keep the body byte-exact when a script only changes headers', async () => {
       // arrange
       const expected = binaryPattern(4096);
