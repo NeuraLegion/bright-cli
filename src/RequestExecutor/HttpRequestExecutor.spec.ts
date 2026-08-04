@@ -1563,9 +1563,9 @@ describe('HttpRequestExecutor', () => {
       // arrange
       // Security payloads deliberately declare a Content-Length that does not
       // match the body, so the upload path must not append its own value.
-      const { baseUrl, received } = await startServer();
+      const fixture = await startServer();
       const { request } = createRequest({
-        url: `${baseUrl}/`,
+        url: `${fixture.baseUrl}/`,
         method: 'POST',
         headers: { 'Content-Length': '5' },
         body: '0123456789'
@@ -1574,7 +1574,8 @@ describe('HttpRequestExecutor', () => {
 
       // act
       await sut.execute(request);
-      const raw = await received();
+      const raw = await fixture.received();
+      fixture.close();
 
       // assert
       expect(
