@@ -973,265 +973,263 @@ describe('HttpRequestExecutor', () => {
         .filter((line) => line.toLowerCase() === 'accept-encoding: identity');
       expect(identityHeaders).toHaveLength(0);
     });
-  });
 
-  it('should include ttfb in a successful response', async () => {
-    // arrange
-    const { baseUrl } = await startServer((_req, res) => {
-      res.writeHead(200);
-      res.end('ok');
+    it('should include ttfb in a successful response', async () => {
+      // arrange
+      const { baseUrl } = await startServer((_req, res) => {
+        res.writeHead(200);
+        res.end('ok');
+      });
+      const { request } = createRequest({ url: `${baseUrl}/` });
+      const sut = buildSut();
+
+      // act
+      const response = await sut.execute(request);
+
+      // assert
+      expect(response.ttfb).toBeGreaterThanOrEqual(0);
     });
-    const { request } = createRequest({ url: `${baseUrl}/` });
-    const sut = buildSut();
 
-    // act
-    const response = await sut.execute(request);
+    it('should include ttfb even on HTTP error responses', async () => {
+      // arrange
+      const { baseUrl } = await startServer((_req, res) => {
+        res.writeHead(500);
+        res.end('error body');
+      });
+      const { request } = createRequest({ url: `${baseUrl}/` });
+      const sut = buildSut();
 
-    // assert
-    expect(response.ttfb).toBeGreaterThanOrEqual(0);
-  });
+      // act
+      const response = await sut.execute(request);
 
-  it('should include ttfb even on HTTP error responses', async () => {
-    // arrange
-    const { baseUrl } = await startServer((_req, res) => {
-      res.writeHead(500);
-      res.end('error body');
+      // assert
+      expect(response.statusCode).toBe(500);
+      expect(response.ttfb).toBeDefined();
     });
-    const { request } = createRequest({ url: `${baseUrl}/` });
-    const sut = buildSut();
 
-    // act
-    const response = await sut.execute(request);
+    it('should not include ttfb when the request fails before reaching the target', async () => {
+      // arrange
+      const { request } = createRequest({ url: 'http://127.0.0.1:1/' });
+      const sut = buildSut();
 
-    // assert
-    expect(response.statusCode).toBe(500);
-    expect(response.ttfb).toBeDefined();
-  });
+      // act
+      const response = await sut.execute(request);
 
-  it('should not include ttfb when the request fails before reaching the target', async () => {
-    // arrange
-    const { request } = createRequest({ url: 'http://127.0.0.1:1/' });
-    const sut = buildSut();
-
-    // act
-    const response = await sut.execute(request);
-
-    // assert
-    expect(response.errorCode).toBeDefined();
-    expect(response.ttfb).toBeUndefined();
-  });
-
-  it('should reuse the TCP connection across requests when reuseConnection is true', async () => {
-    // arrange
-    // Connection reuse is provided by a per-host Multi handle whose
-    // connection pool survives individual Curl handle teardown.
-    // When reuseConnection is true we set TCP_KEEPALIVE and TCP_KEEPIDLE and
-    // wire each Curl handle to a dedicated per-host Multi so that
-    // MAX_HOST_CONNECTIONS applies per origin.
-    let connectionCount = 0;
-    const { server, baseUrl } = await startServer((_req, res) => {
-      res.writeHead(200, { 'Content-Type': 'text/plain' });
-      res.end('ok');
+      // assert
+      expect(response.errorCode).toBeDefined();
+      expect(response.ttfb).toBeUndefined();
     });
-    server.on('connection', () => {
-      connectionCount++;
+
+    it('should reuse the TCP connection across requests when reuseConnection is true', async () => {
+      // arrange
+      // Connection reuse is provided by a per-host Multi handle whose
+      // connection pool survives individual Curl handle teardown.
+      // When reuseConnection is true we set TCP_KEEPALIVE and TCP_KEEPIDLE and
+      // wire each Curl handle to a dedicated per-host Multi so that
+      // MAX_HOST_CONNECTIONS applies per origin.
+      let connectionCount = 0;
+      const { server, baseUrl } = await startServer((_req, res) => {
+        res.writeHead(200, { 'Content-Type': 'text/plain' });
+        res.end('ok');
+      });
+      server.on('connection', () => {
+        connectionCount++;
+      });
+      const reuseExecutor = new HttpRequestExecutor(
+        instance(virtualScriptsMock),
+        { reuseConnection: true },
+        certificatesCacheMock,
+        instance(certificatesResolverMock)
+      );
+      const { request: req1 } = createRequest({ url: `${baseUrl}/a` });
+      const { request: req2 } = createRequest({ url: `${baseUrl}/b` });
+      const { request: req3 } = createRequest({ url: `${baseUrl}/c` });
+
+      // act
+      await reuseExecutor.execute(req1);
+      await reuseExecutor.execute(req2);
+      await reuseExecutor.execute(req3);
+
+      // assert
+      // All three requests should travel over the same TCP connection.
+      expect(connectionCount).toBe(1);
     });
-    const reuseExecutor = new HttpRequestExecutor(
-      instance(virtualScriptsMock),
-      { reuseConnection: true },
-      certificatesCacheMock,
-      instance(certificatesResolverMock)
-    );
-    const { request: req1 } = createRequest({ url: `${baseUrl}/a` });
-    const { request: req2 } = createRequest({ url: `${baseUrl}/b` });
-    const { request: req3 } = createRequest({ url: `${baseUrl}/c` });
 
-    // act
-    await reuseExecutor.execute(req1);
-    await reuseExecutor.execute(req2);
-    await reuseExecutor.execute(req3);
+    it('should open a new TCP connection for each request when reuseConnection is false', async () => {
+      // arrange
+      // When reuseConnection is false we set FRESH_CONNECT and FORBID_REUSE
+      // to match the node default-off keepAlive behaviour, ensuring each
+      // request opens a fresh TCP connection.
+      let connectionCount = 0;
+      const { server, baseUrl } = await startServer((_req, res) => {
+        res.writeHead(200);
+        res.end('ok');
+      });
+      server.on('connection', () => {
+        connectionCount++;
+      });
+      const { request: req1 } = createRequest({ url: `${baseUrl}/a` });
+      const { request: req2 } = createRequest({ url: `${baseUrl}/b` });
+      const sut = buildSut();
 
-    // assert
-    // All three requests should travel over the same TCP connection.
-    expect(connectionCount).toBe(1);
-  });
+      // act
+      await sut.execute(req1);
+      await sut.execute(req2);
 
-  it('should open a new TCP connection for each request when reuseConnection is false', async () => {
-    // arrange
-    // When reuseConnection is false we set FRESH_CONNECT and FORBID_REUSE
-    // to match the node default-off keepAlive behaviour, ensuring each
-    // request opens a fresh TCP connection.
-    let connectionCount = 0;
-    const { server, baseUrl } = await startServer((_req, res) => {
-      res.writeHead(200);
-      res.end('ok');
+      // assert
+      expect(connectionCount).toBe(2);
     });
-    server.on('connection', () => {
-      connectionCount++;
+
+    it('should send Connection: close header on the wire when reuseConnection is false', async () => {
+      // arrange
+      // FRESH_CONNECT / FORBID_REUSE are client-side only; the server still needs
+      // to be told to close the connection.  The executor must inject the header
+      // when the caller has not supplied one.
+      const fixture = await startServer();
+      const { request } = createRequest({
+        url: `http://127.0.0.1:${fixture.port}/`
+      });
+      const sut = buildSut();
+
+      // act
+      const results = await Promise.all([
+        sut.execute(request),
+        fixture.received()
+      ]);
+      fixture.close();
+
+      // assert
+      const headers = results[1].toLowerCase();
+      expect(headers).toContain('connection: close');
     });
-    const { request: req1 } = createRequest({ url: `${baseUrl}/a` });
-    const { request: req2 } = createRequest({ url: `${baseUrl}/b` });
-    const sut = buildSut();
 
-    // act
-    await sut.execute(req1);
-    await sut.execute(req2);
+    it('should not duplicate Connection header when the caller already supplies one', async () => {
+      // arrange
+      // If the caller provides their own Connection header (e.g. "keep-alive")
+      // the executor must NOT append an additional Connection: close line.
+      const fixture = await startServer();
+      const { request } = createRequest({
+        url: `http://127.0.0.1:${fixture.port}/`,
+        headers: { Connection: 'keep-alive' }
+      });
+      const sut = buildSut();
 
-    // assert
-    expect(connectionCount).toBe(2);
-  });
+      // act
+      const results = await Promise.all([
+        sut.execute(request),
+        fixture.received()
+      ]);
+      fixture.close();
 
-  it('should send Connection: close header on the wire when reuseConnection is false', async () => {
-    // arrange
-    // FRESH_CONNECT / FORBID_REUSE are client-side only; the server still needs
-    // to be told to close the connection.  The executor must inject the header
-    // when the caller has not supplied one.
-    const fixture = await startServer();
-    const { request } = createRequest({
-      url: `http://127.0.0.1:${fixture.port}/`
+      // assert
+      const connectionHeaders = results[1]
+        .split('\r\n')
+        .filter((line) => line.toLowerCase().startsWith('connection:'));
+      expect(connectionHeaders).toHaveLength(1);
+      expect(connectionHeaders[0].toLowerCase()).toBe('connection: keep-alive');
     });
-    const sut = buildSut();
 
-    // act
-    const results = await Promise.all([
-      sut.execute(request),
-      fixture.received()
-    ]);
-    fixture.close();
+    it('should reuse the same Multi handle for multiple requests to the same host', async () => {
+      // arrange
+      const { baseUrl } = await startServer((_req, res) => {
+        res.writeHead(200);
+        res.end('ok');
+      });
+      const sut = buildSut({ reuseConnection: true });
+      const { request: req1 } = createRequest({ url: `${baseUrl}/a` });
+      const { request: req2 } = createRequest({ url: `${baseUrl}/b` });
+      const { request: req3 } = createRequest({ url: `${baseUrl}/c` });
 
-    // assert
-    const headers = results[1].toLowerCase();
-    expect(headers).toContain('connection: close');
-  });
+      // act
+      await sut.execute(req1);
+      await sut.execute(req2);
+      await sut.execute(req3);
 
-  it('should not duplicate Connection header when the caller already supplies one', async () => {
-    // arrange
-    // If the caller provides their own Connection header (e.g. "keep-alive")
-    // the executor must NOT append an additional Connection: close line.
-    const fixture = await startServer();
-    const { request } = createRequest({
-      url: `http://127.0.0.1:${fixture.port}/`,
-      headers: { Connection: 'keep-alive' }
+      // assert
+      expect(MultiSpy).toHaveBeenCalledTimes(1);
     });
-    const sut = buildSut();
 
-    // act
-    const results = await Promise.all([
-      sut.execute(request),
-      fixture.received()
-    ]);
-    fixture.close();
+    it('should call onResponse script hook and modify response', async () => {
+      // arrange
+      const { baseUrl } = await startServer((_req, res) => {
+        res.writeHead(200, { 'content-type': 'text/plain' });
+        res.end('original');
+      });
+      const { request } = createRequest({ url: baseUrl });
+      const { hostname: virtualScriptId } = new URL(baseUrl);
+      const virtualScript = new VirtualScript(
+        virtualScriptId,
+        VirtualScriptType.LOCAL,
+        'module.exports.handle = (req) => req; module.exports.onResponse = (res) => ({ ...res, body: "intercepted" });'
+      );
+      virtualScript.compile();
+      when(virtualScriptsMock.find(virtualScriptId)).thenReturn(
+        undefined,
+        virtualScript
+      );
+      const sut = buildSut();
 
-    // assert
-    const connectionHeaders = results[1]
-      .split('\r\n')
-      .filter((line) => line.toLowerCase().startsWith('connection:'));
-    expect(connectionHeaders).toHaveLength(1);
-    expect(connectionHeaders[0].toLowerCase()).toBe('connection: keep-alive');
-  });
+      // act
+      const response = await sut.execute(request);
 
-  it('should reuse the same Multi handle for multiple requests to the same host', async () => {
-    // arrange
-    const { baseUrl } = await startServer((_req, res) => {
-      res.writeHead(200);
-      res.end('ok');
+      // assert
+      expect(response.body).toEqual('intercepted');
     });
-    const sut = buildSut({ reuseConnection: true });
-    const { request: req1 } = createRequest({ url: `${baseUrl}/a` });
-    const { request: req2 } = createRequest({ url: `${baseUrl}/b` });
-    const { request: req3 } = createRequest({ url: `${baseUrl}/c` });
 
-    // act
-    await sut.execute(req1);
-    await sut.execute(req2);
-    await sut.execute(req3);
+    it('should pass through response if onResponse returns void', async () => {
+      // arrange
+      const { baseUrl } = await startServer((_req, res) => {
+        res.writeHead(200, { 'content-type': 'text/plain' });
+        res.end('original');
+      });
+      const { request } = createRequest({ url: baseUrl });
+      const { hostname: virtualScriptId } = new URL(baseUrl);
+      const virtualScript = new VirtualScript(
+        virtualScriptId,
+        VirtualScriptType.LOCAL,
+        'module.exports.handle = (req) => req; module.exports.onResponse = () => {};'
+      );
+      virtualScript.compile();
+      when(virtualScriptsMock.find(virtualScriptId)).thenReturn(
+        undefined,
+        virtualScript
+      );
+      const sut = buildSut();
 
-    // assert
-    expect(MultiSpy).toHaveBeenCalledTimes(1);
-  });
+      // act
+      const response = await sut.execute(request);
 
-  it('should call onResponse script hook and modify response', async () => {
-    // arrange
-    const { baseUrl } = await startServer((_req, res) => {
-      res.writeHead(200, { 'content-type': 'text/plain' });
-      res.end('original');
+      // assert
+      expect(response.body).toEqual('original');
     });
-    const { request } = createRequest({ url: baseUrl });
-    const { hostname: virtualScriptId } = new URL(baseUrl);
-    const virtualScript = new VirtualScript(
-      virtualScriptId,
-      VirtualScriptType.LOCAL,
-      'module.exports.handle = (req) => req; module.exports.onResponse = (res) => ({ ...res, body: "intercepted" });'
-    );
-    virtualScript.compile();
-    when(virtualScriptsMock.find(virtualScriptId)).thenReturn(
-      undefined,
-      virtualScript
-    );
-    const sut = buildSut();
 
-    // act
-    const response = await sut.execute(request);
+    it('should pass through response if onResponse is not exported', async () => {
+      // arrange
+      const { baseUrl } = await startServer((_req, res) => {
+        res.writeHead(200, { 'content-type': 'text/plain' });
+        res.end('original');
+      });
+      const { request } = createRequest({ url: baseUrl });
+      const { hostname: virtualScriptId } = new URL(baseUrl);
+      const virtualScript = new VirtualScript(
+        virtualScriptId,
+        VirtualScriptType.LOCAL,
+        'module.exports.handle = (req) => req;'
+      );
+      virtualScript.compile();
+      when(virtualScriptsMock.find(virtualScriptId)).thenReturn(
+        undefined,
+        virtualScript
+      );
+      const sut = buildSut();
 
-    // assert
-    expect(response.body).toEqual('intercepted');
-  });
+      // act
+      const response = await sut.execute(request);
 
-  it('should pass through response if onResponse returns void', async () => {
-    // arrange
-    const { baseUrl } = await startServer((_req, res) => {
-      res.writeHead(200, { 'content-type': 'text/plain' });
-      res.end('original');
+      // assert
+      expect(response.body).toEqual('original');
     });
-    const { request } = createRequest({ url: baseUrl });
-    const { hostname: virtualScriptId } = new URL(baseUrl);
-    const virtualScript = new VirtualScript(
-      virtualScriptId,
-      VirtualScriptType.LOCAL,
-      'module.exports.handle = (req) => req; module.exports.onResponse = () => {};'
-    );
-    virtualScript.compile();
-    when(virtualScriptsMock.find(virtualScriptId)).thenReturn(
-      undefined,
-      virtualScript
-    );
-    const sut = buildSut();
 
-    // act
-    const response = await sut.execute(request);
-
-    // assert
-    expect(response.body).toEqual('original');
-  });
-
-  it('should pass through response if onResponse is not exported', async () => {
-    // arrange
-    const { baseUrl } = await startServer((_req, res) => {
-      res.writeHead(200, { 'content-type': 'text/plain' });
-      res.end('original');
-    });
-    const { request } = createRequest({ url: baseUrl });
-    const { hostname: virtualScriptId } = new URL(baseUrl);
-    const virtualScript = new VirtualScript(
-      virtualScriptId,
-      VirtualScriptType.LOCAL,
-      'module.exports.handle = (req) => req;'
-    );
-    virtualScript.compile();
-    when(virtualScriptsMock.find(virtualScriptId)).thenReturn(
-      undefined,
-      virtualScript
-    );
-    const sut = buildSut();
-
-    // act
-    const response = await sut.execute(request);
-
-    // assert
-    expect(response.body).toEqual('original');
-  });
-
-  describe('request body', () => {
     /** Builds a deterministic 0x00..0xFF repeating pattern. */
     const binaryPattern = (size: number): Buffer => {
       const pattern = Buffer.alloc(size);
@@ -1648,187 +1646,179 @@ describe('HttpRequestExecutor', () => {
       expect(headers['content-length']).toEqual('0');
     });
 
-    describe('libcurl upload callbacks', () => {
-      // CURLOPT_SEEKFUNCTION contract, see the libcurl documentation.
-      const SEEK_SET = 0;
-      const SEEK_CUR = 1;
-      const SEEK_END = 2;
-      const CURL_SEEKFUNC_OK = 0;
-      const CURL_SEEKFUNC_FAIL = 1;
+    // CURLOPT_SEEKFUNCTION contract, see the libcurl documentation.
+    const SEEK_SET = 0;
+    const SEEK_CUR = 1;
+    const SEEK_END = 2;
+    const CURL_SEEKFUNC_OK = 0;
+    const CURL_SEEKFUNC_FAIL = 1;
 
-      type ReadCallback = (
-        target: Buffer,
-        size: number,
-        nmemb: number
-      ) => number;
-      type SeekCallback = (position: number, origin: number) => number;
+    type ReadCallback = (target: Buffer, size: number, nmemb: number) => number;
+    type SeekCallback = (position: number, origin: number) => number;
 
-      /**
-       * Runs a request and returns the options the executor handed to libcurl,
-       * so the read and seek callbacks can be exercised the way libcurl drives
-       * them when it has to send the same request twice.
-       */
-      const executeCapturingCurlOptions = async (
-        request: Request
-      ): Promise<Map<string, unknown>> => {
-        const setOptSpy = jest.spyOn(Curl.prototype, 'setOpt');
+    /**
+     * Runs a request and returns the options the executor handed to libcurl,
+     * so the read and seek callbacks can be exercised the way libcurl drives
+     * them when it has to send the same request twice.
+     */
+    const executeCapturingCurlOptions = async (
+      request: Request
+    ): Promise<Map<string, unknown>> => {
+      const setOptSpy = jest.spyOn(Curl.prototype, 'setOpt');
 
-        try {
-          await buildSut().execute(request);
+      try {
+        await buildSut().execute(request);
 
-          const captured = new Map<string, unknown>();
+        const captured = new Map<string, unknown>();
 
-          for (const call of setOptSpy.mock.calls) {
-            captured.set(String(call[0]), call[1]);
-          }
-
-          return captured;
-        } finally {
-          setOptSpy.mockRestore();
+        for (const call of setOptSpy.mock.calls) {
+          captured.set(String(call[0]), call[1]);
         }
-      };
 
-      /** Drains the read callback in fixed-size chunks, as libcurl does. */
-      const drain = (read: ReadCallback, chunkSize: number): Buffer => {
-        const chunks: Buffer[] = [];
-        let written: number;
-        let guard = 0;
+        return captured;
+      } finally {
+        setOptSpy.mockRestore();
+      }
+    };
 
-        do {
-          const target = Buffer.alloc(chunkSize);
-          written = read(target, 1, chunkSize);
-          chunks.push(target.subarray(0, Math.max(written, 0)));
-        } while (written > 0 && ++guard < 1024);
+    /** Drains the read callback in fixed-size chunks, as libcurl does. */
+    const drain = (read: ReadCallback, chunkSize: number): Buffer => {
+      const chunks: Buffer[] = [];
+      let written: number;
+      let guard = 0;
 
-        return Buffer.concat(chunks);
-      };
+      do {
+        const target = Buffer.alloc(chunkSize);
+        written = read(target, 1, chunkSize);
+        chunks.push(target.subarray(0, Math.max(written, 0)));
+      } while (written > 0 && ++guard < 1024);
 
-      const uploadRequest = (baseUrl: string, body: Buffer) =>
-        createRequest({
-          url: `${baseUrl}/`,
-          method: 'POST',
-          body: body.toString('base64'),
-          encoding: 'base64'
-        }).request;
+      return Buffer.concat(chunks);
+    };
 
-      it('should register a seek callback alongside the read callback', async () => {
-        // arrange
-        const { baseUrl } = await startBodyCapturingServer();
-        const request = uploadRequest(baseUrl, binaryPattern(1024));
+    const uploadRequest = (baseUrl: string, body: Buffer) =>
+      createRequest({
+        url: `${baseUrl}/`,
+        method: 'POST',
+        body: body.toString('base64'),
+        encoding: 'base64'
+      }).request;
 
-        // act
-        const options = await executeCapturingCurlOptions(request);
+    it('should register a seek callback alongside the read callback', async () => {
+      // arrange
+      const { baseUrl } = await startBodyCapturingServer();
+      const request = uploadRequest(baseUrl, binaryPattern(1024));
 
-        // assert
-        expect(options.get('UPLOAD')).toBe(true);
-        expect(options.get('INFILESIZE_LARGE')).toBe(1024);
-        expect(typeof options.get('READFUNCTION')).toBe('function');
-        // Without a seek callback libcurl reports the body as non-seekable and
-        // cannot replay it, which breaks authentication negotiation.
-        expect(typeof options.get('SEEKFUNCTION')).toBe('function');
-      });
+      // act
+      const options = await executeCapturingCurlOptions(request);
 
-      it('should replay the body byte-for-byte after seeking back to the start', async () => {
-        // arrange
-        const expected = binaryPattern(4096);
-        const { baseUrl } = await startBodyCapturingServer();
-        const options = await executeCapturingCurlOptions(
-          uploadRequest(baseUrl, expected)
-        );
-        const read = options.get('READFUNCTION') as ReadCallback;
-        const seek = options.get('SEEKFUNCTION') as SeekCallback;
-
-        // act
-        // The body is fully consumed at this point, which is the state libcurl
-        // is in when it has to send the request a second time.
-        const atEof = read(Buffer.alloc(64), 1, 64);
-        const seekResult = seek(0, SEEK_SET);
-        const replayed = drain(read, 512);
-
-        // assert
-        expect(atEof).toBe(0);
-        expect(seekResult).toBe(CURL_SEEKFUNC_OK);
-        expect(firstMismatch(replayed, expected)).toBe(-1);
-      });
-
-      it('should resolve seek positions against the requested origin', async () => {
-        // arrange
-        const expected = binaryPattern(1024);
-        const { baseUrl } = await startBodyCapturingServer();
-        const options = await executeCapturingCurlOptions(
-          uploadRequest(baseUrl, expected)
-        );
-        const read = options.get('READFUNCTION') as ReadCallback;
-        const seek = options.get('SEEKFUNCTION') as SeekCallback;
-        const readNext = (length: number): Buffer => {
-          const target = Buffer.alloc(length);
-          read(target, 1, length);
-
-          return target;
-        };
-
-        // act
-        const fromSet = seek(8, SEEK_SET);
-        const afterSet = readNext(8);
-        const fromCur = seek(4, SEEK_CUR);
-        const afterCur = readNext(4);
-        const fromEnd = seek(-16, SEEK_END);
-        const afterEnd = drain(read, 64);
-
-        // assert
-        expect(fromSet).toBe(CURL_SEEKFUNC_OK);
-        expect(afterSet).toEqual(expected.subarray(8, 16));
-        expect(fromCur).toBe(CURL_SEEKFUNC_OK);
-        expect(afterCur).toEqual(expected.subarray(20, 24));
-        expect(fromEnd).toBe(CURL_SEEKFUNC_OK);
-        expect(afterEnd).toEqual(expected.subarray(expected.length - 16));
-      });
-
-      it('should reject seek positions outside the body', async () => {
-        // arrange
-        const expected = binaryPattern(1024);
-        const { baseUrl } = await startBodyCapturingServer();
-        const options = await executeCapturingCurlOptions(
-          uploadRequest(baseUrl, expected)
-        );
-        const seek = options.get('SEEKFUNCTION') as SeekCallback;
-
-        // act
-        const beforeStart = seek(-1, SEEK_SET);
-        const pastEnd = seek(expected.length + 1, SEEK_SET);
-        const withinBody = seek(0, SEEK_SET);
-
-        // assert
-        expect(beforeStart).toBe(CURL_SEEKFUNC_FAIL);
-        expect(pastEnd).toBe(CURL_SEEKFUNC_FAIL);
-        expect(withinBody).toBe(CURL_SEEKFUNC_OK);
-      });
-
-      it('should never write past the buffer window libcurl asked for', async () => {
-        // arrange
-        const expected = binaryPattern(4096);
-        const { baseUrl } = await startBodyCapturingServer();
-        const options = await executeCapturingCurlOptions(
-          uploadRequest(baseUrl, expected)
-        );
-        const read = options.get('READFUNCTION') as ReadCallback;
-        const seek = options.get('SEEKFUNCTION') as SeekCallback;
-        const target = Buffer.alloc(expected.length);
-
-        // act
-        seek(0, SEEK_SET);
-        const written = read(target, 1, 128);
-
-        // assert
-        expect(written).toBe(128);
-        expect(target.subarray(0, 128)).toEqual(expected.subarray(0, 128));
-        // Bytes 128.. of the pattern are non-zero, so an overrun would show up.
-        expect(target.subarray(128).every((byte) => byte === 0)).toBe(true);
-      });
+      // assert
+      expect(options.get('UPLOAD')).toBe(true);
+      expect(options.get('INFILESIZE_LARGE')).toBe(1024);
+      expect(typeof options.get('READFUNCTION')).toBe('function');
+      // Without a seek callback libcurl reports the body as non-seekable and
+      // cannot replay it, which breaks authentication negotiation.
+      expect(typeof options.get('SEEKFUNCTION')).toBe('function');
     });
-  });
 
-  describe('Kerberos authentication', () => {
+    it('should replay the body byte-for-byte after seeking back to the start', async () => {
+      // arrange
+      const expected = binaryPattern(4096);
+      const { baseUrl } = await startBodyCapturingServer();
+      const options = await executeCapturingCurlOptions(
+        uploadRequest(baseUrl, expected)
+      );
+      const read = options.get('READFUNCTION') as ReadCallback;
+      const seek = options.get('SEEKFUNCTION') as SeekCallback;
+
+      // act
+      // The body is fully consumed at this point, which is the state libcurl
+      // is in when it has to send the request a second time.
+      const atEof = read(Buffer.alloc(64), 1, 64);
+      const seekResult = seek(0, SEEK_SET);
+      const replayed = drain(read, 512);
+
+      // assert
+      expect(atEof).toBe(0);
+      expect(seekResult).toBe(CURL_SEEKFUNC_OK);
+      expect(firstMismatch(replayed, expected)).toBe(-1);
+    });
+
+    it('should resolve seek positions against the requested origin', async () => {
+      // arrange
+      const expected = binaryPattern(1024);
+      const { baseUrl } = await startBodyCapturingServer();
+      const options = await executeCapturingCurlOptions(
+        uploadRequest(baseUrl, expected)
+      );
+      const read = options.get('READFUNCTION') as ReadCallback;
+      const seek = options.get('SEEKFUNCTION') as SeekCallback;
+      const readNext = (length: number): Buffer => {
+        const target = Buffer.alloc(length);
+        read(target, 1, length);
+
+        return target;
+      };
+
+      // act
+      const fromSet = seek(8, SEEK_SET);
+      const afterSet = readNext(8);
+      const fromCur = seek(4, SEEK_CUR);
+      const afterCur = readNext(4);
+      const fromEnd = seek(-16, SEEK_END);
+      const afterEnd = drain(read, 64);
+
+      // assert
+      expect(fromSet).toBe(CURL_SEEKFUNC_OK);
+      expect(afterSet).toEqual(expected.subarray(8, 16));
+      expect(fromCur).toBe(CURL_SEEKFUNC_OK);
+      expect(afterCur).toEqual(expected.subarray(20, 24));
+      expect(fromEnd).toBe(CURL_SEEKFUNC_OK);
+      expect(afterEnd).toEqual(expected.subarray(expected.length - 16));
+    });
+
+    it('should reject seek positions outside the body', async () => {
+      // arrange
+      const expected = binaryPattern(1024);
+      const { baseUrl } = await startBodyCapturingServer();
+      const options = await executeCapturingCurlOptions(
+        uploadRequest(baseUrl, expected)
+      );
+      const seek = options.get('SEEKFUNCTION') as SeekCallback;
+
+      // act
+      const beforeStart = seek(-1, SEEK_SET);
+      const pastEnd = seek(expected.length + 1, SEEK_SET);
+      const withinBody = seek(0, SEEK_SET);
+
+      // assert
+      expect(beforeStart).toBe(CURL_SEEKFUNC_FAIL);
+      expect(pastEnd).toBe(CURL_SEEKFUNC_FAIL);
+      expect(withinBody).toBe(CURL_SEEKFUNC_OK);
+    });
+
+    it('should never write past the buffer window libcurl asked for', async () => {
+      // arrange
+      const expected = binaryPattern(4096);
+      const { baseUrl } = await startBodyCapturingServer();
+      const options = await executeCapturingCurlOptions(
+        uploadRequest(baseUrl, expected)
+      );
+      const read = options.get('READFUNCTION') as ReadCallback;
+      const seek = options.get('SEEKFUNCTION') as SeekCallback;
+      const target = Buffer.alloc(expected.length);
+
+      // act
+      seek(0, SEEK_SET);
+      const written = read(target, 1, 128);
+
+      // assert
+      expect(written).toBe(128);
+      expect(target.subarray(0, 128)).toEqual(expected.subarray(0, 128));
+      // Bytes 128.. of the pattern are non-zero, so an overrun would show up.
+      expect(target.subarray(128).every((byte) => byte === 0)).toBe(true);
+    });
+
     it('should handle kerberos-enabled requests gracefully', async () => {
       // When kerberos is enabled, the executor sets HTTPAUTH=Negotiate and
       // activates connection reuse (shared Multi) for SPNEGO handshake.
