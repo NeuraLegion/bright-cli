@@ -7,6 +7,8 @@ import { Protocol } from './Protocol';
 import { RequestExecutorOptions } from './RequestExecutorOptions';
 import { CertificatesCache } from './CertificatesCache';
 import { CertificatesResolver } from './CertificatesResolver';
+import { CurlSeekResult } from './CurlSeekResult';
+import { CurlSeekOrigin } from './CurlSeekOrigin';
 import { inject, injectable } from 'tsyringe';
 import iconv from 'iconv-lite';
 import { safeParse } from 'fast-content-type-parse';
@@ -35,11 +37,6 @@ type ResponseScriptEntrypoint = (options: {
 export class HttpRequestExecutor implements RequestExecutor {
   private readonly KEEP_ALIVE_IDLE_TIMEOUT = 60;
   private readonly MAX_HOST_CONNECTIONS = 100;
-  // libcurl seek callback contract, see CURLOPT_SEEKFUNCTION.
-  private readonly CURL_SEEKFUNC_OK = 0;
-  private readonly CURL_SEEKFUNC_FAIL = 1;
-  private readonly SEEK_CUR = 1;
-  private readonly SEEK_END = 2;
   private readonly DEFAULT_SCRIPT_ENTRYPOINT = 'handle';
   private readonly RESPONSE_SCRIPT_ENTRYPOINT = 'onResponse';
   private readonly proxyDomains?: RegExp[];
@@ -267,21 +264,33 @@ export class HttpRequestExecutor implements RequestExecutor {
     // authentication negotiation. A read callback without a seek callback is
     // reported as non-seekable, which fails the replay.
     curl.setOpt('SEEKFUNCTION', (position: number, origin: number) => {
-      const base =
-        origin === this.SEEK_CUR
-          ? offset
-          : origin === this.SEEK_END
-          ? bodyBuffer.length
-          : 0;
+      let base: number;
+
+      switch (origin) {
+        case CurlSeekOrigin.SET:
+          base = 0;
+          break;
+        case CurlSeekOrigin.CUR:
+          base = offset;
+          break;
+        case CurlSeekOrigin.END:
+          base = bodyBuffer.length;
+          break;
+        default:
+          // An origin we cannot interpret cannot be resolved to a position.
+          // Reporting that is safer than guessing and replaying from the wrong one.
+          return CurlSeekResult.FAIL;
+      }
+
       const target = base + position;
 
       if (target < 0 || target > bodyBuffer.length) {
-        return this.CURL_SEEKFUNC_FAIL;
+        return CurlSeekResult.FAIL;
       }
 
       offset = target;
 
-      return this.CURL_SEEKFUNC_OK;
+      return CurlSeekResult.OK;
     });
   }
 
