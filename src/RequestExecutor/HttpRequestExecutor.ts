@@ -564,11 +564,14 @@ export class HttpRequestExecutor implements RequestExecutor {
       }
     );
     // `toJSON()` does not carry `encoding`, so a script that leaves the body
-    // alone hands it back undefined, and the lossy decoded view is all that is
-    // left of the body — restore both. A script that sets `encoding` itself is
-    // asking for its own body to be decoded, so pass its result through.
-    const restoreOriginalBody =
-      !!result && result.body === decodedBody && !result.encoding;
+    // alone hands it back either undefined or the encoding it was told to use,
+    // and the lossy decoded view is all that is left of the body — restore
+    // both. Only a script that asks for an encoding the request did not already
+    // have is asking for its own body to be decoded, so pass that through.
+    const bodyUntouched = !!result && result.body === decodedBody;
+    const encodingUnchanged =
+      !result?.encoding || result.encoding === script.encoding;
+    const restoreOriginalBody = bodyUntouched && encodingUnchanged;
 
     return new Request(
       restoreOriginalBody
