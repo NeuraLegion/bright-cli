@@ -7,6 +7,8 @@ import { Protocol } from './Protocol';
 import { RequestExecutorOptions } from './RequestExecutorOptions';
 import { CertificatesCache } from './CertificatesCache';
 import { CertificatesResolver } from './CertificatesResolver';
+import { CurlSeekResult } from './CurlSeekResult';
+import { CurlSeekOrigin } from './CurlSeekOrigin';
 import { inject, injectable } from 'tsyringe';
 import iconv from 'iconv-lite';
 import { safeParse } from 'fast-content-type-parse';
@@ -217,8 +219,63 @@ export class HttpRequestExecutor implements RequestExecutor {
       ? iconv.encode(options.body, options.encoding)
       : Buffer.from(options.body);
 
-    curl.setOpt('POSTFIELDS', bodyBuffer.toString());
-    curl.setOpt('POSTFIELDSIZE', bodyBuffer.length);
+    // The body has to reach libcurl as raw bytes. POSTFIELDS cannot be used for
+    // that: it only accepts a JS string and the binding re-encodes it as UTF-8,
+    // which replaces every byte that is not valid UTF-8 with U+FFFD (EF BF BD)
+    // and silently corrupts binary bodies. Feeding the buffer through the read
+    // callback keeps it byte-exact.
+    let offset = 0;
+
+    curl.setOpt('UPLOAD', true);
+    curl.setOpt('INFILESIZE_LARGE', bodyBuffer.length);
+    curl.setOpt(
+      'READFUNCTION',
+      (target: Buffer, size: number, nmemb: number) => {
+        const length = Math.min(size * nmemb, bodyBuffer.length - offset);
+
+        if (length <= 0) {
+          return 0;
+        }
+
+        bodyBuffer.copy(target, 0, offset, offset + length);
+        offset += length;
+
+        return length;
+      }
+    );
+
+    // libcurl replays the body when a request has to be sent twice, e.g. during
+    // authentication negotiation. A read callback without a seek callback is
+    // reported as non-seekable, which fails the replay.
+    curl.setOpt('SEEKFUNCTION', (position: number, origin: number) => {
+      let base: number;
+
+      switch (origin) {
+        case CurlSeekOrigin.SET:
+          base = 0;
+          break;
+        case CurlSeekOrigin.CUR:
+          base = offset;
+          break;
+        case CurlSeekOrigin.END:
+          base = bodyBuffer.length;
+          break;
+        default:
+          // An origin we cannot interpret cannot be resolved to a position.
+          // Reporting that is safer than guessing and replaying from the wrong one.
+          return CurlSeekResult.FAIL;
+      }
+
+      const target = base + position;
+
+      if (target < 0 || target > bodyBuffer.length) {
+        return CurlSeekResult.FAIL;
+      }
+
+      offset = target;
+
+      return CurlSeekResult.OK;
+    });
   }
 
   private applyCurlTls(curl: Curl, options: Request): void {
@@ -452,17 +509,35 @@ export class HttpRequestExecutor implements RequestExecutor {
       return script;
     }
 
+    // Scripts see a decoded, string view of the body. That view is lossy for
+    // bytes that are not valid UTF-8, so the original body and its encoding are
+    // restored whenever the script leaves the body untouched.
+    const decodedBody = script.encoding
+      ? iconv.encode(script.body, script.encoding).toString()
+      : script.body;
+
     const result = await vm.exec<ScriptEntrypoint>(
       this.DEFAULT_SCRIPT_ENTRYPOINT,
       {
         ...script.toJSON(),
-        body: script.encoding
-          ? iconv.encode(script.body, script.encoding).toString()
-          : script.body
+        body: decodedBody
       }
     );
+    // `toJSON()` does not carry `encoding`, so a script that leaves the body
+    // alone hands it back either undefined or the encoding it was told to use,
+    // and the lossy decoded view is all that is left of the body — restore
+    // both. Only a script that asks for an encoding the request did not already
+    // have is asking for its own body to be decoded, so pass that through.
+    const bodyUntouched = !!result && result.body === decodedBody;
+    const encodingUnchanged =
+      !result?.encoding || result.encoding === script.encoding;
+    const restoreOriginalBody = bodyUntouched && encodingUnchanged;
 
-    return new Request(result);
+    return new Request(
+      restoreOriginalBody
+        ? { ...result, body: script.body, encoding: script.encoding }
+        : result
+    );
   }
 
   private async handleResponseScript(
