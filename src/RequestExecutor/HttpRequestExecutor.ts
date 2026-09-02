@@ -208,6 +208,7 @@ export class HttpRequestExecutor implements RequestExecutor {
       curl.setOpt('PROXY', proxyUrl);
     }
 
+    curl.setOpt('NOBODY', options.method === 'HEAD');
     curl.setOpt('CUSTOMREQUEST', options.method);
   }
 
