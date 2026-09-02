@@ -229,6 +229,9 @@ export class CliBuilder {
       dsn,
       attachStacktrace: true,
       release: process.env.VERSION,
+      ignoreErrors: [
+        /^The Repeater ID [\w]+ specified is currently being used by another Repeater./
+      ],
       beforeSend(event) {
         if (event.contexts.args) {
           event.contexts.args = {
