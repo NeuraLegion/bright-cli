@@ -41,9 +41,16 @@ RUN echo 'http://dl-cdn.alpinelinux.org/alpine/edge/main' >> /etc/apk/repositori
     apk upgrade --no-cache
 
 # install @brightsec/cli from NPM
+# NOTE: Kerberos/SPNEGO support requires @brightsec/node-libcurl to be built
+# with the "gssapi" vcpkg feature. The krb5 package provides kinit/klist
+# for ticket management; krb5-libs provides the runtime GSSAPI libraries
+# that libcurl links against when built with gssapi support.
 RUN set -eux; \
+    apk add --no-cache --virtual .build-deps python3 make g++ curl-dev && \
     npm i -g -q @brightsec/cli@${VERSION} && \
-    NPM_CONFIG_PREFIX=/usr/local npm uninstall -g npm
+    NPM_CONFIG_PREFIX=/usr/local npm uninstall -g npm && \
+    apk del .build-deps && \
+    apk add --no-cache libcurl krb5-libs krb5
 
 # set the directory and file permissions to allow users in the root group to access files
 # for details please refer to the doc at https://docs.openshift.com/container-platform/3.11/creating_images/guidelines.html#openshift-specific-guidelines
