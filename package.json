@@ -22,12 +22,12 @@
     ]
   },
   "engines": {
-    "node": ">=22 <=24"
+    "node": ">=22 <=26"
   },
   "dependencies": {
     "@brightsec/node-libcurl": "5.1.2",
     "@modelcontextprotocol/sdk": "1.17.5",
-    "@neuralegion/os-service": "^2.0.5",
+    "@neuralegion/os-service": "^2.0.6",
     "@neuralegion/raw-socket": "^2.0.2",
     "@sentry/node": "^7.120.0",
     "ajv": "^6.12.6",
