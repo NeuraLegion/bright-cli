@@ -98,7 +98,7 @@ jobs:
         if: ${{ startsWith(matrix.container, 'rockylinux') || startsWith(matrix.container, 'fedora') }}
         run: |
           dnf -y update \
-            && dnf install -y --allowerasing curl tar \
+            && dnf install -y --allowerasing curl tar libatomic \
             && dnf clean all \
             && rm -rf /var/cache/dnf/*
 
@@ -106,7 +106,7 @@ jobs:
         if: startsWith(matrix.container, 'ubuntu')
         run: |
           apt-get update -yq \
-            && apt-get install curl -yq \
+            && apt-get install curl libatomic1 -yq \
             && apt-get clean \
             && rm -rf /var/lib/apt/lists/*
 
@@ -284,7 +284,7 @@ jobs:
         if: ${{ startsWith(matrix.container, 'rockylinux') || startsWith(matrix.container, 'fedora') }}
         run: |
           dnf -y update \
-            && dnf install -y --allowerasing curl tar \
+            && dnf install -y --allowerasing curl tar libatomic \
             && dnf clean all \
             && rm -rf /var/cache/dnf/*
 
@@ -292,7 +292,7 @@ jobs:
         if: startsWith(matrix.container, 'ubuntu')
         run: |
           apt-get update -yq \
-            && apt-get install curl -yq \
+            && apt-get install curl libatomic1 -yq \
             && apt-get clean \
             && rm -rf /var/lib/apt/lists/*
 
