@@ -304,6 +304,11 @@ jobs:
         if: ${{ !inputs.with_wiremock }}
         uses: ./.github/workflows/composite/todoapp
 
+      - name: Ensure libatomic (Node 24/26 on bare Ubuntu runner)
+        if: ${{ !matrix.container && runner.os == 'Linux' }}
+        shell: bash
+        run: sudo apt-get update -yq && sudo apt-get install -yq libatomic1
+
       - name: Install Dependencies
         uses: ./.github/workflows/composite/npm
         with:
