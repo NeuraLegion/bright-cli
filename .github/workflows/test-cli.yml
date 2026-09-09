@@ -296,6 +296,12 @@ jobs:
             && apt-get clean \
             && rm -rf /var/lib/apt/lists/*
 
+        # https://github.com/nodejs/node/blob/v25.2.0/BUILDING.md#official-binary-platforms-and-toolchains:~:text=Starting%20with%20Node,your%20Linux%20distibution
+      - name: Install Packages (distroless missing libatomic for modern Node.js)
+        if: ${{ !matrix.container && runner.os == 'Linux' && fromJSON(format('[{0}]', matrix.node))[0] >= 25 }}
+        shell: bash
+        run: sudo apt-get update -yq && sudo apt-get install -yq libatomic1
+
       - name: Checkout Repository
         uses: actions/checkout@v4
 
@@ -303,12 +309,6 @@ jobs:
         id: target
         if: ${{ !inputs.with_wiremock }}
         uses: ./.github/workflows/composite/todoapp
-
-        # https://github.com/nodejs/node/blob/v25.2.0/BUILDING.md#official-binary-platforms-and-toolchains:~:text=Starting%20with%20Node,your%20Linux%20distibution
-      - name: Ensure libatomic (Node 25/26 on bare Ubuntu runner)
-        if: ${{ !matrix.container && runner.os == 'Linux' && fromJSON(format('[{0}]', matrix.node))[0] >= 25 }}
-        shell: bash
-        run: sudo apt-get update -yq && sudo apt-get install -yq libatomic1
 
       - name: Install Dependencies
         uses: ./.github/workflows/composite/npm
