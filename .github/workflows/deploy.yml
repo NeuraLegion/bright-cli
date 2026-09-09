@@ -123,7 +123,7 @@ jobs:
         run: npx json -I -f package.json -e "this.brightCli.distribution='${{ matrix.target }}-executable'"
 
       - name: Build executable file
-        run: npm run build:pkg -- -t node22-${{ matrix.target }}-x64
+        run: npm run build:pkg -- -t node24-${{ matrix.target }}-x64
 
       # DigiCert KeyLocker code signing (Windows only).
       # If the SM_* secrets are not configured (e.g. local re-runs), signing is

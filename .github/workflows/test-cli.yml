@@ -98,7 +98,7 @@ jobs:
         if: ${{ startsWith(matrix.container, 'rockylinux') || startsWith(matrix.container, 'fedora') }}
         run: |
           dnf -y update \
-            && dnf install -y --allowerasing curl tar \
+            && dnf install -y --allowerasing curl tar libatomic \
             && dnf clean all \
             && rm -rf /var/cache/dnf/*
 
@@ -106,7 +106,7 @@ jobs:
         if: startsWith(matrix.container, 'ubuntu')
         run: |
           apt-get update -yq \
-            && apt-get install curl -yq \
+            && apt-get install curl libatomic1 -yq \
             && apt-get clean \
             && rm -rf /var/lib/apt/lists/*
 
@@ -258,33 +258,33 @@ jobs:
       fail-fast: false
       matrix:
         os: [macos-latest, windows-latest, ubuntu-latest]
-        node: [22, 24.11.1]
+        node: [24.11.1, 26.1.0]
         include:
           - os: ubuntu-latest
             container: ubuntu:22.04
-            node: 22
+            node: 24.11.1
           - os: ubuntu-latest
             container: ubuntu:22.04
-            node: 24.11.1
-          - os: ubuntu-latest
-            container: rockylinux:8
-            node: 22
+            node: 26.1.0
           - os: ubuntu-latest
             container: rockylinux:8
             node: 24.11.1
           - os: ubuntu-latest
-            container: rockylinux:9
-            node: 22
+            container: rockylinux:8
+            node: 26.1.0
           - os: ubuntu-latest
             container: rockylinux:9
             node: 24.11.1
+          - os: ubuntu-latest
+            container: rockylinux:9
+            node: 26.1.0
 
     steps:
       - name: Install Packages (RHEL-based)
         if: ${{ startsWith(matrix.container, 'rockylinux') || startsWith(matrix.container, 'fedora') }}
         run: |
           dnf -y update \
-            && dnf install -y --allowerasing curl tar \
+            && dnf install -y --allowerasing curl tar libatomic \
             && dnf clean all \
             && rm -rf /var/cache/dnf/*
 
@@ -292,9 +292,15 @@ jobs:
         if: startsWith(matrix.container, 'ubuntu')
         run: |
           apt-get update -yq \
-            && apt-get install curl -yq \
+            && apt-get install curl libatomic1 -yq \
             && apt-get clean \
             && rm -rf /var/lib/apt/lists/*
+
+        # https://github.com/nodejs/node/blob/v25.2.0/BUILDING.md#official-binary-platforms-and-toolchains:~:text=Starting%20with%20Node,your%20Linux%20distibution
+      - name: Install Packages (distroless missing libatomic for modern Node.js)
+        if: ${{ !matrix.container && runner.os == 'Linux' && fromJSON(format('[{0}]', matrix.node))[0] >= 25 }}
+        shell: bash
+        run: sudo apt-get update -yq && sudo apt-get install -yq libatomic1
 
       - name: Checkout Repository
         uses: actions/checkout@v4
