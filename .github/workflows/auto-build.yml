@@ -25,7 +25,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        target: [ 'lint', 'format', 'test:unit' ]
+        target: [ 'lint', 'format', 'test:unit', 'build' ]
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -35,22 +35,3 @@ jobs:
 
       - name: Execute ${{ matrix.target }} npm script
         run: npm run ${{ matrix.target }} -- $JEST_ARGUMENTS
-
-  build:
-    runs-on: ubuntu-latest
-    needs: install-deps
-    strategy:
-      fail-fast: false
-      matrix:
-        node: [24, 26]
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Install deps
-        uses: ./.github/workflows/composite/npm
-        with:
-          version: ${{ matrix.node }}
-
-      - name: Build
-        run: npm run build
