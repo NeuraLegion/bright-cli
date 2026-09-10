@@ -1,4 +1,4 @@
-FROM node:24-alpine AS base
+FROM node:26-alpine AS base
 
 # update npm to get latest security fixes
 RUN npm i -g npm@11.11.0

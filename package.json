@@ -1,6 +1,6 @@
 {
   "name": "@brightsec/cli",
-  "version": "13.13.0-next.6",
+  "version": "13.13.0-next.8",
   "private": false,
   "repository": {
     "type": "git",
@@ -22,13 +22,13 @@
     ]
   },
   "engines": {
-    "node": ">=22 <=24"
+    "node": ">=24 <=26"
   },
   "dependencies": {
     "@brightsec/node-libcurl": "5.1.2",
     "@modelcontextprotocol/sdk": "1.17.5",
-    "@neuralegion/os-service": "^2.0.5",
-    "@neuralegion/raw-socket": "^2.0.0",
+    "@neuralegion/os-service": "^2.0.6",
+    "@neuralegion/raw-socket": "^2.0.2",
     "@sentry/node": "^7.120.0",
     "ajv": "^6.12.6",
     "arch": "^2.2.0",
@@ -133,16 +133,16 @@
       "./node_modules/@brightsec/node-libcurl/lib/binding/node_libcurl.node",
       "./node_modules/axios/**",
       "./node_modules/win-ca/lib/crypt32-*.node",
-      "./node_modules/@neuralegion/os-service/prebuilds/win32-x64/@neuralegion+os-service.abi127.node",
-      "./node_modules/@neuralegion/raw-socket/prebuilds/win32-x64/@neuralegion+raw-socket.abi127.node",
-      "./node_modules/@neuralegion/raw-socket/prebuilds/linux-x64/@neuralegion+raw-socket.abi127.node",
-      "./node_modules/@neuralegion/raw-socket/prebuilds/darwin-x64+arm64/@neuralegion+raw-socket.abi127.node",
+      "./node_modules/@neuralegion/os-service/prebuilds/win32-x64/@neuralegion+os-service.abi137.node",
+      "./node_modules/@neuralegion/raw-socket/prebuilds/win32-x64/@neuralegion+raw-socket.abi137.node",
+      "./node_modules/@neuralegion/raw-socket/prebuilds/linux-x64/@neuralegion+raw-socket.abi137.glibc.node",
+      "./node_modules/@neuralegion/raw-socket/prebuilds/darwin-x64+arm64/@neuralegion+raw-socket.abi137.node",
       "./node_modules/rotating-file-stream/**"
     ],
     "targets": [
-      "node22-linux-x64",
-      "node22-macos-x64",
-      "node22-windows-x64"
+      "node24-linux-x64",
+      "node24-macos-x64",
+      "node24-windows-x64"
     ],
     "outputPath": "bin",
     "compress": "Brotli"

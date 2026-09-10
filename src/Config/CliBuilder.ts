@@ -230,7 +230,8 @@ export class CliBuilder {
       attachStacktrace: true,
       release: process.env.VERSION,
       ignoreErrors: [
-        /^The Repeater ID [\w]+ specified is currently being used by another Repeater./
+        /The Repeater ID [\w]+ specified is currently being used by another Repeater\./,
+        /The Repeater ID [\w]+ is inactive\./
       ],
       beforeSend(event) {
         if (event.contexts.args) {
