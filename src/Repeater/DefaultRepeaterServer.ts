@@ -209,7 +209,9 @@ export class DefaultRepeaterServer implements RepeaterServer {
       this.events.emit(RepeaterServerEvents.TEST_NETWORK, event, callback)
     );
     this.socket.on(SocketEvents.ERROR, (event) => {
-      captureMessage(event.message);
+      captureMessage(event.message, {
+        fingerprint: [event.code ?? 'repeater_socket_error']
+      });
       this.events.emit(RepeaterServerEvents.ERROR, event);
     });
     this.socket.on(SocketEvents.UPDATE_AVAILABLE, (event) =>

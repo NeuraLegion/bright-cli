@@ -5,6 +5,13 @@ export interface WhitelistMimeType {
   allowTruncation?: boolean;
 }
 
+export interface KerberosOptions {
+  enabled: boolean;
+  domains?: string[];
+  credentials?: string;
+  delegation?: boolean;
+}
+
 export interface RequestExecutorOptions {
   timeout?: number;
   proxyUrl?: string;
@@ -16,6 +23,7 @@ export interface RequestExecutorOptions {
   reuseConnection?: boolean;
   proxyDomains?: string[];
   proxyDomainsBypass?: string[];
+  kerberos?: KerberosOptions;
 }
 
 export const RequestExecutorOptions: unique symbol = Symbol(

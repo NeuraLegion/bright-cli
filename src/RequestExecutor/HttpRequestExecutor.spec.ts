@@ -313,6 +313,33 @@ describe('HttpRequestExecutor', () => {
       expect(response).toMatchObject({ statusCode: 200, body: '{}' });
     });
 
+    it('should complete HEAD requests with a nonzero Content-Length and no body', async () => {
+      // arrange
+      const { baseUrl } = await startServer((_req, res) => {
+        res.writeHead(200, {
+          'content-type': 'application/json',
+          'content-length': '12345'
+        });
+        res.end();
+      });
+      const { request } = createRequest({
+        url: `${baseUrl}/`,
+        method: 'HEAD'
+      });
+      const sut = buildSut();
+
+      // act
+      const response = await sut.execute(request);
+
+      // assert
+      expect(response).toMatchObject({
+        statusCode: 200,
+        body: '',
+        headers: { 'content-length': '12345' }
+      });
+      expect(response.errorCode).toBeUndefined();
+    });
+
     it('should populate ttfb as a non-negative integer milliseconds value', async () => {
       // arrange
       const { baseUrl } = await startServer((_req, res) => {
