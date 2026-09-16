@@ -1522,6 +1522,67 @@ describe('HttpRequestExecutor', () => {
       expect(firstMismatch(body, expected)).toBe(-1);
     });
 
+    it('should honour a per-request timeout after a script transform', async () => {
+      // arrange
+      // The executor is built without a timeout, so the only one in play is the
+      // per-request value. If the script transform drops it, nothing bounds the
+      // request and the slow response arrives successfully.
+      const { baseUrl } = await startServer((_req, res) => {
+        setTimeout(() => res.end('too late'), 1000);
+      });
+      const request = new Request({
+        protocol: Protocol.HTTP,
+        url: `${baseUrl}/`,
+        method: 'GET',
+        timeout: 50
+      });
+      withVirtualScript(request.url, (options) => options);
+      const sut = buildSut();
+
+      // act
+      const response = await sut.execute(request);
+
+      // assert
+      expect(response.statusCode).toBeUndefined();
+      expect(response.errorCode).toBeDefined();
+    });
+
+    it('should hand the script every request option except the body encoding', async () => {
+      // arrange
+      // The body the script receives is already decoded, so reporting the
+      // original `encoding` alongside it would describe it incorrectly.
+      const { baseUrl, received } = await startBodyCapturingServer();
+      const request = new Request({
+        protocol: Protocol.HTTP,
+        url: `${baseUrl}/`,
+        method: 'POST',
+        body: binaryPattern(64).toString('base64'),
+        encoding: 'base64',
+        timeout: 5000,
+        maxContentSize: 7,
+        decompress: false
+      });
+      let seen: RequestOptions | undefined;
+      withVirtualScript(request.url, (options) => {
+        seen = options;
+
+        return options;
+      });
+      const sut = buildSut();
+
+      // act
+      await sut.execute(request);
+      await received;
+
+      // assert
+      expect(seen).toMatchObject({
+        timeout: 5000,
+        maxContentSize: 7,
+        decompress: false
+      });
+      expect(seen.encoding).toBeUndefined();
+    });
+
     it('should keep the body byte-exact when a script re-declares the original encoding', async () => {
       // arrange
       // The script echoes back the encoding the request already had, so it has
