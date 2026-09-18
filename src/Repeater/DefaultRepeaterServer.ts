@@ -22,7 +22,7 @@ import {
 import { inject, injectable } from 'tsyringe';
 import io, { Socket } from 'socket.io-client';
 import parser from 'socket.io-msgpack-parser';
-import { captureException, captureMessage } from '@sentry/node';
+import { captureException, captureMessage, withScope } from '@sentry/node';
 import { EventEmitter, once } from 'node:events';
 
 export interface DefaultRepeaterServerOptions {
@@ -324,16 +324,30 @@ export class DefaultRepeaterServer implements RepeaterServer {
     handler: (...payload: TArgs) => unknown,
     ...args: unknown[]
   ) {
-    try {
-      const callback = this.extractLastArgument(args);
+    // Fork a Sentry scope per dispatched event so a per-request `trace_id` tag
+    // applies ONLY to this forward's capture — a global `setTag` would
+    // cross-contaminate concurrent forwards. The scope wraps the whole try/catch
+    // so it also encloses the capture in `handleEventError`.
+    return withScope(async (scope) => {
+      if (event === RepeaterServerEvents.REQUEST) {
+        const traceId = (args[0] as RepeaterServerRequestEvent | undefined)
+          ?.traceId;
+        if (traceId) {
+          scope.setTag('trace_id', traceId);
+        }
+      }
 
-      // eslint-disable-next-line @typescript-eslint/return-await
-      const response = await handler(...(args as TArgs));
+      try {
+        const callback = this.extractLastArgument(args);
 
-      callback?.(response);
-    } catch (err) {
-      this.handleEventError(err, event, args);
-    }
+        // eslint-disable-next-line @typescript-eslint/return-await
+        const response = await handler(...(args as TArgs));
+
+        callback?.(response);
+      } catch (err) {
+        this.handleEventError(err, event, args);
+      }
+    });
   }
 
   private extractLastArgument(args: unknown[]): CallbackFunction | undefined {
