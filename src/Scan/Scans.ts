@@ -45,6 +45,15 @@ export interface Exclusions {
   requests: RequestExclusion[];
 }
 
+export enum Connectivity {
+  OK = 'ok',
+  UNREACHABLE = 'unreachable',
+  PROBLEM = 'problem',
+  SKIPPED = 'skipped',
+  UNAUTHORIZED = 'unauthorized',
+  UNAVAILABLE = 'unavailable'
+}
+
 export interface ScanConfig {
   name: string;
   module: Module;
@@ -65,6 +74,10 @@ export interface ScanConfig {
   hostsFilter?: string[];
   repeaters?: string[];
   entryPointIds?: string[];
+  entryPointFilter?: {
+    securityStatus?: string[];
+    connectivityStatus?: Connectivity[];
+  };
 }
 
 export enum ScanStatus {
