@@ -50,6 +50,16 @@ export type RepeaterServerRequestResponse =
       protocol: Protocol;
       message?: string;
       errorCode?: string;
+    }
+  | {
+      // The request event payload could not be dispatched because it was
+      // malformed (the Request could not be constructed). This is distinct from
+      // an execution failure — which uses the { message, errorCode } variant
+      // produced by HttpRequestExecutor.execute's catch — and lets the bridge
+      // classify it as a bridge<->repeater contract failure rather than a target
+      // outage.
+      protocol: Protocol;
+      protocolError: { code: string; message: string };
     };
 
 export interface RepeaterServerReconnectionFailedEvent {
