@@ -259,9 +259,6 @@ jobs:
       matrix:
         os: [macos-latest, windows-latest, ubuntu-latest]
         # Track the latest patch of each supported major rather than pinning one.
-        # A pinned patch tests a runtime we do not ship: the published container
-        # follows `node:26-alpine`, and the node-libcurl dispatch regression this
-        # branch fixes does not reproduce on 26.1.0 while it does on 26.9.0+.
         node: ['24', '26']
         include:
           - os: ubuntu-latest
