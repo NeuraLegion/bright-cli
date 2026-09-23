@@ -100,10 +100,11 @@ describe('ServerRepeaterLauncher', () => {
       } as unknown as Response);
 
     it('should ack with a protocol error when the request payload cannot be constructed', async () => {
-      // arrange — a URL the Request constructor rejects.
+      // arrange — a URL the Request constructor still rejects post-relaxation
+      // (blank after trim).
       const event: RepeaterServerRequestEvent = {
         protocol: Protocol.HTTP,
-        url: 'http://host:notaport/'
+        url: ''
       };
 
       // act
@@ -114,7 +115,7 @@ describe('ServerRepeaterLauncher', () => {
         protocol: Protocol.HTTP,
         protocolError: {
           code: 'ERR_MALFORMED_REQUEST',
-          message: 'Invalid URL.'
+          message: 'Invalid URL: '
         }
       });
     });
@@ -123,7 +124,7 @@ describe('ServerRepeaterLauncher', () => {
       // arrange
       const event: RepeaterServerRequestEvent = {
         protocol: Protocol.HTTP,
-        url: 'http://host:notaport/'
+        url: ''
       };
 
       // act
@@ -181,7 +182,7 @@ describe('ServerRepeaterLauncher', () => {
       // arrange
       const event: RepeaterServerRequestEvent = {
         protocol: Protocol.HTTP,
-        url: 'http://host:notaport/'
+        url: ''
       };
 
       // act
