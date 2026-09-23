@@ -1,6 +1,7 @@
 import 'reflect-metadata';
 import { CliInfo } from '../Config';
 import {
+  Connectivity,
   Discovery,
   Module,
   ScanConfig,
@@ -102,6 +103,67 @@ describe('RestScans', () => {
         });
       }
     );
+
+    it('should send the entry point filter to the API as is', async () => {
+      // arrange
+      let parsedBody: ScanConfig;
+      const scanConfig: ScanConfig = {
+        name: 'scan',
+        module: Module.DAST,
+        crawlerUrls: ['https://example.com'],
+        entryPointFilter: {
+          connectivityStatus: [Connectivity.OK, Connectivity.UNREACHABLE]
+        }
+      };
+
+      nock('https://example.com/')
+        .replyContentLength()
+        .post('/api/v1/scans', (body) => (parsedBody = body))
+        .reply(
+          200,
+          { id: 'scan-id' },
+          {
+            'content-type': 'application/json'
+          }
+        );
+
+      // act
+      await restScans.create(scanConfig);
+
+      // assert
+      expect(parsedBody).toMatchObject({
+        entryPointFilter: {
+          connectivityStatus: [Connectivity.OK, Connectivity.UNREACHABLE]
+        }
+      });
+    });
+
+    it('should not send the entry point filter if it is not set', async () => {
+      // arrange
+      let parsedBody: ScanConfig;
+      const scanConfig: ScanConfig = {
+        name: 'scan',
+        module: Module.DAST,
+        entryPointIds: ['entry-point-1']
+      };
+
+      nock('https://example.com/')
+        .replyContentLength()
+        .post('/api/v1/scans', (body) => (parsedBody = body))
+        .reply(
+          200,
+          { id: 'scan-id' },
+          {
+            'content-type': 'application/json'
+          }
+        );
+
+      // act
+      await restScans.create(scanConfig);
+
+      // assert
+      expect(parsedBody).not.toHaveProperty('entryPointFilter');
+    });
 
     it('should throw an error if the file does not exist or the user does not have permissions', async () => {
       // arrange

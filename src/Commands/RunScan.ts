@@ -1,11 +1,12 @@
 import {
+  ATTACK_PARAM_LOCATIONS_DEFAULT,
   AttackParamLocation,
+  Connectivity,
   Module,
   RequestExclusion,
   RestScansOptions,
   ScanConfig,
-  Scans,
-  ATTACK_PARAM_LOCATIONS_DEFAULT
+  Scans
 } from '../Scan';
 import { ErrorMessageFactory, Helpers, logger } from '../Utils';
 import { Arguments, Argv, CommandModule } from 'yargs';
@@ -167,6 +168,13 @@ export class RunScan implements CommandModule {
         describe:
           'List entrypoint IDs to scan specific entrypoints. If no IDs are provided, the scan will run on the first 2000 project-level entrypoints. This option requires to specify the project ID using the --project option.'
       })
+      .option('connectivity-status', {
+        array: true,
+        choices: Helpers.toArray(Connectivity),
+        describe:
+          'Connectivity statuses of the entry points to test. ' +
+          'When omitted, entry points are not filtered by connectivity.'
+      })
       .conflicts('entrypoint', ['crawler', 'archive'])
       .check((args) => {
         if (args.entrypoint && args.archive && args.crawler) {
@@ -225,7 +233,12 @@ export class RunScan implements CommandModule {
           requests: args.excludeEntryPoint,
           params: args.excludeParam
         },
-        entryPointIds: args.entrypoint
+        entryPointIds: args.entrypoint,
+        entryPointFilter: args.connectivityStatus
+          ? {
+              connectivityStatus: args.connectivityStatus as Connectivity[]
+            }
+          : undefined
       } as ScanConfig);
 
       // eslint-disable-next-line no-console
