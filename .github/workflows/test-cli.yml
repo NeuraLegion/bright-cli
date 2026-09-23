@@ -258,26 +258,30 @@ jobs:
       fail-fast: false
       matrix:
         os: [macos-latest, windows-latest, ubuntu-latest]
-        node: [24.11.1, 26.1.0]
+        # Track the latest patch of each supported major rather than pinning one.
+        # A pinned patch tests a runtime we do not ship: the published container
+        # follows `node:26-alpine`, and the node-libcurl dispatch regression this
+        # branch fixes does not reproduce on 26.1.0 while it does on 26.9.0+.
+        node: ['24', '26']
         include:
           - os: ubuntu-latest
             container: ubuntu:22.04
-            node: 24.11.1
+            node: '24'
           - os: ubuntu-latest
             container: ubuntu:22.04
-            node: 26.1.0
+            node: '26'
           - os: ubuntu-latest
             container: rockylinux:8
-            node: 24.11.1
+            node: '24'
           - os: ubuntu-latest
             container: rockylinux:8
-            node: 26.1.0
+            node: '26'
           - os: ubuntu-latest
             container: rockylinux:9
-            node: 24.11.1
+            node: '24'
           - os: ubuntu-latest
             container: rockylinux:9
-            node: 26.1.0
+            node: '26'
 
     steps:
       - name: Install Packages (RHEL-based)
@@ -298,7 +302,11 @@ jobs:
 
         # https://github.com/nodejs/node/blob/v25.2.0/BUILDING.md#official-binary-platforms-and-toolchains:~:text=Starting%20with%20Node,your%20Linux%20distibution
       - name: Install Packages (distroless missing libatomic for modern Node.js)
-        if: ${{ !matrix.container && runner.os == 'Linux' && fromJSON(format('[{0}]', matrix.node))[0] >= 25 }}
+        # `matrix.node` is a major now, so it compares directly. The previous
+        # `fromJSON(format('[{0}]', matrix.node))[0]` built `[24.11.1]` from a
+        # patch pin, which is not valid JSON - it only ever avoided throwing
+        # because `&&` short-circuits before reaching it.
+        if: ${{ !matrix.container && runner.os == 'Linux' && matrix.node >= 25 }}
         shell: bash
         run: sudo apt-get update -yq && sudo apt-get install -yq libatomic1
 
