@@ -25,13 +25,29 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        target: [ 'lint', 'format', 'test:unit', 'build' ]
+        # Keep the Node.js versions in sync with the npm leg of test-cli.yml,
+        # which is what e2e/smoke run on. Unit tests previously ran only on the
+        # composite action's default runtime, so a runtime-specific regression in
+        # a native dependency could not be caught here at all.
+        node: ['24.11.1', '26.1.0']
+        target: ['lint', 'format', 'test:unit', 'build']
+        # lint / format / build are runtime-agnostic, so only the test target is
+        # worth running across every supported runtime.
+        exclude:
+          - node: '26.1.0'
+            target: 'lint'
+          - node: '26.1.0'
+            target: 'format'
+          - node: '26.1.0'
+            target: 'build'
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
       - name: Install deps
         uses: ./.github/workflows/composite/npm
+        with:
+          version: ${{ matrix.node }}
 
-      - name: Execute ${{ matrix.target }} npm script
+      - name: Execute ${{ matrix.target }} npm script (Node.js ${{ matrix.node }})
         run: npm run ${{ matrix.target }} -- $JEST_ARGUMENTS
