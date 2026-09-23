@@ -49,3 +49,23 @@ jobs:
 
       - name: Execute ${{ matrix.target }} npm script (Node.js ${{ matrix.node }})
         run: npm run ${{ matrix.target }} -- $JEST_ARGUMENTS
+
+  # Stable aggregation gate. Branch protection should require this single
+  # `test-all` context instead of the individual `test` matrix legs, whose
+  # check-run names (e.g. `test (24, build)`, `test (26, test:unit)`) change
+  # whenever the matrix axes (node version / target) change. Requiring the
+  # per-leg names leaves PRs stuck on "Expected — Waiting for status to be
+  # reported" after any matrix change. This job passes only if every `test`
+  # matrix leg succeeds.
+  test-all:
+    if: ${{ always() }}
+    runs-on: ubuntu-latest
+    needs: test
+    steps:
+      - name: Verify all test matrix legs passed
+        run: |
+          if [ "${{ needs.test.result }}" != "success" ]; then
+            echo "One or more 'test' matrix legs did not succeed: ${{ needs.test.result }}"
+            exit 1
+          fi
+          echo "All 'test' matrix legs succeeded."
