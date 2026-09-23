@@ -347,7 +347,7 @@ describe('RunScan', () => {
       // arrange
       const args = {
         name: 'test-scan',
-        entrypoint: ['test-entry'],
+        crawler: ['http://example.com'],
         connectivityStatus: [Connectivity.OK, Connectivity.UNREACHABLE],
         _: [],
         $0: ''
@@ -358,7 +358,7 @@ describe('RunScan', () => {
         mockedScans.create(
           objectContaining({
             name: args.name as string,
-            entryPointIds: args.entrypoint as string[],
+            crawlerUrls: ['http://example.com'],
             entryPointFilter: {
               connectivityStatus: args.connectivityStatus as Connectivity[]
             }
@@ -413,8 +413,8 @@ describe('RunScan', () => {
           'test-token',
           '--name',
           'test-scan',
-          '--entrypoint',
-          'test-entry',
+          '--crawler',
+          'http://example.com',
           '--connectivity-status',
           Connectivity.PROBLEM,
           Connectivity.UNAUTHORIZED
@@ -425,7 +425,7 @@ describe('RunScan', () => {
         mockedScans.create(
           objectContaining({
             name: 'test-scan',
-            entryPointIds: ['test-entry'],
+            crawlerUrls: ['http://example.com'],
             entryPointFilter: {
               connectivityStatus: [
                 Connectivity.PROBLEM,

@@ -110,7 +110,7 @@ describe('RestScans', () => {
       const scanConfig: ScanConfig = {
         name: 'scan',
         module: Module.DAST,
-        entryPointIds: ['entry-point-1', 'entry-point-2'],
+        crawlerUrls: ['https://example.com'],
         entryPointFilter: {
           connectivityStatus: [Connectivity.OK, Connectivity.UNREACHABLE]
         }
@@ -132,7 +132,6 @@ describe('RestScans', () => {
 
       // assert
       expect(parsedBody).toMatchObject({
-        entryPointIds: scanConfig.entryPointIds,
         entryPointFilter: {
           connectivityStatus: [Connectivity.OK, Connectivity.UNREACHABLE]
         }
