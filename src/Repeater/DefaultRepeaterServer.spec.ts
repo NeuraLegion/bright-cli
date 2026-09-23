@@ -11,6 +11,51 @@ import { EventEmitter } from 'node:events';
 
 jest.mock('socket.io-client', () => jest.fn());
 
+// Model Sentry's per-scope fork. `withScope` runs its callback with a FRESH scope
+// (as the real async-context strategy does for concurrent forwards);
+// `captureException` snapshots the active scope's tags so a test can assert which
+// trace id an error was tagged with.
+const capturedTags: Record<string, unknown>[] = [];
+jest.mock('@sentry/node', () => {
+  let activeTags: Record<string, unknown> = {};
+
+  return {
+    captureException: jest.fn(() => {
+      capturedTags.push({ ...activeTags });
+    }),
+    captureMessage: jest.fn(),
+    withScope: (
+      cb: (scope: { setTag: (k: string, v: unknown) => void }) => unknown
+    ) => {
+      const previous = activeTags;
+      const scopeTags: Record<string, unknown> = {};
+      activeTags = scopeTags;
+      const scope = {
+        setTag: (k: string, v: unknown) => {
+          scopeTags[k] = v;
+        }
+      };
+
+      const restore = () => {
+        activeTags = previous;
+      };
+
+      try {
+        const result = cb(scope);
+        if (result instanceof Promise) {
+          return result.finally(restore);
+        }
+        restore();
+
+        return result;
+      } catch (e) {
+        restore();
+        throw e;
+      }
+    }
+  };
+});
+
 class FakeSocket extends EventEmitter {
   public readonly io = new EventEmitter();
   public readonly connect = jest.fn();
@@ -48,6 +93,7 @@ describe('DefaultRepeaterServer', () => {
   beforeEach(() => {
     jest.useFakeTimers();
 
+    capturedTags.length = 0;
     socket = new FakeSocket();
     lookupMock.mockReturnValue(socket);
 
@@ -204,6 +250,80 @@ describe('DefaultRepeaterServer', () => {
 
       jest.advanceTimersByTime(60_000);
       await expect(deploying).rejects.toThrow('No response.');
+    });
+  });
+
+  describe('wrapEventListener', () => {
+    const emitRequest = (event: Record<string, unknown>) =>
+      socket.emit(
+        'request',
+        event,
+        // socket.io ack callback
+        () => undefined
+      );
+
+    it('tags the per-request Sentry scope with trace_id when the request carries one', async () => {
+      // arrange — a handler that throws so handleEventError captures inside scope
+      server.on(RepeaterServerEvents.REQUEST, () => {
+        throw new Error('boom');
+      });
+      await connect();
+
+      // act
+      emitRequest({
+        protocol: 'http',
+        url: 'http://target.test/',
+        traceId: 'trace-abc12345'
+      });
+      await Promise.resolve();
+
+      // assert
+      expect(capturedTags).toHaveLength(1);
+      expect(capturedTags[0]).toEqual({ trace_id: 'trace-abc12345' });
+    });
+
+    it('does not tag trace_id when the request carries none', async () => {
+      // arrange
+      server.on(RepeaterServerEvents.REQUEST, () => {
+        throw new Error('boom');
+      });
+      await connect();
+
+      // act
+      emitRequest({ protocol: 'http', url: 'http://target.test/' });
+      await Promise.resolve();
+
+      // assert
+      expect(capturedTags).toHaveLength(1);
+      expect(capturedTags[0]).not.toHaveProperty('trace_id');
+    });
+
+    it('does not cross-contaminate trace_id tags across two requests', async () => {
+      // arrange
+      server.on(RepeaterServerEvents.REQUEST, () => {
+        throw new Error('boom');
+      });
+      await connect();
+
+      // act — two distinct forwards, each with its own trace id
+      emitRequest({
+        protocol: 'http',
+        url: 'http://a.test/',
+        traceId: 'trace-aaaa1111'
+      });
+      emitRequest({
+        protocol: 'http',
+        url: 'http://b.test/',
+        traceId: 'trace-bbbb2222'
+      });
+      await Promise.resolve();
+
+      // assert — each capture carries only its own request's trace id
+      expect(capturedTags).toHaveLength(2);
+      expect(capturedTags).toEqual([
+        { trace_id: 'trace-aaaa1111' },
+        { trace_id: 'trace-bbbb2222' }
+      ]);
     });
   });
 });

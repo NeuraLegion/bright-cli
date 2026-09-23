@@ -78,4 +78,26 @@ describe('Request', () => {
       });
     });
   });
+
+  describe('constructor', () => {
+    // The trace id must never reach the target. bridges carries it as a `traceId`
+    // DTO field, and the guarantee that an old repeater cannot leak it rests on
+    // this constructor's FIXED destructured param list — an unknown key is
+    // discarded, never copied into `headers`. If a future refactor switches to
+    // `Object.assign(this, opts)` or a `...rest` capture, this test must fail
+    // loudly rather than silently reintroduce the leak.
+    it('should discard an unknown traceId option and never place it in headers', () => {
+      const request = new Request({
+        url: 'http://foo.bar',
+        protocol: Protocol.HTTP,
+        headers: { 'x-key': 'value' },
+        // cast: `traceId` is not part of RequestOptions on the cli side by design
+        ...({ traceId: 'trace-abc12345' } as object)
+      });
+
+      expect(request.headers).toEqual({ 'x-key': 'value' });
+      expect(request.headers).not.toHaveProperty('traceId');
+      expect(request.headers).not.toHaveProperty('x-bridge-trace-id');
+    });
+  });
 });
