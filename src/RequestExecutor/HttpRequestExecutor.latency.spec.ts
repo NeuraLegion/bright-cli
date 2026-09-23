@@ -90,10 +90,9 @@ describe('HttpRequestExecutor', () => {
 
       const mean = latencies.reduce((a, b) => a + b, 0) / latencies.length;
 
-      // Assert on an object rather than the bare number: on failure Jest prints
-      // the whole thing, so the report shows how slow it got, on which runtime,
-      // and the individual samples - enough to tell a real regression from a
-      // noisy runner without rerunning anything.
+      // Assert via objectContaining so Jest prints the whole received object on
+      // failure: the runtime, the mean, the max and every sample. That is enough
+      // to tell a real regression from a noisy runner without rerunning.
       expect({
         node: process.version,
         meanMs: Math.round(mean),
@@ -101,7 +100,7 @@ describe('HttpRequestExecutor', () => {
         budgetMs: MAX_MEAN_LATENCY_MS,
         samplesMs: latencies.map((value) => Math.round(value)),
         withinBudget: mean < MAX_MEAN_LATENCY_MS
-      }).toMatchObject({ withinBudget: true });
+      }).toEqual(expect.objectContaining({ withinBudget: true }));
     }, 60000);
   });
 });

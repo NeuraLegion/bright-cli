@@ -25,20 +25,22 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # Keep the Node.js versions in sync with the npm leg of test-cli.yml,
-        # which is what e2e/smoke run on. Unit tests previously ran only on the
-        # composite action's default runtime, so a runtime-specific regression in
-        # a native dependency could not be caught here at all.
-        node: ['24.11.1', '26.1.0']
+        # Track the latest release of each supported major rather than a pinned
+        # patch. The regression this suite now guards against does not reproduce
+        # on 26.1.0 but does on 26.9.0 (mean request latency 1ms vs 338ms), and
+        # the published container tracks `node:26-alpine` - so pinning an old
+        # patch would test a runtime we do not ship. Keep the majors in sync with
+        # the npm leg of test-cli.yml.
+        node: ['24', '26']
         target: ['lint', 'format', 'test:unit', 'build']
         # lint / format / build are runtime-agnostic, so only the test target is
         # worth running across every supported runtime.
         exclude:
-          - node: '26.1.0'
+          - node: '26'
             target: 'lint'
-          - node: '26.1.0'
+          - node: '26'
             target: 'format'
-          - node: '26.1.0'
+          - node: '26'
             target: 'build'
     steps:
       - name: Checkout
