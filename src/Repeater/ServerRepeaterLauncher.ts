@@ -261,7 +261,10 @@ export class ServerRepeaterLauncher implements RepeaterLauncher {
 
       return {
         protocol: event.protocol,
-        protocolError: { code: 'ERR_MALFORMED_REQUEST', message: reason }
+        protocolError: {
+          code: RepeaterErrorCodes.MALFORMED_REQUEST,
+          message: reason
+        }
       };
     }
 

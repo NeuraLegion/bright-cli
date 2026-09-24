@@ -5,7 +5,8 @@ import {
   RepeaterServerEvents,
   RepeaterServerEventHandler,
   RepeaterServerRequestEvent,
-  RepeaterServerRequestResponse
+  RepeaterServerRequestResponse,
+  RepeaterErrorCodes
 } from './RepeaterServer';
 import { RepeaterCommandHub } from './RepeaterCommandHub';
 import { RuntimeDetector } from './RuntimeDetector';
@@ -114,7 +115,7 @@ describe('ServerRepeaterLauncher', () => {
       expect(response).toEqual({
         protocol: Protocol.HTTP,
         protocolError: {
-          code: 'ERR_MALFORMED_REQUEST',
+          code: RepeaterErrorCodes.MALFORMED_REQUEST,
           message: 'Invalid URL: '
         }
       });
