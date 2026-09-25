@@ -48,6 +48,65 @@ describe('Request', () => {
     );
   });
 
+  describe('toJSON', () => {
+    it('should round-trip every option the constructor accepts', () => {
+      // arrange
+      const options = {
+        protocol: Protocol.HTTP,
+        url: 'http://foo.bar/',
+        method: 'POST',
+        headers: { 'x-key': 'value' },
+        body: 'AAAA',
+        passphrase: 'pass',
+        correlationIdRegex: 'x-correlation-id',
+        encoding: 'base64' as const,
+        maxContentSize: 99,
+        timeout: 1234,
+        decompress: false,
+        keepAlive: true
+      };
+      const request = new Request(options);
+
+      // act
+      const copy = new Request(request.toJSON());
+
+      // assert
+      expect(copy).toEqual(
+        expect.objectContaining({
+          protocol: options.protocol,
+          url: options.url,
+          method: options.method,
+          body: options.body,
+          passphrase: options.passphrase,
+          encoding: options.encoding,
+          maxContentSize: options.maxContentSize,
+          timeout: options.timeout,
+          decompress: options.decompress,
+          keepAlive: options.keepAlive
+        })
+      );
+      expect(copy.headers).toEqual(options.headers);
+      expect(copy.correlationIdRegex).toEqual(request.correlationIdRegex);
+    });
+
+    it('should preserve an explicit decompress: false rather than defaulting it back to true', () => {
+      // arrange
+      // `decompress` defaults to `true` in the constructor, so omitting it from
+      // `toJSON()` silently flips it instead of merely dropping it.
+      const request = new Request({
+        protocol: Protocol.HTTP,
+        url: 'http://foo.bar/',
+        decompress: false
+      });
+
+      // act
+      const copy = new Request(request.toJSON());
+
+      // assert
+      expect(copy.decompress).toBe(false);
+    });
+  });
+
   describe('setHeaders', () => {
     it('should append headers', () => {
       const request = new Request({
