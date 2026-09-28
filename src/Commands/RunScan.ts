@@ -6,7 +6,8 @@ import {
   RequestExclusion,
   RestScansOptions,
   ScanConfig,
-  Scans
+  Scans,
+  SecurityStatus
 } from '../Scan';
 import { ErrorMessageFactory, Helpers, logger } from '../Utils';
 import { Arguments, Argv, CommandModule } from 'yargs';
@@ -168,6 +169,14 @@ export class RunScan implements CommandModule {
         describe:
           'List entrypoint IDs to scan specific entrypoints. If no IDs are provided, the scan will run on the first 2000 project-level entrypoints. This option requires to specify the project ID using the --project option.'
       })
+      .option('security-status', {
+        array: true,
+        choices: Helpers.toArray(SecurityStatus),
+        describe:
+          'Security statuses of the entry points to test. ' +
+          'When omitted, entry points are not filtered by security status. ' +
+          'Required if --connectivity-status is specified.'
+      })
       .option('connectivity-status', {
         array: true,
         choices: Helpers.toArray(Connectivity),
@@ -186,6 +195,12 @@ export class RunScan implements CommandModule {
         if (!args.entrypoint && !args.archive && !args.crawler) {
           throw new Error(
             'When --entrypoint is not provided, either --archive or --crawler must be specified'
+          );
+        }
+
+        if (args.connectivityStatus && !args.securityStatus) {
+          throw new Error(
+            'Argument --security-status is required when --connectivity-status is specified'
           );
         }
 
@@ -234,11 +249,22 @@ export class RunScan implements CommandModule {
           params: args.excludeParam
         },
         entryPointIds: args.entrypoint,
-        entryPointFilter: args.connectivityStatus
-          ? {
-              connectivityStatus: args.connectivityStatus as Connectivity[]
-            }
-          : undefined
+        entryPointFilter:
+          args.securityStatus || args.connectivityStatus
+            ? {
+                ...(args.securityStatus
+                  ? {
+                      securityStatus: args.securityStatus as SecurityStatus[]
+                    }
+                  : {}),
+                ...(args.connectivityStatus
+                  ? {
+                      connectivityStatus:
+                        args.connectivityStatus as Connectivity[]
+                    }
+                  : {})
+              }
+            : undefined
       } as ScanConfig);
 
       // eslint-disable-next-line no-console
