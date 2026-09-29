@@ -5,6 +5,7 @@ import {
   Discovery,
   Module,
   ScanConfig,
+  SecurityStatus,
   SourceType,
   StorageFile
 } from './Scans';
@@ -110,8 +111,9 @@ describe('RestScans', () => {
       const scanConfig: ScanConfig = {
         name: 'scan',
         module: Module.DAST,
-        crawlerUrls: ['https://example.com'],
+        entryPointIds: ['entry-point-1'],
         entryPointFilter: {
+          securityStatus: [SecurityStatus.NEW, SecurityStatus.TESTED],
           connectivityStatus: [Connectivity.OK, Connectivity.UNREACHABLE]
         }
       };
@@ -133,6 +135,7 @@ describe('RestScans', () => {
       // assert
       expect(parsedBody).toMatchObject({
         entryPointFilter: {
+          securityStatus: [SecurityStatus.NEW, SecurityStatus.TESTED],
           connectivityStatus: [Connectivity.OK, Connectivity.UNREACHABLE]
         }
       });
