@@ -1949,4 +1949,78 @@ describe('HttpRequestExecutor', () => {
       expect(connectionCount).toBe(2);
     });
   });
+
+  // Probe: prove a malformed-authority URL now travels all the way to libcurl
+  // and is answered with libcurl's own returned failure, rather than being
+  // short-circuited client-side (Finding A) or hanging/throwing something the
+  // execute catch maps to undefined. Run on the supported Node runtime
+  // (package.json engines: >=22 <=24), NOT Node 26.
+  describe('execute', () => {
+    // Build a Request carrying a malformed authority WITHOUT tripping the
+    // constructor predicate (Task 9 relaxes it separately): construct with a
+    // valid placeholder, then redefine the readonly url.
+    const malformedRequest = (url: string): Request => {
+      const request = new Request({
+        url: 'http://placeholder.invalid/',
+        protocol: Protocol.HTTP
+      });
+      Object.defineProperty(request, 'url', { value: url, writable: false });
+
+      return request;
+    };
+
+    // Concrete libcurl outcome observed on Node 24 for each authority defect,
+    // via the string decomposition TargetUrl feeds curl. libcurl rejects the
+    // rebuilt authority as CURLE_URL_MALFORMAT and node-libcurl surfaces it as a
+    // returned Error whose message is the text below; execute's catch derives
+    // errorCode = code ?? syscall ?? name, which for this Error is the name
+    // ('Error') — the load-bearing fact for the AC is that it is a DEFINED,
+    // returned value, never a hang and never the ERR_INVALID_URL short-circuit
+    // the throwing new URL() used to produce.
+    const CURL_MALFORMAT_MESSAGE =
+      'Request failed: URL using bad/illegal format or missing URL';
+
+    const cases: [name: string, url: string][] = [
+      ['non-numeric port', 'http://host.invalid:notaport/'],
+      ['port > 65535', 'http://host.invalid:99999/'],
+      ['unbracketed IPv6', 'http://::1/'],
+      ['space in host', 'http://ho st.invalid/'],
+      ['[not-ipv6]', 'http://[not-ipv6]/'],
+      ['empty string', '']
+    ];
+
+    it.each(cases)(
+      'should reach libcurl and return a defined error for %s (not ERR_INVALID_URL, no throw/hang)',
+      async (_name, url) => {
+        // arrange — an explicit per-test timeout keeps a would-be hang well
+        // under the jest default so a regression fails loudly, not by stalling.
+        const sut = buildSut();
+        const request = malformedRequest(url);
+
+        // act — must resolve (never reject/throw).
+        const response = await sut.execute(request);
+
+        // assert — a returned Response carrying libcurl's malformat failure,
+        // never the client-side ERR_INVALID_URL short-circuit.
+        expect(response.errorCode).toBeDefined();
+        expect(response.errorCode).not.toBe('ERR_INVALID_URL');
+        expect(response.message).toBe(CURL_MALFORMAT_MESSAGE);
+      },
+      10_000
+    );
+
+    it('should short-circuit an empty authority without reaching a virtual script', async () => {
+      // arrange — an origin-form target has no hostname (D4); no virtual script
+      // lookup is attempted and execution still returns a Response.
+      const sut = buildSut();
+      const request = malformedRequest('/origin-form-only');
+
+      // act
+      const response = await sut.execute(request);
+
+      // assert
+      expect(response).toBeDefined();
+      verify(virtualScriptsMock.find(anything())).never();
+    });
+  });
 });
