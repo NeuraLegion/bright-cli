@@ -54,6 +54,13 @@ export enum Connectivity {
   UNAVAILABLE = 'unavailable'
 }
 
+export enum SecurityStatus {
+  NEW = 'new',
+  CHANGED = 'changed',
+  TESTED = 'tested',
+  VULNERABLE = 'vulnerable'
+}
+
 export interface ScanConfig {
   name: string;
   module: Module;
@@ -75,7 +82,7 @@ export interface ScanConfig {
   repeaters?: string[];
   entryPointIds?: string[];
   entryPointFilter?: {
-    securityStatus?: string[];
+    securityStatus?: SecurityStatus[];
     connectivityStatus?: Connectivity[];
   };
 }
