@@ -169,7 +169,7 @@
     "distribution": "unknown"
   },
   "overrides": {
-    "undici": "7.18.2",
+    "undici": "^7.29.1",
     "cosmiconfig-typescript-loader": {
       "typescript": "5.9.3"
     },
