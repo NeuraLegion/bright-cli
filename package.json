@@ -1,6 +1,6 @@
 {
   "name": "@brightsec/cli",
-  "version": "13.14.0-next.5",
+  "version": "13.14.0-next.6",
   "private": false,
   "repository": {
     "type": "git",
@@ -169,7 +169,7 @@
     "distribution": "unknown"
   },
   "overrides": {
-    "undici": "7.18.2",
+    "undici": "^7.29.1",
     "cosmiconfig-typescript-loader": {
       "typescript": "5.9.3"
     },
