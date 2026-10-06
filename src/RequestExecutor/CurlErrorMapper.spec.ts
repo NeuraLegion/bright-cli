@@ -148,4 +148,68 @@ describe('CurlErrorMapper', () => {
       expect(result).toBe('CURLE_9999');
     });
   });
+
+  describe('toErrorCode', () => {
+    // The host `os.constants.errno` only carries the canonical `E*` names, so
+    // the Winsock aliases Windows reports are faked here. The mapper reads the
+    // table once at class load, so the module is re-imported under the mock.
+    const WINSOCK_ERRNO: Readonly<Record<string, number>> = {
+      WSAECONNREFUSED: 10061,
+      WSAECONNRESET: 10054,
+      WSAENETUNREACH: 10051,
+      WSAEHOSTUNREACH: 10065,
+      WSAETIMEDOUT: 10060
+    };
+
+    const loadMapperWithWinsockErrno = async (): Promise<
+      typeof CurlErrorMapper
+    > => {
+      const os = jest.requireActual<typeof import('node:os')>('node:os');
+      jest.doMock('node:os', () => ({
+        ...os,
+        constants: { ...os.constants, errno: WINSOCK_ERRNO }
+      }));
+
+      // ADHOC: `jest.doMock` must be called before importing SUT
+      return (await import('./CurlErrorMapper')).CurlErrorMapper;
+    };
+
+    afterEach(() => {
+      jest.resetModules();
+      jest.dontMock('node:os');
+    });
+
+    it.each([
+      ['WSAECONNREFUSED', 'ECONNREFUSED'],
+      ['WSAECONNRESET', 'ECONNRESET'],
+      ['WSAENETUNREACH', 'ENETUNREACH'],
+      ['WSAEHOSTUNREACH', 'EHOSTUNREACH']
+    ])(
+      'should normalize the Winsock errno %s to the canonical %s',
+      async (winsockName, expected) => {
+        // arrange
+        const mapper = await loadMapperWithWinsockErrno();
+
+        // act
+        const result = mapper.toErrorCode(
+          CurlCode.CURLE_COULDNT_CONNECT,
+          WINSOCK_ERRNO[winsockName]
+        );
+
+        // assert
+        expect(result).toBe(expected);
+      }
+    );
+
+    it('should fall back to the CURLcode mapping for an unknown Winsock errno', async () => {
+      // arrange
+      const mapper = await loadMapperWithWinsockErrno();
+
+      // act
+      const result = mapper.toErrorCode(CurlCode.CURLE_COULDNT_CONNECT, 10093);
+
+      // assert
+      expect(result).toBe('ECONNREFUSED');
+    });
+  });
 });

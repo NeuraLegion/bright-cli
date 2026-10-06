@@ -36,7 +36,10 @@ export class CurlErrorMapper {
   private static readonly ERRNO_NAMES: ReadonlyMap<number, string> = new Map(
     Object.entries(constants.errno)
       .reverse()
-      .map(([name, value]: [string, number]) => [value, name])
+      .map(([name, value]: [string, number]) => [
+        value,
+        CurlErrorMapper.normalizeErrnoName(name)
+      ])
   );
 
   // Several codes share this generic description, so it cannot identify one.
@@ -84,12 +87,16 @@ export class CurlErrorMapper {
   }
 
   public static toErrorCode(curlCode: CurlCode, osErrno?: number): string {
-    if (
-      CurlErrorMapper.SOCKET_CURL_CODES.has(curlCode) &&
-      osErrno &&
-      CurlErrorMapper.ERRNO_NAMES.has(osErrno)
-    ) {
-      return CurlErrorMapper.ERRNO_NAMES.get(osErrno);
+    if (CurlErrorMapper.SOCKET_CURL_CODES.has(curlCode) && osErrno) {
+      const errnoName = CurlErrorMapper.ERRNO_NAMES.get(osErrno);
+
+      // Only trust the OS errno when it maps to a canonical Node-style `E*`
+      // code. On Windows the entry is a Winsock alias (`WSAECONNREFUSED`);
+      // `normalizeErrnoName` strips the `WSA` prefix, and anything that still
+      // isn't `E*`-shaped falls through to the CURLcode mapping below.
+      if (errnoName && errnoName.startsWith('E')) {
+        return errnoName;
+      }
     }
 
     return (
@@ -99,5 +106,12 @@ export class CurlErrorMapper {
       CurlCode[curlCode] ??
       `CURLE_${curlCode}`
     );
+  }
+
+  // Winsock errno constants are the UNIX names prefixed with `WSA`
+  // (`WSAECONNREFUSED` <-> `ECONNREFUSED`), so stripping that prefix restores
+  // the canonical Node-style `E*` name the mapper's contract is built on.
+  private static normalizeErrnoName(name: string): string {
+    return name.startsWith('WSAE') ? name.slice('WSA'.length) : name;
   }
 }
