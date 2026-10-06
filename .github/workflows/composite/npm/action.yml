@@ -47,3 +47,8 @@ runs:
       run: npm ci -q
       env:
         NODE_AUTH_TOKEN: ${{ env.NODE_AUTH_TOKEN }}
+        # node-libcurl's preinstall runs a vcpkg source build whose `gsasl` port
+        # downloads only from the (intermittently unreachable) GNU FTP network.
+        # Redirect GNU-FTP assets to a reachable mirror via vcpkg's x-script
+        # asset provider; vcpkg still verifies SHA512, so the swap is safe.
+        X_VCPKG_ASSET_SOURCES: 'x-script,node "${{ github.action_path }}/vcpkg-fetch-asset.js" {url} {sha512} {dst}'
