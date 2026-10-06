@@ -17,6 +17,14 @@ inputs:
     description: 'Cache'
     required: false
     default: "npm"
+  ignore_scripts:
+    description: >-
+      Skip lifecycle scripts during `npm ci` (passes --ignore-scripts).
+      Use for jobs that exercise an externally-provided CLI and therefore
+      do not need the repo's local native addons (e.g. @brightsec/node-libcurl)
+      built — this avoids the slow, network-fragile vcpkg source build.
+    required: false
+    default: "false"
 
 
 runs:
@@ -44,6 +52,6 @@ runs:
 
     - name: Install deps in quiet mode
       shell: bash
-      run: npm ci -q
+      run: npm ci -q ${{ inputs.ignore_scripts == 'true' && '--ignore-scripts' || '' }}
       env:
         NODE_AUTH_TOKEN: ${{ env.NODE_AUTH_TOKEN }}

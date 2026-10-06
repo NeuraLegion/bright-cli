@@ -128,6 +128,10 @@ jobs:
         uses: ./.github/workflows/composite/npm
         with:
           cache: ''
+          # This job runs the suite against an externally-provided CLI
+          # (executable / MSI / Docker image), not the repo's local build, so
+          # skip lifecycle scripts and avoid node-libcurl's vcpkg source build.
+          ignore_scripts: 'true'
       
       - name: Start WireMock
         id: wiremock
@@ -186,6 +190,10 @@ jobs:
         uses: ./.github/workflows/composite/npm
         with:
           cache: ''
+          # This job runs the suite against an externally-provided CLI
+          # (executable / MSI / Docker image), not the repo's local build, so
+          # skip lifecycle scripts and avoid node-libcurl's vcpkg source build.
+          ignore_scripts: 'true'
 
       - name: Start WireMock
         id: wiremock
@@ -226,6 +234,10 @@ jobs:
         uses: ./.github/workflows/composite/npm
         with:
           cache: ''
+          # This job runs the suite against an externally-provided CLI
+          # (executable / MSI / Docker image), not the repo's local build, so
+          # skip lifecycle scripts and avoid node-libcurl's vcpkg source build.
+          ignore_scripts: 'true'
 
       - name: Start WireMock
         id: wiremock
@@ -320,6 +332,10 @@ jobs:
         with:
           version: ${{ matrix.node }}
           cache: ''
+          # e2e exercises the globally-installed CLI (E2E_CLI_CMD); the repo's
+          # local node_modules native addons aren't loaded here, so skip the
+          # lifecycle scripts and avoid node-libcurl's vcpkg source build.
+          ignore_scripts: 'true'
 
       - name: Start WireMock
         id: wiremock
