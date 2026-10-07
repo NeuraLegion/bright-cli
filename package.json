@@ -1,6 +1,6 @@
 {
   "name": "@brightsec/cli",
-  "version": "13.16.0-next.2",
+  "version": "13.16.0-next.3",
   "private": false,
   "repository": {
     "type": "git",
@@ -27,7 +27,7 @@
   "dependencies": {
     "@brightsec/node-libcurl": "5.1.6",
     "@modelcontextprotocol/sdk": "1.17.5",
-    "@neuralegion/os-service": "^2.0.6",
+    "@neuralegion/os-service": "^2.0.7",
     "@neuralegion/raw-socket": "^2.0.2",
     "@sentry/node": "^7.120.0",
     "ajv": "^6.12.6",
