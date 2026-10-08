@@ -142,18 +142,17 @@ export class Request {
       ...headers
     };
 
-    this._headers = Object.entries(mergedHeaders).reduce(
-      (result, [field, value]: [string, string | string[]]) => {
-        result[field] =
-          Array.isArray(value) &&
-          Request.SINGLE_VALUE_HEADERS.has(field.toLowerCase())
-            ? value.join(', ')
-            : value;
+    this._headers = Object.entries(mergedHeaders).reduce<
+      Record<string, string | string[]>
+    >((result, [field, value]: [string, string | string[]]) => {
+      result[field] =
+        Array.isArray(value) &&
+        Request.SINGLE_VALUE_HEADERS.has(field.toLowerCase())
+          ? value.join(', ')
+          : value;
 
-        return result;
-      },
-      {}
-    );
+      return result;
+    }, {});
   }
 
   public async loadCert({ path, passphrase }: Cert): Promise<void> {
