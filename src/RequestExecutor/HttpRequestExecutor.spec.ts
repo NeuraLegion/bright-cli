@@ -446,7 +446,7 @@ describe('HttpRequestExecutor', () => {
       expect(receivedPath).toBe('/?x=1&y=2');
     });
 
-    it('should handle timeout', async () => {
+    it('should report ETIMEDOUT when the target does not respond in time', async () => {
       // arrange
       const { baseUrl } = await startServer((_req, _res) => {
         // Never respond — triggers timeout
@@ -458,10 +458,15 @@ describe('HttpRequestExecutor', () => {
       const response = await sut.execute(request);
 
       // assert
-      expect(response).toMatchObject({ errorCode: expect.any(String) });
+      expect(response).toMatchObject({
+        protocol: Protocol.HTTP,
+        statusCode: undefined,
+        errorCode: 'ETIMEDOUT',
+        message: expect.any(String)
+      });
     });
 
-    it('should handle non-HTTP errors (connection refused)', async () => {
+    it('should report ECONNREFUSED when the target refuses the connection', async () => {
       // arrange
       const { request } = createRequest({
         url: 'http://127.0.0.1:1/'
@@ -472,7 +477,98 @@ describe('HttpRequestExecutor', () => {
       const response = await sut.execute(request);
 
       // assert
-      expect(response).toMatchObject({ statusCode: undefined });
+      expect(response).toMatchObject({
+        protocol: Protocol.HTTP,
+        statusCode: undefined,
+        errorCode: 'ECONNREFUSED',
+        message: expect.any(String)
+      });
+    });
+
+    it('should report ENOTFOUND when the target host cannot be resolved', async () => {
+      // arrange
+      // RFC 6761: `.invalid` names are guaranteed never to resolve.
+      const { request } = createRequest({
+        url: 'http://repeater-spec.invalid/'
+      });
+      const sut = buildSut({ timeout: 5000 });
+
+      // act
+      const response = await sut.execute(request);
+
+      // assert
+      expect(response).toMatchObject({
+        statusCode: undefined,
+        errorCode: 'ENOTFOUND'
+      });
+    });
+
+    it('should report ECONNRESET when the target closes the connection without replying', async () => {
+      // arrange
+      const server = net.createServer((socket) =>
+        socket.on('data', () => socket.end())
+      );
+      server.listen(0, '127.0.0.1');
+      await once(server, 'listening');
+      const { port } = server.address() as AddressInfo;
+      const { request } = createRequest({ url: `http://127.0.0.1:${port}/` });
+      const sut = buildSut({ timeout: 5000 });
+
+      try {
+        // act
+        const response = await sut.execute(request);
+
+        // assert
+        expect(response).toMatchObject({
+          statusCode: undefined,
+          errorCode: 'ECONNRESET'
+        });
+      } finally {
+        server.close();
+      }
+    });
+
+    it('should report ECONNRESET when the target resets the connection', async () => {
+      // arrange
+      const server = net.createServer((socket) =>
+        socket.on('data', () => socket.resetAndDestroy())
+      );
+      server.listen(0, '127.0.0.1');
+      await once(server, 'listening');
+      const { port } = server.address() as AddressInfo;
+      const { request } = createRequest({ url: `http://127.0.0.1:${port}/` });
+      const sut = buildSut({ timeout: 5000 });
+
+      try {
+        // act
+        const response = await sut.execute(request);
+
+        // assert
+        expect(response).toMatchObject({
+          statusCode: undefined,
+          errorCode: 'ECONNRESET'
+        });
+      } finally {
+        server.close();
+      }
+    });
+
+    it('should report EPROTO when the TLS handshake fails', async () => {
+      // arrange
+      const { baseUrl } = await startServer((_req, res) => res.end());
+      const { request } = createRequest({
+        url: baseUrl.replace('http://', 'https://')
+      });
+      const sut = buildSut({ timeout: 5000 });
+
+      // act
+      const response = await sut.execute(request);
+
+      // assert
+      expect(response).toMatchObject({
+        statusCode: undefined,
+        errorCode: 'EPROTO'
+      });
     });
 
     it('should truncate response body with not white-listed mime type', async () => {
