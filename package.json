@@ -171,6 +171,7 @@
   "overrides": {
     "undici": "^7.29.1",
     "npm": "^11.21.0",
+    "handlebars": "^4.7.10",
     "fast-uri": "^3.1.7",
     "browserslist": "^4.28.7",
     "baseline-browser-mapping": "^2.11.0",
