@@ -170,6 +170,13 @@
   },
   "overrides": {
     "undici": "^7.29.1",
+    "fast-uri": "^3.1.7",
+    "browserslist": "^4.28.7",
+    "baseline-browser-mapping": "^2.11.0",
+    "@babel/core": "^7.29.6",
+    "@istanbuljs/load-nyc-config": {
+      "js-yaml": "^3.15.2"
+    },
     "cosmiconfig-typescript-loader": {
       "typescript": "5.9.3"
     },
