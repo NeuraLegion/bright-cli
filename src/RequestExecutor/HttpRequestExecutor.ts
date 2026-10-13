@@ -9,6 +9,7 @@ import { CertificatesCache } from './CertificatesCache';
 import { CertificatesResolver } from './CertificatesResolver';
 import { CurlSeekResult } from './CurlSeekResult';
 import { CurlSeekOrigin } from './CurlSeekOrigin';
+import { CurlErrorMapper } from './CurlErrorMapper';
 import { inject, injectable } from 'tsyringe';
 import iconv from 'iconv-lite';
 import { safeParse } from 'fast-content-type-parse';
@@ -160,6 +161,19 @@ export class HttpRequestExecutor implements RequestExecutor {
       );
 
       curl.on('error', (err: Error) => {
+        // libcurl reports failures as a CURLcode rather than the Node.js-style
+        // code consumers rely on to classify target failures; normalize it.
+        const curlCode = CurlErrorMapper.resolveCurlCode(err);
+
+        if (curlCode !== undefined) {
+          Object.assign(err, {
+            code: CurlErrorMapper.toErrorCode(
+              curlCode,
+              curl.getInfo('OS_ERRNO') as number
+            )
+          });
+        }
+
         setImmediate(() => curl.close());
         reject(err);
       });
