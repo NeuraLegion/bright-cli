@@ -1,12 +1,14 @@
 import 'reflect-metadata';
-import { Logger, logger } from '../Utils';
+import { Helpers, Logger, logger } from '../Utils';
 import { RunScan } from './RunScan';
 import {
   AttackParamLocation,
+  Connectivity,
   Exclusions,
   Module,
   Scans,
-  ScanWarning
+  ScanWarning,
+  SecurityStatus
 } from '../Scan';
 import {
   anything,
@@ -136,6 +138,185 @@ describe('RunScan', () => {
       // act & assert
       expect(() => runScan.builder(yargsInstance).parse(argv)).not.toThrow();
     });
+
+    describe('connectivity-status', () => {
+      const baseArgv = [
+        '--token',
+        'test-token',
+        '--name',
+        'test-scan',
+        '--entrypoint',
+        'test-entry',
+        '--security-status',
+        SecurityStatus.NEW
+      ];
+
+      it('should be undefined when the option is omitted', () => {
+        // act
+        const result = runScan.builder(yargsInstance).parse(baseArgv);
+
+        // assert
+        expect(result).not.toHaveProperty('connectivityStatus');
+      });
+
+      it('should parse a single value as an array', () => {
+        // arrange
+        const argv = [...baseArgv, '--connectivity-status', Connectivity.OK];
+
+        // act
+        const result = runScan.builder(yargsInstance).parse(argv);
+
+        // assert
+        expect(result).toMatchObject({
+          'connectivityStatus': [Connectivity.OK],
+          'connectivity-status': [Connectivity.OK]
+        });
+      });
+
+      it('should parse multiple values', () => {
+        // arrange
+        const argv = [
+          ...baseArgv,
+          '--connectivity-status',
+          Connectivity.OK,
+          Connectivity.UNREACHABLE,
+          Connectivity.SKIPPED
+        ];
+
+        // act
+        const result = runScan.builder(yargsInstance).parse(argv);
+
+        // assert
+        expect(result).toMatchObject({
+          connectivityStatus: [
+            Connectivity.OK,
+            Connectivity.UNREACHABLE,
+            Connectivity.SKIPPED
+          ]
+        });
+      });
+
+      it.each(Helpers.toArray<Connectivity>(Connectivity))(
+        'should accept %s as a valid choice',
+        (status: Connectivity) => {
+          // arrange
+          const argv = [...baseArgv, '--connectivity-status', status];
+
+          // act & assert
+          expect(() =>
+            runScan.builder(yargsInstance).parse(argv)
+          ).not.toThrow();
+        }
+      );
+
+      it('should throw an error on an unknown value', () => {
+        // arrange
+        const argv = [...baseArgv, '--connectivity-status', 'unknown-status'];
+
+        // act & assert
+        expect(() => runScan.builder(yargsInstance).parse(argv)).toThrow(
+          /Invalid values[\s\S]*connectivity-status/
+        );
+      });
+
+      it('should throw an error when security-status is not specified', () => {
+        // arrange
+        const argv = [
+          '--token',
+          'test-token',
+          '--name',
+          'test-scan',
+          '--entrypoint',
+          'test-entry',
+          '--connectivity-status',
+          Connectivity.OK
+        ];
+
+        // act & assert
+        expect(() => runScan.builder(yargsInstance).parse(argv)).toThrow(
+          'Argument --security-status is required when --connectivity-status is specified'
+        );
+      });
+    });
+
+    describe('security-status', () => {
+      const baseArgv = [
+        '--token',
+        'test-token',
+        '--name',
+        'test-scan',
+        '--entrypoint',
+        'test-entry'
+      ];
+
+      it('should be undefined when the option is omitted', () => {
+        // act
+        const result = runScan.builder(yargsInstance).parse(baseArgv);
+
+        // assert
+        expect(result).not.toHaveProperty('securityStatus');
+      });
+
+      it('should parse a single value as an array', () => {
+        // arrange
+        const argv = [...baseArgv, '--security-status', SecurityStatus.NEW];
+
+        // act
+        const result = runScan.builder(yargsInstance).parse(argv);
+
+        // assert
+        expect(result).toMatchObject({
+          'securityStatus': [SecurityStatus.NEW],
+          'security-status': [SecurityStatus.NEW]
+        });
+      });
+
+      it('should parse multiple values', () => {
+        // arrange
+        const argv = [
+          ...baseArgv,
+          '--security-status',
+          SecurityStatus.NEW,
+          SecurityStatus.CHANGED,
+          SecurityStatus.VULNERABLE
+        ];
+
+        // act
+        const result = runScan.builder(yargsInstance).parse(argv);
+
+        // assert
+        expect(result).toMatchObject({
+          securityStatus: [
+            SecurityStatus.NEW,
+            SecurityStatus.CHANGED,
+            SecurityStatus.VULNERABLE
+          ]
+        });
+      });
+
+      it.each(Helpers.toArray<SecurityStatus>(SecurityStatus))(
+        'should accept %s as a valid choice',
+        (status: SecurityStatus) => {
+          // arrange
+          const argv = [...baseArgv, '--security-status', status];
+
+          // act & assert
+          expect(() =>
+            runScan.builder(yargsInstance).parse(argv)
+          ).not.toThrow();
+        }
+      );
+
+      it('should throw an error on an unknown value', () => {
+        // arrange
+        const argv = [...baseArgv, '--security-status', 'unknown-status'];
+
+        // act & assert
+        expect(() => runScan.builder(yargsInstance).parse(argv)).toThrow(
+          /Invalid values[\s\S]*security-status/
+        );
+      });
+    });
   });
 
   describe('excludeEntryPoint', () => {
@@ -250,6 +431,177 @@ describe('RunScan', () => {
               requests: args.excludeEntryPoint,
               params: args.excludeParam
             } as Exclusions
+          })
+        )
+      ).thenResolve({ id: 'test-scan-id', warnings: [] });
+
+      // act
+      await runScan.handler(args);
+
+      // assert
+      verify(processSpy.exit(0)).once();
+      verify(loggerSpy.error(anything())).never();
+      verify(loggerSpy.warn(anything())).never();
+    });
+
+    it('should pass connectivity statuses as an entry point filter', async () => {
+      // arrange
+      const args = {
+        name: 'test-scan',
+        entrypoint: ['test-entry'],
+        connectivityStatus: [Connectivity.OK, Connectivity.UNREACHABLE],
+        _: [],
+        $0: ''
+      } as unknown as Arguments;
+
+      when(processSpy.exit(anything())).thenReturn(undefined);
+      when(
+        mockedScans.create(
+          objectContaining({
+            name: args.name as string,
+            entryPointIds: args.entrypoint as string[],
+            entryPointFilter: {
+              connectivityStatus: args.connectivityStatus as Connectivity[]
+            }
+          })
+        )
+      ).thenResolve({ id: 'test-scan-id', warnings: [] });
+
+      // act
+      await runScan.handler(args);
+
+      // assert
+      verify(processSpy.exit(0)).once();
+      verify(loggerSpy.error(anything())).never();
+      verify(loggerSpy.warn(anything())).never();
+    });
+
+    it('should pass security statuses as an entry point filter', async () => {
+      // arrange
+      const args = {
+        name: 'test-scan',
+        entrypoint: ['test-entry'],
+        securityStatus: [SecurityStatus.NEW, SecurityStatus.VULNERABLE],
+        _: [],
+        $0: ''
+      } as unknown as Arguments;
+
+      when(processSpy.exit(anything())).thenReturn(undefined);
+      when(
+        mockedScans.create(
+          objectContaining({
+            name: args.name as string,
+            entryPointIds: args.entrypoint as string[],
+            entryPointFilter: {
+              securityStatus: args.securityStatus as SecurityStatus[]
+            }
+          })
+        )
+      ).thenResolve({ id: 'test-scan-id', warnings: [] });
+
+      // act
+      await runScan.handler(args);
+
+      // assert
+      verify(processSpy.exit(0)).once();
+      verify(loggerSpy.error(anything())).never();
+      verify(loggerSpy.warn(anything())).never();
+    });
+
+    it('should pass both security and connectivity statuses as an entry point filter', async () => {
+      // arrange
+      const args = {
+        name: 'test-scan',
+        entrypoint: ['test-entry'],
+        securityStatus: [SecurityStatus.CHANGED],
+        connectivityStatus: [Connectivity.OK],
+        _: [],
+        $0: ''
+      } as unknown as Arguments;
+
+      when(processSpy.exit(anything())).thenReturn(undefined);
+      when(
+        mockedScans.create(
+          objectContaining({
+            name: args.name as string,
+            entryPointIds: args.entrypoint as string[],
+            entryPointFilter: {
+              securityStatus: [SecurityStatus.CHANGED],
+              connectivityStatus: [Connectivity.OK]
+            }
+          })
+        )
+      ).thenResolve({ id: 'test-scan-id', warnings: [] });
+
+      // act
+      await runScan.handler(args);
+
+      // assert
+      verify(processSpy.exit(0)).once();
+      verify(loggerSpy.error(anything())).never();
+      verify(loggerSpy.warn(anything())).never();
+    });
+
+    it('should not pass an entry point filter if no statuses are provided', async () => {
+      // arrange
+      const args = {
+        name: 'test-scan',
+        entrypoint: ['test-entry'],
+        _: [],
+        $0: ''
+      } as unknown as Arguments;
+
+      when(processSpy.exit(anything())).thenReturn(undefined);
+      when(
+        mockedScans.create(
+          objectContaining({
+            name: args.name as string,
+            entryPointIds: args.entrypoint as string[],
+            entryPointFilter: undefined
+          })
+        )
+      ).thenResolve({ id: 'test-scan-id', warnings: [] });
+
+      // act
+      await runScan.handler(args);
+
+      // assert
+      verify(processSpy.exit(0)).once();
+      verify(loggerSpy.error(anything())).never();
+      verify(loggerSpy.warn(anything())).never();
+    });
+
+    it('should pass statuses parsed from the command line', async () => {
+      // arrange
+      const args = runScan
+        .builder(yargs([]).exitProcess(false).strict(false))
+        .parse([
+          '--token',
+          'test-token',
+          '--name',
+          'test-scan',
+          '--entrypoint',
+          'test-entry',
+          '--security-status',
+          SecurityStatus.TESTED,
+          '--connectivity-status',
+          Connectivity.PROBLEM,
+          Connectivity.UNAUTHORIZED
+        ]) as unknown as Arguments;
+
+      when(processSpy.exit(anything())).thenReturn(undefined);
+      when(
+        mockedScans.create(
+          objectContaining({
+            name: 'test-scan',
+            entryPointIds: ['test-entry'],
+            entryPointFilter: {
+              securityStatus: [SecurityStatus.TESTED],
+              connectivityStatus: [
+                Connectivity.PROBLEM,
+                Connectivity.UNAUTHORIZED
+              ]
+            }
           })
         )
       ).thenResolve({ id: 'test-scan-id', warnings: [] });

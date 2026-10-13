@@ -29,6 +29,26 @@ import {
   deflateRaw
 } from 'node:zlib';
 
+// A short latency budget guard for the repeater's outbound request path.
+//
+// The repeater handles one inbound event per request, so it issues outbound
+// requests serially. That is the pattern that regresses when the native libcurl
+// binding stops draining completions promptly: the transfer itself finishes in
+// microseconds, but the `end` event is only delivered once libcurl's multi timer
+// fires. Concurrency masks it, because other in-flight transfers keep waking the
+// event loop - only a serialized measurement exposes it.
+//
+// Asserting on the MEAN is deliberate. The observed failure mode is periodic
+// rather than uniform: on an affected runtime roughly every third request stalls
+// (measured 711, 201, 95, 702, 226, 149, ... ms) while the rest look merely
+// sluggish, so the median stays low enough to slip past a threshold that the
+// mean trips decisively. Against a loopback server a healthy path averages well
+// under a millisecond, so the budget below leaves two orders of magnitude of
+// headroom for a loaded CI runner while still catching a single stalled request.
+const MEASURED_REQUESTS = 12;
+const WARMUP_REQUESTS = 3;
+const MAX_MEAN_LATENCY_MS = 50;
+
 const serversToClose: http.Server[] = [];
 
 async function startServer(
@@ -313,6 +333,33 @@ describe('HttpRequestExecutor', () => {
       expect(response).toMatchObject({ statusCode: 200, body: '{}' });
     });
 
+    it('should complete HEAD requests with a nonzero Content-Length and no body', async () => {
+      // arrange
+      const { baseUrl } = await startServer((_req, res) => {
+        res.writeHead(200, {
+          'content-type': 'application/json',
+          'content-length': '12345'
+        });
+        res.end();
+      });
+      const { request } = createRequest({
+        url: `${baseUrl}/`,
+        method: 'HEAD'
+      });
+      const sut = buildSut();
+
+      // act
+      const response = await sut.execute(request);
+
+      // assert
+      expect(response).toMatchObject({
+        statusCode: 200,
+        body: '',
+        headers: { 'content-length': '12345' }
+      });
+      expect(response.errorCode).toBeUndefined();
+    });
+
     it('should populate ttfb as a non-negative integer milliseconds value', async () => {
       // arrange
       const { baseUrl } = await startServer((_req, res) => {
@@ -399,7 +446,7 @@ describe('HttpRequestExecutor', () => {
       expect(receivedPath).toBe('/?x=1&y=2');
     });
 
-    it('should handle timeout', async () => {
+    it('should report ETIMEDOUT when the target does not respond in time', async () => {
       // arrange
       const { baseUrl } = await startServer((_req, _res) => {
         // Never respond — triggers timeout
@@ -411,10 +458,15 @@ describe('HttpRequestExecutor', () => {
       const response = await sut.execute(request);
 
       // assert
-      expect(response).toMatchObject({ errorCode: expect.any(String) });
+      expect(response).toMatchObject({
+        protocol: Protocol.HTTP,
+        statusCode: undefined,
+        errorCode: 'ETIMEDOUT',
+        message: expect.any(String)
+      });
     });
 
-    it('should handle non-HTTP errors (connection refused)', async () => {
+    it('should report ECONNREFUSED when the target refuses the connection', async () => {
       // arrange
       const { request } = createRequest({
         url: 'http://127.0.0.1:1/'
@@ -425,7 +477,98 @@ describe('HttpRequestExecutor', () => {
       const response = await sut.execute(request);
 
       // assert
-      expect(response).toMatchObject({ statusCode: undefined });
+      expect(response).toMatchObject({
+        protocol: Protocol.HTTP,
+        statusCode: undefined,
+        errorCode: 'ECONNREFUSED',
+        message: expect.any(String)
+      });
+    });
+
+    it('should report ENOTFOUND when the target host cannot be resolved', async () => {
+      // arrange
+      // RFC 6761: `.invalid` names are guaranteed never to resolve.
+      const { request } = createRequest({
+        url: 'http://repeater-spec.invalid/'
+      });
+      const sut = buildSut({ timeout: 5000 });
+
+      // act
+      const response = await sut.execute(request);
+
+      // assert
+      expect(response).toMatchObject({
+        statusCode: undefined,
+        errorCode: 'ENOTFOUND'
+      });
+    });
+
+    it('should report ECONNRESET when the target closes the connection without replying', async () => {
+      // arrange
+      const server = net.createServer((socket) =>
+        socket.on('data', () => socket.end())
+      );
+      server.listen(0, '127.0.0.1');
+      await once(server, 'listening');
+      const { port } = server.address() as AddressInfo;
+      const { request } = createRequest({ url: `http://127.0.0.1:${port}/` });
+      const sut = buildSut({ timeout: 5000 });
+
+      try {
+        // act
+        const response = await sut.execute(request);
+
+        // assert
+        expect(response).toMatchObject({
+          statusCode: undefined,
+          errorCode: 'ECONNRESET'
+        });
+      } finally {
+        server.close();
+      }
+    });
+
+    it('should report ECONNRESET when the target resets the connection', async () => {
+      // arrange
+      const server = net.createServer((socket) =>
+        socket.on('data', () => socket.resetAndDestroy())
+      );
+      server.listen(0, '127.0.0.1');
+      await once(server, 'listening');
+      const { port } = server.address() as AddressInfo;
+      const { request } = createRequest({ url: `http://127.0.0.1:${port}/` });
+      const sut = buildSut({ timeout: 5000 });
+
+      try {
+        // act
+        const response = await sut.execute(request);
+
+        // assert
+        expect(response).toMatchObject({
+          statusCode: undefined,
+          errorCode: 'ECONNRESET'
+        });
+      } finally {
+        server.close();
+      }
+    });
+
+    it('should report EPROTO when the TLS handshake fails', async () => {
+      // arrange
+      const { baseUrl } = await startServer((_req, res) => res.end());
+      const { request } = createRequest({
+        url: baseUrl.replace('http://', 'https://')
+      });
+      const sut = buildSut({ timeout: 5000 });
+
+      // act
+      const response = await sut.execute(request);
+
+      // assert
+      expect(response).toMatchObject({
+        statusCode: undefined,
+        errorCode: 'EPROTO'
+      });
     });
 
     it('should truncate response body with not white-listed mime type', async () => {
@@ -1982,5 +2125,49 @@ describe('HttpRequestExecutor', () => {
       // assert — no kerberos applied, so FRESH_CONNECT used
       expect(connectionCount).toBe(2);
     });
+
+    it('should deliver serialized requests without waiting on libcurl timers', async () => {
+      // arrange
+      const { baseUrl } = await startServer((req, res) => {
+        req.resume();
+        req.on('end', () => res.end('ok'));
+      });
+      const sut = buildSut({ timeout: 30000 });
+      const measureOnce = async (): Promise<number> => {
+        const startedAt = process.hrtime.bigint();
+
+        await sut.execute(
+          new Request({ url: baseUrl, method: 'GET', protocol: Protocol.HTTP })
+        );
+
+        return Number(process.hrtime.bigint() - startedAt) / 1e6;
+      };
+
+      // the first requests pay for JIT and the initial native setup
+      for (let i = 0; i < WARMUP_REQUESTS; i++) {
+        await measureOnce();
+      }
+
+      // act
+      const latencies: number[] = [];
+      for (let i = 0; i < MEASURED_REQUESTS; i++) {
+        latencies.push(await measureOnce());
+      }
+
+      const mean = latencies.reduce((a, b) => a + b, 0) / latencies.length;
+
+      // assert
+      // Assert via objectContaining so Jest prints the whole received object on
+      // failure: the runtime, the mean, the max and every sample. That is enough
+      // to tell a real regression from a noisy runner without rerunning.
+      expect({
+        node: process.version,
+        meanMs: Math.round(mean),
+        maxMs: Math.round(Math.max(...latencies)),
+        budgetMs: MAX_MEAN_LATENCY_MS,
+        samplesMs: latencies.map((value) => Math.round(value)),
+        withinBudget: mean < MAX_MEAN_LATENCY_MS
+      }).toEqual(expect.objectContaining({ withinBudget: true }));
+    }, 60000);
   });
 });
