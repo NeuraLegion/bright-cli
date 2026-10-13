@@ -1,6 +1,6 @@
 {
   "name": "@brightsec/cli",
-  "version": "13.16.0-next.7",
+  "version": "13.16.0-next.8",
   "private": false,
   "repository": {
     "type": "git",
@@ -170,6 +170,7 @@
   },
   "overrides": {
     "undici": "^7.29.1",
+    "npm": "^11.21.0",
     "fast-uri": "^3.1.7",
     "browserslist": "^4.28.7",
     "baseline-browser-mapping": "^2.11.0",
