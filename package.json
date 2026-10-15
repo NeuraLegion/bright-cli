@@ -88,6 +88,7 @@
     "lint-staged": "^16.2.7",
     "nock": "^13.2.9",
     "prettier": "^2.7.1",
+    "resedit": "3.1.0",
     "semantic-release": "^25.0.2",
     "terser-webpack-plugin": "^5.3.16",
     "ts-jest": "^29.4.6",

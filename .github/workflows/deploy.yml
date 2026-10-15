@@ -125,6 +125,12 @@ jobs:
       - name: Build executable file
         run: npm run build:pkg -- -t node24-${{ matrix.target }}-x64
 
+      # pkg output is a renamed node.exe; rewrite its VERSIONINFO/icon so the
+      # publisher metadata matches the code signing certificate (SmartScreen).
+      - name: Set Windows version info
+        if: startsWith(matrix.os, 'win')
+        run: node .\tools\scripts\set-windows-version-info.mjs .\bin\cli.exe
+
       # DigiCert KeyLocker code signing (Windows only).
       # If the SM_* secrets are not configured (e.g. local re-runs), signing is
       # skipped gracefully and unsigned artifacts are produced.
@@ -172,6 +178,21 @@ jobs:
           SM_CLIENT_CERT_PASSWORD: ${{ secrets.SM_CLIENT_CERT_PASSWORD }}
           SM_CODE_SIGNING_CERT_SHA1_HASH: ${{ secrets.SM_CODE_SIGNING_CERT_SHA1_HASH }}
         run: .\tools\scripts\sign-windows.ps1 -FilePath .\bin\cli.exe
+        shell: pwsh
+
+      # roots.exe (from the win-ca package) is bundled into the MSI, so it is
+      # staged and signed here before build-msi.ps1 packages it.
+      - name: Sign bundled roots.exe
+        if: startsWith(matrix.os, 'win') && steps.signing.outputs.enabled == 'true'
+        env:
+          SM_HOST: ${{ vars.SM_HOST }}
+          SM_API_KEY: ${{ secrets.SM_API_KEY }}
+          SM_CLIENT_CERT_FILE: ${{ runner.temp }}/client-auth-cert.p12
+          SM_CLIENT_CERT_PASSWORD: ${{ secrets.SM_CLIENT_CERT_PASSWORD }}
+          SM_CODE_SIGNING_CERT_SHA1_HASH: ${{ secrets.SM_CODE_SIGNING_CERT_SHA1_HASH }}
+        run: |
+          Copy-Item .\node_modules\win-ca\lib\roots.exe -Destination .\bin\roots.exe
+          .\tools\scripts\sign-windows.ps1 -FilePath .\bin\roots.exe
         shell: pwsh
 
       - name: Build MSI
