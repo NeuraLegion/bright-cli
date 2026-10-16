@@ -142,18 +142,17 @@ export class Request {
       ...headers
     };
 
-    this._headers = Object.entries(mergedHeaders).reduce(
-      (result, [field, value]: [string, string | string[]]) => {
-        result[field] =
-          Array.isArray(value) &&
-          Request.SINGLE_VALUE_HEADERS.has(field.toLowerCase())
-            ? value.join(', ')
-            : value;
+    this._headers = Object.entries(mergedHeaders).reduce<
+      Record<string, string | string[]>
+    >((result, [field, value]: [string, string | string[]]) => {
+      result[field] =
+        Array.isArray(value) &&
+        Request.SINGLE_VALUE_HEADERS.has(field.toLowerCase())
+          ? value.join(', ')
+          : value;
 
-        return result;
-      },
-      {}
-    );
+      return result;
+    }, {});
   }
 
   public async loadCert({ path, passphrase }: Cert): Promise<void> {
@@ -184,6 +183,13 @@ export class Request {
     }
   }
 
+  /**
+   * Serializes every option the constructor accepts, so that
+   * `new Request(request.toJSON())` is a faithful copy. Any field omitted here
+   * is silently dropped on such a round-trip, and `decompress` is worse than
+   * dropped: the constructor defaults it to `true`, so omitting it flips an
+   * explicit `false`.
+   */
   public toJSON(): RequestOptions {
     return {
       protocol: this.protocol,
@@ -194,7 +200,12 @@ export class Request {
       passphrase: this._passphrase,
       ca: this._ca?.toString('utf8'),
       pfx: this._pfx?.toString('utf8'),
-      correlationIdRegex: this.correlationIdRegex
+      correlationIdRegex: this.correlationIdRegex,
+      encoding: this.encoding,
+      maxContentSize: this.maxContentSize,
+      timeout: this.timeout,
+      decompress: this.decompress,
+      keepAlive: this.keepAlive
     };
   }
 
